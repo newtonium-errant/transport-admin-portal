@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transportation Admin Portal</title>
+    <title>Rural Route Transportation Services - Admin Portal</title>
     <style>
         * {
             margin: 0;
@@ -286,8 +286,8 @@
     <div class="container">
         <div class="header">
             <button class="logout-btn" id="logoutBtn" style="display: none;">Logout</button>
-            <h1>Transportation Admin Portal</h1>
-            <p id="headerSubtext">Secure admin access for client bookings</p>
+            <h1>Rural Route Transportation Services</h1>
+            <p id="headerSubtext">Admin Portal - Secure access for client bookings</p>
         </div>
 
         <div class="form-container">
@@ -638,7 +638,7 @@
             .then(data => {
                 document.getElementById('saveLoading').style.display = 'none';
                 if (data.success) {
-                    alert('Client information and appointments saved successfully to database!');
+                    alert('Client information and appointments saved successfully!');
                     startOver();
                 } else {
                     alert('Error saving data: ' + (data.message || 'Unknown error'));
