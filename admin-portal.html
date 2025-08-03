@@ -335,6 +335,11 @@
                 <h2>Client Information</h2>
                 <form id="clientForm">
                     <div class="form-grid">
+                        <div class="form-group" id="clientKNumberGroup" style="display: none;">
+                            <label for="clientKNumber">K Number <span class="required">*</span></label>
+                            <input type="text" id="clientKNumber" name="clientKNumber" placeholder="K1234567" pattern="^[Kk]\d{7}$" maxlength="15" style="background-color: #f8f9fa;">
+                            <small style="color: #666; font-size: 0.9rem;">Edit if the K Number was entered incorrectly</small>
+                        </div>
                         <div class="form-group">
                             <label for="firstName">First Name <span class="required">*</span></label>
                             <input type="text" id="firstName" name="firstName" required>
@@ -344,24 +349,55 @@
                             <input type="text" id="lastName" name="lastName" required>
                         </div>
                         <div class="form-group">
-                            <label for="email">Email Address <span class="required">*</span></label>
-                            <input type="email" id="email" name="email" required>
-                        </div>
-                        <div class="form-group">
                             <label for="phone">Phone Number <span class="required">*</span></label>
                             <input type="tel" id="phone" name="phone" required>
                         </div>
-                        <div class="form-group full-width">
-                            <label for="address">Home Address <span class="required">*</span></label>
-                            <input type="text" id="address" name="address" required>
+                        <div class="form-group">
+                            <label for="email">Email Address <span class="required">*</span></label>
+                            <input type="email" id="email" name="email" required>
                         </div>
                         <div class="form-group full-width">
-                            <label for="emergencyContact">Emergency Contact Name & Phone</label>
-                            <input type="text" id="emergencyContact" name="emergencyContact" placeholder="Name and phone number">
+                            <label for="civicAddress">Civic Address <span class="required">*</span></label>
+                            <input type="text" id="civicAddress" name="civicAddress" required placeholder="Street number and name">
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City <span class="required">*</span></label>
+                            <input type="text" id="city" name="city" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="province">Province <span class="required">*</span></label>
+                            <select id="province" name="province" required>
+                                <option value="">Select Province</option>
+                                <option value="AB">Alberta</option>
+                                <option value="BC">British Columbia</option>
+                                <option value="MB">Manitoba</option>
+                                <option value="NB">New Brunswick</option>
+                                <option value="NL">Newfoundland and Labrador</option>
+                                <option value="NS" selected>Nova Scotia</option>
+                                <option value="NT">Northwest Territories</option>
+                                <option value="NU">Nunavut</option>
+                                <option value="ON">Ontario</option>
+                                <option value="PE">Prince Edward Island</option>
+                                <option value="QC">Quebec</option>
+                                <option value="SK">Saskatchewan</option>
+                                <option value="YT">Yukon</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="postalCode">Postal Code <span class="required">*</span></label>
+                            <input type="text" id="postalCode" name="postalCode" required placeholder="A1A 1A1" pattern="[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d">
+                        </div>
+                        <div class="form-group">
+                            <label for="emergencyContactName">Emergency Contact Name <span class="required">*</span></label>
+                            <input type="text" id="emergencyContactName" name="emergencyContactName" placeholder="Contact person name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="emergencyContactNumber">Emergency Contact Number <span class="required">*</span></label>
+                            <input type="tel" id="emergencyContactNumber" name="emergencyContactNumber" placeholder="Phone number" required>
                         </div>
                         <div class="form-group full-width">
-                            <label for="specialNeeds">Special Needs or Notes</label>
-                            <textarea id="specialNeeds" name="specialNeeds" rows="3" placeholder="Wheelchair accessibility, medical equipment, etc."></textarea>
+                            <label for="notes">Notes or Special Requests</label>
+                            <textarea id="notes" name="notes" rows="3" placeholder="Special requests, accessibility requirements, medical equipment, etc."></textarea>
                         </div>
                     </div>
 
@@ -388,16 +424,8 @@
     <script>
         // Predefined locations for appointments
         const locations = [
-            'Halifax Infirmary - 1796 Summer St',
-            'Dartmouth General Hospital - 325 Pleasant St',
-            'IWK Health Centre - 5850 University Ave',
-            'Nova Scotia Hospital - 300 Pleasant St',
-            'Cobequid Community Health Centre - 40 Freer Ln',
-            'Eastern Shore Memorial Hospital - 22613 NS-7',
-            'Hants Community Hospital - 89 Payzant Dr',
-            'South Shore Regional Hospital - 90 Glen Allan Dr',
-            'Valley Regional Hospital - 150 Exhibition St',
-            'Colchester East Hants Health Centre - 600 Abenaki Rd'
+            'NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0',
+            'NuVista Psychedelic - New Minas - 21 Roy Avenue Suite 230, New Minas, NS B4N 3R7'
         ];
 
         // Configuration - Your actual n8n webhook URLs
@@ -534,24 +562,39 @@
 
         // Populate client form with existing data
         function populateClientForm(client) {
+            // Hide K Number field for existing clients
+            document.getElementById('clientKNumberGroup').style.display = 'none';
+            
             document.getElementById('firstName').value = client.firstName || '';
             document.getElementById('lastName').value = client.lastName || '';
-            document.getElementById('email').value = client.email || '';
             document.getElementById('phone').value = client.phone || '';
-            document.getElementById('address').value = client.address || '';
-            document.getElementById('emergencyContact').value = client.emergencyContact || '';
-            document.getElementById('specialNeeds').value = client.specialNeeds || '';
+            document.getElementById('email').value = client.email || '';
+            document.getElementById('civicAddress').value = client.address || '';
+            document.getElementById('city').value = client.city || '';
+            document.getElementById('province').value = client.province || '';
+            document.getElementById('postalCode').value = client.postalCode || '';
+            document.getElementById('emergencyContactName').value = client.emergencyContactName || '';
+            document.getElementById('emergencyContactNumber').value = client.emergencyContactNumber || '';
+            document.getElementById('notes').value = client.notes || '';
         }
 
         // Clear client form for new client
         function clearClientForm() {
+            // Show and populate K Number field for new clients
+            document.getElementById('clientKNumberGroup').style.display = 'block';
+            document.getElementById('clientKNumber').value = currentClient.kNumber || '';
+            
             document.getElementById('firstName').value = '';
             document.getElementById('lastName').value = '';
-            document.getElementById('email').value = '';
             document.getElementById('phone').value = '';
-            document.getElementById('address').value = '';
-            document.getElementById('emergencyContact').value = '';
-            document.getElementById('specialNeeds').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('civicAddress').value = '';
+            document.getElementById('city').value = '';
+            document.getElementById('province').value = 'NS'; // Default to Nova Scotia
+            document.getElementById('postalCode').value = '';
+            document.getElementById('emergencyContactName').value = '';
+            document.getElementById('emergencyContactNumber').value = '';
+            document.getElementById('notes').value = '';
         }
 
         // Add appointment
@@ -637,7 +680,7 @@
 
             // Prepare data for n8n (which will save to Supabase)
             const submissionData = {
-                kNumber: currentClient.kNumber,
+                kNumber: document.getElementById('clientKNumber').value || currentClient.kNumber,
                 isNewClient: isNewClient,
                 clientData: clientData,
                 appointments: validAppointments,
