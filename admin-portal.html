@@ -217,10 +217,39 @@
             border-left: 4px solid #27ae60;
         }
 
+        .appointment-item.existing-appointment.flagged-appointment {
+            background: #fff8e1;
+            border-color: #ff9800;
+            border-left: 4px solid #ff9800;
+        }
+
         .appointment-item.new-appointment {
             background: #fff3cd;
             border-color: #f39c12;
             border-left: 4px solid #f39c12;
+        }
+
+        .validation-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 0.9rem;
+            color: #856404;
+            font-weight: 500;
+        }
+
+        .status-needs-approval {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .status-flagged {
+            background: #fff3e0;
+            color: #ef6c00;
+            border: 1px solid #ffe0b2;
         }
 
         .appointment-status-badge {
@@ -600,13 +629,29 @@
                     currentClient = data.clientData;
                     populateClientForm(currentClient);
                     
-                    // Load existing appointments
+                    // Load existing appointments and show validation summary
                     loadExistingAppointments(data.existingAppointments || []);
                     
                     document.getElementById('clientStatus').className = 'client-status existing';
                     const appointmentCount = data.existingAppointments ? data.existingAppointments.length : 0;
-                    document.getElementById('clientStatus').textContent = 
-                        `Existing Client Found: ${currentClient.firstName} ${currentClient.lastName}${appointmentCount > 0 ? ` (${appointmentCount} future appointments)` : ''}`;
+                    let statusMessage = `Existing Client Found: ${currentClient.firstName} ${currentClient.lastName}`;
+                    
+                    if (appointmentCount > 0) {
+                        statusMessage += ` (${appointmentCount} future appointments)`;
+                        
+                        // Add validation warnings to status message
+                        if (data.validationSummary) {
+                            const { flaggedAppointments, appointmentsNeedingApproval } = data.validationSummary;
+                            if (flaggedAppointments > 0) {
+                                statusMessage += ` - ⚠️ ${flaggedAppointments} flagged`;
+                                if (appointmentsNeedingApproval > 0) {
+                                    statusMessage += `, ${appointmentsNeedingApproval} need approval`;
+                                }
+                            }
+                        }
+                    }
+                    
+                    document.getElementById('clientStatus').textContent = statusMessage;
                 } else {
                     // New client
                     isNewClient = true;
@@ -664,11 +709,28 @@
                     isExisting: apt.isExisting || false, // Flag to identify existing appointments
                     appointmentStatus: apt.appointmentStatus || 'pending',
                     notes: apt.notes || '',
-                    originalId: apt.id // Keep track of original database ID
+                    originalId: apt.id, // Keep track of original database ID
+                    
+                    // Enhanced validation data
+                    validation: apt.validation || {
+                        valid: true,
+                        flagged: false,
+                        reason: 'sufficient_notice',
+                        message: 'Appointment has sufficient notice',
+                        requiresApproval: false,
+                        businessDaysNotice: null
+                    }
                 });
             });
             
             console.log('📅 Loaded', appointments.length, 'existing appointments');
+            
+            // Log validation summary
+            const flaggedCount = appointments.filter(apt => apt.validation && apt.validation.flagged).length;
+            const needsApprovalCount = appointments.filter(apt => apt.validation && apt.validation.requiresApproval).length;
+            if (flaggedCount > 0) {
+                console.log('⚠️ Found', flaggedCount, 'flagged appointments,', needsApprovalCount, 'needing approval');
+            }
         }
 
         // Clear client form for new client
@@ -724,11 +786,28 @@
                 let statusClass = '';
                 let statusText = '';
                 let appointmentClass = '';
+                let validationWarning = '';
                 
                 if (apt.isExisting) {
                     appointmentClass = 'existing-appointment';
-                    statusText = apt.appointmentStatus === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
-                    statusClass = apt.appointmentStatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
+                    
+                    // Check for validation warnings
+                    if (apt.validation && apt.validation.flagged) {
+                        appointmentClass += ' flagged-appointment';
+                        if (apt.validation.requiresApproval) {
+                            statusText = '🔍 Needs Approval';
+                            statusClass = 'status-needs-approval';
+                            validationWarning = `<div class="validation-warning">
+                                ⚠️ ${apt.validation.message}
+                            </div>`;
+                        } else {
+                            statusText = '⚠️ Flagged';
+                            statusClass = 'status-flagged';
+                        }
+                    } else {
+                        statusText = apt.appointmentStatus === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
+                        statusClass = apt.appointmentStatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
+                    }
                 } else {
                     appointmentClass = 'new-appointment';
                     statusText = '🆕 New';
@@ -739,6 +818,7 @@
                 <div class="appointment-item ${appointmentClass}">
                     <button class="remove-appointment" onclick="removeAppointment(${apt.id})">×</button>
                     <div class="appointment-status-badge ${statusClass}">${statusText}</div>
+                    ${validationWarning}
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div>
                             <label>Date <span class="required">*</span></label>
@@ -758,6 +838,9 @@
                         ${apt.notes ? `<div style="grid-column: 1 / -1;">
                             <label>Notes</label>
                             <textarea readonly style="background: #f8f9fa;">${apt.notes}</textarea>
+                        </div>` : ''}
+                        ${apt.validation && apt.validation.businessDaysNotice !== null ? `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #666;">
+                            📊 ${apt.validation.businessDaysNotice} business day${apt.validation.businessDaysNotice === 1 ? '' : 's'} notice
                         </div>` : ''}
                     </div>
                 </div>
@@ -874,4 +957,4 @@
 </body>
 </html>
 
-<!-- Version: 1.32 - Added existing appointment display with visual indicators and status badges -->
+<!-- Version: 1.33 - Added appointment validation display with warning messages and approval flags -->
