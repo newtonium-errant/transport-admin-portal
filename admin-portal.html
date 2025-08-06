@@ -1,4 +1,19 @@
-<!DOCTYPE html>
+// Remove appointment
+        function removeAppointment(id) {
+            const appointment = appointments.find(apt => apt.id === id);
+            
+            // If removing an existing appointment, mark it for deletion
+            if (appointment && appointment.isExisting) {
+                appointment.isDeleted = true;
+                appointment.isModified = true;
+                console.log('📅 Marked existing appointment for deletion:', appointment.originalId);
+            } else {
+                // For new appointments, just remove from array
+                appointments = appointments.filter(apt => apt.id !== id);
+            }
+            
+            updateAppointmentsList();
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -733,7 +748,59 @@
             }
         }
 
-        // Clear client form for new client
+        // Client-side validation for appointments
+        function validateAppointmentClientSide(date, time) {
+            if (!date || !time) {
+                return { valid: false, message: 'Date and time are required' };
+            }
+            
+            const appointmentDateTime = new Date(`${date}T${time}`);
+            const now = new Date();
+            
+            // Check if appointment is in the past
+            if (appointmentDateTime < now) {
+                return { 
+                    valid: false, 
+                    message: 'Appointment cannot be scheduled in the past',
+                    flagged: true
+                };
+            }
+            
+            // Calculate business days notice (simplified client-side version)
+            const msPerDay = 24 * 60 * 60 * 1000;
+            const daysDifference = Math.floor((appointmentDateTime - now) / msPerDay);
+            
+            // Simple weekday check (more accurate calculation would be in backend)
+            let businessDaysNotice = 0;
+            let checkDate = new Date(now);
+            checkDate.setDate(checkDate.getDate() + 1); // Start from tomorrow
+            
+            while (checkDate <= appointmentDateTime) {
+                const dayOfWeek = checkDate.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not weekend
+                    businessDaysNotice++;
+                }
+                checkDate.setDate(checkDate.getDate() + 1);
+            }
+            
+            if (businessDaysNotice < 2) {
+                return {
+                    valid: true,
+                    message: `Only ${businessDaysNotice} business day${businessDaysNotice === 1 ? '' : 's'} notice - will require manual approval`,
+                    flagged: true,
+                    requiresApproval: true,
+                    businessDaysNotice: businessDaysNotice
+                };
+            }
+            
+            return {
+                valid: true,
+                message: 'Appointment has sufficient notice',
+                flagged: false,
+                requiresApproval: false,
+                businessDaysNotice: businessDaysNotice
+            };
+        }
         function clearClientForm() {
             // Show and populate K Number field for new clients
             document.getElementById('clientKNumberGroup').style.display = 'block';
@@ -957,4 +1024,4 @@
 </body>
 </html>
 
-<!-- Version: 1.33 - Added appointment validation display with warning messages and approval flags -->
+<!-- Version: 1.34 - Enhanced save workflow with appointment modification tracking and client-side validation -->
