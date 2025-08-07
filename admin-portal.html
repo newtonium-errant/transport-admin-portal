@@ -694,7 +694,7 @@
             document.getElementById('notes').value = client.notes || '';
         }
 
-        // Enhanced Load Existing Appointments Function
+// Enhanced Load Existing Appointments Function
         function loadExistingAppointments(existingAppointments) {
             console.log('📥 Loading existing appointments:', existingAppointments.length);
     
@@ -741,7 +741,6 @@
             });
     
             console.log(`✅ Successfully loaded ${appointments.length} existing appointments`);
-        }
             
             // Log validation summary
             const flaggedCount = appointments.filter(apt => apt.validation && apt.validation.flagged).length;
@@ -1177,4 +1176,4 @@
 </body>
 </html>
 
-<!-- Version: v2.7.1 - Fixed frontend appointment modification tracking and deletion functionality -->
+<!-- Version: v2.7.2 - Fixed frontend appointment modification tracking and deletion functionality -->
