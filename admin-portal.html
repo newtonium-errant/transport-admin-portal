@@ -138,6 +138,12 @@
             box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #27ae60, #16a085);
         }
@@ -156,6 +162,34 @@
 
         .required {
             color: #e74c3c;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #f44336;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #4caf50;
+            display: none;
+        }
+
+        .success-message.visible {
+            display: block;
         }
 
         .client-status {
@@ -281,98 +315,92 @@
             border: 1px solid #b3d9ff;
         }
 
-    /* Deleted appointment styling */
-    .appointment-item.deleted-appointment {
-        background: #ffebee;
-        border-color: #f44336;
-        border-left: 4px solid #f44336;
-        opacity: 0.8;
-    }
+        .appointment-item.deleted-appointment {
+            background: #ffebee;
+            border-color: #f44336;
+            border-left: 4px solid #f44336;
+            opacity: 0.8;
+        }
 
-    .appointment-item.deleted-appointment::after {
-        content: "DELETED";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-15deg);
-        background: rgba(244, 67, 54, 0.1);
-        color: #c62828;
-        padding: 10px 20px;
-        font-size: 24px;
-        font-weight: bold;
-        border: 3px solid #f44336;
-        border-radius: 8px;
-        pointer-events: none;
-        z-index: 2;
-    }
+        .appointment-item.deleted-appointment::after {
+            content: "DELETED";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            background: rgba(244, 67, 54, 0.1);
+            color: #c62828;
+            padding: 10px 20px;
+            font-size: 24px;
+            font-weight: bold;
+            border: 3px solid #f44336;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 2;
+        }
 
-    /* Deleted status badge */
-    .status-deleted {
-        background: #ffcdd2;
-        color: #c62828;
-        border: 1px solid #f44336;
-    }
+        .status-deleted {
+            background: #ffcdd2;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
         
-    /* Enhanced remove button - always clickable */
-    .remove-appointment, .restore-appointment {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        border: none;
-        border-radius: 50%;
-        width: 25px;
-        height: 25px;
-        cursor: pointer;
-        font-size: 12px;
-        z-index: 10; /* Higher z-index to ensure it's clickable */
-        color: white;
-    }
+        .remove-appointment, .restore-appointment {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 10;
+            color: white;
+        }
 
-    .remove-appointment {
-        background: #e74c3c;
-    }
+        .remove-appointment {
+            background: #e74c3c;
+        }
 
-    .remove-appointment:hover {
-        background: #c0392b;
-        transform: scale(1.1);
-    }
+        .remove-appointment:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
 
-    .restore-appointment {
-        background: #27ae60;
-    }
+        .restore-appointment {
+            background: #27ae60;
+        }
 
-    .restore-appointment:hover {
-        background: #229954;
-        transform: scale(1.1);
-    }
+        .restore-appointment:hover {
+            background: #229954;
+            transform: scale(1.1);
+        }
 
-    /* Draft appointment styling */
-    .appointment-item.draft-appointment {
-        background: #f0f0f0;
-        border: 2px dashed #999;
-        border-left: 4px dashed #666;
-    }
+        .appointment-item.draft-appointment {
+            background: #f0f0f0;
+            border: 2px dashed #999;
+            border-left: 4px dashed #666;
+        }
 
-    .appointment-item.draft-appointment::before {
-        content: "DRAFT";
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        background: #999;
-        color: white;
-        padding: 2px 6px;
-        font-size: 10px;
-        border-radius: 2px;
-        z-index: 1;
-    }
+        .appointment-item.draft-appointment::before {
+            content: "DRAFT";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: #999;
+            color: white;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 2px;
+            z-index: 1;
+        }
 
-    /* Draft status badge */
-    .status-draft {
-        background: #e0e0e0;
-        color: #666;
-        border: 1px solid #999;
-    }
-
+        .status-draft {
+            background: #e0e0e0;
+            color: #666;
+            border: 1px solid #999;
+        }
         
         .loading {
             display: none;
@@ -453,6 +481,14 @@
         </div>
 
         <div class="form-container">
+            <div id="errorMessage" class="error-message">
+                <strong>Error:</strong> <span id="errorText"></span>
+            </div>
+
+            <div id="successMessage" class="success-message">
+                <strong>Success:</strong> <span id="successText"></span>
+            </div>
+
             <!-- Step 1: Login -->
             <div id="loginStep" class="step active">
                 <h2>Admin Login</h2>
@@ -466,7 +502,7 @@
                         <input type="password" id="password" name="password" required>
                     </div>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="login()">Login</button>
+                <button type="button" class="btn btn-primary" id="loginButton" onclick="login()">Login</button>
             </div>
 
             <!-- Step 2: K Number Entry -->
@@ -613,15 +649,48 @@
         let isNewClient = false;
         let appointments = [];
 
+        function showError(message) {
+            console.error('Error:', message);
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorDiv.classList.add('visible');
+            
+            setTimeout(() => {
+                errorDiv.classList.remove('visible');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            console.log('Success:', message);
+            const successDiv = document.getElementById('successMessage');
+            const successText = document.getElementById('successText');
+            successText.textContent = message;
+            successDiv.classList.add('visible');
+            
+            setTimeout(() => {
+                successDiv.classList.remove('visible');
+            }, 3000);
+        }
+
         // Login function
         function login() {
+            console.log('Login function called');
+            
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('loginButton');
 
             if (!username || !password) {
-                alert('Please enter both username and password');
+                showError('Please enter both username and password');
                 return;
             }
+
+            // Disable button during request
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
+
+            console.log('Attempting login with backend...');
 
             // Call n8n login webhook
             fetch(`${N8N_CONFIG.baseUrl}${N8N_CONFIG.endpoints.login}`, {
@@ -631,20 +700,32 @@
                 },
                 body: JSON.stringify({ username, password })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Login response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Login response data:', data);
                 if (data.success) {
                     currentUser = username;
                     document.getElementById('logoutBtn').style.display = 'block';
                     document.getElementById('headerSubtext').textContent = `Logged in as: ${username}`;
+                    showSuccess('Login successful');
                     showStep('kNumberStep');
                 } else {
-                    alert('Invalid credentials');
+                    showError('Invalid credentials');
                 }
             })
             .catch(error => {
                 console.error('Login error:', error);
-                alert('Login failed. Please try again.');
+                showError('Login failed: ' + error.message);
+            })
+            .finally(() => {
+                loginButton.disabled = false;
+                loginButton.textContent = 'Login';
             });
         }
 
@@ -661,6 +742,7 @@
             document.getElementById('password').value = '';
             
             showStep('loginStep');
+            showSuccess('Logged out successfully');
         }
 
         // Client lookup function
@@ -682,7 +764,7 @@
             // Validate K Number format
             const kNumberPattern = /^K\d{7}$/;
             if (!kNumberPattern.test(kNumber)) {
-                alert('Invalid K Number format. Must be K followed by 7 digits (e.g., K7807878)');
+                showError('Invalid K Number format. Must be K followed by 7 digits (e.g., K7807878)');
                 kNumberInput.focus();
                 return;
             }
@@ -692,7 +774,7 @@
 
             document.getElementById('lookupLoading').style.display = 'block';
 
-            // Call n8n client lookup webhook (which queries Supabase)
+            // Call n8n client lookup webhook
             fetch(`${N8N_CONFIG.baseUrl}${N8N_CONFIG.endpoints.lookup}`, {
                 method: 'POST',
                 headers: {
@@ -700,59 +782,73 @@
                 },
                 body: JSON.stringify({ kNumber })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.found) {
-                    // Existing client - populate with data from Supabase
-                    isNewClient = false;
-                    currentClient = data.clientData;
-                    populateClientForm(currentClient);
-                    
-                    // Load existing appointments and show validation summary
-                    loadExistingAppointments(data.existingAppointments || []);
-                    
-                    document.getElementById('clientStatus').className = 'client-status existing';
-                    const appointmentCount = data.existingAppointments ? data.existingAppointments.length : 0;
-                    let statusMessage = `Existing Client Found: ${currentClient.firstName} ${currentClient.lastName}`;
-                    
-                    if (appointmentCount > 0) {
-                        statusMessage += ` (${appointmentCount} future appointments)`;
-                        
-                        // Add validation warnings to status message
-                        if (data.validationSummary) {
-                            const { flaggedAppointments, appointmentsNeedingApproval } = data.validationSummary;
-                            if (flaggedAppointments > 0) {
-                                statusMessage += ` - ⚠️ ${flaggedAppointments} flagged`;
-                                if (appointmentsNeedingApproval > 0) {
-                                    statusMessage += `, ${appointmentsNeedingApproval} need approval`;
-                                }
-                            }
-                        }
-                    }
-                    
-                    document.getElementById('clientStatus').textContent = statusMessage;
-                } else {
-                    // New client
-                    isNewClient = true;
-                    currentClient = { kNumber: kNumber };
-                    clearClientForm();
-                    
-                    // Clear any existing appointments
-                    appointments = [];
-                    
-                    document.getElementById('clientStatus').className = 'client-status new';
-                    document.getElementById('clientStatus').textContent = 'New Client - Please fill out all information';
+            .then(response => {
+                console.log('Lookup response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-
-                updateAppointmentsList();
-                document.getElementById('lookupLoading').style.display = 'none';
-                showStep('clientFormStep');
+                return response.json();
+            })
+            .then(data => {
+                console.log('Lookup response data:', data);
+                handleLookupResponse(data);
             })
             .catch(error => {
                 console.error('Lookup error:', error);
                 document.getElementById('lookupLoading').style.display = 'none';
-                alert('Error looking up client. Please try again.');
+                showError('Error looking up client: ' + error.message);
             });
+        }
+
+        function handleLookupResponse(data) {
+            document.getElementById('lookupLoading').style.display = 'none';
+            
+            if (data.found) {
+                // Existing client - populate with data from Supabase
+                isNewClient = false;
+                currentClient = data.clientData;
+                populateClientForm(currentClient);
+                
+                // Load existing appointments and show validation summary
+                loadExistingAppointments(data.existingAppointments || []);
+                
+                document.getElementById('clientStatus').className = 'client-status existing';
+                const appointmentCount = data.existingAppointments ? data.existingAppointments.length : 0;
+                let statusMessage = `Existing Client Found: ${currentClient.firstName} ${currentClient.lastName}`;
+                
+                if (appointmentCount > 0) {
+                    statusMessage += ` (${appointmentCount} future appointments)`;
+                    
+                    // Add validation warnings to status message
+                    if (data.validationSummary) {
+                        const { flaggedAppointments, appointmentsNeedingApproval } = data.validationSummary;
+                        if (flaggedAppointments > 0) {
+                            statusMessage += ` - ⚠️ ${flaggedAppointments} flagged`;
+                            if (appointmentsNeedingApproval > 0) {
+                                statusMessage += `, ${appointmentsNeedingApproval} need approval`;
+                            }
+                        }
+                    }
+                }
+                
+                document.getElementById('clientStatus').textContent = statusMessage;
+                showSuccess('Client found successfully');
+            } else {
+                // New client
+                isNewClient = true;
+                currentClient = { kNumber: kNumber };
+                clearClientForm();
+                
+                // Clear any existing appointments
+                appointments = [];
+                
+                document.getElementById('clientStatus').className = 'client-status new';
+                document.getElementById('clientStatus').textContent = 'New Client - Please fill out all information';
+                showSuccess('Ready to create new client');
+            }
+
+            updateAppointmentsList();
+            showStep('clientFormStep');
         }
 
         // Populate client form with existing data
@@ -773,95 +869,78 @@
             document.getElementById('notes').value = client.notes || '';
         }
 
-     // Enhanced Load Existing Appointments Function - FIXED location dropdown + future-only filter
-    function loadExistingAppointments(existingAppointments) {
-        console.log('📥 Loading existing appointments:', existingAppointments.length);
+        // Load existing appointments - future-only filter
+        function loadExistingAppointments(existingAppointments) {
+            console.log('Loading existing appointments:', existingAppointments.length);
 
-        // Clear current appointments
-        appointments = [];
-    
-        // Filter for future appointments only
-        const now = new Date();
-        const futureAppointments = existingAppointments.filter(apt => {
-            if (!apt.date || !apt.time) return false;
-            const appointmentDate = new Date(`${apt.date}T${apt.time}:00`);
-            return appointmentDate > now;
-        });
-    
-        console.log(`📅 Filtered to ${futureAppointments.length} future appointments from ${existingAppointments.length} total`);
+            // Clear current appointments
+            appointments = [];
+        
+            // Filter for future appointments only
+            const now = new Date();
+            const futureAppointments = existingAppointments.filter(apt => {
+                if (!apt.date || !apt.time) return false;
+                const appointmentDate = new Date(`${apt.date}T${apt.time}:00`);
+                return appointmentDate > now;
+            });
+        
+            console.log(`Filtered to ${futureAppointments.length} future appointments from ${existingAppointments.length} total`);
 
-        // Convert existing appointments to the format our form expects
-        futureAppointments.forEach((apt, index) => {
-            // Try to match location from database to dropdown options
-            let matchedLocation = '';
-            const dbLocation = apt.locationname || apt.location || '';
-        
-            // Try to find exact match first
-            matchedLocation = locations.find(loc => loc === dbLocation);
-        
-            // If no exact match, try partial match
-            if (!matchedLocation && dbLocation) {
-                matchedLocation = locations.find(loc => 
-                    loc.toLowerCase().includes(dbLocation.toLowerCase()) || 
-                    dbLocation.toLowerCase().includes(loc.toLowerCase())
-                );
-            }
+            // Convert existing appointments to the format our form expects
+            futureAppointments.forEach((apt, index) => {
+                // Try to match location from database to dropdown options
+                let matchedLocation = '';
+                const dbLocation = apt.locationname || apt.location || '';
             
-            const appointmentData = {
-                id: apt.id || `existing-${Date.now()}-${index}`,
-                date: apt.date || '',
-                time: apt.time || '',
-                location: matchedLocation || dbLocation, // Use matched location
-                notes: apt.notes || '',
-    
-                // Existing appointment flags
-                isExisting: true,
-                isModified: false,
-                originalId: apt.id,
-                appointmentStatus: apt.appointmentStatus || 'pending',
-    
-                // Validation data
-                validation: apt.validation || {
-                    valid: true,
-                    flagged: false,
-                    reason: 'sufficient_notice',
-                    message: 'Appointment loaded from database',
-                    requiresApproval: false
-                },
-    
-                // Track loading
-                loadedAt: new Date().toISOString()
-            };
+                // Try to find exact match first
+                matchedLocation = locations.find(loc => loc === dbLocation);
+            
+                // If no exact match, try partial match
+                if (!matchedLocation && dbLocation) {
+                    matchedLocation = locations.find(loc => 
+                        loc.toLowerCase().includes(dbLocation.toLowerCase()) || 
+                        dbLocation.toLowerCase().includes(loc.toLowerCase())
+                    );
+                }
+                
+                const appointmentData = {
+                    id: apt.id || `existing-${Date.now()}-${index}`,
+                    date: apt.date || '',
+                    time: apt.time || '',
+                    location: matchedLocation || dbLocation, // Use matched location
+                    notes: apt.notes || '',
+        
+                    // Existing appointment flags
+                    isExisting: true,
+                    isModified: false,
+                    originalId: apt.id,
+                    appointmentStatus: apt.appointmentStatus || 'pending',
+        
+                    // Validation data
+                    validation: apt.validation || {
+                        valid: true,
+                        flagged: false,
+                        reason: 'sufficient_notice',
+                        message: 'Appointment loaded from database',
+                        requiresApproval: false
+                    },
+        
+                    // Track loading
+                    loadedAt: new Date().toISOString()
+                };
 
-            console.log(`📋 Loaded appointment ${index + 1}:`, {
-                id: appointmentData.id,
-                originalId: appointmentData.originalId,
-                date: appointmentData.date,
-                time: appointmentData.time,
-                dbLocation: dbLocation,
-                matchedLocation: matchedLocation
+                appointments.push(appointmentData);
             });
 
-            appointments.push(appointmentData);
-        });
-
-        console.log(`✅ Successfully loaded ${appointments.length} future appointments`);
-    
-        // Re-validate appointments for business days
-        appointments.forEach(apt => {
-            if (apt.date && apt.time) {
-                apt.validation = validateAppointmentClientSide(apt.date, apt.time);
-            }
-        });
-    }
-    
-        // Log validation summary
-        const flaggedCount = appointments.filter(apt => apt.validation && apt.validation.flagged).length;
-        const needsApprovalCount = appointments.filter(apt => apt.validation && apt.validation.requiresApproval).length;
-        if (flaggedCount > 0) {
-            console.log('⚠️ Found', flaggedCount, 'flagged appointments,', needsApprovalCount, 'needing approval');
+            console.log(`Successfully loaded ${appointments.length} future appointments`);
+        
+            // Re-validate appointments for business days
+            appointments.forEach(apt => {
+                if (apt.date && apt.time) {
+                    apt.validation = validateAppointmentClientSide(apt.date, apt.time);
+                }
+            });
         }
-    }
 
         // Client-side validation for appointments
         function validateAppointmentClientSide(date, time) {
@@ -916,6 +995,7 @@
                 businessDaysNotice: businessDaysNotice
             };
         }
+
         function clearClientForm() {
             // Show and populate K Number field for new clients
             document.getElementById('clientKNumberGroup').style.display = 'block';
@@ -934,450 +1014,416 @@
             document.getElementById('notes').value = '';
         }
 
-// Enhanced Add Appointment Function - FIXED with commit functionality
-    function addAppointment() {
-        const appointment = {
-            id: Date.now(),
-            date: '',
-            time: '',
-            location: '',
-            notes: '',
-            isExisting: false,
-            appointmentStatus: 'draft', // Mark as draft initially
-            isDraft: true // New flag for draft state
-        };
-        appointments.push(appointment);
-    
-        console.log('➕ Added new draft appointment:', appointment.id);
-    
-        updateAppointmentsList();
-    }
+        // Add appointment function
+        function addAppointment() {
+            const appointment = {
+                id: Date.now(),
+                date: '',
+                time: '',
+                location: '',
+                notes: '',
+                isExisting: false,
+                appointmentStatus: 'draft',
+                isDraft: true
+            };
+            appointments.push(appointment);
         
-    // NEW: Commit Draft Appointment Function
-    function commitDraftAppointment(id) {
-        const appointment = appointments.find(apt => apt.id == id);
-    
-        if (!appointment) {
-            console.error('Draft appointment not found:', id);
-            return;
+            updateAppointmentsList();
         }
-    
-        // Validate required fields
-        if (!appointment.date || !appointment.time || !appointment.location) {
-            alert('Please complete all required fields (Date, Time, Location) before committing this appointment.');
-            return;
-        }
-    
-        // Commit the appointment
-        appointment.isDraft = false;
-        appointment.appointmentStatus = 'new';
-        appointment.committedAt = new Date().toISOString();
-    
-        console.log('✅ Committed draft appointment:', {
-            id: id,
-            date: appointment.date,
-            time: appointment.time,
-            location: appointment.location
-        });
-    
-        updateAppointmentsList();
-    }
             
-    // NEW: Undelete Appointment Function
-    function undeleteAppointment(id) {
-        const appointment = appointments.find(apt => apt.id == id);
-    
-        if (!appointment) {
-            console.error('Appointment not found for undelete:', id);
-            return;
-        }
-    
-        if (appointment.isDeleted && appointment.isExisting) {
-            // Restore the deleted appointment
-            appointment.isDeleted = false;
-            appointment.deletedAt = null;
+        // Commit draft appointment
+        function commitDraftAppointment(id) {
+            const appointment = appointments.find(apt => apt.id == id);
         
-            // Keep it marked as modified since we're changing its status
-            appointment.isModified = true;
-            appointment.modifiedAt = new Date().toISOString();
-        
-            // Add 'restored' to modified fields if not already there
-            if (!appointment.modifiedFields) {
-                appointment.modifiedFields = [];
-            }
-            if (!appointment.modifiedFields.includes('restored')) {
-                appointment.modifiedFields.push('restored');
+            if (!appointment) {
+                console.error('Draft appointment not found:', id);
+                return;
             }
         
-            console.log('↺ Restored deleted appointment:', {
-                id: id,
-                originalId: appointment.originalId,
-                date: appointment.date,
-                time: appointment.time
-            });
-        }
-    
-        updateAppointmentsList();
-    }
-        
-       // Fixed Remove Appointment Function - ENHANCED for better UX
-    function removeAppointment(id) {
-        const appointment = appointments.find(apt => apt.id == id); // Use == to handle string/number comparison
-    
-        if (!appointment) {
-            console.error('Appointment not found for removal:', id);
-            return;
-        }
-    
-        if (appointment.isExisting) {
-            // For existing appointments, mark for deletion but keep visible
-            appointment.isDeleted = true;
-            appointment.isModified = true;
-            appointment.deletedAt = new Date().toISOString();
-            // DON'T hide - keep visible with deletion indicator
-        
-            console.log('🗑️ Marked existing appointment for deletion:', {
-                id: id,
-                originalId: appointment.originalId,
-                date: appointment.date,
-                time: appointment.time
-            });
-        } else {
-            // For new appointments, actually remove from array
-            const indexToRemove = appointments.findIndex(apt => apt.id == id);
-            if (indexToRemove !== -1) {
-                appointments.splice(indexToRemove, 1);
-                console.log('❌ Removed new appointment from array:', id);
+            // Validate required fields
+            if (!appointment.date || !appointment.time || !appointment.location) {
+                showError('Please complete all required fields (Date, Time, Location) before committing this appointment.');
+                return;
             }
-        }
-    
-        updateAppointmentsList();
-    }
-
-    // Enhanced Update Appointments List Display - WITH COMMIT BUTTON
-    function updateAppointmentsList() {
-        const container = document.getElementById('appointmentsList');
-    
-        const allAppointments = appointments;
-    
-        if (allAppointments.length === 0) {
-            container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No appointments scheduled. Click "Add Another Appointment" to begin.</p>';
-            return;
-        }
-
-        container.innerHTML = allAppointments.map((apt, displayIndex) => {
-            let statusClass = '';
-            let statusText = '';
-            let appointmentClass = '';
-            let validationWarning = '';
-            let isDisabled = '';
-            let commitButton = '';
         
-            // Handle draft appointments
-            if (apt.isDraft) {
-                appointmentClass = 'draft-appointment';
-                statusText = '📝 Draft';
-                statusClass = 'status-draft';
-                commitButton = `<button type="button" onclick="commitDraftAppointment('${apt.id}')" style="background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 8px;">
-                    ✅ Commit Appointment
-                </button>`;
+            // Commit the appointment
+            appointment.isDraft = false;
+            appointment.appointmentStatus = 'new';
+            appointment.committedAt = new Date().toISOString();
+        
+            updateAppointmentsList();
+            showSuccess('Appointment committed successfully');
+        }
+                
+        // Undelete appointment
+        function undeleteAppointment(id) {
+            const appointment = appointments.find(apt => apt.id == id);
+        
+            if (!appointment) {
+                console.error('Appointment not found for undelete:', id);
+                return;
             }
-            // Handle deleted appointments
-            else if (apt.isDeleted) {
-                appointmentClass = 'existing-appointment deleted-appointment';
-                statusText = '🗑️ Deleted';
-                statusClass = 'status-deleted';
-                isDisabled = 'disabled style="opacity: 0.6; pointer-events: none;"';
-            } else if (apt.isExisting) {
-                if (apt.isModified) {
-                    appointmentClass = 'existing-appointment modified-appointment';
-                    statusText = '✏️ Modified';
-                    statusClass = 'status-modified';
-                } else {
-                    appointmentClass = 'existing-appointment';
-                    statusText = apt.appointmentStatus === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
-                    statusClass = apt.appointmentStatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
+        
+            if (appointment.isDeleted && appointment.isExisting) {
+                // Restore the deleted appointment
+                appointment.isDeleted = false;
+                appointment.deletedAt = null;
+            
+                // Keep it marked as modified since we're changing its status
+                appointment.isModified = true;
+                appointment.modifiedAt = new Date().toISOString();
+            
+                // Add 'restored' to modified fields if not already there
+                if (!appointment.modifiedFields) {
+                    appointment.modifiedFields = [];
                 }
-    
-                // Check for validation warnings
-                if (apt.validation && apt.validation.flagged && !apt.isDeleted) {
-                    appointmentClass += ' flagged-appointment';
-                    if (apt.validation.requiresApproval) {
-                        validationWarning = `<div class="validation-warning status-needs-approval">
-                            🔍 ${apt.validation.message}
-                        </div>`;
+                if (!appointment.modifiedFields.includes('restored')) {
+                    appointment.modifiedFields.push('restored');
+                }
+            
+                showSuccess('Appointment restored successfully');
+            }
+        
+            updateAppointmentsList();
+        }
+            
+        // Remove appointment
+        function removeAppointment(id) {
+            const appointment = appointments.find(apt => apt.id == id);
+        
+            if (!appointment) {
+                console.error('Appointment not found for removal:', id);
+                return;
+            }
+        
+            if (appointment.isExisting) {
+                // For existing appointments, mark for deletion but keep visible
+                appointment.isDeleted = true;
+                appointment.isModified = true;
+                appointment.deletedAt = new Date().toISOString();
+            
+                showSuccess('Appointment marked for deletion');
+            } else {
+                // For new appointments, actually remove from array
+                const indexToRemove = appointments.findIndex(apt => apt.id == id);
+                if (indexToRemove !== -1) {
+                    appointments.splice(indexToRemove, 1);
+                    showSuccess('New appointment removed');
+                }
+            }
+        
+            updateAppointmentsList();
+        }
+
+        // Update appointments list display
+        function updateAppointmentsList() {
+            const container = document.getElementById('appointmentsList');
+        
+            const allAppointments = appointments;
+        
+            if (allAppointments.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No appointments scheduled. Click "Add Another Appointment" to begin.</p>';
+                return;
+            }
+
+            container.innerHTML = allAppointments.map((apt, displayIndex) => {
+                let statusClass = '';
+                let statusText = '';
+                let appointmentClass = '';
+                let validationWarning = '';
+                let isDisabled = '';
+                let commitButton = '';
+            
+                // Handle draft appointments
+                if (apt.isDraft) {
+                    appointmentClass = 'draft-appointment';
+                    statusText = '📝 Draft';
+                    statusClass = 'status-draft';
+                    commitButton = `<button type="button" onclick="commitDraftAppointment('${apt.id}')" style="background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 8px;">
+                        ✅ Commit Appointment
+                    </button>`;
+                }
+                // Handle deleted appointments
+                else if (apt.isDeleted) {
+                    appointmentClass = 'existing-appointment deleted-appointment';
+                    statusText = '🗑️ Deleted';
+                    statusClass = 'status-deleted';
+                    isDisabled = 'disabled style="opacity: 0.6; pointer-events: none;"';
+                } else if (apt.isExisting) {
+                    if (apt.isModified) {
+                        appointmentClass = 'existing-appointment modified-appointment';
+                        statusText = '✏️ Modified';
+                        statusClass = 'status-modified';
                     } else {
+                        appointmentClass = 'existing-appointment';
+                        statusText = apt.appointmentStatus === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
+                        statusClass = apt.appointmentStatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
+                    }
+        
+                    // Check for validation warnings
+                    if (apt.validation && apt.validation.flagged && !apt.isDeleted) {
+                        appointmentClass += ' flagged-appointment';
+                        if (apt.validation.requiresApproval) {
+                            validationWarning = `<div class="validation-warning status-needs-approval">
+                                🔍 ${apt.validation.message}
+                            </div>`;
+                        } else {
+                            validationWarning = `<div class="validation-warning status-flagged">
+                                ⚠️ ${apt.validation.message}
+                            </div>`;
+                        }
+                    }
+                } else {
+                    appointmentClass = 'new-appointment';
+                    statusText = '🆕 New';
+                    statusClass = 'status-new';
+        
+                    // Show validation for new appointments
+                    if (apt.validation && apt.validation.flagged) {
                         validationWarning = `<div class="validation-warning status-flagged">
                             ⚠️ ${apt.validation.message}
                         </div>`;
                     }
                 }
-            } else {
-                appointmentClass = 'new-appointment';
-                statusText = '🆕 New';
-                statusClass = 'status-new';
-    
-                // Show validation for new appointments
-                if (apt.validation && apt.validation.flagged) {
-                    validationWarning = `<div class="validation-warning status-flagged">
-                        ⚠️ ${apt.validation.message}
+
+                // Add tracking info
+                let trackingInfo = '';
+                if (apt.isDeleted) {
+                    trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #c62828; font-weight: 600; background: #ffebee; padding: 8px; border-radius: 4px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>🗑️ Scheduled for deletion <small style="color: #666;">(${new Date(apt.deletedAt).toLocaleTimeString()})</small></span>
+                        <button type="button" onclick="undeleteAppointment('${apt.id}')" style="background: #27ae60; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                            ↺ Undo Delete
+                        </button>
+                    </div>`;
+                } else if (apt.isModified && apt.modifiedFields && apt.modifiedFields.length > 0) {
+                    trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #e67e22; font-weight: 600; background: #fff8dc; padding: 8px; border-radius: 4px; margin-top: 8px;">
+                        ✏️ Modified: ${apt.modifiedFields.join(', ')} 
+                        <small style="color: #666;">(${new Date(apt.modifiedAt).toLocaleTimeString()})</small>
+                    </div>`;
+                } else if (apt.isDraft) {
+                    trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 8px;">
+                        📝 Complete all required fields and click "Commit Appointment" to add to schedule
+                        ${commitButton}
                     </div>`;
                 }
-            }
 
-            // Add tracking info
-            let trackingInfo = '';
-            if (apt.isDeleted) {
-                trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #c62828; font-weight: 600; background: #ffebee; padding: 8px; border-radius: 4px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>🗑️ Scheduled for deletion <small style="color: #666;">(${new Date(apt.deletedAt).toLocaleTimeString()})</small></span>
-                    <button type="button" onclick="undeleteAppointment('${apt.id}')" style="background: #27ae60; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                        ↺ Undo Delete
-                    </button>
-                </div>`;
-            } else if (apt.isModified && apt.modifiedFields && apt.modifiedFields.length > 0) {
-                trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #e67e22; font-weight: 600; background: #fff8dc; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                    ✏️ Modified: ${apt.modifiedFields.join(', ')} 
-                    <small style="color: #666;">(${new Date(apt.modifiedAt).toLocaleTimeString()})</small>
-                </div>`;
-            } else if (apt.isDraft) {
-                trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                    📝 Complete all required fields and click "Commit Appointment" to add to schedule
-                    ${commitButton}
-                </div>`;
-            }
-
-            // Generate location options with proper selection
-            const locationOptions = locations.map(loc => {
-                const isSelected = apt.location === loc ? 'selected' : '';
-                return `<option value="${loc}" ${isSelected}>${loc}</option>`;
-            }).join('');
-        
-            return `
-            <div class="appointment-item ${appointmentClass}">
-                ${apt.isDeleted ? 
-                    `<button class="restore-appointment" onclick="undeleteAppointment('${apt.id}')" type="button" title="Restore appointment">↺</button>` :
-                    `<button class="remove-appointment" onclick="removeAppointment('${apt.id}')" type="button">×</button>`
-                }
-                <div class="appointment-status-badge ${statusClass}">${statusText}</div>
-                ${validationWarning}
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div>
-                        <label>Date <span class="required">*</span></label>
-                        <input type="date" value="${apt.date}" onchange="updateAppointment('${apt.id}', 'date', this.value)" min="${new Date().toISOString().split('T')[0]}" ${isDisabled} required>
-                    </div>
-                    <div>
-                        <label>Time <span class="required">*</span></label>
-                        <input type="time" value="${apt.time}" onchange="updateAppointment('${apt.id}', 'time', this.value)" ${isDisabled} required>
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                        <label>Location <span class="required">*</span></label>
-                        <select onchange="updateAppointment('${apt.id}', 'location', this.value)" ${isDisabled} required>
-                            <option value="">Select location</option>
-                            ${locationOptions}
-                        </select>
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                        <label>Notes</label>
-                        <textarea onchange="updateAppointment('${apt.id}', 'notes', this.value)" placeholder="Special requests, accessibility requirements, etc." ${isDisabled}>${apt.notes || ''}</textarea>
-                    </div>
-                    ${trackingInfo}
-                </div>
-            </div>
-            `;
-        }).join('');
-
-        console.log(`📊 Appointments displayed: ${allAppointments.length} total`);
-    }
-        
-    // Enhanced Update Appointment Function - PREVENT field reset during updates
-    function updateAppointment(id, field, value) {
-        const appointment = appointments.find(apt => apt.id == id);
-        if (!appointment) {
-            console.error('Appointment not found:', id);
-            return;
-        }
-
-        // Store original value for comparison
-        const originalValue = appointment[field];
-
-        // Update the field
-        appointment[field] = value;
-
-        console.log(`📝 Updated appointment ${id}: ${field} = "${value}" (was: "${originalValue}")`);
-
-        // Track modifications for existing appointments
-        if (appointment.isExisting) {
-            // Check if this is actually a change
-            if (originalValue !== value) {
-                appointment.isModified = true;
-                appointment.modifiedAt = new Date().toISOString();
-    
-                // Track which fields were modified
-                if (!appointment.modifiedFields) {
-                    appointment.modifiedFields = [];
-                }
-                if (!appointment.modifiedFields.includes(field)) {
-                    appointment.modifiedFields.push(field);
-                }
-    
-                console.log(`✏️ Marked existing appointment as modified. Fields: ${appointment.modifiedFields.join(', ')}`);
-            }
-        }
-
-        // Re-validate if date or time changed
-        if (field === 'date' || field === 'time') {
-            if (appointment.date && appointment.time) {
-                appointment.validation = validateAppointmentClientSide(appointment.date, appointment.time);
-                console.log(`📊 Re-validated appointment ${id}:`, appointment.validation);
-            }
-        }
-
-        // DON'T call updateAppointmentsList() here to prevent field reset
-        // Instead, just update the specific field that changed
-        console.log('🚫 Skipping full list update to prevent field reset');
-    }
-
-    // NEW: Manual refresh function for when we need to update the display
-    function refreshAppointmentsList() {
-        console.log('🔄 Manual refresh of appointments list');
-        updateAppointmentsList();
-    }
-        
-    // Enhanced Save Function - IMPROVED validation
-    function saveClient() {
-        console.log('💾 Starting save process...');
-
-        // Validate client form
-        const form = document.getElementById('clientForm');
-        const formData = new FormData(form);
-        const clientData = Object.fromEntries(formData.entries());
-
-        // Get all appointments
-        const allAppointments = [...appointments];
-
-        // Check for uncommitted draft appointments
-        const draftAppointments = allAppointments.filter(apt => apt.isDraft && !apt.isDeleted);
-        if (draftAppointments.length > 0) {
-            alert(`Please commit or remove ${draftAppointments.length} draft appointment${draftAppointments.length === 1 ? '' : 's'} before submitting.`);
-            return;
-        }
-
-        // Filter for valid visible appointments (not deleted and complete)
-        const validAppointments = allAppointments.filter(apt => 
-            !apt.isDeleted && apt.date && apt.time && apt.location
-        );
-        const visibleAppointments = allAppointments.filter(apt => !apt.isDeleted && !apt.isDraft);
-
-        if (visibleAppointments.length > 0 && validAppointments.length === 0) {
-            alert('Please complete at least one appointment or remove empty appointments');
-            return;
-        }
-
-        // Check each visible appointment for completeness
-        for (let apt of visibleAppointments) {
-            if (!apt.date || !apt.time || !apt.location) {
-                alert('Please complete all appointment fields (Date, Time, Location) or remove incomplete appointments');
-                return;
-            }
-        }
-
-        // Show confirmation for new appointments
-        const newAppointments = allAppointments.filter(apt => !apt.isExisting && !apt.isDeleted && !apt.isDraft);
-        if (newAppointments.length > 0) {
-            const confirmMessage = `You are adding ${newAppointments.length} new appointment${newAppointments.length === 1 ? '' : 's'}:\n\n` +
-                newAppointments.map(apt => `• ${apt.date} at ${apt.time} - ${apt.location.split(' - ')[0]}`).join('\n') +
-                '\n\nDo you want to continue?';
+                // Generate location options with proper selection
+                const locationOptions = locations.map(loc => {
+                    const isSelected = apt.location === loc ? 'selected' : '';
+                    return `<option value="${loc}" ${isSelected}>${loc}</option>`;
+                }).join('');
             
-            if (!confirm(confirmMessage)) {
+                return `
+                <div class="appointment-item ${appointmentClass}">
+                    ${apt.isDeleted ? 
+                        `<button class="restore-appointment" onclick="undeleteAppointment('${apt.id}')" type="button" title="Restore appointment">↺</button>` :
+                        `<button class="remove-appointment" onclick="removeAppointment('${apt.id}')" type="button">×</button>`
+                    }
+                    <div class="appointment-status-badge ${statusClass}">${statusText}</div>
+                    ${validationWarning}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <label>Date <span class="required">*</span></label>
+                            <input type="date" value="${apt.date}" onchange="updateAppointment('${apt.id}', 'date', this.value)" min="${new Date().toISOString().split('T')[0]}" ${isDisabled} required>
+                        </div>
+                        <div>
+                            <label>Time <span class="required">*</span></label>
+                            <input type="time" value="${apt.time}" onchange="updateAppointment('${apt.id}', 'time', this.value)" ${isDisabled} required>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label>Location <span class="required">*</span></label>
+                            <select onchange="updateAppointment('${apt.id}', 'location', this.value)" ${isDisabled} required>
+                                <option value="">Select location</option>
+                                ${locationOptions}
+                            </select>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label>Notes</label>
+                            <textarea onchange="updateAppointment('${apt.id}', 'notes', this.value)" placeholder="Special requests, accessibility requirements, etc." ${isDisabled}>${apt.notes || ''}</textarea>
+                        </div>
+                        ${trackingInfo}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+            
+        // Update appointment function
+        function updateAppointment(id, field, value) {
+            const appointment = appointments.find(apt => apt.id == id);
+            if (!appointment) {
+                console.error('Appointment not found:', id);
                 return;
             }
-        }
 
-        // Prepare appointment data (exclude draft appointments)
-        const processedAppointments = allAppointments
-            .filter(apt => !apt.isDraft) // Exclude drafts
-            .map(apt => {
-                const processed = {
-                    id: apt.id,
-                    date: apt.date,
-                    time: apt.time,
-                    location: apt.location,
-                    notes: apt.notes || '',
+            // Store original value for comparison
+            const originalValue = appointment[field];
+
+            // Update the field
+            appointment[field] = value;
+
+            // Track modifications for existing appointments
+            if (appointment.isExisting) {
+                // Check if this is actually a change
+                if (originalValue !== value) {
+                    appointment.isModified = true;
+                    appointment.modifiedAt = new Date().toISOString();
         
-                    // Tracking flags
-                    isExisting: apt.isExisting || false,
-                    isModified: apt.isModified || false,
-                    isDeleted: apt.isDeleted || false,
-                    originalId: apt.originalId || null,
-        
-                    // Status and validation
-                    appointmentStatus: apt.appointmentStatus || 'new',
-                    validation: apt.validation || { flagged: false, requiresApproval: false },
-        
-                    // Timestamps
-                    modifiedAt: apt.modifiedAt,
-                    deletedAt: apt.deletedAt,
-                    modifiedFields: apt.modifiedFields || []
-                };
-
-                return processed;
-            });
-
-        // Count operations for logging
-        const operationCounts = {
-            existing: processedAppointments.filter(apt => apt.isExisting && !apt.isDeleted && !apt.isModified).length,
-            modified: processedAppointments.filter(apt => apt.isModified && !apt.isDeleted).length,
-            deleted: processedAppointments.filter(apt => apt.isDeleted).length,
-            new: processedAppointments.filter(apt => !apt.isExisting && !apt.isDeleted).length
-        };
-
-        console.log('📊 Operation summary:', operationCounts);
-
-        document.getElementById('saveLoading').style.display = 'block';
-
-        // Send data to n8n
-        const submissionData = {
-            kNumber: document.getElementById('clientKNumber').value || currentClient.kNumber,
-            isNewClient: isNewClient,
-            clientData: clientData,
-            appointments: processedAppointments,
-            operationCounts: operationCounts,
-            submittedBy: currentUser,
-            submittedAt: new Date().toISOString()
-        };
-
-        console.log('🚀 Sending to n8n:', {
-            client: submissionData.kNumber,
-            appointmentCount: processedAppointments.length,
-            operations: operationCounts
-        });
-
-        // Send to n8n webhook
-        fetch(`${N8N_CONFIG.baseUrl}${N8N_CONFIG.endpoints.save}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(submissionData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('saveLoading').style.display = 'none';
-            if (data.success) {
-                const message = `Successfully saved! ${operationCounts.new} new, ${operationCounts.modified} modified, ${operationCounts.deleted} deleted.`;
-                alert(message);
-                startOver();
-            } else {
-                alert('Error saving: ' + (data.error || 'Unknown error'));
+                    // Track which fields were modified
+                    if (!appointment.modifiedFields) {
+                        appointment.modifiedFields = [];
+                    }
+                    if (!appointment.modifiedFields.includes(field)) {
+                        appointment.modifiedFields.push(field);
+                    }
+                }
             }
-        })
-        .catch(error => {
-            console.error('Save error:', error);
-            document.getElementById('saveLoading').style.display = 'none';
-            alert('Error saving data. Please try again.');
-        });
-    }
 
+            // Re-validate if date or time changed
+            if (field === 'date' || field === 'time') {
+                if (appointment.date && appointment.time) {
+                    appointment.validation = validateAppointmentClientSide(appointment.date, appointment.time);
+                }
+            }
+        }
+            
+        // Save client function
+        function saveClient() {
+            console.log('Starting save process...');
+
+            // Validate client form
+            const form = document.getElementById('clientForm');
+            const formData = new FormData(form);
+            const clientData = Object.fromEntries(formData.entries());
+
+            // Get all appointments
+            const allAppointments = [...appointments];
+
+            // Check for uncommitted draft appointments
+            const draftAppointments = allAppointments.filter(apt => apt.isDraft && !apt.isDeleted);
+            if (draftAppointments.length > 0) {
+                showError(`Please commit or remove ${draftAppointments.length} draft appointment${draftAppointments.length === 1 ? '' : 's'} before submitting.`);
+                return;
+            }
+
+            // Filter for valid visible appointments (not deleted and complete)
+            const validAppointments = allAppointments.filter(apt => 
+                !apt.isDeleted && apt.date && apt.time && apt.location
+            );
+            const visibleAppointments = allAppointments.filter(apt => !apt.isDeleted && !apt.isDraft);
+
+            if (visibleAppointments.length > 0 && validAppointments.length === 0) {
+                showError('Please complete at least one appointment or remove empty appointments');
+                return;
+            }
+
+            // Check each visible appointment for completeness
+            for (let apt of visibleAppointments) {
+                if (!apt.date || !apt.time || !apt.location) {
+                    showError('Please complete all appointment fields (Date, Time, Location) or remove incomplete appointments');
+                    return;
+                }
+            }
+
+            // Show confirmation for new appointments
+            const newAppointments = allAppointments.filter(apt => !apt.isExisting && !apt.isDeleted && !apt.isDraft);
+            if (newAppointments.length > 0) {
+                const confirmMessage = `You are adding ${newAppointments.length} new appointment${newAppointments.length === 1 ? '' : 's'}:\n\n` +
+                    newAppointments.map(apt => `• ${apt.date} at ${apt.time} - ${apt.location.split(' - ')[0]}`).join('\n') +
+                    '\n\nDo you want to continue?';
+                
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+            }
+
+            // Prepare appointment data (exclude draft appointments)
+            const processedAppointments = allAppointments
+                .filter(apt => !apt.isDraft) // Exclude drafts
+                .map(apt => {
+                    const processed = {
+                        id: apt.id,
+                        date: apt.date,
+                        time: apt.time,
+                        location: apt.location,
+                        notes: apt.notes || '',
+            
+                        // Tracking flags
+                        isExisting: apt.isExisting || false,
+                        isModified: apt.isModified || false,
+                        isDeleted: apt.isDeleted || false,
+                        originalId: apt.originalId || null,
+            
+                        // Status and validation
+                        appointmentStatus: apt.appointmentStatus || 'new',
+                        validation: apt.validation || { flagged: false, requiresApproval: false },
+            
+                        // Timestamps
+                        modifiedAt: apt.modifiedAt,
+                        deletedAt: apt.deletedAt,
+                        modifiedFields: apt.modifiedFields || []
+                    };
+
+                    return processed;
+                });
+
+            // Count operations for logging
+            const operationCounts = {
+                existing: processedAppointments.filter(apt => apt.isExisting && !apt.isDeleted && !apt.isModified).length,
+                modified: processedAppointments.filter(apt => apt.isModified && !apt.isDeleted).length,
+                deleted: processedAppointments.filter(apt => apt.isDeleted).length,
+                new: processedAppointments.filter(apt => !apt.isExisting && !apt.isDeleted).length
+            };
+
+            console.log('Operation summary:', operationCounts);
+
+            document.getElementById('saveLoading').style.display = 'block';
+
+            // Send data to n8n
+            const submissionData = {
+                kNumber: document.getElementById('clientKNumber').value || currentClient.kNumber,
+                isNewClient: isNewClient,
+                clientData: clientData,
+                appointments: processedAppointments,
+                operationCounts: operationCounts,
+                submittedBy: currentUser,
+                submittedAt: new Date().toISOString()
+            };
+
+            console.log('Sending to n8n:', submissionData);
+
+            // Send to n8n webhook
+            fetch(`${N8N_CONFIG.baseUrl}${N8N_CONFIG.endpoints.save}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(submissionData)
+            })
+            .then(response => {
+                console.log('Save response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Save response data:', data);
+                document.getElementById('saveLoading').style.display = 'none';
+                if (data.success) {
+                    const message = `Successfully saved! ${operationCounts.new} new, ${operationCounts.modified} modified, ${operationCounts.deleted} deleted.`;
+                    showSuccess(message);
+                    startOver();
+                } else {
+                    showError('Error saving: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Save error:', error);
+                document.getElementById('saveLoading').style.display = 'none';
+                showError('Error saving data: ' + error.message);
+            });
+        }
 
         // Navigation functions
         function showStep(stepId) {
@@ -1424,4 +1470,15 @@
 </body>
 </html>
 
-<!-- Version: v2.7.5 - Added draft appointment styling, fixed location loading and field reset issues  -->
+<!-- 
+Version: v2.7.6 - Simplified Debug Version
+Key Changes:
+- Removed mock data and authentication - uses real backend only
+- Added enhanced error handling with detailed HTTP status messages
+- Simplified console logging for easier debugging
+- Better error messages that show exact failure reasons
+- Maintained all existing functionality (draft appointments, CRUD operations, validation)
+- Real-time error/success feedback with visual messages
+- Proper async error handling throughout the application
+- Clean separation between frontend logic and backend communication
+-->
