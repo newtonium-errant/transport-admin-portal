@@ -1305,6 +1305,13 @@
             const formData = new FormData(form);
             const clientData = Object.fromEntries(formData.entries());
 
+            // FIXED: Ensure clientKNumber is populated from the current client's K Number
+            if (isNewClient) {
+                clientData.clientKNumber = document.getElementById('clientKNumber').value || currentClient.kNumber;
+            } else {
+                clientData.clientKNumber = currentClient.kNumber;
+            }
+
             // Get all appointments - make a deep copy to avoid mutation
             const allAppointments = appointments.map(apt => ({...apt}));
             
@@ -1506,18 +1513,5 @@
 </html>
 
 <!-- 
-Version: v2.7.7 - Fixed Frontend Issues
-Key Changes:
-- FIXED: Modified appointment visual indicators now update immediately when fields change
-- FIXED: Future appointment count display (was showing total count, now shows filtered count)
-- FIXED: Save function now properly includes modified, new, and deleted appointments
-- FIXED: Operation counting logic for accurate backend processing
-- Enhanced console logging for better debugging of appointment state changes
-- Improved appointment tracking with proper boolean type casting
-- Added deep copy of appointments to prevent mutation issues during save processing
-- Better error handling and validation throughout the appointment workflow
-
-Notes for Future Enhancement:
-- Consider adding Supabase query optimization to filter future appointments server-side
-- Add backend logic to handle date-based filtering to reduce payload size for clients with long history
+Version: v2.7.8 - Fixed KNumber not being passed to backend issue
 -->
