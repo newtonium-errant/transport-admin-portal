@@ -13,1505 +13,1127 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
 
         .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            animation: slideIn 0.8s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .header {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
-
-        .header h1 {
-            font-size: 2.2rem;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-
-        .form-container {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
-        .step {
-            display: none;
-        }
-
-        .step.active {
-            display: block;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+        h1 {
+            color: #333;
+            text-align: center;
             margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 300;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            background: #f8f9fa;
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 500;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: flex-end;
         }
 
         .form-group {
-            position: relative;
-        }
-
-        .form-group.full-width {
-            grid-column: 1 / -1;
+            flex: 1;
         }
 
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 0.95rem;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.95em;
         }
 
         input, select, textarea {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
-            font-size: 1rem;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
             transition: all 0.3s ease;
             background: white;
-            font-family: inherit;
         }
 
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-            transform: translateY(-2px);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .btn {
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px 30px;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+        .btn:active {
+            transform: translateY(0);
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #27ae60, #16a085);
-        }
-
-        .btn-primary:hover {
-            box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+        .btn-secondary {
+            background: #6c757d;
+            padding: 10px 20px;
+            font-size: 13px;
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            background: #dc3545;
+            padding: 8px 12px;
+            font-size: 12px;
+            min-width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .btn-danger:hover {
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
-        }
-
-        .required {
-            color: #e74c3c;
-        }
-
-        .error-message {
-            background: #ffebee;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid #f44336;
-            display: none;
-        }
-
-        .error-message.visible {
-            display: block;
-        }
-
-        .success-message {
-            background: #e8f5e8;
-            color: #2e7d32;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid #4caf50;
-            display: none;
-        }
-
-        .success-message.visible {
-            display: block;
+        .btn-success {
+            background: #28a745;
+            padding: 8px 12px;
+            font-size: 12px;
+            min-width: auto;
+            height: 30px;
+            border-radius: 6px;
         }
 
         .client-status {
             padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .client-status.new {
-            background: #fff3cd;
-            color: #856404;
-            border: 2px solid #ffeaa7;
-        }
-
-        .client-status.existing {
-            background: #d4edda;
-            color: #155724;
-            border: 2px solid #b8daff;
-        }
-
-        .appointments-section {
-            border: 2px solid #e1e8ed;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .section-header {
-            border-bottom: 2px solid #e1e8ed;
-            padding-bottom: 10px;
-            margin: 30px 0 20px 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .section-header:first-child {
-            margin-top: 0;
-        }
-
-        .appointment-item {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            position: relative;
-        }
-
-        .appointment-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .appointment-item.existing-appointment {
-            background: #e8f5e8;
-            border-color: #27ae60;
-            border-left: 4px solid #27ae60;
-        }
-
-        .appointment-item.existing-appointment.flagged-appointment {
-            background: #fff8e1;
-            border-color: #ff9800;
-            border-left: 4px solid #ff9800;
-        }
-
-        .appointment-item.new-appointment {
-            background: #fff3cd;
-            border-color: #f39c12;
-            border-left: 4px solid #f39c12;
-        }
-
-        .validation-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 6px;
-            padding: 8px 12px;
-            margin: 8px 0;
-            font-size: 0.9rem;
-            color: #856404;
+            margin-bottom: 20px;
             font-weight: 500;
+            text-align: center;
         }
 
-        .status-needs-approval {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-
-        .status-flagged {
-            background: #fff3e0;
-            color: #ef6c00;
-            border: 1px solid #ffe0b2;
-        }
-
-        .appointment-status-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            z-index: 1;
-        }
-
-        .status-confirmed {
+        .client-status.found {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
 
-        .status-pending {
+        .client-status.new {
             background: #fff3cd;
             color: #856404;
             border: 1px solid #ffeaa7;
         }
 
+        .client-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .appointment-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .appointment-item.existing {
+            border-color: #28a745;
+            background: #f8fff9;
+            border-left: 6px solid #28a745;
+        }
+
+        .appointment-item.new {
+            border-color: #ffc107;
+            background: #fffdf0;
+            border-left: 6px solid #ffc107;
+        }
+
+        .appointment-item.modified {
+            border-color: #17a2b8;
+            background: #f0fdff;
+            border-left: 6px solid #17a2b8;
+            box-shadow: 0 2px 8px rgba(23, 162, 184, 0.2);
+        }
+
+        .appointment-item.deleted {
+            opacity: 0.6;
+            background: #f8f9fa;
+            border-color: #6c757d;
+            border-style: dashed;
+        }
+
+        .appointment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .appointment-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
         .status-new {
-            background: #cce7ff;
+            background: #cce5ff;
             color: #004085;
-            border: 1px solid #b3d9ff;
         }
 
-        .appointment-item.deleted-appointment {
-            background: #ffebee;
-            border-color: #f44336;
-            border-left: 4px solid #f44336;
-            opacity: 0.8;
-        }
-
-        .appointment-item.deleted-appointment::after {
-            content: "DELETED";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-15deg);
-            background: rgba(244, 67, 54, 0.1);
-            color: #c62828;
-            padding: 10px 20px;
-            font-size: 24px;
-            font-weight: bold;
-            border: 3px solid #f44336;
-            border-radius: 8px;
-            pointer-events: none;
-            z-index: 2;
+        .status-modified {
+            background: #d1ecf1;
+            color: #0c5460;
         }
 
         .status-deleted {
-            background: #ffcdd2;
-            color: #c62828;
-            border: 1px solid #f44336;
-        }
-        
-        .remove-appointment, .restore-appointment {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            border: none;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            cursor: pointer;
-            font-size: 12px;
-            z-index: 10;
-            color: white;
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .remove-appointment {
-            background: #e74c3c;
-        }
-
-        .remove-appointment:hover {
-            background: #c0392b;
-            transform: scale(1.1);
-        }
-
-        .restore-appointment {
-            background: #27ae60;
-        }
-
-        .restore-appointment:hover {
-            background: #229954;
-            transform: scale(1.1);
-        }
-
-        .appointment-item.draft-appointment {
-            background: #f0f0f0;
-            border: 2px dashed #999;
-            border-left: 4px dashed #666;
-        }
-
-        .appointment-item.draft-appointment::before {
-            content: "DRAFT";
             position: absolute;
-            top: 2px;
-            left: 2px;
-            background: #999;
-            color: white;
-            padding: 2px 6px;
-            font-size: 10px;
-            border-radius: 2px;
-            z-index: 1;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
         }
 
-        .status-draft {
-            background: #e0e0e0;
-            color: #666;
-            border: 1px solid #999;
+        .appointment-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
         }
-        
-        .loading {
+
+        .deleted-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(108, 117, 125, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 5;
+        }
+
+        .success-page {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-icon {
+            font-size: 4em;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .success-title {
+            font-size: 2em;
+            color: #28a745;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .success-details {
+            background: #f8fff9;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .success-summary {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #155724;
+        }
+
+        .operation-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .operation-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .operation-list li:last-child {
+            border-bottom: none;
+        }
+
+        .operation-icon {
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
             display: none;
+        }
+
+        .loading {
             text-align: center;
             padding: 20px;
+            color: #667eea;
+            font-weight: 500;
         }
 
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
+        /* Responsive design */
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 1.8rem;
+            .container {
+                padding: 20px;
+                margin: 10px;
             }
             
-            .form-container {
-                padding: 30px 20px;
-            }
-            
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .button-group {
+            .form-row {
                 flex-direction: column;
+                gap: 0;
             }
-
-            .logout-btn {
-                position: static;
-                margin-top: 10px;
-                align-self: flex-start;
+            
+            h1 {
+                font-size: 1.8em;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <button class="logout-btn" id="logoutBtn" style="display: none;">Logout</button>
+        <!-- Login Section -->
+        <div id="loginSection">
             <h1>Rural Route Transportation Services</h1>
-            <p id="headerSubtext">Admin Portal - Secure access for client bookings</p>
+            <div class="section">
+                <h3>Admin Portal Access</h3>
+                <div class="form-group">
+                    <label for="adminPassword">Admin Password:</label>
+                    <input type="password" id="adminPassword" placeholder="Enter admin password">
+                </div>
+                <button class="btn" onclick="login()">Access Portal</button>
+            </div>
         </div>
 
-        <div class="form-container">
-            <div id="errorMessage" class="error-message">
-                <strong>Error:</strong> <span id="errorText"></span>
+        <!-- Main Portal Section -->
+        <div id="portalSection" class="hidden">
+            <h1>Transportation Booking Management</h1>
+            
+            <!-- Client Lookup Section -->
+            <div class="section">
+                <h3>Client Lookup</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="kNumber">K Number:</label>
+                        <input type="text" id="kNumber" placeholder="Enter K Number (e.g., K99999)" style="text-transform: uppercase;">
+                    </div>
+                    <button class="btn" onclick="lookupClient()">Find Client</button>
+                </div>
+                <div id="clientStatus"></div>
             </div>
 
-            <div id="successMessage" class="success-message">
-                <strong>Success:</strong> <span id="successText"></span>
-            </div>
-
-            <!-- Step 1: Login -->
-            <div id="loginStep" class="step active">
-                <h2>Admin Login</h2>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="username">Username <span class="required">*</span></label>
-                        <input type="text" id="username" name="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Password <span class="required">*</span></label>
-                        <input type="password" id="password" name="password" required>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-primary" id="loginButton" onclick="login()">Login</button>
-            </div>
-
-            <!-- Step 2: K Number Entry -->
-            <div id="kNumberStep" class="step">
-                <h2>Client Lookup</h2>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="kNumber">K Number <span class="required">*</span></label>
-                        <input type="text" id="kNumber" name="kNumber" placeholder="K1234567" required pattern="^[Kk]\d{7}$" maxlength="15" style="width: 100%;">
-                        <small style="color: #666; font-size: 0.9rem;">Format: K followed by 7 digits (e.g., K7807878). Spaces will be removed automatically.</small>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button type="button" class="btn btn-primary" onclick="lookupClient()">Lookup Client</button>
-                    <button type="button" class="btn" onclick="startOver()">Start Over</button>
-                </div>
+            <!-- Client Information Section -->
+            <div id="clientSection" class="section hidden">
+                <h3>Client Information</h3>
                 
-                <div class="loading" id="lookupLoading">
-                    <div class="spinner"></div>
-                    <p>Looking up client information...</p>
-                </div>
-            </div>
-
-            <!-- Step 3: Client Information Form -->
-            <div id="clientFormStep" class="step">
-                <div id="clientStatus" class="client-status"></div>
-                
-                <h2>Client Information</h2>
-                <form id="clientForm">
-                    <div class="form-grid">
-                        <div class="form-group" id="clientKNumberGroup" style="display: none;">
-                            <label for="clientKNumber">K Number <span class="required">*</span></label>
-                            <input type="text" id="clientKNumber" name="clientKNumber" placeholder="K1234567" pattern="^[Kk]\d{7}$" maxlength="15" style="background-color: #f8f9fa;">
-                            <small style="color: #666; font-size: 0.9rem;">Edit if the K Number was entered incorrectly</small>
+                <!-- Basic Information -->
+                <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-bottom: 15px; color: #333;">Basic Information</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name:</label>
+                            <input type="text" id="firstName" required>
                         </div>
                         <div class="form-group">
-                            <label for="firstName">First Name <span class="required">*</span></label>
-                            <input type="text" id="firstName" name="firstName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="lastName">Last Name <span class="required">*</span></label>
-                            <input type="text" id="lastName" name="lastName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="phone">Phone Number <span class="required">*</span></label>
-                            <input type="tel" id="phone" name="phone" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email Address <span class="required">*</span></label>
-                            <input type="email" id="email" name="email" required>
+                            <label for="lastName">Last Name:</label>
+                            <input type="text" id="lastName" required>
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Phone:</label>
+                            <input type="tel" id="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" id="email">
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="section-header">Address Information</div>
-                    <div class="form-grid">
-                        <div class="form-group full-width">
-                            <label for="civicAddress">Civic Address <span class="required">*</span></label>
-                            <input type="text" id="civicAddress" name="civicAddress" required placeholder="Street number and name">
+                <!-- Address Information -->
+                <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+                    <h4 style="margin-bottom: 15px; color: #333;">Address Information</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="address">Street Address:</label>
+                            <input type="text" id="address" required>
                         </div>
                         <div class="form-group">
-                            <label for="city">City <span class="required">*</span></label>
-                            <input type="text" id="city" name="city" required>
+                            <label for="city">City:</label>
+                            <input type="text" id="city" required>
                         </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
-                            <label for="province">Province <span class="required">*</span></label>
-                            <select id="province" name="province" required>
+                            <label for="province">Province:</label>
+                            <select id="province" required>
                                 <option value="">Select Province</option>
-                                <option value="AB">Alberta</option>
-                                <option value="BC">British Columbia</option>
-                                <option value="MB">Manitoba</option>
+                                <option value="NS">Nova Scotia</option>
                                 <option value="NB">New Brunswick</option>
-                                <option value="NL">Newfoundland and Labrador</option>
-                                <option value="NS" selected>Nova Scotia</option>
-                                <option value="NT">Northwest Territories</option>
-                                <option value="NU">Nunavut</option>
-                                <option value="ON">Ontario</option>
                                 <option value="PE">Prince Edward Island</option>
-                                <option value="QC">Quebec</option>
-                                <option value="SK">Saskatchewan</option>
-                                <option value="YT">Yukon</option>
+                                <option value="NL">Newfoundland and Labrador</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="postalCode">Postal Code <span class="required">*</span></label>
-                            <input type="text" id="postalCode" name="postalCode" required placeholder="A1A 1A1" pattern="[A-Za-z]\d[A-Za-z] \d[A-Za-z]\d">
+                            <label for="postalCode">Postal Code:</label>
+                            <input type="text" id="postalCode" placeholder="A1A 1A1" required>
                         </div>
                     </div>
+                </div>
 
-                    <div class="section-header">Emergency Contact Information</div>
-                    <div class="form-grid">
+                <!-- Emergency Contact -->
+                <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+                    <h4 style="margin-bottom: 15px; color: #333;">Emergency Contact</h4>
+                    <div class="form-row">
                         <div class="form-group">
-                            <label for="emergencyContactName">Emergency Contact Name <span class="required">*</span></label>
-                            <input type="text" id="emergencyContactName" name="emergencyContactName" placeholder="Contact person name" required>
+                            <label for="emergencyContactName">Emergency Contact Name:</label>
+                            <input type="text" id="emergencyContactName">
                         </div>
                         <div class="form-group">
-                            <label for="emergencyContactNumber">Emergency Contact Number <span class="required">*</span></label>
-                            <input type="tel" id="emergencyContactNumber" name="emergencyContactNumber" placeholder="Phone number" required>
-                        </div>
-                        <div class="form-group full-width">
-                            <label for="notes">Notes or Special Requests</label>
-                            <textarea id="notes" name="notes" rows="3" placeholder="Special requests, accessibility requirements, medical equipment, etc."></textarea>
+                            <label for="emergencyContactNumber">Emergency Contact Phone:</label>
+                            <input type="tel" id="emergencyContactNumber">
                         </div>
                     </div>
-
-                    <div class="appointments-section">
-                        <h3>Upcoming Appointments</h3>
-                        <div id="appointmentsList"></div>
-                        <button type="button" class="btn" onclick="addAppointment()">Add Another Appointment</button>
+                    <div class="form-group">
+                        <label for="notes">Additional Notes:</label>
+                        <textarea id="notes" rows="3" placeholder="Any special requirements or notes..."></textarea>
                     </div>
+                </div>
+            </div>
 
-                    <div class="button-group">
-                        <button type="button" class="btn btn-primary" onclick="saveClient()">Save Client & Appointments</button>
-                        <button type="button" class="btn" onclick="goToKNumber()">Back to K Number</button>
-                    </div>
-                </form>
+            <!-- Appointments Section -->
+            <div id="appointmentsSection" class="section hidden">
+                <h3>Appointments</h3>
+                <div id="appointmentsList"></div>
+                <button class="btn btn-secondary" onclick="addAppointment()">Add Another Appointment</button>
+            </div>
 
-                <div class="loading" id="saveLoading">
-                    <div class="spinner"></div>
-                    <p>Saving client information...</p>
+            <!-- Save Section -->
+            <div id="saveSection" class="section hidden">
+                <button class="btn" onclick="saveClient()" style="width: 100%; padding: 15px; font-size: 16px;">Save Client & Appointments</button>
+            </div>
+        </div>
+
+        <!-- Success Page -->
+        <div id="successSection" class="hidden">
+            <div class="success-page">
+                <div class="success-icon">✅</div>
+                <div class="success-title">Successfully Saved!</div>
+                <div id="successMessage" class="success-summary"></div>
+                <div id="successDetails" class="success-details"></div>
+                <div style="margin-top: 30px;">
+                    <button class="btn" onclick="startNewBooking()" style="margin-right: 10px;">New Booking</button>
+                    <button class="btn btn-secondary" onclick="returnToClient()">Back to Client</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Predefined locations for appointments
-        const locations = [
-            'NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0',
-            'NuVista Psychedelic - New Minas - 21 Roy Avenue Suite 230, New Minas, NS B4N 3R7'
-        ];
-
-        // Configuration - Your actual n8n webhook URLs
-        const N8N_CONFIG = {
-            baseUrl: 'https://webhook-processor-production-3bb8.up.railway.app/webhook',
-            endpoints: {
-                login: '/admin-login',
-                lookup: '/client-lookup',
-                save: '/save-client'
-            }
-        };
-
-        let currentUser = null;
+        // Global variables
         let currentClient = null;
         let isNewClient = false;
         let appointments = [];
+        let appointmentCounter = 0;
 
-        function showError(message) {
-            console.error('Error:', message);
-            const errorDiv = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            errorText.textContent = message;
-            errorDiv.classList.add('visible');
-            
-            setTimeout(() => {
-                errorDiv.classList.remove('visible');
-            }, 5000);
-        }
+        // Clinic addresses mapping
+        const CLINIC_ADDRESSES = {
+            "Dartmouth General Hospital - 325 Pleasant St, Dartmouth, NS B2Y 4G8": "Dartmouth General Hospital - 325 Pleasant St, Dartmouth, NS B2Y 4G8",
+            "Halifax Infirmary - 1796 Summer St, Halifax, NS B3H 3A7": "Halifax Infirmary - 1796 Summer St, Halifax, NS B3H 3A7",
+            "Valley Regional Hospital - 150 Exhibition St, Kentville, NS B4N 5E3": "Valley Regional Hospital - 150 Exhibition St, Kentville, NS B4N 5E3",
+            "South Shore Regional Hospital - 90 Glen Allan Dr, Bridgewater, NS B4V 3S6": "South Shore Regional Hospital - 90 Glen Allan Dr, Bridgewater, NS B4V 3S6",
+            "NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0": "NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0",
+            "NuVista Psychedelic - Port Williams - 1315 Black River Rd, Port Williams, NS B0P 1T0": "NuVista Psychedelic - Port Williams - 1315 Black River Rd, Port Williams, NS B0P 1T0"
+        };
 
-        function showSuccess(message) {
-            console.log('Success:', message);
-            const successDiv = document.getElementById('successMessage');
-            const successText = document.getElementById('successText');
-            successText.textContent = message;
-            successDiv.classList.add('visible');
-            
-            setTimeout(() => {
-                successDiv.classList.remove('visible');
-            }, 3000);
-        }
+        // Webhook URLs
+        const WEBHOOKS = {
+            login: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/admin-login',
+            lookup: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/client-lookup',
+            save: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-client'
+        };
 
         // Login function
-        function login() {
-            console.log('Login function called');
+        async function login() {
+            const password = document.getElementById('adminPassword').value;
             
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const loginButton = document.getElementById('loginButton');
-
-            if (!username || !password) {
-                showError('Please enter both username and password');
+            if (!password) {
+                showError('Please enter admin password');
                 return;
             }
 
-            // Disable button during request
-            loginButton.disabled = true;
-            loginButton.textContent = 'Logging in...';
+            try {
+                const response = await fetch(WEBHOOKS.login, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                });
 
-            console.log('Attempting login with backend...');
-
-            // Call n8n login webhook
-            fetch(`${N8N_CONFIG.baseUrl}${N8N_CONFIG.endpoints.login}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => {
-                console.log('Login response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Login response data:', data);
-                if (data.success) {
-                    currentUser = username;
-                    document.getElementById('logoutBtn').style.display = 'block';
-                    document.getElementById('headerSubtext').textContent = `Logged in as: ${username}`;
-                    showSuccess('Login successful');
-                    showStep('kNumberStep');
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('portalSection').classList.remove('hidden');
                 } else {
-                    showError('Invalid credentials');
+                    showError('Invalid admin password');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Login error:', error);
-                showError('Login failed: ' + error.message);
-            })
-            .finally(() => {
-                loginButton.disabled = false;
-                loginButton.textContent = 'Login';
-            });
-        }
-
-        // Logout function
-        function logout() {
-            currentUser = null;
-            currentClient = null;
-            isNewClient = false;
-            appointments = [];
-            
-            document.getElementById('logoutBtn').style.display = 'none';
-            document.getElementById('headerSubtext').textContent = 'Secure admin access for client bookings';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            
-            showStep('loginStep');
-            showSuccess('Logged out successfully');
+                showError('Login failed - please try again');
+            }
         }
 
         // Client lookup function
-        function lookupClient() {
-            const kNumberInput = document.getElementById('kNumber');
-            let kNumber = kNumberInput.value.trim();
+        async function lookupClient() {
+            const kNumber = document.getElementById('kNumber').value.trim().toUpperCase();
             
-            // Remove all spaces
-            kNumber = kNumber.replace(/\s/g, '');
-            
-            // Auto-add K prefix if missing and it looks like a 7-digit number
-            if (/^\d{7}$/.test(kNumber)) {
-                kNumber = 'K' + kNumber;
-            }
-            
-            // Convert to uppercase
-            kNumber = kNumber.toUpperCase();
-            
-            // Validate K Number format
-            const kNumberPattern = /^K\d{7}$/;
-            if (!kNumberPattern.test(kNumber)) {
-                showError('Invalid K Number format. Must be K followed by 7 digits (e.g., K7807878)');
-                kNumberInput.focus();
+            if (!kNumber) {
+                showError('Please enter a K Number');
                 return;
             }
-            
-            // Auto-format the input field to show corrected version
-            kNumberInput.value = kNumber;
 
-            document.getElementById('lookupLoading').style.display = 'block';
+            showLoading('Looking up client...');
 
-            // Call n8n client lookup webhook
-            fetch(`${N8N_CONFIG.baseUrl}${N8N_CONFIG.endpoints.lookup}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ kNumber })
-            })
-            .then(response => {
-                console.log('Lookup response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            try {
+                const response = await fetch(WEBHOOKS.lookup, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ kNumber: kNumber })
+                });
+
+                const result = await response.json();
+                console.log('Client lookup result:', result);
+
+                if (result.found) {
+                    // Existing client found
+                    loadClientData(result.clientData, result.appointments || []);
+                    showClientStatus(`Existing Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${result.appointments ? ` (${result.appointments.length} future appointments)` : ''}`, 'found');
+                } else {
+                    // New client
+                    setupNewClient(kNumber);
+                    showClientStatus('New Client - Please fill out all information', 'new');
                 }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Lookup response data:', data);
-                handleLookupResponse(data);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Lookup error:', error);
-                document.getElementById('lookupLoading').style.display = 'none';
-                showError('Error looking up client: ' + error.message);
-            });
+                showError('Client lookup failed - please try again');
+            }
         }
 
-        function handleLookupResponse(data) {
-            document.getElementById('lookupLoading').style.display = 'none';
-            
-            if (data.found) {
-                // Existing client - populate with data from Supabase
-                isNewClient = false;
-                currentClient = data.clientData;
-                populateClientForm(currentClient);
-                
-                // Load existing appointments and show validation summary
-                loadExistingAppointments(data.existingAppointments || []);
-                
-                document.getElementById('clientStatus').className = 'client-status existing';
-                
-                // FIXED: Count only future appointments for display
-                const futureAppointmentCount = appointments.length; // This is already filtered in loadExistingAppointments
-                let statusMessage = `Existing Client Found: ${currentClient.firstName} ${currentClient.lastName}`;
-                
-                if (futureAppointmentCount > 0) {
-                    statusMessage += ` (${futureAppointmentCount} future appointments)`;
-                    
-                    // Add validation warnings to status message
-                    if (data.validationSummary) {
-                        const { flaggedAppointments, appointmentsNeedingApproval } = data.validationSummary;
-                        if (flaggedAppointments > 0) {
-                            statusMessage += ` - ⚠️ ${flaggedAppointments} flagged`;
-                            if (appointmentsNeedingApproval > 0) {
-                                statusMessage += `, ${appointmentsNeedingApproval} need approval`;
-                            }
-                        }
-                    }
-                }
-                
-                document.getElementById('clientStatus').textContent = statusMessage;
-                showSuccess('Client found successfully');
-            } else {
-                // New client
-                isNewClient = true;
-                currentClient = { kNumber: document.getElementById('kNumber').value };
-                clearClientForm();
-                
-                // Clear any existing appointments
-                appointments = [];
-                
-                document.getElementById('clientStatus').className = 'client-status new';
-                document.getElementById('clientStatus').textContent = 'New Client - Please fill out all information';
-                showSuccess('Ready to create new client');
+        // Load existing client data
+        function loadClientData(clientData, existingAppointments = []) {
+            isNewClient = false;
+            currentClient = clientData;
+
+            // Populate client form fields
+            document.getElementById('firstName').value = clientData.firstName || '';
+            document.getElementById('lastName').value = clientData.lastName || '';
+            document.getElementById('phone').value = clientData.phone || '';
+            document.getElementById('email').value = clientData.email || '';
+            document.getElementById('address').value = clientData.address || '';
+            document.getElementById('city').value = clientData.city || '';
+            document.getElementById('province').value = clientData.province || '';
+            document.getElementById('postalCode').value = clientData.postalCode || '';
+            document.getElementById('emergencyContactName').value = clientData.emergencyContactName || '';
+            document.getElementById('emergencyContactNumber').value = clientData.emergencyContactNumber || '';
+            document.getElementById('notes').value = clientData.notes || '';
+
+            // Load existing appointments with sorting
+            loadExistingAppointments(existingAppointments);
+
+            // Show sections
+            showSections();
+        }
+
+        // Load and sort existing appointments
+        function loadExistingAppointments(existingAppointments) {
+            appointments = [];
+
+            if (existingAppointments && existingAppointments.length > 0) {
+                console.log('Loading existing appointments:', existingAppointments);
+
+                // Sort appointments chronologically (soonest first)
+                const sortedAppointments = existingAppointments.sort((a, b) => {
+                    const dateTimeA = new Date(`${a.date}T${a.time}`);
+                    const dateTimeB = new Date(`${b.date}T${b.time}`);
+                    return dateTimeA - dateTimeB;
+                });
+
+                sortedAppointments.forEach((apt, index) => {
+                    const appointmentData = {
+                        id: apt.id || `existing-${Date.now()}-${index}`,
+                        date: apt.date || '',
+                        time: apt.time || '',
+                        location: apt.location || apt.locationname || '',
+                        notes: apt.notes || '',
+
+                        // Existing appointment flags
+                        isExisting: true,
+                        isModified: false,
+                        originalId: apt.id,
+                        appointmentStatus: apt.appointmentStatus || 'pending',
+
+                        // Validation data
+                        validation: apt.validation || {
+                            valid: true,
+                            flagged: false,
+                            reason: 'sufficient_notice',
+                            message: 'Appointment loaded from database',
+                            requiresApproval: false
+                        },
+
+                        // Track loading
+                        loadedAt: new Date().toISOString()
+                    };
+
+                    console.log(`📋 Loaded appointment ${index + 1}:`, {
+                        id: appointmentData.id,
+                        originalId: appointmentData.originalId,
+                        date: appointmentData.date,
+                        time: appointmentData.time,
+                        location: appointmentData.location
+                    });
+
+                    appointments.push(appointmentData);
+                });
+
+                console.log(`✅ Successfully loaded ${appointments.length} existing appointments (sorted chronologically)`);
             }
 
             updateAppointmentsList();
-            showStep('clientFormStep');
         }
 
-        // Populate client form with existing data
-        function populateClientForm(client) {
-            // Hide K Number field for existing clients
-            document.getElementById('clientKNumberGroup').style.display = 'none';
-            
-            document.getElementById('firstName').value = client.firstName || '';
-            document.getElementById('lastName').value = client.lastName || '';
-            document.getElementById('phone').value = client.phone || '';
-            document.getElementById('email').value = client.email || '';
-            document.getElementById('civicAddress').value = client.address || '';
-            document.getElementById('city').value = client.city || '';
-            document.getElementById('province').value = client.province || '';
-            document.getElementById('postalCode').value = client.postalCode || '';
-            document.getElementById('emergencyContactName').value = client.emergencyContactName || '';
-            document.getElementById('emergencyContactNumber').value = client.emergencyContactNumber || '';
-            document.getElementById('notes').value = client.notes || '';
-        }
-
-        // Load existing appointments - future-only filter
-        function loadExistingAppointments(existingAppointments) {
-            console.log('Loading existing appointments:', existingAppointments.length);
-
-            // Clear current appointments
+        // Setup new client
+        function setupNewClient(kNumber) {
+            isNewClient = true;
+            currentClient = { kNumber: kNumber };
             appointments = [];
-        
-            // Filter for future appointments only
-            const now = new Date();
-            const futureAppointments = existingAppointments.filter(apt => {
-                if (!apt.date || !apt.time) return false;
-                const appointmentDate = new Date(`${apt.date}T${apt.time}:00`);
-                return appointmentDate > now;
-            });
-        
-            console.log(`Filtered to ${futureAppointments.length} future appointments from ${existingAppointments.length} total`);
 
-            // Convert existing appointments to the format our form expects
-            futureAppointments.forEach((apt, index) => {
-                // Try to match location from database to dropdown options
-                let matchedLocation = '';
-                const dbLocation = apt.locationname || apt.location || '';
-            
-                // Try to find exact match first
-                matchedLocation = locations.find(loc => loc === dbLocation);
-            
-                // If no exact match, try partial match
-                if (!matchedLocation && dbLocation) {
-                    matchedLocation = locations.find(loc => 
-                        loc.toLowerCase().includes(dbLocation.toLowerCase()) || 
-                        dbLocation.toLowerCase().includes(loc.toLowerCase())
-                    );
-                }
-                
-                const appointmentData = {
-                    id: apt.id || `existing-${Date.now()}-${index}`,
-                    date: apt.date || '',
-                    time: apt.time || '',
-                    location: matchedLocation || dbLocation, // Use matched location
-                    notes: apt.notes || '',
-        
-                    // Existing appointment flags
-                    isExisting: true,
-                    isModified: false,
-                    originalId: apt.id,
-                    appointmentStatus: apt.appointmentStatus || 'pending',
-        
-                    // Validation data
-                    validation: apt.validation || {
-                        valid: true,
-                        flagged: false,
-                        reason: 'sufficient_notice',
-                        message: 'Appointment loaded from database',
-                        requiresApproval: false
-                    },
-        
-                    // Track loading
-                    loadedAt: new Date().toISOString()
-                };
+            // Clear all form fields
+            clearClientForm();
 
-                appointments.push(appointmentData);
-            });
+            // Pre-populate K Number in a visible way for new clients
+            if (kNumber) {
+                document.getElementById('kNumber').value = kNumber;
+            }
 
-            console.log(`Successfully loaded ${appointments.length} future appointments`);
-        
-            // Re-validate appointments for business days
-            appointments.forEach(apt => {
-                if (apt.date && apt.time) {
-                    apt.validation = validateAppointmentClientSide(apt.date, apt.time);
-                }
-            });
+            // Add first appointment
+            addAppointment();
+
+            // Show sections
+            showSections();
         }
 
-        // Client-side validation for appointments
-        function validateAppointmentClientSide(date, time) {
-            if (!date || !time) {
-                return { valid: false, message: 'Date and time are required' };
-            }
-            
-            const appointmentDateTime = new Date(`${date}T${time}`);
-            const now = new Date();
-            
-            // Check if appointment is in the past
-            if (appointmentDateTime < now) {
-                return { 
-                    valid: false, 
-                    message: 'Appointment cannot be scheduled in the past',
-                    flagged: true
-                };
-            }
-            
-            // Calculate business days notice (simplified client-side version)
-            const msPerDay = 24 * 60 * 60 * 1000;
-            const daysDifference = Math.floor((appointmentDateTime - now) / msPerDay);
-            
-            // Simple weekday check (more accurate calculation would be in backend)
-            let businessDaysNotice = 0;
-            let checkDate = new Date(now);
-            checkDate.setDate(checkDate.getDate() + 1); // Start from tomorrow
-            
-            while (checkDate <= appointmentDateTime) {
-                const dayOfWeek = checkDate.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not weekend
-                    businessDaysNotice++;
-                }
-                checkDate.setDate(checkDate.getDate() + 1);
-            }
-            
-            if (businessDaysNotice < 2) {
-                return {
-                    valid: true,
-                    message: `Only ${businessDaysNotice} business day${businessDaysNotice === 1 ? '' : 's'} notice - will require manual approval`,
-                    flagged: true,
-                    requiresApproval: true,
-                    businessDaysNotice: businessDaysNotice
-                };
-            }
-            
-            return {
-                valid: true,
-                message: 'Appointment has sufficient notice',
-                flagged: false,
-                requiresApproval: false,
-                businessDaysNotice: businessDaysNotice
-            };
+        // Show sections
+        function showSections() {
+            document.getElementById('clientSection').classList.remove('hidden');
+            document.getElementById('appointmentsSection').classList.remove('hidden');
+            document.getElementById('saveSection').classList.remove('hidden');
         }
 
-        function clearClientForm() {
-            // Show and populate K Number field for new clients
-            document.getElementById('clientKNumberGroup').style.display = 'block';
-            document.getElementById('clientKNumber').value = currentClient.kNumber || '';
-            
-            document.getElementById('firstName').value = '';
-            document.getElementById('lastName').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('civicAddress').value = '';
-            document.getElementById('city').value = '';
-            document.getElementById('province').value = 'NS'; // Default to Nova Scotia
-            document.getElementById('postalCode').value = '';
-            document.getElementById('emergencyContactName').value = '';
-            document.getElementById('emergencyContactNumber').value = '';
-            document.getElementById('notes').value = '';
-        }
-
-        // Add appointment function
+        // Add new appointment
         function addAppointment() {
+            appointmentCounter++;
             const appointment = {
-                id: Date.now(),
+                id: `new-${Date.now()}-${appointmentCounter}`,
                 date: '',
                 time: '',
                 location: '',
                 notes: '',
                 isExisting: false,
-                appointmentStatus: 'draft',
-                isDraft: true
+                isModified: false,
+                isDeleted: false,
+                isDraft: true, // Mark as draft until filled
+                appointmentStatus: 'new'
             };
+
             appointments.push(appointment);
-        
-            updateAppointmentsList();
-        }
-            
-        // Commit draft appointment
-        function commitDraftAppointment(id) {
-            const appointment = appointments.find(apt => apt.id == id);
-        
-            if (!appointment) {
-                console.error('Draft appointment not found:', id);
-                return;
-            }
-        
-            // Validate required fields
-            if (!appointment.date || !appointment.time || !appointment.location) {
-                showError('Please complete all required fields (Date, Time, Location) before committing this appointment.');
-                return;
-            }
-        
-            // Commit the appointment
-            appointment.isDraft = false;
-            appointment.appointmentStatus = 'new';
-            appointment.committedAt = new Date().toISOString();
-        
-            updateAppointmentsList();
-            showSuccess('Appointment committed successfully');
-        }
-                
-        // Undelete appointment
-        function undeleteAppointment(id) {
-            const appointment = appointments.find(apt => apt.id == id);
-        
-            if (!appointment) {
-                console.error('Appointment not found for undelete:', id);
-                return;
-            }
-        
-            if (appointment.isDeleted && appointment.isExisting) {
-                // Restore the deleted appointment
-                appointment.isDeleted = false;
-                appointment.deletedAt = null;
-            
-                // Keep it marked as modified since we're changing its status
-                appointment.isModified = true;
-                appointment.modifiedAt = new Date().toISOString();
-            
-                // Add 'restored' to modified fields if not already there
-                if (!appointment.modifiedFields) {
-                    appointment.modifiedFields = [];
-                }
-                if (!appointment.modifiedFields.includes('restored')) {
-                    appointment.modifiedFields.push('restored');
-                }
-            
-                showSuccess('Appointment restored successfully');
-            }
-        
-            updateAppointmentsList();
-        }
-            
-        // Remove appointment
-        function removeAppointment(id) {
-            const appointment = appointments.find(apt => apt.id == id);
-        
-            if (!appointment) {
-                console.error('Appointment not found for removal:', id);
-                return;
-            }
-        
-            if (appointment.isExisting) {
-                // For existing appointments, mark for deletion but keep visible
-                appointment.isDeleted = true;
-                appointment.isModified = true;
-                appointment.deletedAt = new Date().toISOString();
-            
-                showSuccess('Appointment marked for deletion');
-            } else {
-                // For new appointments, actually remove from array
-                const indexToRemove = appointments.findIndex(apt => apt.id == id);
-                if (indexToRemove !== -1) {
-                    appointments.splice(indexToRemove, 1);
-                    showSuccess('New appointment removed');
-                }
-            }
-        
             updateAppointmentsList();
         }
 
         // Update appointments list display
         function updateAppointmentsList() {
             const container = document.getElementById('appointmentsList');
-        
-            const allAppointments = appointments;
-        
-            if (allAppointments.length === 0) {
-                container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No appointments scheduled. Click "Add Another Appointment" to begin.</p>';
-                return;
-            }
+            container.innerHTML = '';
 
-            container.innerHTML = allAppointments.map((apt, displayIndex) => {
-                let statusClass = '';
-                let statusText = '';
-                let appointmentClass = '';
-                let validationWarning = '';
-                let isDisabled = '';
-                let commitButton = '';
-            
-                // Handle draft appointments
-                if (apt.isDraft) {
-                    appointmentClass = 'draft-appointment';
-                    statusText = '📝 Draft';
-                    statusClass = 'status-draft';
-                    commitButton = `<button type="button" onclick="commitDraftAppointment('${apt.id}')" style="background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-top: 8px;">
-                        ✅ Commit Appointment
-                    </button>`;
-                }
-                // Handle deleted appointments
-                else if (apt.isDeleted) {
-                    appointmentClass = 'existing-appointment deleted-appointment';
-                    statusText = '🗑️ Deleted';
-                    statusClass = 'status-deleted';
-                    isDisabled = 'disabled style="opacity: 0.6; pointer-events: none;"';
-                } else if (apt.isExisting) {
-                    if (apt.isModified) {
-                        appointmentClass = 'existing-appointment modified-appointment';
-                        statusText = '✏️ Modified';
-                        statusClass = 'status-modified';
-                    } else {
-                        appointmentClass = 'existing-appointment';
-                        statusText = apt.appointmentStatus === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
-                        statusClass = apt.appointmentStatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
-                    }
-        
-                    // Check for validation warnings
-                    if (apt.validation && apt.validation.flagged && !apt.isDeleted) {
-                        appointmentClass += ' flagged-appointment';
-                        if (apt.validation.requiresApproval) {
-                            validationWarning = `<div class="validation-warning status-needs-approval">
-                                🔍 ${apt.validation.message}
-                            </div>`;
-                        } else {
-                            validationWarning = `<div class="validation-warning status-flagged">
-                                ⚠️ ${apt.validation.message}
-                            </div>`;
-                        }
-                    }
-                } else {
-                    appointmentClass = 'new-appointment';
-                    statusText = '🆕 New';
-                    statusClass = 'status-new';
-        
-                    // Show validation for new appointments
-                    if (apt.validation && apt.validation.flagged) {
-                        validationWarning = `<div class="validation-warning status-flagged">
-                            ⚠️ ${apt.validation.message}
-                        </div>`;
-                    }
-                }
-
-                // Add tracking info
-                let trackingInfo = '';
-                if (apt.isDeleted) {
-                    trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #c62828; font-weight: 600; background: #ffebee; padding: 8px; border-radius: 4px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <span>🗑️ Scheduled for deletion <small style="color: #666;">(${new Date(apt.deletedAt).toLocaleTimeString()})</small></span>
-                        <button type="button" onclick="undeleteAppointment('${apt.id}')" style="background: #27ae60; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                            ↺ Undo Delete
-                        </button>
-                    </div>`;
-                } else if (apt.isModified && apt.modifiedFields && apt.modifiedFields.length > 0) {
-                    trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #e67e22; font-weight: 600; background: #fff8dc; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                        ✏️ Modified: ${apt.modifiedFields.join(', ')} 
-                        <small style="color: #666;">(${new Date(apt.modifiedAt).toLocaleTimeString()})</small>
-                    </div>`;
-                } else if (apt.isDraft) {
-                    trackingInfo = `<div style="grid-column: 1 / -1; font-size: 0.9rem; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                        📝 Complete all required fields and click "Commit Appointment" to add to schedule
-                        ${commitButton}
-                    </div>`;
-                }
-
-                // Generate location options with proper selection
-                const locationOptions = locations.map(loc => {
-                    const isSelected = apt.location === loc ? 'selected' : '';
-                    return `<option value="${loc}" ${isSelected}>${loc}</option>`;
-                }).join('');
-            
-                return `
-                <div class="appointment-item ${appointmentClass}">
-                    ${apt.isDeleted ? 
-                        `<button class="restore-appointment" onclick="undeleteAppointment('${apt.id}')" type="button" title="Restore appointment">↺</button>` :
-                        `<button class="remove-appointment" onclick="removeAppointment('${apt.id}')" type="button">×</button>`
-                    }
-                    <div class="appointment-status-badge ${statusClass}">${statusText}</div>
-                    ${validationWarning}
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div>
-                            <label>Date <span class="required">*</span></label>
-                            <input type="date" value="${apt.date}" onchange="updateAppointment('${apt.id}', 'date', this.value)" min="${new Date().toISOString().split('T')[0]}" ${isDisabled} required>
-                        </div>
-                        <div>
-                            <label>Time <span class="required">*</span></label>
-                            <input type="time" value="${apt.time}" onchange="updateAppointment('${apt.id}', 'time', this.value)" ${isDisabled} required>
-                        </div>
-                        <div style="grid-column: 1 / -1;">
-                            <label>Location <span class="required">*</span></label>
-                            <select onchange="updateAppointment('${apt.id}', 'location', this.value)" ${isDisabled} required>
-                                <option value="">Select location</option>
-                                ${locationOptions}
-                            </select>
-                        </div>
-                        <div style="grid-column: 1 / -1;">
-                            <label>Notes</label>
-                            <textarea onchange="updateAppointment('${apt.id}', 'notes', this.value)" placeholder="Special requests, accessibility requirements, etc." ${isDisabled}>${apt.notes || ''}</textarea>
-                        </div>
-                        ${trackingInfo}
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-            
-        // Update appointment function - FIXED to trigger visual updates
-        function updateAppointment(id, field, value) {
-            const appointment = appointments.find(apt => apt.id == id);
-            if (!appointment) {
-                console.error('Appointment not found:', id);
-                return;
-            }
-
-            // Store original value for comparison
-            const originalValue = appointment[field];
-
-            // Update the field
-            appointment[field] = value;
-            console.log(`Updated appointment ${id}: ${field} = "${value}" (was: "${originalValue}")`);
-
-            // Track modifications for existing appointments
-            if (appointment.isExisting) {
-                // Check if this is actually a change
-                if (originalValue !== value) {
-                    appointment.isModified = true;
-                    appointment.modifiedAt = new Date().toISOString();
-        
-                    // Track which fields were modified
-                    if (!appointment.modifiedFields) {
-                        appointment.modifiedFields = [];
-                    }
-                    if (!appointment.modifiedFields.includes(field)) {
-                        appointment.modifiedFields.push(field);
-                    }
-                    
-                    console.log(`Marked existing appointment as modified. Fields: ${appointment.modifiedFields.join(', ')}`);
-                    
-                    // IMPORTANT: Refresh the display to show modification indicators
-                    updateAppointmentsList();
-                }
-            }
-
-            // Re-validate if date or time changed
-            if (field === 'date' || field === 'time') {
-                if (appointment.date && appointment.time) {
-                    appointment.validation = validateAppointmentClientSide(appointment.date, appointment.time);
-                    console.log(`Re-validated appointment ${id}:`, appointment.validation);
-                }
-            }
-        }
-            
-        // Enhanced Save Function - FIXED to include all appointment types
-        function saveClient() {
-            console.log('Starting save process...');
-
-            // Validate client form
-            const form = document.getElementById('clientForm');
-            const formData = new FormData(form);
-            const clientData = Object.fromEntries(formData.entries());
-
-            // FIXED: Ensure clientKNumber is populated from the current client's K Number
-            if (isNewClient) {
-                clientData.clientKNumber = document.getElementById('clientKNumber').value || currentClient.kNumber;
-            } else {
-                clientData.clientKNumber = currentClient.kNumber;
-            }
-
-            // Get all appointments - make a deep copy to avoid mutation
-            const allAppointments = appointments.map(apt => ({...apt}));
-            
-            console.log('All appointments before processing:', allAppointments.length);
-            console.log('Appointment details:', allAppointments.map(apt => ({
-                id: apt.id,
-                isExisting: apt.isExisting,
-                isModified: apt.isModified,
-                isDeleted: apt.isDeleted,
-                isDraft: apt.isDraft,
-                date: apt.date,
-                time: apt.time
-            })));
-
-            // Check for uncommitted draft appointments
-            const draftAppointments = allAppointments.filter(apt => apt.isDraft && !apt.isDeleted);
-            if (draftAppointments.length > 0) {
-                showError(`Please commit or remove ${draftAppointments.length} draft appointment${draftAppointments.length === 1 ? '' : 's'} before submitting.`);
-                return;
-            }
-
-            // Filter for valid visible appointments (not deleted and complete)
-            const validAppointments = allAppointments.filter(apt => 
-                !apt.isDeleted && !apt.isDraft && apt.date && apt.time && apt.location
-            );
-            const visibleAppointments = allAppointments.filter(apt => !apt.isDeleted && !apt.isDraft);
-
-            console.log('Valid appointments:', validAppointments.length);
-            console.log('Visible appointments:', visibleAppointments.length);
-
-            if (visibleAppointments.length > 0 && validAppointments.length === 0) {
-                showError('Please complete at least one appointment or remove empty appointments');
-                return;
-            }
-
-            // Check each visible appointment for completeness
-            for (let apt of visibleAppointments) {
-                if (!apt.date || !apt.time || !apt.location) {
-                    showError('Please complete all appointment fields (Date, Time, Location) or remove incomplete appointments');
-                    return;
-                }
-            }
-
-            // Show confirmation for new appointments
-            const newAppointments = allAppointments.filter(apt => !apt.isExisting && !apt.isDeleted && !apt.isDraft);
-            if (newAppointments.length > 0) {
-                const confirmMessage = `You are adding ${newAppointments.length} new appointment${newAppointments.length === 1 ? '' : 's'}:\n\n` +
-                    newAppointments.map(apt => `• ${apt.date} at ${apt.time} - ${apt.location.split(' - ')[0]}`).join('\n') +
-                    '\n\nDo you want to continue?';
+            // Sort appointments: existing first (chronologically), then new appointments
+            const sortedAppointments = [...appointments].sort((a, b) => {
+                // Existing appointments first, then new ones
+                if (a.isExisting && !b.isExisting) return -1;
+                if (!a.isExisting && b.isExisting) return 1;
                 
-                if (!confirm(confirmMessage)) {
-                    return;
+                // For existing appointments, sort chronologically
+                if (a.isExisting && b.isExisting) {
+                    const dateTimeA = new Date(`${a.date}T${a.time}`);
+                    const dateTimeB = new Date(`${b.date}T${b.time}`);
+                    return dateTimeA - dateTimeB;
+                }
+                
+                // For new appointments, maintain creation order
+                return 0;
+            });
+
+            sortedAppointments.forEach((appointment, index) => {
+                if (appointment.isDeleted && appointment.hidden) return;
+
+                const appointmentDiv = document.createElement('div');
+                appointmentDiv.className = `appointment-item ${appointment.isExisting ? 'existing' : 'new'}${appointment.isModified ? ' modified' : ''}${appointment.isDeleted ? ' deleted' : ''}`;
+                appointmentDiv.id = `appointment-${appointment.id}`;
+
+                // Get status display
+                let statusClass = 'status-new';
+                let statusText = '🆕 New';
+                
+                if (appointment.isDeleted) {
+                    statusClass = 'status-deleted';
+                    statusText = '🗑️ Deleted';
+                } else if (appointment.isModified) {
+                    statusClass = 'status-modified';
+                    statusText = '✏️ Modified';
+                } else if (appointment.isExisting) {
+                    statusClass = appointment.appointmentStatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
+                    statusText = appointment.appointmentStatus === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
+                }
+
+                appointmentDiv.innerHTML = `
+                    <div class="appointment-header">
+                        <span class="appointment-status ${statusClass}">${statusText}</span>
+                        <div class="appointment-actions">
+                            ${appointment.isDeleted ? 
+                                `<button type="button" class="btn btn-success" onclick="undeleteAppointment('${appointment.id}')" title="Restore appointment">↶</button>` :
+                                `<button type="button" class="btn btn-danger" onclick="removeAppointment('${appointment.id}')" title="Remove appointment">×</button>`
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <input type="date" 
+                                   id="date-${appointment.id}" 
+                                   value="${appointment.date}" 
+                                   min="${new Date().toISOString().split('T')[0]}"
+                                   onchange="updateAppointment('${appointment.id}', 'date', this.value)"
+                                   ${appointment.isDeleted ? 'disabled' : ''}>
+                        </div>
+                        <div class="form-group">
+                            <label>Time:</label>
+                            <input type="time" 
+                                   id="time-${appointment.id}" 
+                                   value="${appointment.time}" 
+                                   onchange="updateAppointment('${appointment.id}', 'time', this.value)"
+                                   ${appointment.isDeleted ? 'disabled' : ''}>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location:</label>
+                        <select id="location-${appointment.id}" 
+                                onchange="updateAppointment('${appointment.id}', 'location', this.value)"
+                                ${appointment.isDeleted ? 'disabled' : ''}>
+                            <option value="">Select location</option>
+                            ${Object.keys(CLINIC_ADDRESSES).map(clinic => 
+                                `<option value="${clinic}" ${appointment.location === clinic ? 'selected' : ''}>${clinic.split(' - ')[0]}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes:</label>
+                        <textarea id="notes-${appointment.id}" 
+                                  onchange="updateAppointment('${appointment.id}', 'notes', this.value)"
+                                  ${appointment.isDeleted ? 'disabled' : ''}
+                                  ${appointment.isExisting ? 'readonly' : ''}>${appointment.notes}</textarea>
+                    </div>
+
+                    ${appointment.isDeleted ? '<div class="deleted-overlay">DELETED</div>' : ''}
+                `;
+
+                container.appendChild(appointmentDiv);
+            });
+        }
+
+        // Update appointment data
+        function updateAppointment(appointmentId, field, value) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (!appointment) return;
+
+            const oldValue = appointment[field];
+            appointment[field] = value;
+
+            // Mark as modified if it's an existing appointment and value changed
+            if (appointment.isExisting && oldValue !== value) {
+                appointment.isModified = true;
+                console.log(`✏️ Appointment ${appointmentId} marked as modified: ${field} changed from "${oldValue}" to "${value}"`);
+            }
+
+            // Remove draft status if appointment has required fields
+            if (appointment.isDraft && appointment.date && appointment.time && appointment.location) {
+                appointment.isDraft = false;
+                console.log(`📝 Appointment ${appointmentId} no longer a draft`);
+            }
+
+            // Update the display immediately to show modification indicator
+            updateAppointmentsList();
+        }
+
+        // Remove appointment
+        function removeAppointment(appointmentId) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (!appointment) return;
+
+            if (appointment.isExisting) {
+                // Mark existing appointment for deletion
+                appointment.isDeleted = true;
+                appointment.hidden = false; // Keep visible but grayed out
+                console.log(`🗑️ Existing appointment ${appointmentId} marked for deletion`);
+            } else {
+                // Remove new appointment completely
+                const index = appointments.findIndex(apt => apt.id === appointmentId);
+                if (index > -1) {
+                    appointments.splice(index, 1);
+                    console.log(`➖ New appointment ${appointmentId} removed completely`);
                 }
             }
 
-            // FIXED: Include ALL appointments (not just non-drafts) - drafts are already filtered out above
-            const processedAppointments = allAppointments
-                .filter(apt => !apt.isDraft) // Exclude only drafts, include deleted ones for backend processing
-                .map(apt => {
-                    const processed = {
-                        id: apt.id,
-                        date: apt.date,
-                        time: apt.time,
-                        location: apt.location,
-                        notes: apt.notes || '',
-            
-                        // Tracking flags - CRITICAL: Ensure these are preserved
-                        isExisting: Boolean(apt.isExisting),
-                        isModified: Boolean(apt.isModified),
-                        isDeleted: Boolean(apt.isDeleted),
-                        originalId: apt.originalId || null,
-            
-                        // Status and validation
-                        appointmentStatus: apt.appointmentStatus || 'new',
-                        validation: apt.validation || { flagged: false, requiresApproval: false },
-            
-                        // Timestamps
-                        modifiedAt: apt.modifiedAt || null,
-                        deletedAt: apt.deletedAt || null,
-                        modifiedFields: apt.modifiedFields || []
-                    };
+            updateAppointmentsList();
+        }
 
-                    return processed;
+        // Undelete appointment
+        function undeleteAppointment(appointmentId) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (!appointment) return;
+
+            appointment.isDeleted = false;
+            appointment.hidden = false;
+            console.log(`↶ Appointment ${appointmentId} restored`);
+            updateAppointmentsList();
+        }
+
+        // Clear client form
+        function clearClientForm() {
+            const fields = ['firstName', 'lastName', 'phone', 'email', 'address', 'city', 'province', 'postalCode', 'emergencyContactName', 'emergencyContactNumber', 'notes'];
+            fields.forEach(field => {
+                const element = document.getElementById(field);
+                if (element) element.value = '';
+            });
+        }
+
+        // Save client and appointments
+        async function saveClient() {
+            try {
+                // Validate required fields
+                if (!validateRequiredFields()) return;
+
+                // Prepare client data
+                const clientData = {
+                    kNumber: currentClient.kNumber,
+                    firstName: document.getElementById('firstName').value.trim(),
+                    lastName: document.getElementById('lastName').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    address: document.getElementById('address').value.trim(),
+                    city: document.getElementById('city').value.trim(),
+                    province: document.getElementById('province').value,
+                    postalCode: document.getElementById('postalCode').value.trim(),
+                    emergencyContactName: document.getElementById('emergencyContactName').value.trim(),
+                    emergencyContactNumber: document.getElementById('emergencyContactNumber').value.trim(),
+                    notes: document.getElementById('notes').value.trim()
+                };
+
+                // Filter and categorize appointments
+                const validAppointments = appointments.filter(apt => 
+                    !apt.isDraft && apt.date && apt.time && apt.location
+                );
+
+                const newAppointments = validAppointments.filter(apt => 
+                    !apt.isExisting && !apt.isDeleted
+                );
+
+                const modifiedAppointments = validAppointments.filter(apt => 
+                    apt.isExisting && apt.isModified && !apt.isDeleted
+                );
+
+                const deletedAppointments = appointments.filter(apt => 
+                    apt.isExisting && apt.isDeleted
+                );
+
+                // Prepare save data
+                const saveData = {
+                    isNewClient: isNewClient,
+                    kNumber: currentClient.kNumber,
+                    clientData: clientData,
+                    appointments: validAppointments,
+                    appointmentOperations: {
+                        new: newAppointments,
+                        modified: modifiedAppointments,
+                        deleted: deletedAppointments
+                    }
+                };
+
+                console.log('💾 Saving data:', saveData);
+
+                // Show loading
+                showLoading('Saving client and appointments...');
+
+                // Send to backend
+                const response = await fetch(WEBHOOKS.save, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(saveData)
                 });
 
-            // Count operations for logging - FIXED logic
-            const operationCounts = {
-                existing: processedAppointments.filter(apt => apt.isExisting && !apt.isDeleted && !apt.isModified).length,
-                modified: processedAppointments.filter(apt => apt.isExisting && apt.isModified && !apt.isDeleted).length,
-                deleted: processedAppointments.filter(apt => apt.isDeleted).length,
-                new: processedAppointments.filter(apt => !apt.isExisting && !apt.isDeleted).length
-            };
+                const result = await response.json();
+                console.log('💾 Save result:', result);
 
-            console.log('FIXED Operation summary:', operationCounts);
-            console.log('Processed appointments being sent:', processedAppointments.length);
-
-            document.getElementById('saveLoading').style.display = 'block';
-
-            // Send data to n8n
-            const submissionData = {
-                kNumber: document.getElementById('clientKNumber').value || currentClient.kNumber,
-                isNewClient: isNewClient,
-                clientData: clientData,
-                appointments: processedAppointments,
-                operationCounts: operationCounts,
-                submittedBy: currentUser,
-                submittedAt: new Date().toISOString()
-            };
-
-            console.log('FIXED: Sending to n8n:', {
-                kNumber: submissionData.kNumber,
-                appointmentCount: submissionData.appointments.length,
-                operations: submissionData.operationCounts,
-                appointmentDetails: submissionData.appointments.map(apt => ({
-                    id: apt.id,
-                    isExisting: apt.isExisting,
-                    isModified: apt.isModified,
-                    isDeleted: apt.isDeleted,
-                    originalId: apt.originalId
-                }))
-            });
-
-            // Send to n8n webhook
-            fetch(`${N8N_CONFIG.baseUrl}${N8N_CONFIG.endpoints.save}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submissionData)
-            })
-            .then(response => {
-                console.log('Save response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Save response data:', data);
-                document.getElementById('saveLoading').style.display = 'none';
-                if (data.success) {
-                    const message = `Successfully saved! ${operationCounts.new} new, ${operationCounts.modified} modified, ${operationCounts.deleted} deleted.`;
-                    showSuccess(message);
-                    startOver();
+                if (result.success) {
+                    showSuccessPage(result, {
+                        newCount: newAppointments.length,
+                        modifiedCount: modifiedAppointments.length,
+                        deletedCount: deletedAppointments.length,
+                        clientName: `${clientData.firstName} ${clientData.lastName}`
+                    });
                 } else {
-                    showError('Error saving: ' + (data.error || 'Unknown error'));
+                    showError(result.message || 'Save failed - please try again');
                 }
-            })
-            .catch(error => {
-                console.error('Save error:', error);
-                document.getElementById('saveLoading').style.display = 'none';
-                showError('Error saving data: ' + error.message);
-            });
+
+            } catch (error) {
+                console.error('💥 Save error:', error);
+                showError('Save failed - please check your connection and try again');
+            }
         }
 
-        // Navigation functions
-        function showStep(stepId) {
-            document.querySelectorAll('.step').forEach(step => {
-                step.classList.remove('active');
-            });
-            document.getElementById(stepId).classList.add('active');
+        // Validate required fields
+        function validateRequiredFields() {
+            const requiredFields = [
+                { id: 'firstName', name: 'First Name' },
+                { id: 'lastName', name: 'Last Name' },
+                { id: 'phone', name: 'Phone' },
+                { id: 'address', name: 'Address' },
+                { id: 'city', name: 'City' },
+                { id: 'province', name: 'Province' },
+                { id: 'postalCode', name: 'Postal Code' }
+            ];
+
+            for (let field of requiredFields) {
+                const element = document.getElementById(field.id);
+                if (!element.value.trim()) {
+                    showError(`Please fill in the ${field.name} field`);
+                    element.focus();
+                    return false;
+                }
+            }
+
+            // Check for at least one valid appointment
+            const validAppointments = appointments.filter(apt => 
+                !apt.isDraft && !apt.isDeleted && apt.date && apt.time && apt.location
+            );
+
+            if (validAppointments.length === 0) {
+                showError('Please add at least one complete appointment');
+                return false;
+            }
+
+            return true;
         }
 
-        function goToKNumber() {
-            document.getElementById('kNumber').value = '';
-            showStep('kNumberStep');
+        // Show success page with detailed information
+        function showSuccessPage(result, operations) {
+            document.getElementById('portalSection').classList.add('hidden');
+            document.getElementById('successSection').classList.remove('hidden');
+
+            // Set success message
+            const successMessage = `Successfully saved ${operations.clientName}${isNewClient ? ' (new client)' : ' (existing client)'}`;
+            document.getElementById('successMessage').textContent = successMessage;
+
+            // Build detailed operations list
+            const operationsList = [];
+            if (operations.newCount > 0) {
+                operationsList.push(`<li><span class="operation-icon">➕</span>Added ${operations.newCount} new appointment${operations.newCount === 1 ? '' : 's'}</li>`);
+            }
+            if (operations.modifiedCount > 0) {
+                operationsList.push(`<li><span class="operation-icon">✏️</span>Modified ${operations.modifiedCount} existing appointment${operations.modifiedCount === 1 ? '' : 's'}</li>`);
+            }
+            if (operations.deletedCount > 0) {
+                operationsList.push(`<li><span class="operation-icon">🗑️</span>Deleted ${operations.deletedCount} appointment${operations.deletedCount === 1 ? '' : 's'}</li>`);
+            }
+
+            const successDetails = `
+                <div class="success-summary">
+                    <strong>Operations Completed:</strong>
+                </div>
+                <ul class="operation-list">
+                    ${operationsList.join('')}
+                </ul>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #c3e6cb; color: #155724; font-size: 0.9em;">
+                    <strong>K Number:</strong> ${currentClient.kNumber}<br>
+                    <strong>Time:</strong> ${new Date().toLocaleString()}<br>
+                    ${result.message ? `<strong>System:</strong> ${result.message}` : ''}
+                </div>
+            `;
+
+            document.getElementById('successDetails').innerHTML = successDetails;
         }
 
-        function startOver() {
+        // Start new booking
+        function startNewBooking() {
+            // Reset all state
             currentClient = null;
             isNewClient = false;
             appointments = [];
+            appointmentCounter = 0;
+
+            // Clear forms
             document.getElementById('kNumber').value = '';
-            showStep('kNumberStep');
+            clearClientForm();
+
+            // Hide sections
+            document.getElementById('clientSection').classList.add('hidden');
+            document.getElementById('appointmentsSection').classList.add('hidden');
+            document.getElementById('saveSection').classList.add('hidden');
+            document.getElementById('clientStatus').innerHTML = '';
+
+            // Show portal section and hide success
+            document.getElementById('successSection').classList.add('hidden');
+            document.getElementById('portalSection').classList.remove('hidden');
+
+            // Focus on K Number field
+            document.getElementById('kNumber').focus();
         }
 
-        // Event listeners
-        document.getElementById('logoutBtn').addEventListener('click', logout);
+        // Return to client (for modifications)
+        function returnToClient() {
+            document.getElementById('successSection').classList.add('hidden');
+            document.getElementById('portalSection').classList.remove('hidden');
+        }
 
-        // Handle Enter key in login form
-        document.getElementById('username').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') login();
-        });
-        document.getElementById('password').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') login();
+        // Show client status
+        function showClientStatus(message, type) {
+            const statusDiv = document.getElementById('clientStatus');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `client-status ${type}`;
+        }
+
+        // Show error message
+        function showError(message) {
+            const statusDiv = document.getElementById('clientStatus');
+            statusDiv.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        // Show loading message
+        function showLoading(message) {
+            const statusDiv = document.getElementById('clientStatus');
+            statusDiv.innerHTML = `<div class="loading">${message}</div>`;
+        }
+
+        // Handle Enter key for login
+        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
         });
 
-        // Handle Enter key in K number field
+        // Handle Enter key for K Number lookup
         document.getElementById('kNumber').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') lookupClient();
+            if (e.key === 'Enter') {
+                lookupClient();
+            }
         });
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            showStep('loginStep');
+        // Auto-uppercase K Number input
+        document.getElementById('kNumber').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
         });
+
+        console.log('🚀 RRTS Frontend v2.8.0 - UX Improvements Loaded');
+        console.log('✅ Fixed: Removed unnecessary confirmation dialogs');
+        console.log('✅ Fixed: Added post-save confirmation page');
+        console.log('✅ Fixed: Chronological appointment sorting');
     </script>
 </body>
 </html>
 
-<!-- 
-Version: v2.7.8 - Fixed KNumber not being passed to backend issue
--->
+<!-- Version: 2.8.0 - Frontend UX Improvements -->
