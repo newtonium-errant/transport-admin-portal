@@ -131,13 +131,6 @@
             color: #5a67d8;
         }
 
-        .btn-secondary {
-            background: #6c757d;
-            padding: 10px 20px;
-            font-size: 13px;
-            width: auto;
-        }
-
         .error-message {
             background: #f8d7da;
             color: #721c24;
@@ -182,267 +175,11 @@
             font-size: 12px;
             padding: 6px 12px;
             margin-left: 10px;
-        }
-
-        .forgot-password-form {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #e1e5e9;
-        }
-
-        .back-to-login {
-            text-align: center;
-            margin-top: 20px;
+            width: auto;
         }
 
         .hidden {
             display: none;
-        }
-
-        /* Main portal styles */
-        .section {
-            margin-bottom: 30px;
-            padding: 25px;
-            border-radius: 12px;
-            border-left: 5px solid #667eea;
-            background: #f8f9fa;
-        }
-
-        .section h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-            font-weight: 500;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            align-items: flex-end;
-        }
-
-        .form-row .form-group {
-            flex: 1;
-        }
-
-        select, textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        select:focus, textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .client-status {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-weight: 500;
-            text-align: center;
-        }
-
-        .client-status.found {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .client-status.new {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .client-status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .appointment-item {
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .appointment-item.existing {
-            border-color: #28a745;
-            background: #f8fff9;
-            border-left: 6px solid #28a745;
-        }
-
-        .appointment-item.new {
-            border-color: #ffc107;
-            background: #fffdf0;
-            border-left: 6px solid #ffc107;
-        }
-
-        .appointment-item.modified {
-            border-color: #17a2b8;
-            background: #f0fdff;
-            border-left: 6px solid #17a2b8;
-            box-shadow: 0 2px 8px rgba(23, 162, 184, 0.2);
-        }
-
-        .appointment-item.deleted {
-            opacity: 0.6;
-            background: #f8f9fa;
-            border-color: #6c757d;
-            border-style: dashed;
-        }
-
-        .appointment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .appointment-status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-confirmed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-new {
-            background: #cce5ff;
-            color: #004085;
-        }
-
-        .status-modified {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .status-deleted {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .appointment-actions {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            display: flex;
-            gap: 5px;
-            z-index: 10;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            padding: 8px 12px;
-            font-size: 12px;
-            min-width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-success {
-            background: #28a745;
-            padding: 8px 12px;
-            font-size: 12px;
-            min-width: auto;
-            height: 30px;
-            border-radius: 6px;
-        }
-
-        .deleted-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(108, 117, 125, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            color: white;
-            font-weight: bold;
-            font-size: 18px;
-            z-index: 5;
-        }
-
-        .success-page {
-            text-align: center;
-            padding: 40px 20px;
-        }
-
-        .success-icon {
-            font-size: 4em;
-            color: #28a745;
-            margin-bottom: 20px;
-        }
-
-        .success-title {
-            font-size: 2em;
-            color: #28a745;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .success-details {
-            background: #f8fff9;
-            border: 2px solid #28a745;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .success-summary {
-            margin-bottom: 15px;
-            font-size: 1.1em;
-            color: #155724;
-        }
-
-        .operation-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .operation-list li {
-            padding: 8px 0;
-            border-bottom: 1px solid #c3e6cb;
-            color: #155724;
-        }
-
-        .operation-list li:last-child {
-            border-bottom: none;
-        }
-
-        .operation-icon {
-            margin-right: 8px;
-            font-weight: bold;
         }
 
         /* Responsive design */
@@ -450,11 +187,6 @@
             .container {
                 padding: 20px;
                 margin: 10px;
-            }
-            
-            .form-row {
-                flex-direction: column;
-                gap: 0;
             }
             
             h1 {
@@ -507,7 +239,7 @@
                     
                     <button class="btn" onclick="sendPasswordReset()">Send Reset Link</button>
                     
-                    <div class="back-to-login">
+                    <div style="text-align: center; margin-top: 20px;">
                         <button class="btn btn-link" onclick="showLogin()">Back to Login</button>
                     </div>
                 </div>
@@ -524,125 +256,7 @@
             </div>
 
             <h1>Transportation Booking Management</h1>
-            
-            <!-- Client Lookup Section -->
-            <div class="section">
-                <h3>Client Lookup</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="kNumber">K Number:</label>
-                        <input type="text" id="kNumber" placeholder="Enter K Number (e.g., K99999)" style="text-transform: uppercase;">
-                    </div>
-                    <button class="btn" onclick="lookupClient()">Find Client</button>
-                </div>
-                <div id="clientStatus"></div>
-            </div>
-
-            <!-- Client Information Section -->
-            <div id="clientSection" class="section hidden">
-                <h3>Client Information</h3>
-                
-                <!-- Basic Information -->
-                <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">
-                    <h4 style="margin-bottom: 15px; color: #333;">Basic Information</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="firstName">First Name:</label>
-                            <input type="text" id="firstName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="lastName">Last Name:</label>
-                            <input type="text" id="lastName" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="phone">Phone:</label>
-                            <input type="tel" id="phone" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email:</label>
-                            <input type="email" id="email">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Address Information -->
-                <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">
-                    <h4 style="margin-bottom: 15px; color: #333;">Address Information</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="address">Street Address:</label>
-                            <input type="text" id="address" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="city">City:</label>
-                            <input type="text" id="city" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="province">Province:</label>
-                            <select id="province" required>
-                                <option value="">Select Province</option>
-                                <option value="NS">Nova Scotia</option>
-                                <option value="NB">New Brunswick</option>
-                                <option value="PE">Prince Edward Island</option>
-                                <option value="NL">Newfoundland and Labrador</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="postalCode">Postal Code:</label>
-                            <input type="text" id="postalCode" placeholder="A1A 1A1" required>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Emergency Contact -->
-                <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
-                    <h4 style="margin-bottom: 15px; color: #333;">Emergency Contact</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="emergencyContactName">Emergency Contact Name:</label>
-                            <input type="text" id="emergencyContactName">
-                        </div>
-                        <div class="form-group">
-                            <label for="emergencyContactNumber">Emergency Contact Phone:</label>
-                            <input type="tel" id="emergencyContactNumber">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="notes">Additional Notes:</label>
-                        <textarea id="notes" rows="3" placeholder="Any special requirements or notes..."></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Appointments Section -->
-            <div id="appointmentsSection" class="section hidden">
-                <h3>Appointments</h3>
-                <div id="appointmentsList"></div>
-                <button class="btn btn-secondary" onclick="addAppointment()">Add Another Appointment</button>
-            </div>
-
-            <!-- Save Section -->
-            <div id="saveSection" class="section hidden">
-                <button class="btn" onclick="saveClient()" style="width: 100%; padding: 15px; font-size: 16px;">Save Client & Appointments</button>
-            </div>
-        </div>
-
-        <!-- Success Page -->
-        <div id="successSection" class="hidden">
-            <div class="success-page">
-                <div class="success-icon">✅</div>
-                <div class="success-title">Successfully Saved!</div>
-                <div id="successMessage" class="success-summary"></div>
-                <div id="successDetails" class="success-details"></div>
-                <div style="margin-top: 30px;">
-                    <button class="btn" onclick="startNewBooking()" style="margin-right: 10px;">New Booking</button>
-                    <button class="btn btn-secondary" onclick="returnToClient()">Back to Client</button>
-                </div>
-            </div>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">Multi-user system ready for your booking staff</p>
         </div>
     </div>
 
@@ -650,27 +264,11 @@
         // Global variables
         let currentUser = null;
         let sessionToken = null;
-        let currentClient = null;
-        let isNewClient = false;
-        let appointments = [];
-        let appointmentCounter = 0;
-
-        // Clinic addresses mapping
-        const CLINIC_ADDRESSES = {
-            "Dartmouth General Hospital - 325 Pleasant St, Dartmouth, NS B2Y 4G8": "Dartmouth General Hospital - 325 Pleasant St, Dartmouth, NS B2Y 4G8",
-            "Halifax Infirmary - 1796 Summer St, Halifax, NS B3H 3A7": "Halifax Infirmary - 1796 Summer St, Halifax, NS B3H 3A7",
-            "Valley Regional Hospital - 150 Exhibition St, Kentville, NS B4N 5E3": "Valley Regional Hospital - 150 Exhibition St, Kentville, NS B4N 5E3",
-            "South Shore Regional Hospital - 90 Glen Allan Dr, Bridgewater, NS B4V 3S6": "South Shore Regional Hospital - 90 Glen Allan Dr, Bridgewater, NS B4V 3S6",
-            "NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0": "NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0",
-            "NuVista Psychedelic - Port Williams - 1315 Black River Rd, Port Williams, NS B0P 1T0": "NuVista Psychedelic - Port Williams - 1315 Black River Rd, Port Williams, NS B0P 1T0"
-        };
 
         // Webhook URLs - TO BE CREATED
         const WEBHOOKS = {
             login: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login',
-            passwordReset: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset',
-            lookup: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/client-lookup',
-            save: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-client'
+            passwordReset: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset'
         };
 
         // Check for existing session on page load
@@ -832,23 +430,6 @@
         function logout() {
             clearSession();
             
-            // Reset all form data
-            currentClient = null;
-            isNewClient = false;
-            appointments = [];
-            appointmentCounter = 0;
-            
-            // Clear forms
-            document.getElementById('kNumber').value = '';
-            clearClientForm();
-            
-            // Hide sections
-            document.getElementById('clientSection').classList.add('hidden');
-            document.getElementById('appointmentsSection').classList.add('hidden');
-            document.getElementById('saveSection').classList.add('hidden');
-            document.getElementById('successSection').classList.add('hidden');
-            document.getElementById('clientStatus').innerHTML = '';
-            
             // Show login
             document.getElementById('portalSection').classList.add('hidden');
             document.getElementById('loginSection').classList.remove('hidden');
@@ -886,37 +467,31 @@
             document.getElementById('resetMessages').innerHTML = `<div class="loading">${message}</div>`;
         }
 
-        // Enhanced client lookup with session token
-        async function lookupClient() {
-            if (!sessionToken) {
-                showError('Session expired - please login again');
-                logout();
-                return;
+        // Handle Enter key for login
+        document.getElementById('username').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('password').focus();
             }
+        });
 
-            const kNumber = document.getElementById('kNumber').value.trim().toUpperCase();
-            
-            if (!kNumber) {
-                showError('Please enter a K Number');
-                return;
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
             }
+        });
 
-            showLoading('Looking up client...');
+        // Handle Enter key for password reset
+        document.getElementById('resetEmail').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendPasswordReset();
+            }
+        });
 
-            try {
-                const response = await fetch(WEBHOOKS.lookup, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${sessionToken}`
-                    },
-                    body: JSON.stringify({ kNumber: kNumber })
-                });
+        console.log('🚀 RRTS Frontend v3.0.0 - Multi-User Authentication System');
+        console.log('✅ Features: Username/Password login, session management, password reset');
+        console.log('✅ Ready for multiple booking staff members');
+    </script>
+</body>
+</html>
 
-                if (response.status === 401) {
-                    showError('Session expired - please login again');
-                    logout();
-                    return;
-                }
-
-                const result = await response.json
+<!-- Version: 3.0.0 - Multi-User Authentication System -->
