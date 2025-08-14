@@ -32,6 +32,11 @@
             overflow-y: auto;
         }
 
+        .login-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
         h1 {
             color: #333;
             text-align: center;
@@ -40,6 +45,161 @@
             font-weight: 300;
         }
 
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+
+        .login-subtitle {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-link {
+            background: none;
+            color: #667eea;
+            text-transform: none;
+            letter-spacing: normal;
+            font-size: 13px;
+            padding: 8px 0;
+            margin-top: 15px;
+            text-decoration: underline;
+        }
+
+        .btn-link:hover {
+            transform: none;
+            box-shadow: none;
+            color: #5a67d8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            padding: 10px 20px;
+            font-size: 13px;
+            width: auto;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .user-info strong {
+            color: #333;
+        }
+
+        .logout-btn {
+            background: #6c757d;
+            font-size: 12px;
+            padding: 6px 12px;
+            margin-left: 10px;
+        }
+
+        .forgot-password-form {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .back-to-login {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Main portal styles */
         .section {
             margin-bottom: 30px;
             padding: 25px;
@@ -62,19 +222,11 @@
             align-items: flex-end;
         }
 
-        .form-group {
+        .form-row .form-group {
             flex: 1;
         }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-            font-size: 0.95em;
-        }
-
-        input, select, textarea {
+        select, textarea {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e1e5e9;
@@ -84,60 +236,10 @@
             background: white;
         }
 
-        input:focus, select:focus, textarea:focus {
+        select:focus, textarea:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            padding: 10px 20px;
-            font-size: 13px;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            padding: 8px 12px;
-            font-size: 12px;
-            min-width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-success {
-            background: #28a745;
-            padding: 8px 12px;
-            font-size: 12px;
-            min-width: auto;
-            height: 30px;
-            border-radius: 6px;
         }
 
         .client-status {
@@ -243,13 +345,6 @@
             color: #721c24;
         }
 
-        .remove-appointment {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-        }
-
         .appointment-actions {
             position: absolute;
             top: 10px;
@@ -257,6 +352,27 @@
             display: flex;
             gap: 5px;
             z-index: 10;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            padding: 8px 12px;
+            font-size: 12px;
+            min-width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-success {
+            background: #28a745;
+            padding: 8px 12px;
+            font-size: 12px;
+            min-width: auto;
+            height: 30px;
+            border-radius: 6px;
         }
 
         .deleted-overlay {
@@ -329,26 +445,6 @@
             font-weight: bold;
         }
 
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #f5c6cb;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #667eea;
-            font-weight: 500;
-        }
-
         /* Responsive design */
         @media (max-width: 768px) {
             .container {
@@ -371,19 +467,62 @@
     <div class="container">
         <!-- Login Section -->
         <div id="loginSection">
-            <h1>Rural Route Transportation Services</h1>
-            <div class="section">
-                <h3>Admin Portal Access</h3>
-                <div class="form-group">
-                    <label for="adminPassword">Admin Password:</label>
-                    <input type="password" id="adminPassword" placeholder="Enter admin password">
+            <div class="login-container">
+                <div class="login-header">
+                    <div class="login-title">RRTS Admin Portal</div>
+                    <div class="login-subtitle">Rural Route Transportation Services</div>
                 </div>
-                <button class="btn" onclick="login()">Access Portal</button>
+                
+                <div id="loginForm">
+                    <div id="loginMessages"></div>
+                    
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" placeholder="Enter your username" autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+                    </div>
+                    
+                    <button class="btn" onclick="login()">Sign In</button>
+                    
+                    <button class="btn btn-link" onclick="showForgotPassword()">Forgot Password?</button>
+                </div>
+
+                <!-- Forgot Password Form -->
+                <div id="forgotPasswordForm" class="hidden">
+                    <div class="login-header">
+                        <div class="login-title">Reset Password</div>
+                        <div class="login-subtitle">Enter your email to receive reset instructions</div>
+                    </div>
+                    
+                    <div id="resetMessages"></div>
+                    
+                    <div class="form-group">
+                        <label for="resetEmail">Email Address:</label>
+                        <input type="email" id="resetEmail" placeholder="Enter your email address">
+                    </div>
+                    
+                    <button class="btn" onclick="sendPasswordReset()">Send Reset Link</button>
+                    
+                    <div class="back-to-login">
+                        <button class="btn btn-link" onclick="showLogin()">Back to Login</button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Main Portal Section -->
         <div id="portalSection" class="hidden">
+            <!-- User Info Bar -->
+            <div class="user-info">
+                <strong>Logged in as:</strong> <span id="currentUser"></span> 
+                <strong>Role:</strong> <span id="userRole"></span>
+                <button class="btn logout-btn" onclick="logout()">Logout</button>
+            </div>
+
             <h1>Transportation Booking Management</h1>
             
             <!-- Client Lookup Section -->
@@ -509,6 +648,8 @@
 
     <script>
         // Global variables
+        let currentUser = null;
+        let sessionToken = null;
         let currentClient = null;
         let isNewClient = false;
         let appointments = [];
@@ -524,47 +665,235 @@
             "NuVista Psychedelic - Port Williams - 1315 Black River Rd, Port Williams, NS B0P 1T0": "NuVista Psychedelic - Port Williams - 1315 Black River Rd, Port Williams, NS B0P 1T0"
         };
 
-        // Webhook URLs
+        // Webhook URLs - TO BE CREATED
         const WEBHOOKS = {
-            login: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/admin-login',
+            login: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login',
+            passwordReset: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset',
             lookup: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/client-lookup',
             save: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-client'
         };
 
+        // Check for existing session on page load
+        window.addEventListener('load', function() {
+            checkExistingSession();
+        });
+
+        // Check for existing session
+        function checkExistingSession() {
+            const savedToken = localStorage.getItem('rrts_session_token');
+            const savedUser = localStorage.getItem('rrts_user_data');
+            
+            if (savedToken && savedUser) {
+                try {
+                    const userData = JSON.parse(savedUser);
+                    const tokenExpiry = localStorage.getItem('rrts_token_expiry');
+                    
+                    if (tokenExpiry && new Date().getTime() < parseInt(tokenExpiry)) {
+                        // Session is still valid
+                        currentUser = userData;
+                        sessionToken = savedToken;
+                        showPortal();
+                    } else {
+                        // Session expired
+                        clearSession();
+                    }
+                } catch (error) {
+                    console.error('Error parsing stored user data:', error);
+                    clearSession();
+                }
+            }
+        }
+
+        // Clear session data
+        function clearSession() {
+            localStorage.removeItem('rrts_session_token');
+            localStorage.removeItem('rrts_user_data');
+            localStorage.removeItem('rrts_token_expiry');
+            currentUser = null;
+            sessionToken = null;
+        }
+
+        // Show login form
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('forgotPasswordForm').classList.add('hidden');
+            clearMessages();
+        }
+
+        // Show forgot password form
+        function showForgotPassword() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('forgotPasswordForm').classList.remove('hidden');
+            clearMessages();
+        }
+
+        // Clear all messages
+        function clearMessages() {
+            document.getElementById('loginMessages').innerHTML = '';
+            document.getElementById('resetMessages').innerHTML = '';
+        }
+
         // Login function
         async function login() {
-            const password = document.getElementById('adminPassword').value;
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
             
-            if (!password) {
-                showError('Please enter admin password');
+            if (!username || !password) {
+                showLoginError('Please enter both username and password');
                 return;
             }
 
             try {
+                showLoginLoading('Signing in...');
+
                 const response = await fetch(WEBHOOKS.login, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ password: password })
+                    body: JSON.stringify({ 
+                        username: username, 
+                        password: password,
+                        loginTime: new Date().toISOString()
+                    })
                 });
 
                 const result = await response.json();
                 
                 if (result.success) {
-                    document.getElementById('loginSection').classList.add('hidden');
-                    document.getElementById('portalSection').classList.remove('hidden');
+                    // Store session data
+                    currentUser = result.user;
+                    sessionToken = result.sessionToken;
+                    
+                    localStorage.setItem('rrts_session_token', sessionToken);
+                    localStorage.setItem('rrts_user_data', JSON.stringify(currentUser));
+                    localStorage.setItem('rrts_token_expiry', (new Date().getTime() + (24 * 60 * 60 * 1000)).toString()); // 24 hour expiry
+                    
+                    showPortal();
                 } else {
-                    showError('Invalid admin password');
+                    showLoginError(result.message || 'Invalid username or password');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showError('Login failed - please try again');
+                showLoginError('Login failed - please check your connection and try again');
             }
         }
 
-        // Client lookup function
+        // Send password reset
+        async function sendPasswordReset() {
+            const email = document.getElementById('resetEmail').value.trim();
+            
+            if (!email) {
+                showResetError('Please enter your email address');
+                return;
+            }
+
+            try {
+                showResetLoading('Sending reset instructions...');
+
+                const response = await fetch(WEBHOOKS.passwordReset, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: email,
+                        resetTime: new Date().toISOString()
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResetSuccess('Password reset instructions have been sent to your email address');
+                    document.getElementById('resetEmail').value = '';
+                } else {
+                    showResetError(result.message || 'Email not found in our system');
+                }
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showResetError('Failed to send reset email - please try again');
+            }
+        }
+
+        // Show portal after successful login
+        function showPortal() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('portalSection').classList.remove('hidden');
+            
+            // Update user info display
+            document.getElementById('currentUser').textContent = currentUser.full_name || currentUser.username;
+            document.getElementById('userRole').textContent = currentUser.role || 'user';
+            
+            console.log(`✅ User logged in: ${currentUser.username} (${currentUser.role})`);
+        }
+
+        // Logout function
+        function logout() {
+            clearSession();
+            
+            // Reset all form data
+            currentClient = null;
+            isNewClient = false;
+            appointments = [];
+            appointmentCounter = 0;
+            
+            // Clear forms
+            document.getElementById('kNumber').value = '';
+            clearClientForm();
+            
+            // Hide sections
+            document.getElementById('clientSection').classList.add('hidden');
+            document.getElementById('appointmentsSection').classList.add('hidden');
+            document.getElementById('saveSection').classList.add('hidden');
+            document.getElementById('successSection').classList.add('hidden');
+            document.getElementById('clientStatus').innerHTML = '';
+            
+            // Show login
+            document.getElementById('portalSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            
+            // Clear login form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            clearMessages();
+            
+            console.log('✅ User logged out');
+        }
+
+        // Message display functions
+        function showLoginError(message) {
+            document.getElementById('loginMessages').innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        function showLoginSuccess(message) {
+            document.getElementById('loginMessages').innerHTML = `<div class="success-message">${message}</div>`;
+        }
+
+        function showLoginLoading(message) {
+            document.getElementById('loginMessages').innerHTML = `<div class="loading">${message}</div>`;
+        }
+
+        function showResetError(message) {
+            document.getElementById('resetMessages').innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        function showResetSuccess(message) {
+            document.getElementById('resetMessages').innerHTML = `<div class="success-message">${message}</div>`;
+        }
+
+        function showResetLoading(message) {
+            document.getElementById('resetMessages').innerHTML = `<div class="loading">${message}</div>`;
+        }
+
+        // Enhanced client lookup with session token
         async function lookupClient() {
+            if (!sessionToken) {
+                showError('Session expired - please login again');
+                logout();
+                return;
+            }
+
             const kNumber = document.getElementById('kNumber').value.trim().toUpperCase();
             
             if (!kNumber) {
@@ -578,562 +907,16 @@
                 const response = await fetch(WEBHOOKS.lookup, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionToken}`
                     },
                     body: JSON.stringify({ kNumber: kNumber })
                 });
 
-                const result = await response.json();
-                console.log('Client lookup result:', result);
-
-                if (result.found) {
-                    // Existing client found
-                    loadClientData(result.clientData, result.appointments || []);
-                    showClientStatus(`Existing Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${result.appointments ? ` (${result.appointments.length} future appointments)` : ''}`, 'found');
-                } else {
-                    // New client
-                    setupNewClient(kNumber);
-                    showClientStatus('New Client - Please fill out all information', 'new');
-                }
-            } catch (error) {
-                console.error('Lookup error:', error);
-                showError('Client lookup failed - please try again');
-            }
-        }
-
-        // Load existing client data
-        function loadClientData(clientData, existingAppointments = []) {
-            isNewClient = false;
-            currentClient = clientData;
-
-            // Populate client form fields
-            document.getElementById('firstName').value = clientData.firstName || '';
-            document.getElementById('lastName').value = clientData.lastName || '';
-            document.getElementById('phone').value = clientData.phone || '';
-            document.getElementById('email').value = clientData.email || '';
-            document.getElementById('address').value = clientData.address || '';
-            document.getElementById('city').value = clientData.city || '';
-            document.getElementById('province').value = clientData.province || '';
-            document.getElementById('postalCode').value = clientData.postalCode || '';
-            document.getElementById('emergencyContactName').value = clientData.emergencyContactName || '';
-            document.getElementById('emergencyContactNumber').value = clientData.emergencyContactNumber || '';
-            document.getElementById('notes').value = clientData.notes || '';
-
-            // Load existing appointments with sorting
-            loadExistingAppointments(existingAppointments);
-
-            // Show sections
-            showSections();
-        }
-
-        // Load and sort existing appointments
-        function loadExistingAppointments(existingAppointments) {
-            appointments = [];
-
-            if (existingAppointments && existingAppointments.length > 0) {
-                console.log('Loading existing appointments:', existingAppointments);
-
-                // Sort appointments chronologically (soonest first)
-                const sortedAppointments = existingAppointments.sort((a, b) => {
-                    const dateTimeA = new Date(`${a.date}T${a.time}`);
-                    const dateTimeB = new Date(`${b.date}T${b.time}`);
-                    return dateTimeA - dateTimeB;
-                });
-
-                sortedAppointments.forEach((apt, index) => {
-                    const appointmentData = {
-                        id: apt.id || `existing-${Date.now()}-${index}`,
-                        date: apt.date || '',
-                        time: apt.time || '',
-                        location: apt.location || apt.locationname || '',
-                        notes: apt.notes || '',
-
-                        // Existing appointment flags
-                        isExisting: true,
-                        isModified: false,
-                        originalId: apt.id,
-                        appointmentStatus: apt.appointmentStatus || 'pending',
-
-                        // Validation data
-                        validation: apt.validation || {
-                            valid: true,
-                            flagged: false,
-                            reason: 'sufficient_notice',
-                            message: 'Appointment loaded from database',
-                            requiresApproval: false
-                        },
-
-                        // Track loading
-                        loadedAt: new Date().toISOString()
-                    };
-
-                    console.log(`📋 Loaded appointment ${index + 1}:`, {
-                        id: appointmentData.id,
-                        originalId: appointmentData.originalId,
-                        date: appointmentData.date,
-                        time: appointmentData.time,
-                        location: appointmentData.location
-                    });
-
-                    appointments.push(appointmentData);
-                });
-
-                console.log(`✅ Successfully loaded ${appointments.length} existing appointments (sorted chronologically)`);
-            }
-
-            updateAppointmentsList();
-        }
-
-        // Setup new client
-        function setupNewClient(kNumber) {
-            isNewClient = true;
-            currentClient = { kNumber: kNumber };
-            appointments = [];
-
-            // Clear all form fields
-            clearClientForm();
-
-            // Pre-populate K Number in a visible way for new clients
-            if (kNumber) {
-                document.getElementById('kNumber').value = kNumber;
-            }
-
-            // Add first appointment
-            addAppointment();
-
-            // Show sections
-            showSections();
-        }
-
-        // Show sections
-        function showSections() {
-            document.getElementById('clientSection').classList.remove('hidden');
-            document.getElementById('appointmentsSection').classList.remove('hidden');
-            document.getElementById('saveSection').classList.remove('hidden');
-        }
-
-        // Add new appointment
-        function addAppointment() {
-            appointmentCounter++;
-            const appointment = {
-                id: `new-${Date.now()}-${appointmentCounter}`,
-                date: '',
-                time: '',
-                location: '',
-                notes: '',
-                isExisting: false,
-                isModified: false,
-                isDeleted: false,
-                isDraft: true, // Mark as draft until filled
-                appointmentStatus: 'new'
-            };
-
-            appointments.push(appointment);
-            updateAppointmentsList();
-        }
-
-        // Update appointments list display
-        function updateAppointmentsList() {
-            const container = document.getElementById('appointmentsList');
-            container.innerHTML = '';
-
-            // Sort appointments: existing first (chronologically), then new appointments
-            const sortedAppointments = [...appointments].sort((a, b) => {
-                // Existing appointments first, then new ones
-                if (a.isExisting && !b.isExisting) return -1;
-                if (!a.isExisting && b.isExisting) return 1;
-                
-                // For existing appointments, sort chronologically
-                if (a.isExisting && b.isExisting) {
-                    const dateTimeA = new Date(`${a.date}T${a.time}`);
-                    const dateTimeB = new Date(`${b.date}T${b.time}`);
-                    return dateTimeA - dateTimeB;
-                }
-                
-                // For new appointments, maintain creation order
-                return 0;
-            });
-
-            sortedAppointments.forEach((appointment, index) => {
-                if (appointment.isDeleted && appointment.hidden) return;
-
-                const appointmentDiv = document.createElement('div');
-                appointmentDiv.className = `appointment-item ${appointment.isExisting ? 'existing' : 'new'}${appointment.isModified ? ' modified' : ''}${appointment.isDeleted ? ' deleted' : ''}`;
-                appointmentDiv.id = `appointment-${appointment.id}`;
-
-                // Get status display
-                let statusClass = 'status-new';
-                let statusText = '🆕 New';
-                
-                if (appointment.isDeleted) {
-                    statusClass = 'status-deleted';
-                    statusText = '🗑️ Deleted';
-                } else if (appointment.isModified) {
-                    statusClass = 'status-modified';
-                    statusText = '✏️ Modified';
-                } else if (appointment.isExisting) {
-                    statusClass = appointment.appointmentStatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
-                    statusText = appointment.appointmentStatus === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
+                if (response.status === 401) {
+                    showError('Session expired - please login again');
+                    logout();
+                    return;
                 }
 
-                appointmentDiv.innerHTML = `
-                    <div class="appointment-header">
-                        <span class="appointment-status ${statusClass}">${statusText}</span>
-                        <div class="appointment-actions">
-                            ${appointment.isDeleted ? 
-                                `<button type="button" class="btn btn-success" onclick="undeleteAppointment('${appointment.id}')" title="Restore appointment">↶</button>` :
-                                `<button type="button" class="btn btn-danger" onclick="removeAppointment('${appointment.id}')" title="Remove appointment">×</button>`
-                            }
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Date:</label>
-                            <input type="date" 
-                                   id="date-${appointment.id}" 
-                                   value="${appointment.date}" 
-                                   min="${new Date().toISOString().split('T')[0]}"
-                                   onchange="updateAppointment('${appointment.id}', 'date', this.value)"
-                                   ${appointment.isDeleted ? 'disabled' : ''}>
-                        </div>
-                        <div class="form-group">
-                            <label>Time:</label>
-                            <input type="time" 
-                                   id="time-${appointment.id}" 
-                                   value="${appointment.time}" 
-                                   onchange="updateAppointment('${appointment.id}', 'time', this.value)"
-                                   ${appointment.isDeleted ? 'disabled' : ''}>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Location:</label>
-                        <select id="location-${appointment.id}" 
-                                onchange="updateAppointment('${appointment.id}', 'location', this.value)"
-                                ${appointment.isDeleted ? 'disabled' : ''}>
-                            <option value="">Select location</option>
-                            ${Object.keys(CLINIC_ADDRESSES).map(clinic => 
-                                `<option value="${clinic}" ${appointment.location === clinic ? 'selected' : ''}>${clinic.split(' - ')[0]}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Notes:</label>
-                        <textarea id="notes-${appointment.id}" 
-                                  onchange="updateAppointment('${appointment.id}', 'notes', this.value)"
-                                  ${appointment.isDeleted ? 'disabled' : ''}
-                                  ${appointment.isExisting ? 'readonly' : ''}>${appointment.notes}</textarea>
-                    </div>
-
-                    ${appointment.isDeleted ? '<div class="deleted-overlay">DELETED</div>' : ''}
-                `;
-
-                container.appendChild(appointmentDiv);
-            });
-        }
-
-        // Update appointment data
-        function updateAppointment(appointmentId, field, value) {
-            const appointment = appointments.find(apt => apt.id === appointmentId);
-            if (!appointment) return;
-
-            const oldValue = appointment[field];
-            appointment[field] = value;
-
-            // Mark as modified if it's an existing appointment and value changed
-            if (appointment.isExisting && oldValue !== value) {
-                appointment.isModified = true;
-                console.log(`✏️ Appointment ${appointmentId} marked as modified: ${field} changed from "${oldValue}" to "${value}"`);
-            }
-
-            // Remove draft status if appointment has required fields
-            if (appointment.isDraft && appointment.date && appointment.time && appointment.location) {
-                appointment.isDraft = false;
-                console.log(`📝 Appointment ${appointmentId} no longer a draft`);
-            }
-
-            // Update the display immediately to show modification indicator
-            updateAppointmentsList();
-        }
-
-        // Remove appointment
-        function removeAppointment(appointmentId) {
-            const appointment = appointments.find(apt => apt.id === appointmentId);
-            if (!appointment) return;
-
-            if (appointment.isExisting) {
-                // Mark existing appointment for deletion
-                appointment.isDeleted = true;
-                appointment.hidden = false; // Keep visible but grayed out
-                console.log(`🗑️ Existing appointment ${appointmentId} marked for deletion`);
-            } else {
-                // Remove new appointment completely
-                const index = appointments.findIndex(apt => apt.id === appointmentId);
-                if (index > -1) {
-                    appointments.splice(index, 1);
-                    console.log(`➖ New appointment ${appointmentId} removed completely`);
-                }
-            }
-
-            updateAppointmentsList();
-        }
-
-        // Undelete appointment
-        function undeleteAppointment(appointmentId) {
-            const appointment = appointments.find(apt => apt.id === appointmentId);
-            if (!appointment) return;
-
-            appointment.isDeleted = false;
-            appointment.hidden = false;
-            console.log(`↶ Appointment ${appointmentId} restored`);
-            updateAppointmentsList();
-        }
-
-        // Clear client form
-        function clearClientForm() {
-            const fields = ['firstName', 'lastName', 'phone', 'email', 'address', 'city', 'province', 'postalCode', 'emergencyContactName', 'emergencyContactNumber', 'notes'];
-            fields.forEach(field => {
-                const element = document.getElementById(field);
-                if (element) element.value = '';
-            });
-        }
-
-        // Save client and appointments
-        async function saveClient() {
-            try {
-                // Validate required fields
-                if (!validateRequiredFields()) return;
-
-                // Prepare client data
-                const clientData = {
-                    kNumber: currentClient.kNumber,
-                    firstName: document.getElementById('firstName').value.trim(),
-                    lastName: document.getElementById('lastName').value.trim(),
-                    phone: document.getElementById('phone').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    address: document.getElementById('address').value.trim(),
-                    city: document.getElementById('city').value.trim(),
-                    province: document.getElementById('province').value,
-                    postalCode: document.getElementById('postalCode').value.trim(),
-                    emergencyContactName: document.getElementById('emergencyContactName').value.trim(),
-                    emergencyContactNumber: document.getElementById('emergencyContactNumber').value.trim(),
-                    notes: document.getElementById('notes').value.trim()
-                };
-
-                // Filter and categorize appointments
-                const validAppointments = appointments.filter(apt => 
-                    !apt.isDraft && apt.date && apt.time && apt.location
-                );
-
-                const newAppointments = validAppointments.filter(apt => 
-                    !apt.isExisting && !apt.isDeleted
-                );
-
-                const modifiedAppointments = validAppointments.filter(apt => 
-                    apt.isExisting && apt.isModified && !apt.isDeleted
-                );
-
-                const deletedAppointments = appointments.filter(apt => 
-                    apt.isExisting && apt.isDeleted
-                );
-
-                // Prepare save data
-                const saveData = {
-                    isNewClient: isNewClient,
-                    kNumber: currentClient.kNumber,
-                    clientData: clientData,
-                    appointments: validAppointments,
-                    appointmentOperations: {
-                        new: newAppointments,
-                        modified: modifiedAppointments,
-                        deleted: deletedAppointments
-                    }
-                };
-
-                console.log('💾 Saving data:', saveData);
-
-                // Show loading
-                showLoading('Saving client and appointments...');
-
-                // Send to backend
-                const response = await fetch(WEBHOOKS.save, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(saveData)
-                });
-
-                const result = await response.json();
-                console.log('💾 Save result:', result);
-
-                if (result.success) {
-                    showSuccessPage(result, {
-                        newCount: newAppointments.length,
-                        modifiedCount: modifiedAppointments.length,
-                        deletedCount: deletedAppointments.length,
-                        clientName: `${clientData.firstName} ${clientData.lastName}`
-                    });
-                } else {
-                    showError(result.message || 'Save failed - please try again');
-                }
-
-            } catch (error) {
-                console.error('💥 Save error:', error);
-                showError('Save failed - please check your connection and try again');
-            }
-        }
-
-        // Validate required fields
-        function validateRequiredFields() {
-            const requiredFields = [
-                { id: 'firstName', name: 'First Name' },
-                { id: 'lastName', name: 'Last Name' },
-                { id: 'phone', name: 'Phone' },
-                { id: 'address', name: 'Address' },
-                { id: 'city', name: 'City' },
-                { id: 'province', name: 'Province' },
-                { id: 'postalCode', name: 'Postal Code' }
-            ];
-
-            for (let field of requiredFields) {
-                const element = document.getElementById(field.id);
-                if (!element.value.trim()) {
-                    showError(`Please fill in the ${field.name} field`);
-                    element.focus();
-                    return false;
-                }
-            }
-
-            // Check for at least one valid appointment
-            const validAppointments = appointments.filter(apt => 
-                !apt.isDraft && !apt.isDeleted && apt.date && apt.time && apt.location
-            );
-
-            if (validAppointments.length === 0) {
-                showError('Please add at least one complete appointment');
-                return false;
-            }
-
-            return true;
-        }
-
-        // Show success page with detailed information
-        function showSuccessPage(result, operations) {
-            document.getElementById('portalSection').classList.add('hidden');
-            document.getElementById('successSection').classList.remove('hidden');
-
-            // Set success message
-            const successMessage = `Successfully saved ${operations.clientName}${isNewClient ? ' (new client)' : ' (existing client)'}`;
-            document.getElementById('successMessage').textContent = successMessage;
-
-            // Build detailed operations list
-            const operationsList = [];
-            if (operations.newCount > 0) {
-                operationsList.push(`<li><span class="operation-icon">➕</span>Added ${operations.newCount} new appointment${operations.newCount === 1 ? '' : 's'}</li>`);
-            }
-            if (operations.modifiedCount > 0) {
-                operationsList.push(`<li><span class="operation-icon">✏️</span>Modified ${operations.modifiedCount} existing appointment${operations.modifiedCount === 1 ? '' : 's'}</li>`);
-            }
-            if (operations.deletedCount > 0) {
-                operationsList.push(`<li><span class="operation-icon">🗑️</span>Deleted ${operations.deletedCount} appointment${operations.deletedCount === 1 ? '' : 's'}</li>`);
-            }
-
-            const successDetails = `
-                <div class="success-summary">
-                    <strong>Operations Completed:</strong>
-                </div>
-                <ul class="operation-list">
-                    ${operationsList.join('')}
-                </ul>
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #c3e6cb; color: #155724; font-size: 0.9em;">
-                    <strong>K Number:</strong> ${currentClient.kNumber}<br>
-                    <strong>Time:</strong> ${new Date().toLocaleString()}<br>
-                    ${result.message ? `<strong>System:</strong> ${result.message}` : ''}
-                </div>
-            `;
-
-            document.getElementById('successDetails').innerHTML = successDetails;
-        }
-
-        // Start new booking
-        function startNewBooking() {
-            // Reset all state
-            currentClient = null;
-            isNewClient = false;
-            appointments = [];
-            appointmentCounter = 0;
-
-            // Clear forms
-            document.getElementById('kNumber').value = '';
-            clearClientForm();
-
-            // Hide sections
-            document.getElementById('clientSection').classList.add('hidden');
-            document.getElementById('appointmentsSection').classList.add('hidden');
-            document.getElementById('saveSection').classList.add('hidden');
-            document.getElementById('clientStatus').innerHTML = '';
-
-            // Show portal section and hide success
-            document.getElementById('successSection').classList.add('hidden');
-            document.getElementById('portalSection').classList.remove('hidden');
-
-            // Focus on K Number field
-            document.getElementById('kNumber').focus();
-        }
-
-        // Return to client (for modifications)
-        function returnToClient() {
-            document.getElementById('successSection').classList.add('hidden');
-            document.getElementById('portalSection').classList.remove('hidden');
-        }
-
-        // Show client status
-        function showClientStatus(message, type) {
-            const statusDiv = document.getElementById('clientStatus');
-            statusDiv.innerHTML = message;
-            statusDiv.className = `client-status ${type}`;
-        }
-
-        // Show error message
-        function showError(message) {
-            const statusDiv = document.getElementById('clientStatus');
-            statusDiv.innerHTML = `<div class="error-message">${message}</div>`;
-        }
-
-        // Show loading message
-        function showLoading(message) {
-            const statusDiv = document.getElementById('clientStatus');
-            statusDiv.innerHTML = `<div class="loading">${message}</div>`;
-        }
-
-        // Handle Enter key for login
-        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
-        });
-
-        // Handle Enter key for K Number lookup
-        document.getElementById('kNumber').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                lookupClient();
-            }
-        });
-
-        // Auto-uppercase K Number input
-        document.getElementById('kNumber').addEventListener('input', function(e) {
-            e.target.value = e.target.value.toUpperCase();
-        });
-
-        console.log('🚀 RRTS Frontend v2.8.0 - UX Improvements Loaded');
-        console.log('✅ Fixed: Removed unnecessary confirmation dialogs');
-        console.log('✅ Fixed: Added post-save confirmation page');
-        console.log('✅ Fixed: Chronological appointment sorting');
-    </script>
-</body>
-</html>
-
-<!-- Version: 2.8.0 - Frontend UX Improvements -->
+                const result = await response.json
