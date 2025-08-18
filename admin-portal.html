@@ -552,12 +552,17 @@
         let appointmentCounter = 0;
         let isNewClient = false;
 
-        // API endpoints - Update these to match your n8n webhook URLs
+        // API endpoints - RRTS 4 Webhook URLs
         const API_ENDPOINTS = {
-            LOGIN: 'https://production-nsrrt.up.railway.app/webhook/7f8b2a34-d8e1-4e9f-9c2e-5a1b3c4d5e6f',
+            LOGIN: 'https://production-nsrrt.up.railway.app/webhook/f5bd3c27-8e41-4bfc-9dcb-a2b7e8f4c1d0',
             LOOKUP: 'https://production-nsrrt.up.railway.app/webhook/46cc936f-a7cd-4c4a-82a8-e77ad99d8d75',
             SAVE: 'https://production-nsrrt.up.railway.app/webhook/08c48bb1-74a4-4e24-a0b6-9966de1fef1c'
         };
+
+        // Frontend Appointment Management Fixes v3.2.0
+        // Fix 1: Update client data collection to use civicAddress
+        // Fix 2: Fix appointment modification tracking
+        // Fix 3: Enable appointment deletion for existing appointments
 
         // Login function
         async function login() {
@@ -607,32 +612,6 @@
             errorDiv.classList.remove('hidden');
         }
 
-        // Handle Enter key in login fields
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Rural Route Transportation Admin Portal Loaded');
-            
-            // Focus on username field
-            document.getElementById('username').focus();
-            
-            // Handle Enter key for login
-            document.getElementById('username').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    document.getElementById('password').focus();
-                }
-            });
-            
-            document.getElementById('password').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    login();
-                }
-            });
-        });
-
-        // Frontend Appointment Management Fixes v3.2.0
-        // Fix 1: Update client data collection to use civicAddress
-        // Fix 2: Fix appointment modification tracking
-        // Fix 3: Enable appointment deletion for existing appointments
-
         // 1. UPDATE CLIENT DATA COLLECTION FUNCTION
         function collectClientData() {
             return {
@@ -675,13 +654,15 @@
                     appointment.isModified = true;
                     appointment.modified_at = new Date().toISOString();
                     console.log('✏️ Marked existing appointment as modified:', appointmentId);
+                    
+                    // Update visual indicators immediately
+                    updateAppointmentDisplay(appointmentId);
                 }
             }
             
-            // Special handling for date/time changes
-            if (field === 'date' || field === 'time') {
-                // Update visual indicators immediately
-                updateAppointmentDisplay(appointmentId);
+            // Mark as no longer a draft if all required fields are filled
+            if (appointment.date && appointment.time && appointment.location) {
+                appointment.isDraft = false;
             }
             
             console.log('📝 Updated appointment data:', appointment);
@@ -914,7 +895,14 @@
                 if (result.found) {
                     // Existing client found
                     loadClientData(result.clientData, result.appointments || []);
-                    showClientStatus(`Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${result.appointments && result.appointments.length > 0 ? ` (${result.appointments.length} future appointments)` : ''}`, 'found');
+                    
+                    // Count future appointments for display
+                    const futureAppointments = (result.appointments || []).filter(apt => {
+                        const appointmentDate = new Date(apt.date + ' ' + apt.time);
+                        return appointmentDate > new Date();
+                    });
+                    
+                    showClientStatus(`Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${futureAppointments.length > 0 ? ` (${futureAppointments.length} future appointments)` : ''}`, 'found');
                 } else {
                     // New client
                     setupNewClient(kNumber);
@@ -1198,7 +1186,7 @@
                     ${operationsList.join('')}
                 </ul>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #c3e6cb; color: #155724; font-size: 0.9em;">
-                    <strong>K Number:</strong> ${currentClient.kNumber}<br>
+                    <strong>K Number:</strong> ${currentClient?.kNumber || document.getElementById('kNumber').value}<br>
                     <strong>Time:</strong> ${new Date().toLocaleString()}<br>
                     ${result.message ? `<strong>System:</strong> ${result.message}` : ''}
                 </div>
@@ -1284,6 +1272,14 @@
 
         console.log('✅ Frontend appointment management fixes v3.2.0 loaded');
 
+        // Version: v3.2.0 - Frontend appointment management fixes with RRTS 4 integration
+        // - v3.0.0: Original frontend functions
+        // - v3.1.0: Added basic appointment tracking  
+        // - v3.2.0: Fixed civicAddress mapping, appointment modification tracking, deletion functionality, 
+        //           simplified location options, added appointment sorting, updated to RRTS 4 login system,
+        //           improved future appointment filtering, and enhanced visual modification indicators
+
     </script>
 </body>
-</html>
+</html>.remove('hidden');
+            document.getElementById('appointmentsSection').classList
