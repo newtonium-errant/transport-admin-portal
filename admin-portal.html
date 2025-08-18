@@ -858,18 +858,13 @@
             formFields.forEach(field => {
                 document.getElementById(field).value = '';
             });
-            
-            // Set default province to NS
-            document.getElementById('province').value = 'NS';
-            
-            // Clear appointments list
-            document.getElementById('appointmentsList').innerHTML = '';
+            document.getElementById('province').value = 'NS'; // Default to Nova Scotia
         }
 
         // Add new appointment
         function addAppointment() {
             appointmentCounter++;
-            const appointmentId = `appointment-${appointmentCounter}`;
+            const appointmentId = `appointment-${Date.now()}-${appointmentCounter}`;
             
             const appointment = {
                 id: appointmentId,
@@ -882,15 +877,28 @@
                 isDeleted: false,
                 isDraft: true
             };
-            
+
             appointments.push(appointment);
             displayAppointments();
+            
+            // Focus on the date field of the new appointment
+            setTimeout(() => {
+                const dateInput = document.getElementById(`date-${appointmentId}`);
+                if (dateInput) {
+                    dateInput.focus();
+                }
+            }, 100);
         }
 
-        // Display appointments
+        // Display all appointments
         function displayAppointments() {
             const appointmentsList = document.getElementById('appointmentsList');
             appointmentsList.innerHTML = '';
+
+            if (appointments.length === 0) {
+                appointmentsList.innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 20px;">No appointments scheduled. Click "Add Appointment" to begin.</p>';
+                return;
+            }
 
             appointments.forEach(appointment => {
                 const appointmentDiv = document.createElement('div');
@@ -959,14 +967,12 @@
                             <input type="text" 
                                    id="notes-${appointment.id}" 
                                    value="${appointment.notes}" 
-                                   placeholder="Optional notes"
+                                   placeholder="Optional notes..."
                                    onchange="updateAppointment('${appointment.id}', 'notes', this.value)"
                                    ${appointment.isDeleted ? 'disabled' : ''}>
                         </div>
                     </div>
                 `;
-
-                appointmentsList.appendChild(appointmentDiv);
 
                 // Add deleted overlay if needed
                 if (appointment.isDeleted) {
@@ -976,6 +982,8 @@
                     appointmentDiv.style.position = 'relative';
                     appointmentDiv.appendChild(overlay);
                 }
+
+                appointmentsList.appendChild(appointmentDiv);
             });
         }
 
@@ -996,7 +1004,7 @@
                     clientData: clientData,
                     appointments: validAppointments,
                     isNewClient: isNewClient,
-                    submittedBy: 'Admin Portal',
+                    submittedBy: 'admin',
                     submittedAt: new Date().toISOString()
                 };
 
@@ -1015,8 +1023,10 @@
 
                 if (result.success) {
                     showSuccessPage(result, {
-                        ...operations,
-                        appointmentCount: result.appointmentsSaved || validAppointments.length,
+                        newCount: operations.newCount,
+                        modifiedCount: operations.modifiedCount,
+                        deletedCount: operations.deletedCount,
+                        totalCount: validAppointments.length,
                         clientName: `${clientData.firstName} ${clientData.lastName}`
                     });
                 } else {
@@ -1095,7 +1105,7 @@
                     ${operationsList.join('')}
                 </ul>
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #c3e6cb; color: #155724; font-size: 0.9em;">
-                    <strong>K Number:</strong> ${currentClient?.kNumber || document.getElementById('kNumber').value}<br>
+                    <strong>K Number:</strong> ${currentClient.kNumber}<br>
                     <strong>Time:</strong> ${new Date().toLocaleString()}<br>
                     ${result.message ? `<strong>System:</strong> ${result.message}` : ''}
                 </div>
@@ -1137,46 +1147,35 @@
         }
 
         // Utility functions
+        function showLoading(show) {
+            const indicator = document.getElementById('loadingIndicator');
+            if (show) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
         function showError(message) {
             showLoading(false);
-            const clientStatus = document.getElementById('clientStatus');
-            clientStatus.innerHTML = `<div class="error">${message}</div>`;
+            const statusDiv = document.getElementById('clientStatus');
+            statusDiv.innerHTML = `<div class="error">${message}</div>`;
         }
 
         function showClientStatus(message, type) {
             showLoading(false);
-            const clientStatus = document.getElementById('clientStatus');
-            clientStatus.innerHTML = `<div class="client-status status-${type}">${message}</div>`;
-        }
-
-        function showLoading(show) {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            if (show) {
-                loadingIndicator.classList.remove('hidden');
-            } else {
-                loadingIndicator.classList.add('hidden');
-            }
+            const statusDiv = document.getElementById('clientStatus');
+            statusDiv.innerHTML = `<div class="client-status status-${type}">${message}</div>`;
         }
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            // Focus on K Number field when page loads
+            console.log('Rural Route Transportation Admin Portal Loaded');
             document.getElementById('kNumber').focus();
-            
-            // Add Enter key support for K Number lookup
-            document.getElementById('kNumber').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    lookupClient();
-                }
-            });
         });
 
         console.log('✅ Frontend appointment management fixes v3.2.0 loaded');
 
-        // Version: v3.2.0 - Frontend appointment management fixes  
-        // - v3.0.0: Original frontend functions
-        // - v3.1.0: Added basic appointment tracking
-        // - v3.2.0: Fixed civicAddress mapping, appointment modification tracking, deletion functionality, simplified location options, and added appointment sorting
     </script>
 </body>
 </html>
