@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRTS - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 300;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.9em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .metric {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric.success { color: #27ae60; }
+        .metric.warning { color: #f39c12; }
+        .metric.danger { color: #e74c3c; }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(52, 152, 219, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+
+        .action-btn.success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+
+        .action-btn.warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .action-btn .icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .appointments-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .appointment-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .appointment-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .appointment-item.pending {
+            border-left-color: #f39c12;
+        }
+
+        .appointment-item.confirmed {
+            border-left-color: #27ae60;
+        }
+
+        .appointment-item.flagged {
+            border-left-color: #e74c3c;
+            background-color: #fef9e7;
+        }
+
+        .appointment-info {
+            flex: 1;
+        }
+
+        .appointment-client {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .appointment-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .appointment-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-flagged {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3498db;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .login-section {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .system-status {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-operational {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .appointment-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="loginSection">
+            <div class="header">
+                <h1>Rural Route Transportation Services</h1>
+                <div class="header-info">
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+            <div class="login-section">
+                <h3 style="text-align: center; margin-bottom: 30px; color: #2c3e50;">Administrator Login</h3>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group" style="text-align: center; margin-top: 30px;">
+                    <button type="button" class="action-btn" onclick="login()" style="width: 100%; font-size: 18px; padding: 15px;">
+                        <span class="icon">🔐</span> Login
+                    </button>
+                </div>
+                <div id="loginError" class="hidden"></div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Section -->
+        <div id="dashboardSection" class="hidden">
+            <div class="header">
+                <h1>RRTS Dashboard</h1>
+                <div class="header-info">
+                    <span id="currentDateTime"></span>
+                    <span>•</span>
+                    <span id="welcomeUser">Welcome, Admin</span>
+                </div>
+                <div class="nav-links">
+                    <a href="dashboard.html" class="active">Dashboard</a>
+                    <a href="client-management.html">Clients</a>
+                    <a href="operations.html">Operations</a>
+                    <a href="driver-management.html">Drivers</a>
+                    <a href="admin.html">Admin</a>
+                    <a href="#" onclick="logout()">Logout</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- System Status -->
+                <div class="system-status">
+                    <div class="status-indicator status-operational">
+                        ✅ System Operational
+                    </div>
+                    <div class="status-indicator status-operational">
+                        ✅ Database Connected
+                    </div>
+                    <div class="status-indicator status-operational">
+                        ✅ API Services Online
+                    </div>
+                </div>
+
+                <!-- Metrics Dashboard -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">📅</div>
+                            <div class="card-title">Today's Appointments</div>
+                        </div>
+                        <div class="metric" id="todaysAppointments">--</div>
+                        <div class="metric-label">Scheduled Today</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">⚠️</div>
+                            <div class="card-title">Pending Approval</div>
+                        </div>
+                        <div class="metric warning" id="pendingApprovals">--</div>
+                        <div class="metric-label">Need Review</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">👥</div>
+                            <div class="card-title">Active Clients</div>
+                        </div>
+                        <div class="metric success" id="activeClients">--</div>
+                        <div class="metric-label">This Month</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">🚗</div>
+                            <div class="card-title">Driver Status</div>
+                        </div>
+                        <div class="metric" id="availableDrivers">--</div>
+                        <div class="metric-label">Available Today</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <a href="client-management.html" class="action-btn">
+                        <span class="icon">👤</span>
+                        Manage Clients
+                    </a>
+                    <a href="operations.html" class="action-btn success">
+                        <span class="icon">📋</span>
+                        Today's Operations
+                    </a>
+                    <a href="driver-management.html" class="action-btn secondary">
+                        <span class="icon">🚗</span>
+                        Driver Schedules
+                    </a>
+                    <button class="action-btn warning" onclick="viewPendingApprovals()">
+                        <span class="icon">⚠️</span>
+                        Review Approvals
+                    </button>
+                </div>
+
+                <!-- Today's Appointments -->
+                <div class="appointments-section">
+                    <h3 class="section-title">📅 Today's Appointments</h3>
+                    <div id="todaysAppointmentsList">
+                        <div class="loading">Loading today's appointments...</div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Flagged Appointments -->
+                <div class="appointments-section">
+                    <h3 class="section-title">⚠️ Appointments Requiring Attention</h3>
+                    <div id="flaggedAppointmentsList">
+                        <div class="loading">Loading flagged appointments...</div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="appointments-section">
+                    <h3 class="section-title">📊 Recent Activity</h3>
+                    <div id="recentActivityList">
+                        <div class="loading">Loading recent activity...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_ENDPOINTS = {
+            LOGIN: 'https://n8n.newtonium.ca/webhook/rrts-1-admin-login',
+            DASHBOARD_DATA: 'https://n8n.newtonium.ca/webhook/rrts-dashboard-data', // TODO: Create this endpoint
+        };
+
+        // Global variables
+        let isLoggedIn = false;
+        let currentUser = null;
+        let dashboardData = null;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('RRTS Dashboard Loaded');
+            updateDateTime();
+            setInterval(updateDateTime, 60000); // Update every minute
+            
+            // Check if already logged in (session storage)
+            const savedUser = sessionStorage.getItem('rrts_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
+                loadDashboardData();
+            } else {
+                showLogin();
+            }
+            
+            // Focus on username field initially
+            document.getElementById('username').focus();
+            
+            // Handle Enter key for login
+            document.getElementById('username').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('password').focus();
+                }
+            });
+            
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+        });
+
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const dateTimeString = now.toLocaleDateString('en-CA', options);
+            
+            const currentDateElement = document.getElementById('currentDate');
+            const currentDateTimeElement = document.getElementById('currentDateTime');
+            
+            if (currentDateElement) {
+                currentDateElement.textContent = dateTimeString.split(' at ')[0];
+            }
+            if (currentDateTimeElement) {
+                currentDateTimeElement.textContent = dateTimeString;
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_ENDPOINTS.LOGIN, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+                console.log('Login result:', result);
+
+                if (result.success) {
+                    isLoggedIn = true;
+                    currentUser = { username, role: result.role || 'admin' };
+                    sessionStorage.setItem('rrts_user', JSON.stringify(currentUser));
+                    
+                    showDashboard();
+                    loadDashboardData();
+                } else {
+                    showError(result.message || 'Invalid username or password');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Login failed - please try again');
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            
+            if (currentUser) {
+                document.getElementById('welcomeUser').textContent = `Welcome, ${currentUser.username}`;
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                // TODO: Replace with actual dashboard data endpoint
+                // For now, simulate some data
+                const mockData = {
+                    todaysAppointments: 8,
+                    pendingApprovals: 2,
+                    activeClients: 45,
+                    availableDrivers: 3,
+                    todaysSchedule: [
+                        {
+                            id: 1,
+                            client: 'John Smith (K1234567)',
+                            time: '09:00',
+                            location: 'New Minas Clinic',
+                            status: 'confirmed',
+                            driver: 'Andrew Newton'
+                        },
+                        {
+                            id: 2,
+                            client: 'Jane Doe (K2345678)',
+                            time: '10:30',
+                            location: 'Greenwood Clinic',
+                            status: 'pending',
+                            driver: 'TBD'
+                        },
+                        {
+                            id: 3,
+                            client: 'Bob Johnson (K3456789)',
+                            time: '14:00',
+                            location: 'Middleton Clinic',
+                            status: 'flagged',
+                            driver: 'Andrew Newton',
+                            flagReason: 'Short notice - requires approval'
+                        }
+                    ],
+                    flaggedAppointments: [
+                        {
+                            id: 3,
+                            client: 'Bob Johnson (K3456789)',
+                            date: 'Today',
+                            time: '14:00',
+                            location: 'Middleton Clinic',
+                            reason: 'Less than 48 hours notice',
+                            hoursNotice: 18
+                        },
+                        {
+                            id: 4,
+                            client: 'Sarah Wilson (K4567890)',
+                            date: 'Tomorrow',
+                            time: '11:00',
+                            location: 'New Minas Clinic',
+                            reason: 'No drivers available',
+                            hoursNotice: 30
+                        }
+                    ],
+                    recentActivity: [
+                        {
+                            type: 'appointment_created',
+                            message: 'New appointment created for K1234567',
+                            time: '2 hours ago',
+                            user: 'admin'
+                        },
+                        {
+                            type: 'appointment_modified',
+                            message: 'Appointment K2345678 time changed',
+                            time: '3 hours ago',
+                            user: 'admin'
+                        },
+                        {
+                            type: 'client_added',
+                            message: 'New client K5678901 added',
+                            time: '5 hours ago',
+                            user: 'admin'
+                        }
+                    ]
+                };
+
+                updateDashboardMetrics(mockData);
+                renderTodaysAppointments(mockData.todaysSchedule);
+                renderFlaggedAppointments(mockData.flaggedAppointments);
+                renderRecentActivity(mockData.recentActivity);
+
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+                showDashboardError();
+            }
+        }
+
+        function updateDashboardMetrics(data) {
+            document.getElementById('todaysAppointments').textContent = data.todaysAppointments;
+            document.getElementById('pendingApprovals').textContent = data.pendingApprovals;
+            document.getElementById('activeClients').textContent = data.activeClients;
+            document.getElementById('availableDrivers').textContent = data.availableDrivers;
+        }
+
+        function renderTodaysAppointments(appointments) {
+            const container = document.getElementById('todaysAppointmentsList');
+            
+            if (!appointments || appointments.length === 0) {
+                container.innerHTML = '<div class="empty-state">No appointments scheduled for today</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            appointments.forEach(appointment => {
+                const appointmentDiv = document.createElement('div');
+                appointmentDiv.className = `appointment-item ${appointment.status}`;
+                
+                appointmentDiv.innerHTML = `
+                    <div class="appointment-info">
+                        <div class="appointment-client">${appointment.client}</div>
+                        <div class="appointment-details">
+                            ${appointment.time} • ${appointment.location} • Driver: ${appointment.driver}
+                            ${appointment.flagReason ? `<br><strong>⚠️ ${appointment.flagReason}</strong>` : ''}
+                        </div>
+                    </div>
+                    <div class="appointment-status status-${appointment.status}">
+                        ${appointment.status}
+                    </div>
+                `;
+                
+                container.appendChild(appointmentDiv);
+            });
+        }
+
+        function renderFlaggedAppointments(flaggedAppointments) {
+            const container = document.getElementById('flaggedAppointmentsList');
+            
+            if (!flaggedAppointments || flaggedAppointments.length === 0) {
+                container.innerHTML = '<div class="empty-state">No appointments requiring attention</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            flaggedAppointments.forEach(appointment => {
+                const appointmentDiv = document.createElement('div');
+                appointmentDiv.className = 'appointment-item flagged';
+                
+                appointmentDiv.innerHTML = `
+                    <div class="appointment-info">
+                        <div class="appointment-client">${appointment.client}</div>
+                        <div class="appointment-details">
+                            ${appointment.date} at ${appointment.time} • ${appointment.location}<br>
+                            <strong>⚠️ ${appointment.reason}</strong> (${appointment.hoursNotice} hours notice)
+                        </div>
+                    </div>
+                    <div class="appointment-status status-flagged">
+                        Needs Review
+                    </div>
+                `;
+                
+                container.appendChild(appointmentDiv);
+            });
+        }
+
+        function renderRecentActivity(activities) {
+            const container = document.getElementById('recentActivityList');
+            
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<div class="empty-state">No recent activity</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            activities.forEach(activity => {
+                const activityDiv = document.createElement('div');
+                activityDiv.className = 'appointment-item';
+                
+                const icon = getActivityIcon(activity.type);
+                
+                activityDiv.innerHTML = `
+                    <div class="appointment-info">
+                        <div class="appointment-client">${icon} ${activity.message}</div>
+                        <div class="appointment-details">
+                            ${activity.time} • by ${activity.user}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(activityDiv);
+            });
+        }
+
+        function getActivityIcon(type) {
+            const icons = {
+                appointment_created: '📅',
+                appointment_modified: '✏️',
+                appointment_deleted: '🗑️',
+                client_added: '👤',
+                client_modified: '✏️',
+                driver_assigned: '🚗',
+                system_alert: '⚠️'
+            };
+            return icons[type] || '📋';
+        }
+
+        function viewPendingApprovals() {
+            // TODO: Navigate to approval management page or show modal
+            alert('Pending approvals functionality will be implemented in the operations module');
+        }
+
+        function showDashboardError() {
+            document.getElementById('todaysAppointmentsList').innerHTML = 
+                '<div class="error">Failed to load appointment data</div>';
+            document.getElementById('flaggedAppointmentsList').innerHTML = 
+                '<div class="error">Failed to load flagged appointments</div>';
+            document.getElementById('recentActivityList').innerHTML = 
+                '<div class="error">Failed to load activity data</div>';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function logout() {
+            isLoggedIn = false;
+            currentUser = null;
+            sessionStorage.removeItem('rrts_user');
+            
+            // Clear form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+            
+            showLogin();
+        }
+
+    </script>
+</body>
+</html>
+<!-- 
+Version: v1.0.0 - RRTS Dashboard
+- v1.0.0: Initial dashboard with login, metrics overview, today's appointments
+- Features: System status indicators, appointment metrics, quick actions navigation
+- Real-time dashboard data loading with mock data structure
+- Today's schedule view with status indicators (confirmed/pending/flagged)
+- Flagged appointments requiring attention with approval workflow hooks
+- Recent activity feed for system monitoring
+- Responsive design with mobile support
+- Session-based authentication with automatic login state persistence
+- Ready for integration with dashboard data API endpoint
+-->
