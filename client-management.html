@@ -526,17 +526,17 @@
         // Hide K Number display for existing clients
         document.getElementById('kNumberDisplay').classList.add('hidden');
 
-        // Populate client form fields
-        document.getElementById('firstName').value = clientData.firstName || clientData.firstname || '';
-        document.getElementById('lastName').value = clientData.lastName || clientData.lastname || '';
+        // Populate client form fields - using correct field names from Supabase
+        document.getElementById('firstName').value = clientData.firstName || '';
+        document.getElementById('lastName').value = clientData.lastName || '';
         document.getElementById('phone').value = clientData.phone || '';
         document.getElementById('email').value = clientData.email || '';
         document.getElementById('address').value = clientData.address || '';
         document.getElementById('city').value = clientData.city || '';
         document.getElementById('province').value = clientData.province || '';
-        document.getElementById('postalCode').value = clientData.postalCode || clientData.postal_code || '';
-        document.getElementById('emergencyContact').value = clientData.emergencyContact || clientData.emergency_contact || '';
-        document.getElementById('accessibilityNeeds').value = clientData.accessibilityNeeds || clientData.accessibility_needs || '';
+        document.getElementById('postalCode').value = clientData.postalCode || '';
+        document.getElementById('emergencyContact').value = clientData.emergencyContactName || '';
+        document.getElementById('accessibilityNeeds').value = clientData.specialNeeds || '';
         document.getElementById('notes').value = clientData.notes || '';
 
         // Load existing appointments
@@ -553,17 +553,15 @@
         appointments = [];
         appointmentCounter = 0;
         
-        // Add existing appointments to the array
+        // Add existing appointments to the array - using correct field mapping
         existingAppointments.forEach(apt => {
             const appointment = {
                 id: apt.id || `existing_${appointmentCounter}`,
-                date: apt.date || apt.appointment_date,
-                time: apt.time || apt.appointment_time,
-                pickupLocation: apt.pickupLocation || apt.pickup_location || '',
-                destination: apt.destination || '',
-                appointmentType: apt.appointmentType || apt.appointment_type || '',
+                date: apt.appointmenttime ? apt.appointmenttime.split('T')[0] : (apt.date || ''),
+                time: apt.appointmenttime ? apt.appointmenttime.split('T')[1].substring(0,5) : (apt.time || ''),
+                destination: apt.locationname || apt.destination || '',
                 notes: apt.notes || '',
-                status: apt.status || 'scheduled',
+                status: apt.appointmentstatus || apt.status || 'scheduled',
                 isExisting: true
             };
             appointments.push(appointment);
@@ -588,9 +586,7 @@
             id: `new_${Date.now()}`,
             date: '',
             time: '',
-            pickupLocation: '',
             destination: '',
-            appointmentType: '',
             notes: '',
             status: 'scheduled',
             isExisting: false
@@ -614,7 +610,7 @@
             const statusBadge = appointment.isExisting ? '<span class="status-confirmed">Existing</span>' : '';
             
             appointmentDiv.innerHTML = `
-                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h4>Appointment ${index + 1} ${statusBadge}</h4>
                 </div>
                 <div class="form-row">
@@ -629,26 +625,20 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Pickup Location <span class="required">*</span></label>
-                        <input type="text" id="pickup_${index}" value="${appointment.pickupLocation}" placeholder="123 Main St, Halifax, NS" ${appointment.isExisting ? 'readonly' : ''}>
+                        <label>Pickup Location</label>
+                        <input type="text" id="pickup_${index}" value="Client Address" readonly style="background-color: #f8f9fa; color: #6c757d;">
+                        <div class="form-hint">Pickup location is automatically set to client's address</div>
                     </div>
                     <div class="form-group">
                         <label>Destination <span class="required">*</span></label>
-                        <input type="text" id="destination_${index}" value="${appointment.destination}" placeholder="Hospital, Clinic, etc." ${appointment.isExisting ? 'readonly' : ''}>
+                        <select id="destination_${index}" ${appointment.isExisting ? 'disabled' : ''}>
+                            <option value="">Select Destination</option>
+                            <option value="NuVista Psychedelic - Greenwood" ${appointment.destination === 'NuVista Psychedelic - Greenwood' || appointment.destination === 'NuVista Greenwood' ? 'selected' : ''}>NuVista Psychedelic - Greenwood</option>
+                            <option value="NuVista Psychedelic - New Minas" ${appointment.destination === 'NuVista Psychedelic - New Minas' || appointment.destination === 'NuVista New Minas' ? 'selected' : ''}>NuVista Psychedelic - New Minas</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Appointment Type</label>
-                        <select id="type_${index}" ${appointment.isExisting ? 'disabled' : ''}>
-                            <option value="">Select Type</option>
-                            <option value="medical" ${appointment.appointmentType === 'medical' ? 'selected' : ''}>Medical Appointment</option>
-                            <option value="shopping" ${appointment.appointmentType === 'shopping' ? 'selected' : ''}>Shopping Trip</option>
-                            <option value="personal" ${appointment.appointmentType === 'personal' ? 'selected' : ''}>Personal Business</option>
-                            <option value="social" ${appointment.appointmentType === 'social' ? 'selected' : ''}>Social Visit</option>
-                            <option value="other" ${appointment.appointmentType === 'other' ? 'selected' : ''}>Other</option>
-                        </select>
-                    </div>
                     <div class="form-group">
                         <label>Notes</label>
                         <input type="text" id="notes_${index}" value="${appointment.notes}" placeholder="Any special instructions" ${appointment.isExisting ? 'readonly' : ''}>
@@ -673,9 +663,7 @@
 
         appointment.date = document.getElementById(`date_${index}`).value;
         appointment.time = document.getElementById(`time_${index}`).value;
-        appointment.pickupLocation = document.getElementById(`pickup_${index}`).value;
         appointment.destination = document.getElementById(`destination_${index}`).value;
-        appointment.appointmentType = document.getElementById(`type_${index}`).value;
         appointment.notes = document.getElementById(`notes_${index}`).value;
         
         console.log('Updated appointment:', appointment);
@@ -705,8 +693,8 @@
         // Validate appointments
         const newAppointments = appointments.filter(apt => !apt.isExisting);
         for (let apt of newAppointments) {
-            if (!apt.date || !apt.time || !apt.pickupLocation || !apt.destination) {
-                showError('Please fill out all required appointment fields (Date, Time, Pickup Location, Destination)');
+            if (!apt.date || !apt.time || !apt.destination) {
+                showError('Please fill out all required appointment fields (Date, Time, Destination)');
                 return;
             }
         }
@@ -723,7 +711,7 @@
                 city: document.getElementById('city').value.trim(),
                 province: document.getElementById('province').value,
                 postalCode: document.getElementById('postalCode').value.trim(),
-                emergencyContact: document.getElementById('emergencyContact').value.trim(),
+                emergencyContactName: document.getElementById('emergencyContact').value.trim(),
                 accessibilityNeeds: document.getElementById('accessibilityNeeds').value,
                 notes: document.getElementById('notes').value.trim()
             };
@@ -854,7 +842,8 @@
 </body>
 </html>
 <!-- 
-Version: v1.2.0 - RRTS Client Management Portal - Fixed JavaScript Errors
+Version: v1.2.1 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+- v1.2.1: Fixed client data structure, removed pickup location field, simplified appointments
 - v1.2.0: Fixed invalid regular expression and missing function errors
 - v1.1.6: Added CSS for visual states
 - v1.1.5: Fixed edit and save functions
@@ -868,6 +857,8 @@ Version: v1.2.0 - RRTS Client Management Portal - Fixed JavaScript Errors
 - Case-insensitive K-number search with format validation (K + 7 digits)
 - K-number display field for new clients 
 - Enhanced appointment management with existing appointment editing
+- Pickup location automatically set to client address
+- Destination dropdown with NuVista locations
 - Responsive design with navigation header
 - Complete form validation and error handling
 - Ready for integration with existing RRTS workflows
