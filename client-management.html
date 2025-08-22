@@ -590,58 +590,70 @@
   	  }
 
   	  // Load existing client data
-  	  function loadClientData(clientData, existingAppointments = []) {
-  	      isNewClient = false;
-  	      currentClient = clientData;
+	function loadClientData(clientData, existingAppointments = []) {
+  	  isNewClient = false;
+  	  currentClient = clientData;
 
-    	    // Hide K Number display for existing clients
-     	   document.getElementById('kNumberDisplay').classList.add('hidden');
+  	  // Hide K Number display for existing clients
+  	  document.getElementById('kNumberDisplay').classList.add('hidden');
 
-      	  // Populate client form fields
-     	   document.getElementById('firstName').value = clientData.firstName || clientData.firstname || '';
-    	    document.getElementById('lastName').value = clientData.lastName || clientData.lastname || '';
-   	     document.getElementById('phone').value = clientData.phone || '';
-    	    document.getElementById('email').value = clientData.email || '';
-   	     document.getElementById('address').value = clientData.civicAddress || clientData.address || '';
-   	     document.getElementById('city').value = clientData.city || '';
-   	     document.getElementById('province').value = clientData.province || clientData.prov || 'NS';
-    	    document.getElementById('postalCode').value = clientData.postalCode || '';
-   	     document.getElementById('emergencyContactName').value = clientData.emergencyContactName || clientData.emergency_contact_name || '';
-   	     document.getElementById('emergencyContactNumber').value = clientData.emergencyContactNumber || clientData.emergency_contact_number || '';
-   	     document.getElementById('notes').value = clientData.notes || '';
-   	     document.getElementById('preferredDriver').value = clientData.preferredDriver || clientData.preferreddriver || '';
-    	    document.getElementById('requiresNonMaleDriver').checked = clientData.driver_gender_requirement === 'non-male';
+ 	   // Populate client form fields
+ 	   document.getElementById('firstName').value = clientData.firstName || clientData.firstname || '';
+  	  document.getElementById('lastName').value = clientData.lastName || clientData.lastname || '';
+ 	   document.getElementById('phone').value = clientData.phone || '';
+ 	   document.getElementById('email').value = clientData.email || '';
+   	 document.getElementById('address').value = clientData.civicAddress || clientData.address || '';
+  	  document.getElementById('city').value = clientData.city || '';
+  	  document.getElementById('province').value = clientData.province || clientData.prov || 'NS';
+  	  document.getElementById('postalCode').value = clientData.postalCode || '';
+  	  document.getElementById('emergencyContactName').value = clientData.emergencyContactName || clientData.emergency_contact_name || '';
+  	  document.getElementById('emergencyContactNumber').value = clientData.emergencyContactNumber || clientData.emergency_contact_number || '';
+  	  document.getElementById('notes').value = clientData.notes || '';
+  	  document.getElementById('preferredDriver').value = clientData.preferredDriver || clientData.preferreddriver || '';
+ 	   document.getElementById('requiresNonMaleDriver').checked = clientData.driver_gender_requirement === 'non-male';
 
-    	    // Load existing appointments
-    	    appointments = [];
-   	     appointmentCounter = 0;
+  	  // Reset appointments array and counter
+  	  appointments = [];
+   	 appointmentCounter = 0;
+    
+   	 if (existingAppointments && existingAppointments.length > 0) {
+   	     console.log('📅 Loading existing appointments:', existingAppointments);
         
-     	   if (existingAppointments && existingAppointments.length > 0) {
-     	       console.log('📅 Loading existing appointments:', existingAppointments);
+  	      // Filter for future appointments only
+   	     const futureAppointments = existingAppointments.filter(apt => {
+  	          const appointmentDate = new Date(apt.date + ' ' + apt.time);
+   	         return appointmentDate > new Date();
+  	      });
+        
+   	     console.log('📅 Future appointments filtered:', futureAppointments.length);
+        
+  	      futureAppointments.forEach((apt, index) => {
+   	         const appointment = {
+    	            id: apt.id || (++appointmentCounter),
+    	            date: apt.date,
+     	           time: apt.time,
+    	            location: apt.location,
+     	           notes: apt.notes || '',
+      	          isExisting: true
+       	     };
             
-     	       // Filter for future appointments only
-    	        const futureAppointments = existingAppointments.filter(apt => {
-     	           const appointmentDate = new Date(apt.date + ' ' + apt.time);
-      	          return appointmentDate > new Date();
-     	       });
-            
-       	     futureAppointments.forEach(apt => {
-       	         addAppointmentToList({
-       	             id: apt.id,
-      	              date: apt.date,
-      	              time: apt.time,
-       	             location: apt.location,
-      	              notes: apt.notes || '',
-     	               isExisting: true
-     	           });
-    	        });
-    	    }
-
-     	   // Show the form sections
-     	   document.getElementById('clientSection').classList.remove('hidden');
-    	    document.getElementById('appointmentsSection').classList.remove('hidden');
-     	   document.getElementById('saveSection').classList.remove('hidden');
+     	       appointments.push(appointment);
+     	       console.log(`📅 Added appointment ${index + 1}:`, appointment);
+    	    });
+        
+     	   // CRITICAL: Update the display after loading all appointments
+     	   updateAppointmentsDisplay();
+    	    console.log('📅 Display updated with', appointments.length, 'appointments');
+ 	   } else {
+   	     // No appointments - make sure display is empty
+    	    updateAppointmentsDisplay();
    	 }
+
+ 	   // Show the form sections
+  	  document.getElementById('clientSection').classList.remove('hidden');
+  	  document.getElementById('appointmentsSection').classList.remove('hidden');
+ 	   document.getElementById('saveSection').classList.remove('hidden');
+	}
 
    	 // Add new appointment
    	 function addAppointment() {
@@ -912,7 +924,8 @@
 </body>
 </html>
 <!-- 
-Version: v1.1.0 - RRTS Client Management Portal
+Version: v1.1.1 - RRTS Client Management Portal
+- v1.1.1 fixed loadClientData()
 - v1.1.0: Uses real endpoints and data
 - v1.0.0: Initial client management page extracted from main admin portal
 - Features: Client lookup, add/edit client info, appointment management
