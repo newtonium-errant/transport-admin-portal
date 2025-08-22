@@ -650,19 +650,45 @@
             }
         }
 
-        function showLogin() {
-            document.getElementById('loginSection').classList.remove('hidden');
-            document.getElementById('dashboardSection').classList.add('hidden');
-        }
+	function updateCurrentTime() {
+  	  const now = new Date();
+  	  const options = {
+    	    weekday: 'long',
+  	      year: 'numeric',
+   	     month: 'long',
+   	     day: 'numeric',
+   	     hour: '2-digit',
+    	    minute: '2-digit'
+  	  };
+ 	   const dateTimeString = now.toLocaleDateString('en-CA', options);
+    
+  	  const currentDateElement = document.getElementById('currentDate');
+  	  const currentDateTimeElement = document.getElementById('currentDateTime');
+    
+ 	   if (currentDateElement) {
+  	      currentDateElement.textContent = dateTimeString.split(' at ')[0];
+ 	   }
+  	  if (currentDateTimeElement) {
+  	      currentDateTimeElement.textContent = dateTimeString;
+  	  }
+	}
 
-        function showDashboard() {
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('dashboardSection').classList.remove('hidden');
-            
-            if (currentUser) {
-                document.getElementById('welcomeUser').textContent = `Welcome, ${currentUser.username}`;
-            }
-        }
+	function showLogin() {
+    	document.getElementById('loginSection').classList.remove('hidden');
+    	document.getElementById('dashboardSection').classList.add('hidden');
+	}
+
+	function showDashboard() {
+   	 document.getElementById('loginSection').classList.add('hidden');
+   	 document.getElementById('dashboardSection').classList.remove('hidden');
+    
+   	 if (currentUser) {
+    	    const welcomeElement = document.getElementById('welcomeUser');
+      	  if (welcomeElement) {
+      	      welcomeElement.textContent = `Welcome, ${currentUser.username}`;
+     	   }
+   	 }
+	}
 
 	async function loadDashboardData() {
 	    try {
@@ -913,7 +939,8 @@
 </body>
 </html>
 <!-- 
-Version: v1.1.1 - RRTS Dashboard
+Version: v1.1.2 - RRTS Dashboard
+- v1.1.2: fixes missing functions
 - v1.1.1: Uses actual data, updated endpoints
 - v1.0.0: Initial dashboard with login, metrics overview, today's appointments
 - Features: System status indicators, appointment metrics, quick actions navigation
