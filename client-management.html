@@ -652,10 +652,14 @@
                         <input type="text" id="notes_${index}" value="${appointment.notes}" placeholder="Any special instructions" ${appointment.isExisting ? 'readonly' : ''}>
                     </div>
                 </div>
-                ${!appointment.isExisting ? `
-                <div class="appointment-actions">
+		<div class="appointment-actions">
+                    ${!appointment.isExisting ? `
                     <button type="button" class="btn btn-primary" onclick="updateAppointment(${index})">Update</button>
                     <button type="button" class="btn btn-danger" onclick="removeAppointment(${index})">Remove</button>
+                    ` : `
+                    <button type="button" class="btn btn-secondary" onclick="editAppointment(${index})">Edit</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteAppointment(${index})">Delete</button>
+                    `}
                 </div>
                 ` : ''}
             `;
@@ -684,6 +688,92 @@
             updateAppointmentsList();
         }
     }
+
+	// Edit existing appointment
+	    function editAppointment(index) {
+        	const appointment = appointments[index];
+	        if (!appointment || !appointment.isExisting) return;
+        
+        	// Make the fields editable
+ 	       document.getElementById(`date_${index}`).removeAttribute('readonly');
+	        document.getElementById(`time_${index}`).removeAttribute('readonly');
+	        document.getElementById(`destination_${index}`).removeAttribute('disabled');
+ 	       document.getElementById(`notes_${index}`).removeAttribute('readonly');
+        
+ 	       // Change the buttons
+ 	       const actionsDiv = document.querySelector(`#appointmentsList .appointment-item:nth-child(${index + 1}) .appointment-actions`);
+ 	       if (actionsDiv) {
+ 	           actionsDiv.innerHTML = `
+  	              <button type="button" class="btn btn-primary" onclick="saveEditedAppointment(${index})">Save Changes</button>
+  	              <button type="button" class="btn btn-secondary" onclick="cancelEdit(${index})">Cancel</button>
+  	          `;
+ 	       }
+ 	   }
+
+ 	   // Save edited appointment
+	   function saveEditedAppointment(index) {
+ 	       const appointment = appointments[index];
+ 	       if (!appointment) return;
+        
+ 	     // Update the appointment data
+   	     appointment.date = document.getElementById(`date_${index}`).value;
+  	     appointment.time = document.getElementById(`time_${index}`).value;
+   	     appointment.destination = document.getElementById(`destination_${index}`).value;
+	     appointment.notes = document.getElementById(`notes_${index}`).value;
+        
+ 	       // Mark as modified for backend processing
+ 	       appointment.isModified = true;
+        
+ 	       console.log('Edited appointment:', appointment);
+        
+  	      // Refresh the display to make fields readonly again
+  	      updateAppointmentsList();
+  	  }
+
+ 	   // Cancel edit
+ 	   function cancelEdit(index) {
+ 	       // Simply refresh the display to revert changes
+ 	       updateAppointmentsList();
+	    }
+
+ 	   // Delete existing appointment
+ 	   function deleteAppointment(index) {
+  	      const appointment = appointments[index];
+  	      if (!appointment || !appointment.isExisting) return;
+        
+  	      if (confirm('Are you sure you want to delete this appointment?')) {
+  	          // Mark for deletion instead of removing from array
+  	          appointment.isDeleted = true;
+            
+  	          // Hide the appointment visually
+   	         const appointmentDiv = document.querySelector(`#appointmentsList .appointment-item:nth-child(${index + 1})`);
+   	         if (appointmentDiv) {
+   	             appointmentDiv.style.opacity = '0.5';
+   	             appointmentDiv.style.textDecoration = 'line-through';
+   	         }
+            
+   	         // Update the actions
+   	         const actionsDiv = document.querySelector(`#appointmentsList .appointment-item:nth-child(${index + 1}) .appointment-actions`);
+   	         if (actionsDiv) {
+   	             actionsDiv.innerHTML = `
+    	                <span style="color: #e74c3c; font-weight: bold;">Marked for Deletion</span>
+   	                 <button type="button" class="btn btn-secondary" onclick="undoDelete(${index})">Undo</button>
+   	             `;
+   	         }
+  	      }
+	    }
+
+	    // Undo delete
+ 	   function undoDelete(index) {
+  	      const appointment = appointments[index];
+   	     if (!appointment) return;
+        
+  	      // Remove deletion flag
+  	      appointment.isDeleted = false;
+        
+   	     // Refresh display
+  	      updateAppointmentsList();
+  	  }
 
     // Save client and appointments
     async function saveClient() {
@@ -858,7 +948,8 @@
 </body>
 </html>
 <!-- 
-Version: v1.2.2 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+Version: v1.2.3 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+- v1.2.3: added missing modify delete functions
 - v1.2.2: fixed missing elements
 - v1.2.1: Fixed client data structure, removed pickup location field, simplified appointments
 - v1.2.0: Fixed invalid regular expression and missing function errors
