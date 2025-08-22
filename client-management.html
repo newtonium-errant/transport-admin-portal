@@ -466,452 +466,454 @@
         </div>
     </div>
 
-    <script>
-        // API Configuration
-        const API_ENDPOINTS = {
-            LOOKUP: 'https://n8n.newtonium.ca/webhook/rrts-2-client-lookup',
-            SAVE: 'https://n8n.newtonium.ca/webhook/rrts-3-save-client-appointments'
-        };
+ 	<script>
+  	  // API Configuration for RRTS Client Management
+  	  const API_ENDPOINTS = {
+   	     LOGIN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login', // RRTS 4
+    	    LOOKUP: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/client-lookup', // RRTS 2
+    	    SAVE: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-client' // RRTS 3
+   	 };
 
-        // Global variables
-        let isNewClient = false;
-        let currentClient = null;
-        let appointments = [];
-        let appointmentCounter = 0;
+   	 // Global variables
+   	 let appointments = [];
+  	  let appointmentCounter = 0;
+  	  let isNewClient = false;
+  	  let currentClient = null;
+  	  let isLoggedIn = false;
+ 	   let currentUser = null;
 
-        // K Number validation and formatting
-        document.getElementById('kNumber').addEventListener('input', function(e) {
-            let value = e.target.value.toUpperCase();
+   	 // Initialize the page
+  	  document.addEventListener('DOMContentLoaded', function() {
+    	    console.log('RRTS Client Management Portal Loaded');
+   	     console.log('API Endpoints configured:', API_ENDPOINTS);
+        
+   	     // Check for existing session from dashboard
+   	     const savedUser = sessionStorage.getItem('rrts_user');
+   	     if (savedUser) {
+    	        try {
+      	          currentUser = JSON.parse(savedUser);
+        	        isLoggedIn = true;
+        	        console.log('User session found:', currentUser.username);
+       	     } catch (error) {
+         	       console.log('Invalid saved session, redirecting to dashboard');
+       	         window.location.href = 'dashboard.html';
+         	       return;
+       	     }
+      	  } else {
+      	      console.log('No user session found, redirecting to dashboard');
+      	      window.location.href = 'dashboard.html';
+      	      return;
+     	   }
+        
+     	   // Focus on K Number field initially
+    	    const kNumberField = document.getElementById('kNumber');
+     	   if (kNumberField) {
+    	        kNumberField.focus();
             
-            // Remove any non-K or non-numeric characters except K at start
-            if (value.length > 0 && !value.startsWith('K')) {
-                value = 'K' + value.replace(/[^0-9]/g, '');
-            }
-            value = value.replace(/[^K0-9]/g, '');
-            
-            // Limit to K + 7 digits
-            if (value.length > 8) {
-                value = value.substring(0, 8);
-            }
-            
-            e.target.value = value;
-            
-            // Validate format
-            const isValid = /^K\d{7}$/.test(value) || value === '';
-            const errorDiv = document.getElementById('kNumberError');
-            
-            if (value && !isValid) {
-                errorDiv.textContent = 'K Number must be K followed by exactly 7 digits';
-                errorDiv.classList.remove('hidden');
-            } else {
-                errorDiv.classList.add('hidden');
-            }
-        });
+      	      // Handle Enter key for lookup
+     	       kNumberField.addEventListener('keypress', function(e) {
+       	         if (e.key === 'Enter') {
+     	               lookupClient();
+         	       }
+       	     });
+   	     }
+  	  });
 
-        // Client lookup function
-        async function lookupClient() {
-            const kNumber = document.getElementById('kNumber').value.trim();
+   	 // Client lookup function
+   	 async function lookupClient() {
+   	     const kNumber = document.getElementById('kNumber').value.trim().toUpperCase();
+        
+     	   // Validate K Number format
+     	   if (!kNumber || !/^K\d{7}$/.test(kNumber)) {
+     	       showError('Invalid K Number format. Must be K followed by 7 digits (e.g., K7807878)');
+    	        return;
+    	    }
+
+      	  try {
+       	     showLoading(true);
             
-            if (!kNumber) {
-                showError('Please enter a K Number');
-                return;
-            }
+    	        const response = await fetch(API_ENDPOINTS.LOOKUP, {
+       	         method: 'POST',
+       	         headers: {
+            	        'Content-Type': 'application/json',
+           	     },
+          	      body: JSON.stringify({ kNumber: kNumber })
+         	   });
 
-            // Validate format
-            if (!/^K\d{7}$/.test(kNumber)) {
-                showError('Invalid K Number format. Must be K followed by 7 digits (e.g., K7807878)');
-                return;
-            }
+          	  if (!response.ok) {
+         	       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        	    }
 
-            try {
-                showLoading(true);
+         	   const result = await response.json();
+         	   console.log('Client lookup result:', result);
+
+         	   if (result.found) {
+        	        // Existing client found
+        	        loadClientData(result.clientData, result.appointments || []);
                 
-                const response = await fetch(API_ENDPOINTS.LOOKUP, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ kNumber: kNumber })
-                });
-
-                const result = await response.json();
-                console.log('Client lookup result:', result);
-
-                if (result.found) {
-                    // Existing client found
-                    loadClientData(result.clientData, result.appointments || []);
-                    
-                    // Count future appointments for display
-                    const futureAppointments = (result.appointments || []).filter(apt => {
-                        const appointmentDate = new Date(apt.date + ' ' + apt.time);
-                        return appointmentDate > new Date();
-                    });
-                    
-                    showClientStatus(`Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${futureAppointments.length > 0 ? ` (${futureAppointments.length} future appointments)` : ''}`, 'found');
-                } else {
-                    // New client
-                    setupNewClient(kNumber);
-                    showClientStatus('New Client - Please fill out all information', 'new');
-                }
-            } catch (error) {
-                console.error('Lookup error:', error);
-                showError('Client lookup failed - please try again');
-            }
-        }
-
-        // Setup for new client
-        function setupNewClient(kNumber) {
-            isNewClient = true;
-            currentClient = null;
-            appointments = [];
-            appointmentCounter = 0;
-
-            // Clear all form fields
-            clearClientForm();
-            
-            // Show the K Number for new clients
-            document.getElementById('displayKNumber').value = kNumber;
-            document.getElementById('kNumberDisplay').classList.remove('hidden');
-            
-            // Show the form sections
-            document.getElementById('clientSection').classList.remove('hidden');
-            document.getElementById('appointmentsSection').classList.remove('hidden');
-            document.getElementById('saveSection').classList.remove('hidden');
-        }
-
-        // Load existing client data
-        function loadClientData(clientData, existingAppointments = []) {
-            isNewClient = false;
-            currentClient = clientData;
-
-            // Hide K Number display for existing clients
-            document.getElementById('kNumberDisplay').classList.add('hidden');
-
-            // Populate client form fields
-            document.getElementById('firstName').value = clientData.firstName || '';
-            document.getElementById('lastName').value = clientData.lastName || '';
-            document.getElementById('phone').value = clientData.phone || '';
-            document.getElementById('email').value = clientData.email || '';
-            document.getElementById('address').value = clientData.civicAddress || clientData.address || '';
-            document.getElementById('city').value = clientData.city || '';
-            document.getElementById('province').value = clientData.province || clientData.prov || 'NS';
-            document.getElementById('postalCode').value = clientData.postalCode || '';
-            document.getElementById('emergencyContactName').value = clientData.emergencyContactName || clientData.emergency_contact_name || '';
-            document.getElementById('emergencyContactNumber').value = clientData.emergencyContactNumber || clientData.emergency_contact_number || '';
-            document.getElementById('notes').value = clientData.notes || '';
-            document.getElementById('preferredDriver').value = clientData.preferredDriver || clientData.preferreddriver || '';
-            document.getElementById('requiresNonMaleDriver').checked = clientData.driver_gender_requirement === 'non-male';
-
-            // Load existing appointments
-            appointments = [];
-            appointmentCounter = 0;
-            
-            if (existingAppointments && existingAppointments.length > 0) {
-                console.log('📅 Loading existing appointments:', existingAppointments);
+        	        // Count future appointments for display
+         	       const futureAppointments = (result.appointments || []).filter(apt => {
+        	            const appointmentDate = new Date(apt.date + ' ' + apt.time);
+       	             return appointmentDate > new Date();
+      	          });
                 
-                // Sort appointments by date (soonest first)
-                const sortedAppointments = existingAppointments.sort((a, b) => {
-                    const dateA = new Date(a.date + ' ' + a.time);
-                    const dateB = new Date(b.date + ' ' + b.time);
-                    return dateA - dateB;
-                });
+           	     showClientStatus(`Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${futureAppointments.length > 0 ? ` 	(${futureAppointments.length} future appointments)` : ''}`, 'found');
+       	     } else {
+             	   // New client
+             	   setupNewClient(kNumber);
+              	  showClientStatus('New Client - Please fill out all information', 'new');
+        	    }
+      	  } catch (error) {
+        	    console.error('Lookup error:', error);
+      	      showError(`Client lookup failed: ${error.message}`);
+       	 }
+  	  }
+	
+   	 // Setup for new client
+   	 function setupNewClient(kNumber) {
+   	     isNewClient = true;
+    	    currentClient = null;
+  	      appointments = [];
+   	     appointmentCounter = 0;
+
+      	  // Clear all form fields
+      	  clearClientForm();
+        
+    	    // Show the K Number for new clients
+     	   document.getElementById('displayKNumber').value = kNumber;
+     	   document.getElementById('kNumberDisplay').classList.remove('hidden');
+        
+    	    // Show the form sections
+    	    document.getElementById('clientSection').classList.remove('hidden');
+     	   document.getElementById('appointmentsSection').classList.remove('hidden');
+     	   document.getElementById('saveSection').classList.remove('hidden');
+  	  }
+
+  	  // Load existing client data
+  	  function loadClientData(clientData, existingAppointments = []) {
+  	      isNewClient = false;
+  	      currentClient = clientData;
+
+    	    // Hide K Number display for existing clients
+     	   document.getElementById('kNumberDisplay').classList.add('hidden');
+
+      	  // Populate client form fields
+     	   document.getElementById('firstName').value = clientData.firstName || clientData.firstname || '';
+    	    document.getElementById('lastName').value = clientData.lastName || clientData.lastname || '';
+   	     document.getElementById('phone').value = clientData.phone || '';
+    	    document.getElementById('email').value = clientData.email || '';
+   	     document.getElementById('address').value = clientData.civicAddress || clientData.address || '';
+   	     document.getElementById('city').value = clientData.city || '';
+   	     document.getElementById('province').value = clientData.province || clientData.prov || 'NS';
+    	    document.getElementById('postalCode').value = clientData.postalCode || '';
+   	     document.getElementById('emergencyContactName').value = clientData.emergencyContactName || clientData.emergency_contact_name || '';
+   	     document.getElementById('emergencyContactNumber').value = clientData.emergencyContactNumber || clientData.emergency_contact_number || '';
+   	     document.getElementById('notes').value = clientData.notes || '';
+   	     document.getElementById('preferredDriver').value = clientData.preferredDriver || clientData.preferreddriver || '';
+    	    document.getElementById('requiresNonMaleDriver').checked = clientData.driver_gender_requirement === 'non-male';
+
+    	    // Load existing appointments
+    	    appointments = [];
+   	     appointmentCounter = 0;
+        
+     	   if (existingAppointments && existingAppointments.length > 0) {
+     	       console.log('📅 Loading existing appointments:', existingAppointments);
+            
+     	       // Filter for future appointments only
+    	        const futureAppointments = existingAppointments.filter(apt => {
+     	           const appointmentDate = new Date(apt.date + ' ' + apt.time);
+      	          return appointmentDate > new Date();
+     	       });
+            
+       	     futureAppointments.forEach(apt => {
+       	         addAppointmentToList({
+       	             id: apt.id,
+      	              date: apt.date,
+      	              time: apt.time,
+       	             location: apt.location,
+      	              notes: apt.notes || '',
+     	               isExisting: true
+     	           });
+    	        });
+    	    }
+
+     	   // Show the form sections
+     	   document.getElementById('clientSection').classList.remove('hidden');
+    	    document.getElementById('appointmentsSection').classList.remove('hidden');
+     	   document.getElementById('saveSection').classList.remove('hidden');
+   	 }
+
+   	 // Add new appointment
+   	 function addAppointment() {
+  	      const date = document.getElementById('appointmentDate').value;
+   	     const time = document.getElementById('appointmentTime').value;
+   	     const location = document.getElementById('appointmentLocation').value;
+    	    const notes = document.getElementById('appointmentNotes').value;
+
+  	      if (!date || !time || !location) {
+    	        showError('Please fill in all appointment fields (Date, Time, Location)');
+    	        return;
+     	   }
+
+      	  // Validate appointment is in the future
+     	   const appointmentDateTime = new Date(date + ' ' + time);
+     	   if (appointmentDateTime <= new Date()) {
+      	      showError('Appointment must be in the future');
+     	       return;
+     	   }
+
+      	  const appointment = {
+         	   id: ++appointmentCounter,
+       	     date: date,
+       	     time: time,
+        	    location: location,
+        	    notes: notes,
+       	     isNew: true
+       	 };
+
+     	   addAppointmentToList(appointment);
+
+       	 // Clear the form
+    	    document.getElementById('appointmentDate').value = '';
+      	  document.getElementById('appointmentTime').value = '';
+     	   document.getElementById('appointmentLocation').value = '';
+     	   document.getElementById('appointmentNotes').value = '';
+    	}
+
+  	  // Add appointment to the list display
+  	  function addAppointmentToList(appointment) {
+    	    appointments.push(appointment);
+    	    updateAppointmentsDisplay();
+   	 }
+
+  	  // Update appointments display
+   	 function updateAppointmentsDisplay() {
+  	      const container = document.getElementById('appointmentsList');
+   	     if (!container) return;
+
+    	    if (appointments.length === 0) {
+     	       container.innerHTML = '<div class="no-appointments">No appointments scheduled</div>';
+      	      return;
+     	   }
+
+      	  // Sort appointments by date and time
+     	   const sortedAppointments = [...appointments].sort((a, b) => {
+      	      const dateA = new Date(a.date + ' ' + a.time);
+       	     const dateB = new Date(b.date + ' ' + b.time);
+      	      return dateA - dateB;
+      	  });
+
+    	    container.innerHTML = sortedAppointments.map(appointment => `
+     	       <div class="appointment-item ${appointment.isModified ? 'modified' : ''}" data-id="${appointment.id}">
+             	   <div class="appointment-details">
+             	       <div class="appointment-datetime">
+            	            📅 ${new Date(appointment.date).toLocaleDateString()} at ${appointment.time}
+            	        </div>
+           	         <div class="appointment-location">📍 ${appointment.location}</div>
+             	       ${appointment.notes ? `<div class="appointment-notes">📝 ${appointment.notes}</div>` : ''}
+             	       ${appointment.isExisting ? '<span class="existing-badge">Existing</span>' : ''}
+                 	   ${appointment.isNew ? '<span class="new-badge">New</span>' : ''}
+                 	   ${appointment.isModified ? '<span class="modified-badge">Modified</span>' : ''}
+             	   </div>
+           	     <div class="appointment-actions">
+              	      <button type="button" class="btn-edit" onclick="editAppointment(${appointment.id})">✏️</button>
+                	    <button type="button" class="btn-delete" onclick="removeAppointment(${appointment.id})">🗑️</button>
+             	   </div>
+          	  </div>
+    	    `).join('');
+  	  }
+
+  	  // Remove appointment
+  	  function removeAppointment(appointmentId) {
+   	     if (confirm('Are you sure you want to remove this appointment?')) {
+    	        appointments = appointments.filter(apt => apt.id !== appointmentId);
+    	        updateAppointmentsDisplay();
+     	   }
+   	 }
+
+  	  // Edit appointment (placeholder for future enhancement)
+  	  function editAppointment(appointmentId) {
+   	     const appointment = appointments.find(apt => apt.id === appointmentId);
+   	     if (appointment) {
+          	  // For now, just populate the form with existing data
+        	    document.getElementById('appointmentDate').value = appointment.date;
+        	    document.getElementById('appointmentTime').value = appointment.time;
+        	    document.getElementById('appointmentLocation').value = appointment.location;
+        	    document.getElementById('appointmentNotes').value = appointment.notes || '';
+            
+        	    // Mark as modified and remove from list temporarily
+        	    appointment.isModified = true;
+       	     removeAppointment(appointmentId);
+      	  }
+  	  }
+
+   	 // Save client data
+  	  async function saveClientData() {
+   	     try {
+   	         showLoading(true);
+            
+        	    // Validate required fields
+        	    const requiredFields = ['firstName', 'lastName', 'phone'];
+        	    const missingFields = requiredFields.filter(field => {
+         	       const element = document.getElementById(field);
+       	         return !element || !element.value.trim();
+        	    });
+            
+        	    if (missingFields.length > 0) {
+        	        showError(`Please fill in required fields: ${missingFields.join(', ')}`);
+         	       return;
+         	   }
+
+          	  // Prepare client data in RRTS 3 expected format
+        	    const clientData = {
+        	        kNumber: document.getElementById('kNumber').value.trim().toUpperCase(),
+         	       firstName: document.getElementById('firstName').value.trim(),
+         	       lastName: document.getElementById('lastName').value.trim(),
+          	      phone: document.getElementById('phone').value.trim(),
+        	        email: document.getElementById('email').value.trim(),
+         	       civicAddress: document.getElementById('address').value.trim(),
+         	       city: document.getElementById('city').value.trim(),
+         	       province: document.getElementById('province').value || 'NS',
+         	       postalCode: document.getElementById('postalCode').value.trim(),
+              	 	 emergencyContactName: document.getElementById('emergencyContactName').value.trim(),
+            	    emergencyContactNumber: document.getElementById('emergencyContactNumber').value.trim(),
+           	     notes: document.getElementById('notes').value.trim(),
+        	        preferredDriver: document.getElementById('preferredDriver').value.trim(),
+          	      driver_gender_requirement: document.getElementById('requiresNonMaleDriver').checked ? 'non-male' : null
+       	 	    };
+
+        	    // Prepare appointments data
+         	   const appointmentsData = appointments.map(apt => ({
+         	       id: apt.id,
+        	        date: apt.date,
+        	        time: apt.time,
+         	       location: apt.location,
+         	       notes: apt.notes || '',
+        	        isModified: apt.isModified || false,
+         	       isNew: apt.isNew || false
+      	      }));
+	
+         	   const payload = {
+        	        operation: isNewClient ? 'create' : 'update',
+        	        clientData: clientData,
+         	       appointments: appointmentsData,
+          	      adminUser: currentUser?.username || 'admin',
+         	       timestamp: new Date().toISOString()
+        	    };
+
+          	  console.log('Saving client data:', payload);
+
+          	  const response = await fetch(API_ENDPOINTS.SAVE, {
+           	     method: 'POST',
+           	     headers: {
+            	        'Content-Type': 'application/json',
+            	    },
+           	     body: JSON.stringify(payload)
+          	  });
+
+         	   if (!response.ok) {
+          	      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+         	   }
+
+         	   const result = await response.json();
+          	  console.log('Save result:', result);
+
+          	  if (result.success) {
+          	      showSuccess(`${isNewClient ? 'Client created' : 'Client updated'} successfully!`);
                 
-                sortedAppointments.forEach(apt => {
-                    const appointment = {
-                        id: apt.id,
-                        date: apt.date,
-                        time: apt.time,
-                        location: apt.location,
-                        notes: apt.notes || '',
-                        isExisting: true,
-                        isModified: false,
-                        isDeleted: false
-                    };
-                    appointments.push(appointment);
-                    appointmentCounter++;
-                });
-            }
+           	     // Reset form state after successful save
+           	     setTimeout(() => {
+            	        resetForm();
+           	     }, 2000);
+           	 } else {
+          	      showError(result.message || 'Failed to save client data');
+         	   }
 
-            renderAppointments();
-            
-            // Show the form sections
-            document.getElementById('clientSection').classList.remove('hidden');
-            document.getElementById('appointmentsSection').classList.remove('hidden');
-            document.getElementById('saveSection').classList.remove('hidden');
-        }
+      	  } catch (error) {
+        	    console.error('Save error:', error);
+      	      showError(`Save failed: ${error.message}`);
+     	   }
+  	  }
 
-        // Clear client form
-        function clearClientForm() {
-            const formFields = ['firstName', 'lastName', 'phone', 'email', 'address', 'city', 'postalCode', 'emergencyContactName', 'emergencyContactNumber', 'notes'];
-            formFields.forEach(field => {
-                document.getElementById(field).value = '';
-            });
-            document.getElementById('province').value = 'NS';
-            document.getElementById('preferredDriver').value = '';
-            document.getElementById('requiresNonMaleDriver').checked = false;
-        }
+   	 // Clear client form
+  	  function clearClientForm() {
+  	      const fields = ['firstName', 'lastName', 'phone', 'email', 'address', 'city', 'province', 'postalCode', 'emergencyContactName', 	'emergencyContactNumber', 'notes', 'preferredDriver'];
+       	 fields.forEach(field => {
+      	      const element = document.getElementById(field);
+     	       if (element) element.value = '';
+     	   });
+    	    document.getElementById('requiresNonMaleDriver').checked = false;
+   	     document.getElementById('province').value = 'NS'; // Default to Nova Scotia
+    	}
 
-        // Add new appointment
-        function addAppointment() {
-            appointmentCounter++;
-            const appointmentId = `appointment-${Date.now()}-${appointmentCounter}`;
-            
-            const appointment = {
-                id: appointmentId,
-                date: '',
-                time: '',
-                location: '',
-                notes: '',
-                isExisting: false,
-                isModified: false,
-                isDeleted: false,
-                isDraft: true
-            };
-            
-            appointments.push(appointment);
-            renderAppointments();
-        }
+  	  // Reset form to initial state
+   	 function resetForm() {
+    	    clearClientForm();
+   	     document.getElementById('kNumber').value = '';
+   	     document.getElementById('clientSection').classList.add('hidden');
+   	     document.getElementById('appointmentsSection').classList.add('hidden');
+   	     document.getElementById('saveSection').classList.add('hidden');
+   	     document.getElementById('clientStatus').innerHTML = '';
+  	      document.getElementById('kNumberDisplay').classList.add('hidden');
+   	     appointments = [];
+  	      appointmentCounter = 0;
+   	     isNewClient = false;
+  	      currentClient = null;
+        
+    	    // Focus back on K Number field
+    	    document.getElementById('kNumber').focus();
+   	 }
 
-        // Render all appointments
-        function renderAppointments() {
-            const container = document.getElementById('existingAppointments');
-            container.innerHTML = '';
+  	  // Utility functions
+   	 function showLoading(show) {
+   	     const indicator = document.getElementById('loadingIndicator');
+   	     if (indicator) {
+   	         if (show) {
+    	            indicator.classList.remove('hidden');
+     	       } else {
+      	          indicator.classList.add('hidden');
+      	      }
+     	   }
+  	  }
 
-            appointments.forEach((appointment, index) => {
-                if (!appointment.isDeleted) {
-                    const appointmentHtml = createAppointmentHtml(appointment, index);
-                    container.appendChild(appointmentHtml);
-                }
-            });
-        }
+   	 function showError(message) {
+    	    showLoading(false);
+   	     const statusDiv = document.getElementById('clientStatus');
+   	     if (statusDiv) {
+   	         statusDiv.innerHTML = `<div class="error">${message}</div>`;
+  	      }
+  	  }
 
-        // Create appointment HTML element
-        function createAppointmentHtml(appointment, index) {
-            const div = document.createElement('div');
-            div.className = `appointment-item${appointment.isModified ? ' modified' : ''}`;
-            
-            const today = new Date().toISOString().split('T')[0];
-            
-            div.innerHTML = `
-                <button type="button" class="delete-btn" onclick="deleteAppointment(${index})" title="Delete appointment">×</button>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Date <span class="required">*</span></label>
-                        <input type="date" min="${today}" value="${appointment.date}" 
-                               onchange="updateAppointment(${index}, 'date', this.value)" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Time <span class="required">*</span></label>
-                        <input type="time" value="${appointment.time}" 
-                               onchange="updateAppointment(${index}, 'time', this.value)" required>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Location <span class="required">*</span></label>
-                        <select onchange="updateAppointment(${index}, 'location', this.value)" required>
-                            <option value="">Select location</option>
-                            <option value="New Minas Clinic" ${appointment.location === 'New Minas Clinic' ? 'selected' : ''}>New Minas Clinic</option>
-                            <option value="Greenwood Clinic" ${appointment.location === 'Greenwood Clinic' ? 'selected' : ''}>Greenwood Clinic</option>
-                            <option value="Middleton Clinic" ${appointment.location === 'Middleton Clinic' ? 'selected' : ''}>Middleton Clinic</option>
-                            <option value="Other" ${appointment.location === 'Other' ? 'selected' : ''}>Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Notes</label>
-                        <input type="text" value="${appointment.notes}" placeholder="Special instructions..."
-                               onchange="updateAppointment(${index}, 'notes', this.value)">
-                    </div>
-                </div>
-                
-                ${appointment.isExisting ? `<div style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                    ${appointment.isModified ? '✏️ Modified' : '📋 Existing appointment'}
-                </div>` : '<div style="margin-top: 10px; font-size: 0.9em; color: #27ae60;">➕ New appointment</div>'}
-            `;
-            
-            return div;
-        }
+  	  function showSuccess(message) {
+  	      showLoading(false);
+   	     const statusDiv = document.getElementById('clientStatus');
+    	    if (statusDiv) {
+    	        statusDiv.innerHTML = `<div class="client-status status-found">${message}</div>`;
+    	    }
+  	  }
+	
+  	  function showClientStatus(message, type) {
+   	     showLoading(false);
+   	     const statusDiv = document.getElementById('clientStatus');
+   	     if (statusDiv) {
+   	         statusDiv.innerHTML = `<div class="client-status status-${type}">${message}</div>`;
+  	      }
+  	  }
 
-        // Update appointment
-        function updateAppointment(index, field, value) {
-            appointments[index][field] = value;
-            
-            // Mark as modified if it's an existing appointment
-            if (appointments[index].isExisting) {
-                appointments[index].isModified = true;
-            }
-            
-            // Mark as complete if all required fields are filled
-            if (appointments[index].date && appointments[index].time && appointments[index].location) {
-                appointments[index].isDraft = false;
-            }
-            
-            renderAppointments();
-        }
+ 	   // Enhanced logout function
+ 	   function logout() {
+  	      sessionStorage.removeItem('rrts_user');
+  	      isLoggedIn = false;
+  	      currentUser = null;
+ 	       window.location.href = 'dashboard.html';
+ 	   }
 
-        // Delete appointment
-        function deleteAppointment(index) {
-            if (appointments[index].isExisting) {
-                appointments[index].isDeleted = true;
-            } else {
-                appointments.splice(index, 1);
-            }
-            renderAppointments();
-        }
-
-        // Save client data
-        async function saveClientData() {
-            // Validate required fields
-            const requiredFields = ['firstName', 'lastName'];
-            let hasErrors = false;
-
-            requiredFields.forEach(field => {
-                const input = document.getElementById(field);
-                if (!input.value.trim()) {
-                    input.style.borderColor = '#e74c3c';
-                    hasErrors = true;
-                } else {
-                    input.style.borderColor = '#e0e0e0';
-                }
-            });
-
-            if (hasErrors) {
-                showError('Please fill in all required fields');
-                return;
-            }
-
-            // Validate appointments
-            const validAppointments = appointments.filter(apt => 
-                !apt.isDeleted && (!apt.isDraft || (apt.date && apt.time && apt.location))
-            );
-
-            if (validAppointments.length === 0) {
-                showError('Please add at least one appointment');
-                return;
-            }
-
-            try {
-                showLoading(true);
-
-                const clientData = {
-                    kNumber: isNewClient ? document.getElementById('displayKNumber').value : currentClient.kNumber,
-                    firstName: document.getElementById('firstName').value.trim(),
-                    lastName: document.getElementById('lastName').value.trim(),
-                    phone: document.getElementById('phone').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    address: document.getElementById('address').value.trim(),
-                    city: document.getElementById('city').value.trim(),
-                    province: document.getElementById('province').value,
-                    postalCode: document.getElementById('postalCode').value.trim(),
-                    emergencyContactName: document.getElementById('emergencyContactName').value.trim(),
-                    emergencyContactNumber: document.getElementById('emergencyContactNumber').value.trim(),
-                    notes: document.getElementById('notes').value.trim(),
-                    preferredDriver: document.getElementById('preferredDriver').value,
-                    driverGenderRequirement: document.getElementById('requiresNonMaleDriver').checked ? 'non-male' : null
-                };
-
-                const requestData = {
-                    isNewClient: isNewClient,
-                    clientData: clientData,
-                    appointments: validAppointments
-                };
-
-                console.log('Saving client data:', requestData);
-
-                const response = await fetch(API_ENDPOINTS.SAVE, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestData)
-                });
-
-                const result = await response.json();
-                console.log('Save result:', result);
-
-                if (result.success) {
-                    showSuccess(`Client and appointments saved successfully!`);
-                    // Reset form after successful save
-                    setTimeout(() => {
-                        resetForm();
-                    }, 3000);
-                } else {
-                    showError(result.error || 'Failed to save client data');
-                }
-            } catch (error) {
-                console.error('Save error:', error);
-                showError('Save operation failed - please try again');
-            }
-        }
-
-        // Reset form
-        function resetForm() {
-            document.getElementById('kNumber').value = '';
-            document.getElementById('clientSection').classList.add('hidden');
-            document.getElementById('appointmentsSection').classList.add('hidden');
-            document.getElementById('saveSection').classList.add('hidden');
-            document.getElementById('clientStatus').innerHTML = '';
-            appointments = [];
-            appointmentCounter = 0;
-            isNewClient = false;
-            currentClient = null;
-        }
-
-        // Utility functions
-        function showLoading(show) {
-            const indicator = document.getElementById('loadingIndicator');
-            if (show) {
-                indicator.classList.remove('hidden');
-            } else {
-                indicator.classList.add('hidden');
-            }
-        }
-
-        function showError(message) {
-            showLoading(false);
-            const statusDiv = document.getElementById('clientStatus');
-            statusDiv.innerHTML = `<div class="error">${message}</div>`;
-        }
-
-        function showSuccess(message) {
-            showLoading(false);
-            const statusDiv = document.getElementById('clientStatus');
-            statusDiv.innerHTML = `<div class="client-status status-found">${message}</div>`;
-        }
-
-        function showClientStatus(message, type) {
-            showLoading(false);
-            const statusDiv = document.getElementById('clientStatus');
-            statusDiv.innerHTML = `<div class="client-status status-${type}">${message}</div>`;
-        }
-
-        function logout() {
-            // Redirect to main dashboard or login
-            window.location.href = 'dashboard.html';
-        }
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('RRTS Client Management Portal Loaded');
-            
-            // Focus on K Number field initially
-            document.getElementById('kNumber').focus();
-            
-            // Handle Enter key for lookup
-            document.getElementById('kNumber').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    lookupClient();
-                }
-            });
-        });
-
-    </script>
+</script>
 </body>
 </html>
 <!-- 
-Version: v1.0.0 - RRTS Client Management Portal
+Version: v1.1.0 - RRTS Client Management Portal
+- v1.1.0: Uses real endpoints and data
 - v1.0.0: Initial client management page extracted from main admin portal
 - Features: Client lookup, add/edit client info, appointment management
 - Case-insensitive K-number search with format validation (K + 7 digits)
