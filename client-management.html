@@ -655,42 +655,62 @@
  	   document.getElementById('saveSection').classList.remove('hidden');
 	}
 
-   	 // Add new appointment
-   	 function addAppointment() {
-  	      const date = document.getElementById('appointmentDate').value;
-   	     const time = document.getElementById('appointmentTime').value;
-   	     const location = document.getElementById('appointmentLocation').value;
-    	    const notes = document.getElementById('appointmentNotes').value;
+// Enhanced add appointment function (handles both new and edited appointments)
+function addAppointment() {
+    const date = document.getElementById('appointmentDate').value;
+    const time = document.getElementById('appointmentTime').value;
+    const location = document.getElementById('appointmentLocation').value;
+    const notes = document.getElementById('appointmentNotes').value;
 
-  	      if (!date || !time || !location) {
-    	        showError('Please fill in all appointment fields (Date, Time, Location)');
-    	        return;
-     	   }
+    if (!date || !time || !location) {
+        showError('Please fill in all appointment fields (Date, Time, Location)');
+        return;
+    }
 
-      	  // Validate appointment is in the future
-     	   const appointmentDateTime = new Date(date + ' ' + time);
-     	   if (appointmentDateTime <= new Date()) {
-      	      showError('Appointment must be in the future');
-     	       return;
-     	   }
+    // Validate appointment is in the future
+    const appointmentDateTime = new Date(date + ' ' + time);
+    if (appointmentDateTime <= new Date()) {
+        showError('Appointment must be in the future');
+        return;
+    }
 
-      	  const appointment = {
-         	   id: ++appointmentCounter,
-       	     date: date,
-       	     time: time,
-        	    location: location,
-        	    notes: notes,
-       	     isNew: true
-       	 };
+    // Check if we're editing an existing appointment
+    const beingEdited = appointments.find(apt => apt.isBeingEdited);
+    
+    if (beingEdited) {
+        // Update existing appointment
+        beingEdited.date = date;
+        beingEdited.time = time;
+        beingEdited.location = location;
+        beingEdited.notes = notes;
+        beingEdited.isBeingEdited = false;
+        beingEdited.isModified = true;
+        
+        console.log('Updated existing appointment:', beingEdited);
+    } else {
+        // Create new appointment
+        const appointment = {
+            id: ++appointmentCounter,
+            date: date,
+            time: time,
+            location: location,
+            notes: notes,
+            isNew: true,
+            isModified: true
+        };
+        
+        appointments.push(appointment);
+        console.log('Added new appointment:', appointment);
+    }
 
-     	   addAppointmentToList(appointment);
+    updateAppointmentsDisplay();
 
-       	 // Clear the form
-    	    document.getElementById('appointmentDate').value = '';
-      	  document.getElementById('appointmentTime').value = '';
-     	   document.getElementById('appointmentLocation').value = '';
-     	   document.getElementById('appointmentNotes').value = '';
-    	}
+    // Clear the form
+    document.getElementById('appointmentDate').value = '';
+    document.getElementById('appointmentTime').value = '';
+    document.getElementById('appointmentLocation').value = '';
+    document.getElementById('appointmentNotes').value = '';
+}
 
   	  // Add appointment to the list display
   	  function addAppointmentToList(appointment) {
@@ -698,39 +718,30 @@
     	    updateAppointmentsDisplay();
    	 }
 
-  	  // Update appointments display
+/ Enhanced display function with delete states and better edit/delete buttons
 function updateAppointmentsDisplay() {
     console.log('🔧 === APPOINTMENTS DISPLAY DEBUG ===');
     console.log('🔧 appointments array:', appointments);
     console.log('🔧 appointments.length:', appointments.length);
     
-const container = document.getElementById('appointmentsSection');
+    const container = document.getElementById('appointmentsSection');
     console.log('🔧 Container found:', !!container);
-    console.log('🔧 Container element:', container);
     
     if (!container) {
-        console.error('❌ appointmentsDisplay element not found!');
+        console.error('❌ appointmentsSection element not found!');
         return;
     }
 
-    if (appointments.length === 0) {
+    // Filter out deleted appointments for counting
+    const activeAppointments = appointments.filter(apt => !apt.isDeleted);
+    
+    if (activeAppointments.length === 0 && appointments.filter(apt => apt.isDeleted).length === 0) {
         console.log('🔧 No appointments - showing empty message');
         container.innerHTML = '<div class="no-appointments">No appointments scheduled</div>';
         return;
     }
 
-    console.log('🔧 Processing', appointments.length, 'appointments for display');
-
-    // Log each appointment before processing
-    appointments.forEach((apt, index) => {
-        console.log(`🔧 Appointment ${index + 1}:`, {
-            id: apt.id,
-            date: apt.date,
-            time: apt.time,
-            location: apt.location,
-            isExisting: apt.isExisting
-        });
-    });
+    console.log('🔧 Processing', appointments.length, 'appointments (including deleted)');
 
     // Sort appointments by date and time
     const sortedAppointments = [...appointments].sort((a, b) => {
@@ -739,22 +750,23 @@ const container = document.getElementById('appointmentsSection');
         return dateA - dateB;
     });
 
-    console.log('🔧 Sorted appointments:', sortedAppointments.length);
-
-    // Generate HTML with extra logging
+    // Generate HTML
     const appointmentHTML = sortedAppointments.map((appointment, index) => {
         const dateObj = new Date(appointment.date);
         const formattedDate = dateObj.toLocaleDateString();
         
-        console.log(`🔧 Generating HTML for appointment ${index + 1}:`, {
-            originalDate: appointment.date,
-            formattedDate: formattedDate,
-            time: appointment.time,
-            location: appointment.location
-        });
+        // Different styling for deleted appointments
+        const itemClass = `appointment-item 
+            ${appointment.isModified ? 'modified' : ''} 
+            ${appointment.isDeleted ? 'deleted' : ''}
+            ${appointment.isBeingEdited ? 'being-edited' : ''}`;
         
-        const html = `
-            <div class="appointment-item ${appointment.isModified ? 'modified' : ''}" data-id="${appointment.id}">
+        const deleteButton = appointment.isDeleted 
+            ? `<button type="button" class="btn-undo" onclick="undoDeleteAppointment('${appointment.id}')" title="Undo Delete">↺ Undo</button>`
+            : `<button type="button" class="btn-delete" onclick="removeAppointment('${appointment.id}')" title="Mark for Deletion">🗑️</button>`;
+        
+        return `
+            <div class="${itemClass}" data-id="${appointment.id}">
                 <div class="appointment-details">
                     <div class="appointment-datetime">
                         📅 ${formattedDate} at ${appointment.time}
@@ -764,27 +776,20 @@ const container = document.getElementById('appointmentsSection');
                     ${appointment.isExisting ? '<span class="existing-badge">Existing</span>' : ''}
                     ${appointment.isNew ? '<span class="new-badge">New</span>' : ''}
                     ${appointment.isModified ? '<span class="modified-badge">Modified</span>' : ''}
+                    ${appointment.isDeleted ? '<span class="deleted-badge">Marked for Deletion</span>' : ''}
+                    ${appointment.isBeingEdited ? '<span class="editing-badge">Being Edited</span>' : ''}
                 </div>
                 <div class="appointment-actions">
-                    <button type="button" class="btn-edit" onclick="editAppointment('${appointment.id}')">✏️</button>
-                    <button type="button" class="btn-delete" onclick="removeAppointment('${appointment.id}')">🗑️</button>
+                    ${!appointment.isDeleted ? `<button type="button" class="btn-edit" onclick="editAppointment('${appointment.id}')" title="Edit Appointment">✏️</button>` : ''}
+                    ${deleteButton}
                 </div>
             </div>
         `;
-        
-        console.log(`🔧 Generated HTML length for appointment ${index + 1}:`, html.length);
-        return html;
     }).join('');
 
-    console.log('🔧 Total generated HTML length:', appointmentHTML.length);
-    console.log('🔧 HTML preview:', appointmentHTML.substring(0, 300));
-
-    // Set the HTML
     container.innerHTML = appointmentHTML;
     
-    console.log('🔧 Container innerHTML after setting:', container.innerHTML.length, 'characters');
-    console.log('🔧 Container children count:', container.children.length);
-    console.log('🔧 === END DEBUG ===');
+    console.log('🔧 Container innerHTML set. Appointments displayed:', container.children.length);
 }
 
 function testAppointmentsDisplay() {
@@ -808,118 +813,177 @@ function testAppointmentsDisplay() {
     console.log('=== END MANUAL TEST ===');
 }
 
-  	  // Remove appointment
-  	  function removeAppointment(appointmentId) {
-   	     if (confirm('Are you sure you want to remove this appointment?')) {
-    	        appointments = appointments.filter(apt => apt.id !== appointmentId);
-    	        updateAppointmentsDisplay();
-     	   }
-   	 }
+// Enhanced delete appointment function (mark for deletion, don't remove immediately)
+function removeAppointment(appointmentId) {
+    console.log('Marking appointment for deletion:', appointmentId);
+    
+    const appointment = appointments.find(apt => apt.id === appointmentId);
+    if (!appointment) {
+        console.error('Appointment not found:', appointmentId);
+        return;
+    }
+    
+    if (confirm('Mark this appointment for deletion? You can undo this before saving.')) {
+        // Mark for deletion instead of removing immediately
+        appointment.isDeleted = true;
+        appointment.isModified = true;
+        
+        updateAppointmentsDisplay();
+        console.log('Appointment marked for deletion. Click "Undo Delete" to restore, or save to confirm deletion.');
+    }
+}
 
-  	  // Edit appointment (placeholder for future enhancement)
-  	  function editAppointment(appointmentId) {
-   	     const appointment = appointments.find(apt => apt.id === appointmentId);
-   	     if (appointment) {
-          	  // For now, just populate the form with existing data
-        	    document.getElementById('appointmentDate').value = appointment.date;
-        	    document.getElementById('appointmentTime').value = appointment.time;
-        	    document.getElementById('appointmentLocation').value = appointment.location;
-        	    document.getElementById('appointmentNotes').value = appointment.notes || '';
+// Add undo delete function
+function undoDeleteAppointment(appointmentId) {
+    console.log('Undoing deletion for appointment:', appointmentId);
+    
+    const appointment = appointments.find(apt => apt.id === appointmentId);
+    if (appointment) {
+        appointment.isDeleted = false;
+        appointment.isModified = true;
+        updateAppointmentsDisplay();
+        console.log('Appointment deletion undone.');
+    }
+}
+
+  	// Enhanced edit appointment function
+function editAppointment(appointmentId) {
+    console.log('Editing appointment:', appointmentId);
+    
+    const appointment = appointments.find(apt => apt.id === appointmentId);
+    if (!appointment) {
+        console.error('Appointment not found:', appointmentId);
+        return;
+    }
+    
+    // Populate the form with existing data
+    document.getElementById('appointmentDate').value = appointment.date;
+    document.getElementById('appointmentTime').value = appointment.time;
+    document.getElementById('appointmentLocation').value = appointment.location;
+    document.getElementById('appointmentNotes').value = appointment.notes || '';
+    
+    // Mark the original as being edited
+    appointment.isBeingEdited = true;
+    appointment.isModified = true;
+    
+    // Update the display to show it's being edited
+    updateAppointmentsDisplay();
+    
+    // Scroll to the form
+    document.getElementById('appointmentDate').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('appointmentDate').focus();
+    
+    console.log('Appointment loaded for editing. Make your changes and click "Add Appointment" to save.');
+}
+
+// Enhanced save function with better data preparation
+async function saveClientData() {
+    try {
+        showLoading(true);
+        
+        // Validate required fields
+        const requiredFields = ['firstName', 'lastName', 'phone'];
+        const missingFields = requiredFields.filter(field => {
+            const element = document.getElementById(field);
+            return !element || !element.value.trim();
+        });
+        
+        if (missingFields.length > 0) {
+            showError(`Please fill in required fields: ${missingFields.join(', ')}`);
+            return;
+        }
+
+        const kNumber = document.getElementById('kNumber').value.trim().toUpperCase();
+
+        // Prepare client data
+        const clientData = {
+            kNumber: kNumber,
+            firstName: document.getElementById('firstName').value.trim(),
+            lastName: document.getElementById('lastName').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            civicAddress: document.getElementById('address').value.trim(),
+            city: document.getElementById('city').value.trim(),
+            province: document.getElementById('province').value || 'NS',
+            postalCode: document.getElementById('postalCode').value.trim(),
+            emergencyContactName: document.getElementById('emergencyContactName').value.trim(),
+            emergencyContactNumber: document.getElementById('emergencyContactNumber').value.trim(),
+            notes: document.getElementById('notes').value.trim(),
+            preferredDriver: document.getElementById('preferredDriver').value.trim(),
+            driver_gender_requirement: document.getElementById('requiresNonMaleDriver').checked ? 'non-male' : null
+        };
+
+        // Prepare appointments data - filter out deleted ones and add kNumber
+        const appointmentsData = appointments
+            .filter(apt => !apt.isDeleted) // Remove deleted appointments
+            .map(apt => ({
+                id: apt.id,
+                kNumber: kNumber, // Add kNumber to each appointment
+                date: apt.date,
+                time: apt.time,
+                location: apt.location,
+                notes: apt.notes || '',
+                isModified: apt.isModified || false,
+                isNew: apt.isNew || false,
+                isExisting: apt.isExisting || false
+            }));
+
+        const payload = {
+            operation: isNewClient ? 'create' : 'update',
+            clientData: clientData,
+            appointments: appointmentsData,
+            adminUser: currentUser?.username || 'admin',
+            timestamp: new Date().toISOString()
+        };
+
+        console.log('Saving client data:', payload);
+
+        const response = await fetch(API_ENDPOINTS.SAVE, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+
+        // Check if response is ok before trying to parse JSON
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await response.text();
+            throw new Error(`Expected JSON response but got: ${textResponse.substring(0, 100)}`);
+        }
+
+        const result = await response.json();
+        console.log('Save result:', result);
+
+        if (result.success) {
+            showSuccess(`${isNewClient ? 'Client created' : 'Client updated'} successfully!`);
             
-        	    // Mark as modified and remove from list temporarily
-        	    appointment.isModified = true;
-       	     removeAppointment(appointmentId);
-      	  }
-  	  }
-
-   	 // Save client data
-  	  async function saveClientData() {
-   	     try {
-   	         showLoading(true);
+            // Reset modification flags
+            appointments.forEach(apt => {
+                apt.isModified = false;
+                apt.isNew = false;
+            });
             
-        	    // Validate required fields
-        	    const requiredFields = ['firstName', 'lastName', 'phone'];
-        	    const missingFields = requiredFields.filter(field => {
-         	       const element = document.getElementById(field);
-       	         return !element || !element.value.trim();
-        	    });
+            updateAppointmentsDisplay();
             
-        	    if (missingFields.length > 0) {
-        	        showError(`Please fill in required fields: ${missingFields.join(', ')}`);
-         	       return;
-         	   }
+            // Reset form state after successful save
+            setTimeout(() => {
+                resetForm();
+            }, 2000);
+        } else {
+            showError(result.message || 'Failed to save client data');
+        }
 
-          	  // Prepare client data in RRTS 3 expected format
-        	    const clientData = {
-        	        kNumber: document.getElementById('kNumber').value.trim().toUpperCase(),
-         	       firstName: document.getElementById('firstName').value.trim(),
-         	       lastName: document.getElementById('lastName').value.trim(),
-          	      phone: document.getElementById('phone').value.trim(),
-        	        email: document.getElementById('email').value.trim(),
-         	       civicAddress: document.getElementById('address').value.trim(),
-         	       city: document.getElementById('city').value.trim(),
-         	       province: document.getElementById('province').value || 'NS',
-         	       postalCode: document.getElementById('postalCode').value.trim(),
-              	 	 emergencyContactName: document.getElementById('emergencyContactName').value.trim(),
-            	    emergencyContactNumber: document.getElementById('emergencyContactNumber').value.trim(),
-           	     notes: document.getElementById('notes').value.trim(),
-        	        preferredDriver: document.getElementById('preferredDriver').value.trim(),
-          	      driver_gender_requirement: document.getElementById('requiresNonMaleDriver').checked ? 'non-male' : null
-       	 	    };
-
-        	    // Prepare appointments data
-         	   const appointmentsData = appointments.map(apt => ({
-         	       id: apt.id,
-        	        date: apt.date,
-        	        time: apt.time,
-         	       location: apt.location,
-         	       notes: apt.notes || '',
-        	        isModified: apt.isModified || false,
-         	       isNew: apt.isNew || false
-      	      }));
-	
-         	   const payload = {
-        	        operation: isNewClient ? 'create' : 'update',
-        	        clientData: clientData,
-         	       appointments: appointmentsData,
-          	      adminUser: currentUser?.username || 'admin',
-         	       timestamp: new Date().toISOString()
-        	    };
-
-          	  console.log('Saving client data:', payload);
-
-          	  const response = await fetch(API_ENDPOINTS.SAVE, {
-           	     method: 'POST',
-           	     headers: {
-            	        'Content-Type': 'application/json',
-            	    },
-           	     body: JSON.stringify(payload)
-          	  });
-
-         	   if (!response.ok) {
-          	      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-         	   }
-
-         	   const result = await response.json();
-          	  console.log('Save result:', result);
-
-          	  if (result.success) {
-          	      showSuccess(`${isNewClient ? 'Client created' : 'Client updated'} successfully!`);
-                
-           	     // Reset form state after successful save
-           	     setTimeout(() => {
-            	        resetForm();
-           	     }, 2000);
-           	 } else {
-          	      showError(result.message || 'Failed to save client data');
-         	   }
-
-      	  } catch (error) {
-        	    console.error('Save error:', error);
-      	      showError(`Save failed: ${error.message}`);
-     	   }
-  	  }
-
+    } catch (error) {
+        console.error('Save error:', error);
+        showError(`Save failed: ${error.message}`);
+    }
+}
    	 // Clear client form
   	  function clearClientForm() {
   	      const fields = ['firstName', 'lastName', 'phone', 'email', 'address', 'city', 'province', 'postalCode', 'emergencyContactName', 	'emergencyContactNumber', 'notes', 'preferredDriver'];
@@ -997,7 +1061,8 @@ function testAppointmentsDisplay() {
 </body>
 </html>
 <!-- 
-Version: v1.1.4 - RRTS Client Management Portal
+Version: v1.1.5 - RRTS Client Management Portal
+- v1.1.5 fixed edit and save functions
 - v1.1.4 corrected display
 - v1.1.3 added debug
 - v1.1.2 fixed appointmentdisplay
