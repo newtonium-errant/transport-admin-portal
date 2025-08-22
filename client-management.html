@@ -410,16 +410,31 @@
         SAVE: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-client' // RRTS 3
     };
 
-    // Global variables
-    let appointments = [];
-    let appointmentCounter = 0;
-    let isNewClient = false;
-    let currentClient = null;
-    let isLoggedIn = false;
-    let currentUser = null;
+	// Global variables
+	let appointments = [];
+	let appointmentCounter = 0;
+	let isNewClient = false;
+	let currentClient = null;
+	let isLoggedIn = false;
+	let currentUser = null;
 
-    // Initialize the page
-    document.addEventListener('DOMContentLoaded', function() {
+	// Global destinations array
+	let availableDestinations = [];
+
+	// Function to generate destination options
+	function getDestinationOptions(selectedDestination) {
+	    if (!availableDestinations || availableDestinations.length === 0) {
+	        return '<option value="">No destinations available</option>';
+	    }
+    
+	    return availableDestinations.map(function(dest) {
+	        var isSelected = dest.name === selectedDestination ? 'selected' : '';
+	        return '<option value="' + dest.name + '" ' + isSelected + '>' + dest.name + '</option>';
+	    }).join('');
+	}
+
+	// Initialize the page
+	document.addEventListener('DOMContentLoaded', function() {
         console.log('RRTS Client Management Portal Loaded');
         console.log('API Endpoints configured:', API_ENDPOINTS);
         
@@ -483,9 +498,12 @@
             const result = await response.json();
             console.log('Client lookup result:', result);
 
-            if (result.found) {
-                // Existing client found
-                loadClientData(result.clientData, result.appointments || []);
+	if (result.found) {
+	    // Store destinations globally
+	    availableDestinations = result.destinations || [];
+    
+	    // Existing client found
+	    loadClientData(result.clientData, result.appointments || []);
                 
                 // Count future appointments for display
                 const futureAppointments = (result.appointments || []).filter(apt => {
@@ -494,9 +512,12 @@
                 });
                 
                 showClientStatus(`Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${futureAppointments.length > 0 ? ` (${futureAppointments.length} future appointments)` : ''}`, 'found');
-            } else {
-                // New client
-                setupNewClient(kNumber);
+	} else {
+	    // Store destinations globally  
+	    availableDestinations = result.destinations || [];
+    
+	    // New client
+	    setupNewClient(kNumber);
                 showClientStatus('New Client - Please fill out all information', 'new');
             }
         } catch (error) {
@@ -948,7 +969,8 @@
 </body>
 </html>
 <!-- 
-Version: v1.2.3 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+Version: v1.2.4 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+- v1.2.4: added destination table lookup
 - v1.2.3: added missing modify delete functions
 - v1.2.2: fixed missing elements
 - v1.2.1: Fixed client data structure, removed pickup location field, simplified appointments
