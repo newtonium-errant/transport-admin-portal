@@ -253,7 +253,7 @@
     <div class="header">
         <h1>🚐 RRTS Client Management</h1>
         <div class="header-nav">
-            <a href="admin-portal_v3_1_0.html" class="btn btn-secondary">Back to Dashboard</a>
+            <a href="dashboard.html" class="btn btn-secondary">Back to Dashboard</a>
             <button onclick="logout()" class="btn btn-danger">Logout</button>
         </div>
     </div>
@@ -447,12 +447,12 @@
                 console.log('User session found:', currentUser.username);
             } catch (error) {
                 console.log('Invalid saved session, redirecting to dashboard');
-                window.location.href = 'admin-portal_v3_1_0.html';
+                window.location.href = 'dashboard.html';
                 return;
             }
         } else {
             console.log('No user session found, redirecting to dashboard');
-            window.location.href = 'admin-portal_v3_1_0.html';
+            window.location.href = 'dashboard.html';
             return;
         }
         
@@ -959,14 +959,15 @@ function updateAppointmentsList() {
         sessionStorage.removeItem('rrts_user');
         isLoggedIn = false;
         currentUser = null;
-        window.location.href = 'admin-portal_v3_1_0.html';
+        window.location.href = 'dashboard.html';
     }
 
 </script>
 </body>
 </html>
 <!-- 
-Version: v1.2.5 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+Version: v1.2.6 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+- v1.2.6: corrected broken dashboard link
 - v1.2.5: fixed lookup errors
 - v1.2.4: added destination table lookup
 - v1.2.3: added missing modify delete functions
