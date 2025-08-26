@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRTS - Appointment Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .controls-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .client-info {
+            background: #e6fffa;
+            border: 2px solid #38b2ac;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .client-info h3 {
+            color: #2c7a7b;
+            margin-bottom: 0.5rem;
+        }
+
+        .client-info p {
+            color: #285e61;
+            margin: 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+        }
+
+        .appointments-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .appointments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .appointments-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .appointment-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .appointment-card:hover {
+            border-color: #4299e1;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
+        }
+
+        .appointment-card.deleted {
+            opacity: 0.6;
+            border-color: #f56565;
+            background: #fed7d7;
+        }
+
+        .appointment-card.modified {
+            border-color: #ed8936;
+            background: #fefcbf;
+        }
+
+        .appointment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .appointment-date-time {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .appointment-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status-confirmed {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status-deleted {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status-modified {
+            background: #fbb6ce;
+            color: #b83280;
+        }
+
+        .appointment-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .appointment-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .appointment-field label {
+            font-size: 0.875rem;
+            color: #4a5568;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .appointment-field input,
+        .appointment-field select,
+        .appointment-field textarea {
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .appointment-field input:focus,
+        .appointment-field select:focus,
+        .appointment-field textarea:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .appointment-field textarea {
+            grid-column: 1 / -1;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .appointment-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .appointment-actions .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .save-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 2px solid #e2e8f0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #4299e1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #718096;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .appointment-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .appointments-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Appointment Management</h1>
+        <p>Manage future appointments for RRTS clients</p>
+    </div>
+
+    <div class="container">
+        <div class="controls-section">
+            <div class="filter-controls">
+                <button class="btn" onclick="loadAllAppointments()">All Future Appointments</button>
+                <button class="btn btn-success" onclick="addNewAppointment()">Add Appointment</button>
+            </div>
+            
+            <div id="clientInfo" class="client-info" style="display: none;">
+                <h3 id="clientName">Client Name</h3>
+                <p id="clientDetails">K Number • Phone • Email</p>
+            </div>
+        </div>
+
+        <div class="appointments-section">
+            <div class="appointments-header">
+                <h2 id="appointmentsTitle">Future Appointments</h2>
+                <div id="appointmentCount" class="appointment-status status-confirmed">0 appointments</div>
+            </div>
+
+            <div id="appointmentsList" class="appointments-list">
+                <div class="empty-state">
+                    <h3>No appointments found</h3>
+                    <p>Click "Add Appointment" to create a new appointment, or load a specific client's appointments.</p>
+                    <button class="btn" onclick="addNewAppointment()">Add First Appointment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-section" id="saveSection" style="display: none;">
+        <button class="btn btn-secondary" onclick="cancelChanges()">Cancel Changes</button>
+        <button class="btn btn-success" onclick="saveAllChanges()">Save All Changes</button>
+    </div>
+
+    <div class="loading" id="loadingIndicator">
+        <p>Processing...</p>
+    </div>
+
+    <script>
+        // Configuration
+        const API_ENDPOINTS = {
+            ALL_APPOINTMENTS: 'https://your-n8n-instance.app.n8n.cloud/webhook/appointments-list',
+            CLIENT_APPOINTMENTS: 'https://your-n8n-instance.app.n8n.cloud/webhook/client-appointments',
+            SAVE_APPOINTMENTS: 'https://your-n8n-instance.app.n8n.cloud/webhook/save-appointments',
+            CLIENT_LOOKUP: 'https://your-n8n-instance.app.n8n.cloud/webhook/client-lookup'
+        };
+
+        // Global state
+        let appointments = [];
+        let currentClient = null;
+        let appointmentCounter = 1000;
+        let hasUnsavedChanges = false;
+
+        // Available locations
+        const LOCATIONS = [
+            'NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0',
+            'NuVista Psychedelic - New Minas - 9209 Commercial St, New Minas, NS B4N 3E2'
+        ];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if we're loading a specific client's appointments
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientKNumber = urlParams.get('client');
+            
+            if (clientKNumber) {
+                loadClientAppointments(clientKNumber);
+            } else {
+                loadAllAppointments();
+            }
+        });
+
+        // Load all future appointments
+        async function loadAllAppointments() {
+            try {
+                showLoading(true);
+                currentClient = null;
+                document.getElementById('clientInfo').style.display = 'none';
+                document.getElementById('appointmentsTitle').textContent = 'All Future Appointments';
+
+                const response = await fetch(API_ENDPOINTS.ALL_APPOINTMENTS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+                console.log('All appointments loaded:', result);
+
+                if (result.appointments) {
+                    appointments = result.appointments.map(apt => ({
+                        ...apt,
+                        isExisting: true,
+                        isModified: false,
+                        isDeleted: false,
+                        originalData: { ...apt }
+                    }));
+                    displayAppointments();
+                } else {
+                    appointments = [];
+                    displayEmptyState();
+                }
+
+                showLoading(false);
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                showError('Failed to load appointments. Please try again.');
+                showLoading(false);
+            }
+        }
+
+        // Load appointments for a specific client
+        async function loadClientAppointments(kNumber) {
+            try {
+                showLoading(true);
+                
+                // First get client details
+                const clientResponse = await fetch(API_ENDPOINTS.CLIENT_LOOKUP, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kNumber: kNumber })
+                });
+
+                const clientResult = await clientResponse.json();
+                
+                if (clientResult.found) {
+                    currentClient = clientResult.clientData;
+                    displayClientInfo(currentClient);
+                    
+                    // Load client's appointments
+                    const appoResponse = await fetch(API_ENDPOINTS.CLIENT_APPOINTMENTS, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ kNumber: kNumber })
+                    });
+
+                    const appoResult = await appoResponse.json();
+                    console.log('Client appointments loaded:', appoResult);
+
+                    if (appoResult.appointments) {
+                        appointments = appoResult.appointments.map(apt => ({
+                            ...apt,
+                            isExisting: true,
+                            isModified: false,
+                            isDeleted: false,
+                            originalData: { ...apt }
+                        }));
+                    } else {
+                        appointments = [];
+                    }
+                    
+                    displayAppointments();
+                    document.getElementById('appointmentsTitle').textContent = `Appointments for ${currentClient.firstName} ${currentClient.lastName}`;
+                } else {
+                    showError('Client not found');
+                }
+
+                showLoading(false);
+            } catch (error) {
+                console.error('Error loading client appointments:', error);
+                showError('Failed to load client appointments. Please try again.');
+                showLoading(false);
+            }
+        }
+
+        // Display client information
+        function displayClientInfo(client) {
+            const clientInfoDiv = document.getElementById('clientInfo');
+            const clientName = document.getElementById('clientName');
+            const clientDetails = document.getElementById('clientDetails');
+
+            clientName.textContent = `${client.firstName} ${client.lastName}`;
+            clientDetails.textContent = `${client.knumber} • ${client.phone} • ${client.email}`;
+            clientInfoDiv.style.display = 'block';
+        }
+
+        // Display appointments
+        function displayAppointments() {
+            const appointmentsList = document.getElementById('appointmentsList');
+            const appointmentCount = document.getElementById('appointmentCount');
+
+            if (appointments.length === 0) {
+                displayEmptyState();
+                return;
+            }
+
+            // Sort appointments by date and time
+            const sortedAppointments = [...appointments].sort((a, b) => {
+                const dateTimeA = new Date(a.date + ' ' + a.time);
+                const dateTimeB = new Date(b.date + ' ' + b.time);
+                return dateTimeA - dateTimeB;
+            });
+
+            appointmentsList.innerHTML = '';
+
+            sortedAppointments.forEach(appointment => {
+                const appointmentDiv = createAppointmentCard(appointment);
+                appointmentsList.appendChild(appointmentDiv);
+            });
+
+            // Update count
+            const activeCount = appointments.filter(apt => !apt.isDeleted).length;
+            appointmentCount.textContent = `${activeCount} appointment${activeCount !== 1 ? 's' : ''}`;
+            appointmentCount.className = `appointment-status ${activeCount > 0 ? 'status-confirmed' : 'status-pending'}`;
+
+            // Show/hide save section based on changes
+            checkForUnsavedChanges();
+        }
+
+        // Create appointment card HTML
+        function createAppointmentCard(appointment) {
+            const appointmentDiv = document.createElement('div');
+            appointmentDiv.className = `appointment-card${appointment.isDeleted ? ' deleted' : ''}${appointment.isModified ? ' modified' : ''}`;
+            appointmentDiv.id = `appointment-${appointment.id}`;
+
+            const statusText = appointment.isDeleted ? 'Deleted' : 
+                              appointment.isModified ? 'Modified' : 
+                              appointment.appointmentstatus === 'confirmed' ? 'Confirmed' : 'Pending';
+            
+            const statusClass = appointment.isDeleted ? 'status-deleted' : 
+                               appointment.isModified ? 'status-modified' : 
+                               appointment.appointmentstatus === 'confirmed' ? 'status-confirmed' : 'status-pending';
+
+            appointmentDiv.innerHTML = `
+                <div class="appointment-header">
+                    <div class="appointment-date-time">
+                        ${formatDate(appointment.date)} at ${formatTime(appointment.time)}
+                    </div>
+                    <div class="appointment-status ${statusClass}">${statusText}</div>
+                </div>
+
+                <div class="appointment-details">
+                    <div class="appointment-field">
+                        <label for="date-${appointment.id}">Date</label>
+                        <input type="date" 
+                               id="date-${appointment.id}" 
+                               value="${appointment.date}" 
+                               min="${getTodayDate()}"
+                               ${appointment.isDeleted ? 'disabled' : ''}
+                               onchange="updateAppointmentField('${appointment.id}', 'date', this.value)">
+                    </div>
+
+                    <div class="appointment-field">
+                        <label for="time-${appointment.id}">Time</label>
+                        <input type="time" 
+                               id="time-${appointment.id}" 
+                               value="${appointment.time}" 
+                               ${appointment.isDeleted ? 'disabled' : ''}
+                               onchange="updateAppointmentField('${appointment.id}', 'time', this.value)">
+                    </div>
+
+                    <div class="appointment-field">
+                        <label for="location-${appointment.id}">Location</label>
+                        <select id="location-${appointment.id}" 
+                                ${appointment.isDeleted ? 'disabled' : ''}
+                                onchange="updateAppointmentField('${appointment.id}', 'location', this.value)">
+                            ${LOCATIONS.map(loc => `
+                                <option value="${loc}" ${appointment.locationname === loc ? 'selected' : ''}>${loc}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+
+                    <div class="appointment-field">
+                        <label for="status-${appointment.id}">Status</label>
+                        <select id="status-${appointment.id}" 
+                                ${appointment.isDeleted ? 'disabled' : ''}
+                                onchange="updateAppointmentField('${appointment.id}', 'appointmentstatus', this.value)">
+                            <option value="pending" ${appointment.appointmentstatus === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="confirmed" ${appointment.appointmentstatus === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                            <option value="cancelled" ${appointment.appointmentstatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="appointment-field">
+                        <label for="notes-${appointment.id}">Notes</label>
+                        <textarea id="notes-${appointment.id}" 
+                                  placeholder="Appointment notes or special requests..."
+                                  ${appointment.isDeleted ? 'disabled' : ''}
+                                  onchange="updateAppointmentField('${appointment.id}', 'notes', this.value)">${appointment.notes || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="appointment-actions">
+                    ${appointment.isDeleted ? `
+                        <button class="btn btn-success" onclick="undoDeleteAppointment('${appointment.id}')">Undo Delete</button>
+                    ` : `
+                        <button class="btn btn-danger" onclick="deleteAppointment('${appointment.id}')">Delete</button>
+                    `}
+                </div>
+            `;
+
+            return appointmentDiv;
+        }
+
+        // Display empty state
+        function displayEmptyState() {
+            const appointmentsList = document.getElementById('appointmentsList');
+            const appointmentCount = document.getElementById('appointmentCount');
+
+            appointmentsList.innerHTML = `
+                <div class="empty-state">
+                    <h3>No appointments found</h3>
+                    <p>${currentClient ? `No future appointments for ${currentClient.firstName} ${currentClient.lastName}` : 'No future appointments in the system'}.</p>
+                    <button class="btn" onclick="addNewAppointment()">Add Appointment</button>
+                </div>
+            `;
+
+            appointmentCount.textContent = '0 appointments';
+            appointmentCount.className = 'appointment-status status-pending';
+        }
+
+        // Add new appointment
+        function addNewAppointment() {
+            if (currentClient === null) {
+                showError('Please select a client first, or load from the client management page.');
+                return;
+            }
+
+            const newAppointment = {
+                id: `new-${appointmentCounter++}`,
+                knumber: currentClient.knumber,
+                date: getTodayDate(),
+                time: '09:00',
+                locationname: LOCATIONS[0],
+                locationaddress: LOCATIONS[0].split(' - ')[2] || '',
+                appointmentstatus: 'pending',
+                notes: '',
+                isExisting: false,
+                isModified: false,
+                isDeleted: false
+            };
+
+            appointments.push(newAppointment);
+            displayAppointments();
+        }
+
+        // Update appointment field
+        function updateAppointmentField(appointmentId, field, value) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (!appointment) return;
+
+            appointment[field] = value;
+
+            // Special handling for location
+            if (field === 'location') {
+                appointment.locationname = value;
+                appointment.locationaddress = value.split(' - ')[2] || '';
+            }
+
+            // Mark as modified if it's an existing appointment
+            if (appointment.isExisting && !appointment.isDeleted) {
+                appointment.isModified = true;
+            }
+
+            displayAppointments();
+        }
+
+        // Delete appointment
+        function deleteAppointment(appointmentId) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (!appointment) return;
+
+            if (confirm('Are you sure you want to delete this appointment?')) {
+                appointment.isDeleted = true;
+                displayAppointments();
+            }
+        }
+
+        // Undo delete appointment
+        function undoDeleteAppointment(appointmentId) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (!appointment) return;
+
+            appointment.isDeleted = false;
+            displayAppointments();
+        }
+
+        // Check for unsaved changes
+        function checkForUnsavedChanges() {
+            hasUnsavedChanges = appointments.some(apt => 
+                !apt.isExisting || apt.isModified || apt.isDeleted
+            );
+
+            document.getElementById('saveSection').style.display = hasUnsavedChanges ? 'flex' : 'none';
+        }
+
+        // Cancel all changes
+        function cancelChanges() {
+            if (confirm('Are you sure you want to cancel all changes? This cannot be undone.')) {
+                // Remove new appointments and reset modified ones
+                appointments = appointments.filter(apt => apt.isExisting).map(apt => ({
+                    ...apt.originalData,
+                    isExisting: true,
+                    isModified: false,
+                    isDeleted: false,
+                    originalData: apt.originalData
+                }));
+
+                displayAppointments();
+            }
+        }
+
+        // Save all changes
+        async function saveAllChanges() {
+            try {
+                showLoading(true);
+
+                const changes = {
+                    newAppointments: appointments.filter(apt => !apt.isExisting && !apt.isDeleted),
+                    modifiedAppointments: appointments.filter(apt => apt.isExisting && apt.isModified && !apt.isDeleted),
+                    deletedAppointments: appointments.filter(apt => apt.isExisting && apt.isDeleted).map(apt => apt.id)
+                };
+
+                console.log('Saving appointment changes:', changes);
+
+                const response = await fetch(API_ENDPOINTS.SAVE_APPOINTMENTS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        changes: changes,
+                        clientKNumber: currentClient?.knumber || null
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Appointments saved successfully!');
+                    
+                    // Reload appointments to get updated data
+                    if (currentClient) {
+                        loadClientAppointments(currentClient.knumber);
+                    } else {
+                        loadAllAppointments();
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to save appointments');
+                }
+
+                showLoading(false);
+            } catch (error) {
+                console.error('Error saving appointments:', error);
+                showError('Failed to save appointments. Please try again.');
+                showLoading(false);
+            }
+        }
+
+        // Utility functions
+        function getTodayDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-CA', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        function formatTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':');
+            const hour = parseInt(hours);
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+            return `${displayHour}:${minutes} ${period}`;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+
+        function showSuccess(message) {
+            alert(message); // Replace with a proper toast notification
+        }
+
+        function showError(message) {
+            alert('Error: ' + message); // Replace with a proper toast notification
+        }
+    </script>
+
+    <!-- Version: v1.0.0 - Appointment Management Page
+         Features:
+         - Load all future appointments or client-specific appointments
+         - Edit appointment details with real-time validation
+         - Delete appointments with undo functionality
+         - Add new appointments for existing clients
+         - Save changes with batch operations (create/update/delete)
+         - URL parameter support for client-specific loading
+         - Responsive design with modern UI/UX
+         - Visual indicators for modified/deleted appointments
+    -->
+</body>
+</html>
