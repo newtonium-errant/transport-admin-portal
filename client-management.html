@@ -470,61 +470,61 @@
         }
     });
 
-    // Client lookup function
-    async function lookupClient() {
-        const kNumber = document.getElementById('kNumber').value.trim().toUpperCase();
-        
-        // Validate K Number format (K followed by 7 digits)
-        if (!kNumber || !/^K\d{7}$/.test(kNumber)) {
-            showError('Invalid K Number format. Must be K followed by 7 digits (e.g., K1234567)');
-            return;
-        }
-
-        try {
-            showLoading(true);
-            
-            const response = await fetch(API_ENDPOINTS.LOOKUP, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ kNumber: kNumber })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            console.log('Client lookup result:', result);
-
-	if (result.found) {
-	    // Store destinations globally
-	    availableDestinations = result.destinations || [];
+// Client lookup function
+async function lookupClient() {
+    const kNumber = document.getElementById('kNumber').value.trim().toUpperCase();
     
-	    // Existing client found
-	    loadClientData(result.clientData, result.appointments || []);
-                
-                // Count future appointments for display
-                const futureAppointments = (result.appointments || []).filter(apt => {
-                    const appointmentDate = new Date(apt.date + ' ' + apt.time);
-                    return appointmentDate > new Date();
-                });
-                
-                showClientStatus(`Client Found: ${result.clientData.firstName} ${result.clientData.lastName}${futureAppointments.length > 0 ? ` (${futureAppointments.length} future appointments)` : ''}`, 'found');
-	} else {
-	    // Store destinations globally  
-	    availableDestinations = result.destinations || [];
-    
-	    // New client
-	    setupNewClient(kNumber);
-                showClientStatus('New Client - Please fill out all information', 'new');
-            }
-        } catch (error) {
-            console.error('Lookup error:', error);
-            showError(`Client lookup failed: ${error.message}`);
-        }
+    // Validate K Number format (K followed by 7 digits)
+    if (!kNumber || !/^K\d{7}$/.test(kNumber)) {
+        showError('Invalid K Number format. Must be K followed by 7 digits (e.g., K1234567)');
+        return;
     }
+
+    try {
+        showLoading(true);
+        
+        const response = await fetch(API_ENDPOINTS.LOOKUP, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ kNumber: kNumber })
+        });
+
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        }
+
+        const result = await response.json();
+        console.log('Client lookup result:', result);
+
+        if (result.found) {
+            // Store destinations globally
+            availableDestinations = result.destinations || [];
+            
+            // Existing client found
+            loadClientData(result.clientData, result.appointments || []);
+            
+            // Count future appointments for display
+            const futureAppointments = (result.appointments || []).filter(function(apt) {
+                const appointmentDate = new Date(apt.date + ' ' + apt.time);
+                return appointmentDate > new Date();
+            });
+            
+            showClientStatus('Client Found: ' + result.clientData.firstName + ' ' + result.clientData.lastName + (futureAppointments.length > 0 ? ' (' + futureAppointments.length + ' future appointments)' : ''), 'found');
+        } else {
+            // Store destinations globally  
+            availableDestinations = result.destinations || [];
+            
+            // New client
+            setupNewClient(kNumber);
+            showClientStatus('New Client - Please fill out all information', 'new');
+        }
+    } catch (error) {
+        console.error('Lookup error:', error);
+        showError('Client lookup failed: ' + error.message);
+    }
+}
 
     // Setup for new client
     function setupNewClient(kNumber) {
@@ -625,69 +625,66 @@
         updateAppointmentsList();
     }
 
-    // Update appointments list display
-    function updateAppointmentsList() {
-        const container = document.getElementById('appointmentsList');
-        if (!container) return;
+// Update appointments list display
+function updateAppointmentsList() {
+    const container = document.getElementById('appointmentsList');
+    if (!container) return;
 
-        container.innerHTML = '';
+    container.innerHTML = '';
 
-        appointments.forEach((appointment, index) => {
-            const appointmentDiv = document.createElement('div');
-            appointmentDiv.className = `appointment-item ${appointment.isExisting ? 'existing-appointment' : ''}`;
-            
-            const statusBadge = appointment.isExisting ? '<span class="status-confirmed">Existing</span>' : '';
-            
-            appointmentDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h4>Appointment ${index + 1} ${statusBadge}</h4>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Date <span class="required">*</span></label>
-                        <input type="date" id="date_${index}" value="${appointment.date}" ${appointment.isExisting ? 'readonly' : ''}>
-                    </div>
-                    <div class="form-group">
-                        <label>Time <span class="required">*</span></label>
-                        <input type="time" id="time_${index}" value="${appointment.time}" ${appointment.isExisting ? 'readonly' : ''}>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Pickup Location</label>
-                        <input type="text" id="pickup_${index}" value="Client Address" readonly style="background-color: #f8f9fa; color: #6c757d;">
-                        <div class="form-hint">Pickup location is automatically set to client's address</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Destination <span class="required">*</span></label>
-                        <select id="destination_${index}" ${appointment.isExisting ? 'disabled' : ''}>
-                            <option value="">Select Destination</option>
-                            <option value="NuVista Psychedelic - Greenwood" ${appointment.destination === 'NuVista Psychedelic - Greenwood' || appointment.destination === 'NuVista Greenwood' ? 'selected' : ''}>NuVista Psychedelic - Greenwood</option>
-                            <option value="NuVista Psychedelic - New Minas" ${appointment.destination === 'NuVista Psychedelic - New Minas' || appointment.destination === 'NuVista New Minas' ? 'selected' : ''}>NuVista Psychedelic - New Minas</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Notes</label>
-                        <input type="text" id="notes_${index}" value="${appointment.notes}" placeholder="Any special instructions" ${appointment.isExisting ? 'readonly' : ''}>
-                    </div>
-                </div>
-		<div class="appointment-actions">
-                    ${!appointment.isExisting ? `
-                    <button type="button" class="btn btn-primary" onclick="updateAppointment(${index})">Update</button>
-                    <button type="button" class="btn btn-danger" onclick="removeAppointment(${index})">Remove</button>
-                    ` : `
-                    <button type="button" class="btn btn-secondary" onclick="editAppointment(${index})">Edit</button>
-                    <button type="button" class="btn btn-danger" onclick="deleteAppointment(${index})">Delete</button>
-                    `}
-                </div>
-                ` : ''}
-            `;
-            
-            container.appendChild(appointmentDiv);
-        });
-    }
+    appointments.forEach(function(appointment, index) {
+        const appointmentDiv = document.createElement('div');
+        appointmentDiv.className = 'appointment-item' + (appointment.isExisting ? ' existing-appointment' : '');
+        
+        const statusBadge = appointment.isExisting ? '<span class="status-confirmed">Existing</span>' : '';
+        
+        appointmentDiv.innerHTML = 
+            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">' +
+                '<h4>Appointment ' + (index + 1) + ' ' + statusBadge + '</h4>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Date <span class="required">*</span></label>' +
+                    '<input type="date" id="date_' + index + '" value="' + appointment.date + '"' + (appointment.isExisting ? ' readonly' : '') + '>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Time <span class="required">*</span></label>' +
+                    '<input type="time" id="time_' + index + '" value="' + appointment.time + '"' + (appointment.isExisting ? ' readonly' : '') + '>' +
+                '</div>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Pickup Location</label>' +
+                    '<input type="text" id="pickup_' + index + '" value="Client Address" readonly style="background-color: #f8f9fa; color: #6c757d;">' +
+                    '<div class="form-hint">Pickup location is automatically set to client\'s address</div>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Destination <span class="required">*</span></label>' +
+                    '<select id="destination_' + index + '"' + (appointment.isExisting ? ' disabled' : '') + '>' +
+                        '<option value="">Select Destination</option>' +
+                        getDestinationOptions(appointment.destination) +
+                    '</select>' +
+                '</div>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Notes</label>' +
+                    '<input type="text" id="notes_' + index + '" value="' + appointment.notes + '" placeholder="Any special instructions"' + (appointment.isExisting ? ' readonly' : '') + '>' +
+                '</div>' +
+            '</div>' +
+            '<div class="appointment-actions">' +
+                ((!appointment.isExisting) ? 
+                    '<button type="button" class="btn btn-primary" onclick="updateAppointment(' + index + ')">Update</button>' +
+                    '<button type="button" class="btn btn-danger" onclick="removeAppointment(' + index + ')">Remove</button>'
+                    : 
+                    '<button type="button" class="btn btn-secondary" onclick="editAppointment(' + index + ')">Edit</button>' +
+                    '<button type="button" class="btn btn-danger" onclick="deleteAppointment(' + index + ')">Delete</button>'
+                ) +
+            '</div>';
+        
+        container.appendChild(appointmentDiv);
+    });
+}
 
     // Update appointment
     function updateAppointment(index) {
@@ -969,7 +966,8 @@
 </body>
 </html>
 <!-- 
-Version: v1.2.4 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+Version: v1.2.5 - RRTS Client Management Portal - Fixed Data Structure & Simplified Appointments
+- v1.2.5: fixed lookup errors
 - v1.2.4: added destination table lookup
 - v1.2.3: added missing modify delete functions
 - v1.2.2: fixed missing elements
