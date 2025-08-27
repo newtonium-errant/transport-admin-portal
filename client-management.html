@@ -675,7 +675,7 @@
         async function loadAllClients() {
             try {
                 showLoading(true);
-                const response = await fetch('https://n8n.rrts.ca/webhook/getAllClients', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -699,7 +699,7 @@
                 
             } catch (error) {
                 console.error('Error loading clients:', error);
-                showError('Failed to load clients: ' + error.message);
+                showError('Failed to load clients. Please check your network connection and try again.');
             } finally {
                 showLoading(false);
             }
@@ -861,8 +861,8 @@
             
             try {
                 const endpoint = isEditMode ? 
-                    'https://n8n.rrts.ca/webhook/updateClient' : 
-                    'https://n8n.rrts.ca/webhook/createClient';
+                    'https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient' : 
+                    'https://webhook-processor-production-3bb8.up.railway.app/webhook/createClient';
                     
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -992,9 +992,10 @@
 </body>
 </html>
 <!-- 
-Version: v2.0.4 - RRTS Client Overview Portal - Updated Display Layout
-- v2.0.4: Changed to single column layout with "lastname, firstname" format and showing civic address instead of emergency contact
-- v2.0.3: added production webhook
+Version: v2.0.5 - RRTS Client Overview Portal - Added Update Client Workflow
+- v2.0.5: Updated updateClient webhook URL to use actual Railway endpoint
+- v2.0.4: Updated webhook URLs to use actual Railway endpoints for getAllClients and createClient
+- v2.0.3: Changed to single column layout with "lastname, firstname" format and showing civic address instead of emergency contact
 - v2.0.2: Updated to match consistent dashboard navigation header design
 - v31: Initial client overview page with search, list, edit, and add functionality
 - Features: 
@@ -1011,5 +1012,5 @@ Version: v2.0.4 - RRTS Client Overview Portal - Updated Display Layout
   * Supabase field mapping (firstname, lastname, civicaddress, prov, etc.)
   * Authentication check and navigation
 - Ready for integration with appointment-management.html page
-- Uses existing n8n endpoints: /getAllClients, /updateClient, /createClient
+- Uses Railway webhook endpoints: /getAllClients, /createClient, /updateClient
 -->
