@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Management - RRTS Admin</title>
+    <title>RRTS - Client Management</title>
     <style>
         * {
             margin: 0;
@@ -15,162 +15,52 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #333;
         }
 
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .header h1 {
-            font-size: 1.8em;
-            font-weight: 300;
-            color: white;
-        }
-
         .header-info {
+            color: white;
             display: flex;
             align-items: center;
-            gap: 20px;
-            font-size: 0.9em;
+            gap: 1rem;
         }
 
         .nav-links {
             display: flex;
-            gap: 20px;
+            gap: 1.5rem;
         }
 
         .nav-links a {
             color: white;
             text-decoration: none;
-            padding: 8px 16px;
+            padding: 0.5rem 1rem;
             border-radius: 6px;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s;
         }
 
-        .nav-links a:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-
-        .nav-links a.active {
-            background-color: rgba(255,255,255,0.2);
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: #2c3e50;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #27ae60, #219a52);
-            color: white;
-            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        .nav-links a:hover, .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.2);
         }
 
         .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        .search-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
             padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        .search-section h2 {
-            color: #2c3e50;
-            margin-bottom: 1.5rem;
-            font-size: 1.4rem;
-            font-weight: 600;
-        }
-
-        .search-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .form-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            color: #34495e;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-
-        .clients-section {
+        .content {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            border-radius: 20px;
             padding: 2rem;
-            border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
@@ -186,6 +76,44 @@
             color: #2c3e50;
             font-size: 1.4rem;
             font-weight: 600;
+        }
+
+        .search-section {
+            margin-bottom: 2rem;
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .clients-grid {
@@ -204,6 +132,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .client-card.inactive {
+            opacity: 0.7;
+            background: #f8f9fa;
+            border-left: 4px solid #dc3545;
         }
 
         .client-card:hover {
@@ -233,6 +167,25 @@
             font-size: 0.9rem;
             color: #7f8c8d;
             font-weight: 500;
+        }
+
+        .client-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .client-status.active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .client-status.inactive {
+            background-color: #f8d7da;
+            color: #721c24;
         }
 
         .client-details {
@@ -271,104 +224,119 @@
             flex-shrink: 0;
         }
 
-        .btn-sm {
+        .btn {
             padding: 0.5rem 1rem;
-            font-size: 0.85rem;
+            border: none;
             border-radius: 6px;
-            flex: 1;
-            min-width: 100px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
             text-align: center;
-        }
-
-        .btn-outline-primary {
-            background: transparent;
-            color: #3498db;
-            border: 1px solid #3498db;
-        }
-
-        .btn-outline-primary:hover {
-            background: #3498db;
-            color: white;
-        }
-
-        .btn-outline-success {
-            background: transparent;
-            color: #27ae60;
-            border: 1px solid #27ae60;
-        }
-
-        .btn-outline-success:hover {
-            background: #27ae60;
-            color: white;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            color: #3498db;
-            font-size: 1.1rem;
+            transition: all 0.3s;
             font-weight: 500;
         }
 
-        .error {
-            background: #ffe6e6;
-            color: #c0392b;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #f8d7da;
-            margin: 1rem 0;
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #7f8c8d;
+        .btn-primary {
+            background-color: #667eea;
+            color: white;
         }
 
-        .empty-state h3 {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
+        .btn-primary:hover {
+            background-color: #5a6fd8;
+            transform: translateY(-1px);
         }
 
-        .empty-state p {
-            margin-bottom: 2rem;
+        .btn-success {
+            background-color: #28a745;
+            color: white;
         }
 
-        .hidden {
-            display: none !important;
+        .btn-success:hover {
+            background-color: #218838;
         }
 
-        /* Modal Styles */
+        .btn-outline-primary {
+            background-color: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .btn-outline-secondary {
+            background-color: transparent;
+            color: #6c757d;
+            border: 2px solid #6c757d;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+            border: 2px solid #ffc107;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+            border-color: #d39e00;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: 2px solid #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
 
+        .modal.hidden {
+            display: none;
+        }
+
         .modal-content {
             background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 800px;
+            border-radius: 12px;
             width: 90%;
+            max-width: 800px;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid #e9ecef;
-            padding-bottom: 1rem;
         }
 
         .modal-header h3 {
@@ -380,92 +348,105 @@
             background: none;
             border: none;
             font-size: 1.5rem;
-            color: #7f8c8d;
             cursor: pointer;
-            padding: 0.25rem;
+            color: #adb5bd;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .close-btn:hover {
-            color: #2c3e50;
+            color: #6c757d;
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-divider {
-            border: none;
-            border-top: 2px solid #e9ecef;
-            margin: 2rem 0 1.5rem 0;
+        .modal form {
+            padding: 1.5rem;
         }
 
         .section-title {
             font-size: 1.1rem;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 1rem;
+            margin: 1.5rem 0 1rem 0;
             padding-bottom: 0.5rem;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            flex: 1;
         }
 
         .required {
-            color: #e74c3c;
+            color: #dc3545;
         }
 
-        textarea {
-            resize: vertical;
-            min-height: 80px;
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e9ecef;
         }
 
-        select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e9ecef;
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 1rem;
             border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: white;
+            margin-bottom: 1rem;
         }
 
-        select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 1rem;
-            }
-            
-            .search-controls {
-                flex-direction: column;
-            }
-            
-            .clients-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .client-actions {
-                flex-direction: column;
-            }
-            
-            .btn-sm {
-                min-width: auto;
-            }
-            
-            .nav-buttons {
-                flex-wrap: wrap;
-            }
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .status-filter {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 0.5rem;
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>RRTS Dashboard</h1>
         <div class="header-info">
             <span id="currentDateTime"></span>
             <span>•</span>
@@ -491,6 +472,14 @@
                     <div class="form-group">
                         <label for="searchInput">Search by Name or K Number:</label>
                         <input type="text" id="searchInput" placeholder="Enter name or K number (e.g., K1234567)" oninput="searchClients()">
+                    </div>
+                    <div class="form-group" style="flex: 0 0 150px;">
+                        <label for="statusFilter">Filter by Status:</label>
+                        <select id="statusFilter" onchange="searchClients()" class="status-filter">
+                            <option value="all">All Clients</option>
+                            <option value="active">Active Only</option>
+                            <option value="inactive">Inactive Only</option>
+                        </select>
                     </div>
                     <button class="btn btn-primary" onclick="loadAllClients()">Show All Clients</button>
                 </div>
@@ -539,7 +528,11 @@
                         <input type="text" id="modalKNumber" placeholder="K1234567" required>
                     </div>
                     <div class="form-group">
-                        <!-- Spacer -->
+                        <label for="modalActive">Status <span class="required">*</span></label>
+                        <select id="modalActive" required>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
                     </div>
                 </div>
                 
@@ -557,82 +550,78 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="modalPhone">Phone <span class="required">*</span></label>
-                        <input type="tel" id="modalPhone" required>
+                        <input type="tel" id="modalPhone" placeholder="(902) 123-4567" required>
                     </div>
                     <div class="form-group">
-                        <label for="modalEmail">Email <span class="required">*</span></label>
-                        <input type="email" id="modalEmail" required>
+                        <label for="modalEmail">Email:</label>
+                        <input type="email" id="modalEmail" placeholder="client@email.com">
                     </div>
                 </div>
-
-                <hr class="section-divider">
-
+                
                 <!-- Address Information -->
                 <div class="section-title">Address Information</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="modalAddress">Civic Address <span class="required">*</span></label>
-                        <input type="text" id="modalAddress" required>
+                        <label for="modalAddress">Civic Address:</label>
+                        <input type="text" id="modalAddress" placeholder="123 Main Street">
                     </div>
                     <div class="form-group">
-                        <label for="modalCity">City <span class="required">*</span></label>
-                        <input type="text" id="modalCity" required>
+                        <label for="modalCity">City:</label>
+                        <input type="text" id="modalCity" placeholder="Halifax">
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="modalProvince">Province <span class="required">*</span></label>
-                        <select id="modalProvince" required>
+                        <label for="modalProvince">Province:</label>
+                        <select id="modalProvince">
                             <option value="">Select Province</option>
+                            <option value="NS">Nova Scotia</option>
+                            <option value="NB">New Brunswick</option>
+                            <option value="PE">Prince Edward Island</option>
+                            <option value="NL">Newfoundland and Labrador</option>
+                            <option value="ON">Ontario</option>
+                            <option value="QC">Quebec</option>
+                            <option value="MB">Manitoba</option>
+                            <option value="SK">Saskatchewan</option>
                             <option value="AB">Alberta</option>
                             <option value="BC">British Columbia</option>
-                            <option value="MB">Manitoba</option>
-                            <option value="NB">New Brunswick</option>
-                            <option value="NL">Newfoundland and Labrador</option>
-                            <option value="NS" selected>Nova Scotia</option>
+                            <option value="YT">Yukon</option>
                             <option value="NT">Northwest Territories</option>
                             <option value="NU">Nunavut</option>
-                            <option value="ON">Ontario</option>
-                            <option value="PE">Prince Edward Island</option>
-                            <option value="QC">Quebec</option>
-                            <option value="SK">Saskatchewan</option>
-                            <option value="YT">Yukon</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="modalPostalCode">Postal Code <span class="required">*</span></label>
-                        <input type="text" id="modalPostalCode" placeholder="A1A 1A1" required>
+                        <label for="modalPostalCode">Postal Code:</label>
+                        <input type="text" id="modalPostalCode" placeholder="B3H 4R2">
                     </div>
                 </div>
-
-                <hr class="section-divider">
-
+                
                 <!-- Emergency Contact -->
                 <div class="section-title">Emergency Contact</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="modalEmergencyName">Emergency Contact Name <span class="required">*</span></label>
-                        <input type="text" id="modalEmergencyName" required>
+                        <label for="modalEmergencyName">Emergency Contact Name:</label>
+                        <input type="text" id="modalEmergencyName" placeholder="Contact Name">
                     </div>
                     <div class="form-group">
-                        <label for="modalEmergencyPhone">Emergency Contact Phone <span class="required">*</span></label>
-                        <input type="tel" id="modalEmergencyPhone" required>
+                        <label for="modalEmergencyPhone">Emergency Contact Phone:</label>
+                        <input type="tel" id="modalEmergencyPhone" placeholder="(902) 123-4567">
                     </div>
                 </div>
-
-                <hr class="section-divider">
-
+                
                 <!-- Notes -->
                 <div class="section-title">Additional Information</div>
-                <div class="form-group">
-                    <label for="modalNotes">Notes or Special Requests</label>
-                    <textarea id="modalNotes" placeholder="Any special needs, accessibility requirements, or notes..."></textarea>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modalNotes">Notes:</label>
+                        <textarea id="modalNotes" placeholder="Any special notes or requirements..." rows="3" style="resize: vertical; width: 100%; padding: 0.75rem; border: 2px solid #e9ecef; border-radius: 8px;"></textarea>
+                    </div>
                 </div>
-
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
-                    <button type="submit" class="btn btn-success">Save Client</button>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="saveClientBtn">Save Client</button>
                 </div>
             </form>
         </div>
@@ -641,25 +630,18 @@
     <script>
         // Global variables
         let allClients = [];
-        let filteredClients = [];
-        let currentClient = null;
         let isEditMode = false;
+        let editingClientId = null;
 
-        // Authentication check
-        const currentUser = sessionStorage.getItem('rrts_user');
-        if (!currentUser) {
-            window.location.href = 'admin-portal_v3_2_3.html';
-        }
-
-        // Load clients on page load
+        // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            updateCurrentDateTime();
-            setInterval(updateCurrentDateTime, 1000);
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            checkAuthentication();
             loadAllClients();
         });
 
-        // Update current date/time display
-        function updateCurrentDateTime() {
+        function updateDateTime() {
             const now = new Date();
             const options = { 
                 weekday: 'long', 
@@ -672,11 +654,22 @@
             document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
         }
 
+        function checkAuthentication() {
+            const user = sessionStorage.getItem('rrts_user');
+            if (!user) {
+                window.location.href = 'admin-portal_v3_2_3.html';
+                return;
+            }
+            document.getElementById('welcomeUser').textContent = `Welcome, ${user}`;
+        }
+
         // Load all clients from API
         async function loadAllClients() {
+            showLoading(true);
+            hideError();
+            
             try {
-                showLoading(true);
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients', {
+                const response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/getAllClients', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -688,15 +681,11 @@
                 }
 
                 const data = await response.json();
-                
-                if (data.success && data.clients) {
-                    allClients = data.clients;
-                    filteredClients = [...allClients];
-                    displayClients(filteredClients);
-                    updateClientCount(filteredClients.length);
-                } else {
-                    throw new Error('Failed to load clients: ' + (data.message || 'Unknown error'));
-                }
+                console.log('API Response:', data);
+
+                allClients = data.clients || [];
+                displayClients(allClients);
+                updateClientCount(allClients.length);
                 
             } catch (error) {
                 console.error('Error loading clients:', error);
@@ -704,6 +693,35 @@
             } finally {
                 showLoading(false);
             }
+        }
+
+        // Search and filter clients
+        function searchClients() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let filteredClients = allClients;
+
+            // Filter by search term
+            if (searchTerm) {
+                filteredClients = filteredClients.filter(client => {
+                    const fullName = `${client.firstname} ${client.lastname}`.toLowerCase();
+                    const kNumber = (client.knumber || '').toLowerCase();
+                    return fullName.includes(searchTerm) || kNumber.includes(searchTerm);
+                });
+            }
+
+            // Filter by status
+            if (statusFilter !== 'all') {
+                const isActiveFilter = statusFilter === 'active';
+                filteredClients = filteredClients.filter(client => {
+                    const clientActive = client.active !== false; // Default to true if undefined
+                    return clientActive === isActiveFilter;
+                });
+            }
+
+            displayClients(filteredClients);
+            updateClientCount(filteredClients.length);
         }
 
         // Display clients in single column list
@@ -719,12 +737,18 @@
             
             emptyState.classList.add('hidden');
             
-            clientsGrid.innerHTML = clients.map(client => `
-                <div class="client-card">
+            clientsGrid.innerHTML = clients.map(client => {
+                const isActive = client.active !== false; // Default to true if undefined
+                const statusClass = isActive ? 'active' : 'inactive';
+                const cardClass = isActive ? '' : 'inactive';
+                
+                return `
+                <div class="client-card ${cardClass}">
                     <div class="client-info">
                         <div class="client-name-section">
                             <div class="client-name">${client.lastname}, ${client.firstname}</div>
                             <div class="client-knumber">${client.knumber}</div>
+                            <div class="client-status ${statusClass}">${isActive ? 'Active' : 'Inactive'}</div>
                         </div>
                         
                         <div class="client-details">
@@ -756,76 +780,100 @@
                         <button class="btn btn-sm btn-outline-primary" onclick="editClient('${client.knumber}')">
                             ✏️ Edit
                         </button>
-                        <a href="appointment-management.html?client=${client.knumber}" class="btn btn-sm btn-outline-success">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="viewAppointments('${client.knumber}')">
                             📅 Appointments
-                        </a>
+                        </button>
+                        <button class="btn btn-sm ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleClientStatus('${client.knumber}', ${!isActive})">
+                            ${isActive ? '⏸️ Deactivate' : '▶️ Activate'}
+                        </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
-        // Search clients
-        function searchClients() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            
-            if (searchTerm === '') {
-                filteredClients = [...allClients];
-            } else {
-                filteredClients = allClients.filter(client => 
-                    client.firstname.toLowerCase().includes(searchTerm) ||
-                    client.lastname.toLowerCase().includes(searchTerm) ||
-                    client.knumber.toLowerCase().includes(searchTerm) ||
-                    client.email.toLowerCase().includes(searchTerm)
-                );
+        // Toggle client active/inactive status
+        async function toggleClientStatus(knumber, newActiveStatus) {
+            const client = allClients.find(c => c.knumber === knumber);
+            if (!client) return;
+
+            const action = newActiveStatus ? 'activate' : 'deactivate';
+            if (!confirm(`Are you sure you want to ${action} ${client.firstname} ${client.lastname}?`)) {
+                return;
             }
-            
-            displayClients(filteredClients);
-            updateClientCount(filteredClients.length);
-        }
 
-        // Update client count display
-        function updateClientCount(count) {
-            document.getElementById('clientCount').textContent = `${count} client${count !== 1 ? 's' : ''} found`;
-        }
+            try {
+                const clientData = {
+                    ...client,
+                    active: newActiveStatus
+                };
 
-        // Show add client modal
-        function showAddClientModal() {
-            isEditMode = false;
-            currentClient = null;
-            document.getElementById('modalTitle').textContent = 'Add New Client';
-            document.getElementById('clientForm').reset();
-            document.getElementById('modalProvince').value = 'NS'; // Default to Nova Scotia
-            document.getElementById('clientModal').classList.remove('hidden');
+                const response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/updateClient', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        kNumber: knumber,
+                        clientData: clientData
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Update local data and refresh display
+                client.active = newActiveStatus;
+                searchClients(); // Refresh the current view
+                
+                showSuccess(`Client ${newActiveStatus ? 'activated' : 'deactivated'} successfully!`);
+                
+            } catch (error) {
+                console.error('Error updating client status:', error);
+                showError(`Failed to ${action} client. Please try again.`);
+            }
         }
 
         // Edit client
         function editClient(knumber) {
             const client = allClients.find(c => c.knumber === knumber);
-            if (!client) {
-                showError('Client not found');
-                return;
-            }
-            
+            if (!client) return;
+
             isEditMode = true;
-            currentClient = client;
-            document.getElementById('modalTitle').textContent = 'Edit Client';
+            editingClientId = knumber;
             
             // Populate form with client data
-            document.getElementById('modalKNumber').value = client.knumber;
+            document.getElementById('modalTitle').textContent = 'Edit Client';
+            document.getElementById('modalKNumber').value = client.knumber || '';
+            document.getElementById('modalKNumber').disabled = true; // Don't allow editing K number
+            document.getElementById('modalActive').value = client.active !== false ? 'true' : 'false';
             document.getElementById('modalFirstName').value = client.firstname || '';
             document.getElementById('modalLastName').value = client.lastname || '';
             document.getElementById('modalPhone').value = client.phone || '';
             document.getElementById('modalEmail').value = client.email || '';
             document.getElementById('modalAddress').value = client.civicaddress || '';
             document.getElementById('modalCity').value = client.city || '';
-            document.getElementById('modalProvince').value = client.prov || 'NS';
+            document.getElementById('modalProvince').value = client.prov || '';
             document.getElementById('modalPostalCode').value = client.postalcode || '';
             document.getElementById('modalEmergencyName').value = client.emergency_contact_name || '';
             document.getElementById('modalEmergencyPhone').value = client.emergency_contact_number || '';
             document.getElementById('modalNotes').value = client.notes || '';
+            document.getElementById('saveClientBtn').textContent = 'Update Client';
             
-            // Disable K Number field for existing clients
-            document.getElementById('modalKNumber').disabled = true;
+            document.getElementById('clientModal').classList.remove('hidden');
+        }
+
+        // Show add client modal
+        function showAddClientModal() {
+            isEditMode = false;
+            editingClientId = null;
+            
+            document.getElementById('modalTitle').textContent = 'Add New Client';
+            document.getElementById('clientForm').reset();
+            document.getElementById('modalKNumber').disabled = false;
+            document.getElementById('modalActive').value = 'true'; // Default to active
+            document.getElementById('saveClientBtn').textContent = 'Save Client';
             
             document.getElementById('clientModal').classList.remove('hidden');
         }
@@ -833,149 +881,119 @@
         // Close modal
         function closeClientModal() {
             document.getElementById('clientModal').classList.add('hidden');
-            document.getElementById('modalKNumber').disabled = false;
+            document.getElementById('clientForm').reset();
+            isEditMode = false;
+            editingClientId = null;
         }
 
         // Handle form submission
         document.getElementById('clientForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Validate form
-            if (!validateClientForm()) {
-                return;
-            }
-            
-            const formData = {
-                knumber: document.getElementById('modalKNumber').value.trim().toUpperCase(),
-                firstname: document.getElementById('modalFirstName').value.trim(),
-                lastname: document.getElementById('modalLastName').value.trim(),
-                phone: document.getElementById('modalPhone').value.trim(),
-                email: document.getElementById('modalEmail').value.trim(),
-                civicaddress: document.getElementById('modalAddress').value.trim(),
-                city: document.getElementById('modalCity').value.trim(),
-                prov: document.getElementById('modalProvince').value,
-                postalcode: document.getElementById('modalPostalCode').value.trim().toUpperCase(),
-                emergency_contact_name: document.getElementById('modalEmergencyName').value.trim(),
-                emergency_contact_number: document.getElementById('modalEmergencyPhone').value.trim(),
-                notes: document.getElementById('modalNotes').value.trim()
+            const clientData = {
+                firstName: document.getElementById('modalFirstName').value,
+                lastName: document.getElementById('modalLastName').value,
+                phone: document.getElementById('modalPhone').value,
+                email: document.getElementById('modalEmail').value,
+                civicAddress: document.getElementById('modalAddress').value,
+                city: document.getElementById('modalCity').value,
+                province: document.getElementById('modalProvince').value,
+                postalCode: document.getElementById('modalPostalCode').value,
+                emergencyContactName: document.getElementById('modalEmergencyName').value,
+                emergencyContactNumber: document.getElementById('modalEmergencyPhone').value,
+                notes: document.getElementById('modalNotes').value,
+                active: document.getElementById('modalActive').value === 'true'
             };
-            
-            try {
-                const endpoint = isEditMode ? 
-                    'https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient' : 
-                    'https://webhook-processor-production-3bb8.up.railway.app/webhook/createClient';
-                    
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
 
-                const data = await response.json();
+            const kNumber = document.getElementById('modalKNumber').value;
+
+            try {
+                let response;
                 
-                if (data.success) {
-                    closeClientModal();
-                    loadAllClients(); // Refresh the client list
-                    alert(isEditMode ? 'Client updated successfully!' : 'Client added successfully!');
+                if (isEditMode) {
+                    // Update existing client
+                    response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/updateClient', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            kNumber: kNumber,
+                            clientData: clientData
+                        })
+                    });
                 } else {
-                    throw new Error(data.message || 'Failed to save client');
+                    // Create new client
+                    response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/createClient', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            kNumber: kNumber,
+                            clientData: clientData
+                        })
+                    });
                 }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                closeClientModal();
+                loadAllClients(); // Reload all clients
+                showSuccess(`Client ${isEditMode ? 'updated' : 'created'} successfully!`);
                 
             } catch (error) {
                 console.error('Error saving client:', error);
-                alert('Error saving client: ' + error.message);
+                showError(`Failed to ${isEditMode ? 'update' : 'create'} client. Please try again.`);
             }
         });
 
-        // Validate client form
-        function validateClientForm() {
-            const knumber = document.getElementById('modalKNumber').value.trim();
-            const postalCode = document.getElementById('modalPostalCode').value.trim();
-            
-            // K Number validation
-            const knumberPattern = /^K\d{7}$/i;
-            if (!knumberPattern.test(knumber)) {
-                alert('K Number must be in format K1234567 (K followed by 7 digits)');
-                return false;
-            }
-            
-            // Postal code validation (Canadian format)
-            const postalCodePattern = /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/i;
-            if (postalCode && !postalCodePattern.test(postalCode)) {
-                alert('Postal code must be in Canadian format (A1A 1A1)');
-                return false;
-            }
-            
-            return true;
+        // View appointments for client
+        function viewAppointments(knumber) {
+            window.location.href = `appointment-management.html?client=${knumber}`;
         }
 
         // Utility functions
-        function showLoading(show) {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            if (show) {
-                loadingIndicator.classList.remove('hidden');
-            } else {
-                loadingIndicator.classList.add('hidden');
+        function formatPhoneNumber(phone) {
+            if (!phone) return '';
+            const cleaned = phone.replace(/\D/g, '');
+            if (cleaned.length === 10) {
+                return `(${cleaned.substr(0,3)}) ${cleaned.substr(3,3)}-${cleaned.substr(6,4)}`;
             }
+            return phone;
+        }
+
+        function updateClientCount(count) {
+            document.getElementById('clientCount').textContent = `${count} client${count !== 1 ? 's' : ''} found`;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
         }
 
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;
             errorDiv.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function showSuccess(message) {
+            // Create and show success message
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            document.querySelector('.content').insertBefore(successDiv, document.querySelector('.search-section'));
+            
             setTimeout(() => {
-                errorDiv.classList.add('hidden');
+                successDiv.remove();
             }, 5000);
         }
-
-        // Format phone number display
-        function formatPhoneNumber(phone) {
-            if (!phone) return 'N/A';
-            const cleaned = phone.replace(/\D/g, '');
-            if (cleaned.length === 10) {
-                return `(${cleaned.substring(0,3)}) ${cleaned.substring(3,6)}-${cleaned.substring(6)}`;
-            }
-            return phone;
-        }
-
-        // Auto-format postal code input
-        document.getElementById('modalPostalCode').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '').toUpperCase();
-            if (value.length > 3) {
-                value = value.substring(0, 3) + ' ' + value.substring(3, 6);
-            }
-            e.target.value = value;
-        });
-
-        // Auto-format K Number input
-        document.getElementById('modalKNumber').addEventListener('input', function(e) {
-            let value = e.target.value.toUpperCase().replace(/[^K0-9]/g, '');
-            if (value.length > 8) {
-                value = value.substring(0, 8);
-            }
-            if (value.length > 1 && !value.startsWith('K')) {
-                value = 'K' + value.replace(/K/g, '');
-            }
-            e.target.value = value;
-        });
-
-        // Auto-format search input for K Numbers
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            let value = e.target.value;
-            // Only auto-format if it looks like a K number is being entered
-            if (value.match(/^k\d/i)) {
-                e.target.value = value.toUpperCase();
-            }
-        });
-
-        // Handle escape key to close modal
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeClientModal();
-            }
-        });
 
         // Handle click outside modal to close
         document.getElementById('clientModal').addEventListener('click', function(e) {
@@ -993,26 +1011,26 @@
 </body>
 </html>
 <!-- 
-Version: v2.0.6 - RRTS Client Overview Portal - Added Appointments Link to Navigation
+Version: v2.1.0 - RRTS Client Management with Active/Inactive Status
+- v2.1.0: Added active/inactive client status functionality
+  * Added active column support in client data
+  * Status filter dropdown (All/Active/Inactive)
+  * Visual indicators for inactive clients (dimmed cards with red border)
+  * Toggle buttons to activate/deactivate clients
+  * Status badges showing "Active" or "Inactive"
+  * Updated form modal to include status selection
+  * API integration for status updates via updateClient endpoint
 - v2.0.6: Added appointment-management.html link to navigation header
-- v2.0.5: Updated updateClient webhook URL to use actual Railway endpoint
-- v2.0.4: Updated webhook URLs to use actual Railway endpoints for getAllClients and createClient
-- v2.0.3: Changed to single column layout with "lastname, firstname" format and showing civic address instead of emergency contact
-- v2.0.2: Updated to match consistent dashboard navigation header design
-- v31: Initial client overview page with search, list, edit, and add functionality
 - Features: 
   * Client search by name or K number with real-time filtering
-  * Single column client list showing: lastname, firstname format, K number, phone, email, civic address, city
-  * Edit client functionality with full form modal
-  * Add new client with comprehensive form
+  * Status-based filtering (active, inactive, all)
+  * Single column client list with status indicators
+  * Edit client functionality with full form modal including status
+  * Add new client with comprehensive form and default active status
+  * Toggle client active/inactive status with confirmation
   * Link to appointment management for each client
   * Responsive design with modern UI matching dashboard
-  * Consistent navigation header with live clock and welcome message including Appointments link
-  * Form validation (K number format, postal code format)
-  * Auto-formatting for inputs (K number, postal code)
-  * Integration with existing RRTS workflows
-  * Supabase field mapping (firstname, lastname, civicaddress, prov, etc.)
-  * Authentication check and navigation
-- Ready for integration with appointment-management.html page
-- Uses Railway webhook endpoints: /getAllClients, /createClient, /updateClient
+  * Form validation and auto-formatting
+  * Integration with RRTS workflows supporting active status
+  * Supabase field mapping including active boolean column
 -->
