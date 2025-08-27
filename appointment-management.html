@@ -374,10 +374,10 @@
     <script>
         // Configuration
         const API_ENDPOINTS = {
-            ALL_APPOINTMENTS: 'https://your-n8n-instance.app.n8n.cloud/webhook/appointments-list',
-            CLIENT_APPOINTMENTS: 'https://your-n8n-instance.app.n8n.cloud/webhook/client-appointments',
-            SAVE_APPOINTMENTS: 'https://your-n8n-instance.app.n8n.cloud/webhook/save-appointments',
-            CLIENT_LOOKUP: 'https://your-n8n-instance.app.n8n.cloud/webhook/client-lookup'
+            ALL_APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/appointments-list',
+            CLIENT_APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/client-appointments',
+            SAVE_APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointments',
+            CLIENT_LOOKUP: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/client-lookup'
         };
 
         // Global state
@@ -510,7 +510,7 @@
                     displayAppointments();
                     document.getElementById('appointmentsTitle').textContent = `Appointments for ${currentClient.firstName} ${currentClient.lastName}`;
                 } else {
-                    showError('Client not found');
+                    showError(result.message || 'Client not found');
                 }
 
                 showLoading(false);
@@ -847,8 +847,9 @@
         }
     </script>
 
-    <!-- Version: v4.1.0 - Appointment Management Page
+    <!-- Version: v4.2.0 - Appointment Management Page
          Updates:
+         - v4.2.0: Updated API endpoints to use Railway webhook processor, simplified client appointments loading
          - v4.1.0: Updated header to match client-management.html navigation style
          - v4.0.0: Initial appointment management page
          Features:
@@ -862,6 +863,7 @@
          - Visual indicators for modified/deleted appointments
          - Authentication check with session management
          - Consistent header navigation matching client management
+         - Railway webhook integration for appointment data
     -->
 </body>
 </html>
