@@ -672,7 +672,7 @@
             };
 
             // Send to save appointments workflow
-            fetch('https://newtonium-errant-2x6w.app.n8n.cloud/webhook/rrts-save-appointments', {
+            fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -737,7 +737,8 @@
 </body>
 </html>
 
-<!-- Version: v1.1.1 - Fixed clinic locations endpoint to use POST request -->
+<!-- Version: v1.1.2 - Updated save endpoint to Railway webhook -->
+<!-- v1.1.2: Changed save appointments endpoint to Railway webhook save-appointment -->
 <!-- v1.1.1: Fixed destinations loading to use POST request instead of GET -->
 <!-- v1.1.0: Updated to use Railway webhook endpoints for clients and destinations -->
 <!-- v1.0.0: Initial add appointments page with client selection and clinic dropdown -->
