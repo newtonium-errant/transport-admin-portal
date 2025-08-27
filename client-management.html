@@ -662,7 +662,7 @@
         async function loadAllClients() {
             try {
                 showLoading(true);
-                const response = await fetch('https://n8n.rrts.ca/webhook/getAllClients', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -972,7 +972,8 @@
 </body>
 </html>
 <!-- 
-Version: v2.0.2 - RRTS Client Overview Portal
+Version: v2.0.3 - RRTS Client Overview Portal
+- v2.0.3: Added production webhook
 - v2.0.2: Add consistent menu at top
 - v2.0.0: Initial client overview page with search, list, edit, and add functionality
 - Features: 
