@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Appointments - RRTS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 300;
+            color: white;
+            margin: 0;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.9em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+
+        .appointment-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .appointment-item:hover {
+            border-color: #3498db;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
+        }
+
+        .appointment-number {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: #3498db;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .remove-appointment {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .remove-appointment:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .btn-outline-secondary {
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideDown 0.5s ease;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .client-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .appointment-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #loadingSpinner {
+            display: none;
+        }
+
+        .is-loading #loadingSpinner {
+            display: block;
+        }
+
+        .is-loading .btn-text {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>RRTS Dashboard</h1>
+        <div class="header-info">
+            <span id="currentDateTime"></span>
+            <span>•</span>
+            <span id="welcomeUser">Welcome, Admin</span>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="client-management.html">Clients</a>
+            <a href="appointment-management.html">Appointments</a>
+            <a href="add-appointments.html" class="active">Add Appointments</a>
+            <a href="operations.html">Operations</a>
+            <a href="driver-management.html">Drivers</a>
+            <a href="admin.html">Admin</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>
+                        <i class="bi bi-calendar-plus me-2"></i>
+                        Add New Appointments
+                    </h2>
+                </div>
+
+                <!-- Client Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-search me-2"></i>
+                            Select Client
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="clientSelect" class="form-label">Client (K Number)</label>
+                                <select class="form-select" id="clientSelect" onchange="selectClient()">
+                                    <option value="">Choose a client...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="clientInfo" class="client-info" style="display: none;">
+                                    <strong>Selected Client:</strong>
+                                    <div id="clientDetails"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Section -->
+                <div class="card mb-4" id="appointmentsCard" style="display: none;">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                Appointments
+                            </h5>
+                            <button type="button" class="btn btn-outline-light" onclick="addAppointment()">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add Appointment
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="appointmentsList">
+                            <div class="empty-state">
+                                <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
+                                No appointments added yet. Click "Add Appointment" to begin.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary and Save Section -->
+                <div class="card" id="saveSection" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Save Appointments
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="appointmentSummary" class="appointment-summary mb-3"></div>
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-success" onclick="saveAppointments()">
+                                <div id="loadingSpinner" class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="btn-text">
+                                    <i class="bi bi-save me-1"></i>
+                                    Save All Appointments
+                                </span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Clear Form
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let clients = [];
+        let destinations = [];
+        let selectedClient = null;
+        let appointments = [];
+        let appointmentCounter = 0;
+
+        // API endpoints
+        const SUPABASE_URL = 'https://prcfqfnqrxkbgygfqtfs.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByY2ZxZm5xcnhrYmd5Z2ZxdGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjI5NjEwNjUsImV4cCI6MjAzODUzNzA2NX0.8VbTFgJpj9pUNdZdMiK_8y1HmgLLf7qz8eQruOqvhcc';
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            loadClients();
+            loadDestinations();
+        });
+
+        // Update date and time in header
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Load clients from Supabase
+        function loadClients() {
+            fetch(`${SUPABASE_URL}/rest/v1/clients?select=*&order=knumber.asc`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                clients = data;
+                populateClientDropdown();
+            })
+            .catch(error => {
+                console.error('Error loading clients:', error);
+                showError('Failed to load clients. Please refresh the page.');
+            });
+        }
+
+        // Load destinations from Supabase
+        function loadDestinations() {
+            fetch(`${SUPABASE_URL}/rest/v1/destinations?select=*&order=name.asc`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                destinations = data;
+            })
+            .catch(error => {
+                console.error('Error loading destinations:', error);
+                showError('Failed to load clinic locations. Please refresh the page.');
+            });
+        }
+
+        // Populate client dropdown
+        function populateClientDropdown() {
+            const clientSelect = document.getElementById('clientSelect');
+            clientSelect.innerHTML = '<option value="">Choose a client...</option>';
+            
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.knumber;
+                option.textContent = `${client.knumber} - ${client.firstname || ''} ${client.lastname || ''}`.trim();
+                clientSelect.appendChild(option);
+            });
+        }
+
+        // Handle client selection
+        function selectClient() {
+            const clientSelect = document.getElementById('clientSelect');
+            const knumber = clientSelect.value;
+            
+            if (!knumber) {
+                selectedClient = null;
+                document.getElementById('clientInfo').style.display = 'none';
+                document.getElementById('appointmentsCard').style.display = 'none';
+                document.getElementById('saveSection').style.display = 'none';
+                appointments = [];
+                appointmentCounter = 0;
+                return;
+            }
+
+            selectedClient = clients.find(client => client.knumber === knumber);
+            
+            if (selectedClient) {
+                displayClientInfo();
+                document.getElementById('appointmentsCard').style.display = 'block';
+                appointments = [];
+                appointmentCounter = 0;
+                displayAppointments();
+            }
+        }
+
+        // Display selected client information
+        function displayClientInfo() {
+            const clientDetails = document.getElementById('clientDetails');
+            const fullAddress = [
+                selectedClient.civicaddress,
+                selectedClient.city,
+                selectedClient.prov,
+                selectedClient.postalcode
+            ].filter(Boolean).join(', ');
+
+            clientDetails.innerHTML = `
+                <div><strong>${selectedClient.firstname || ''} ${selectedClient.lastname || ''}</strong></div>
+                <div>${fullAddress}</div>
+                <div>Phone: ${selectedClient.phone || 'Not provided'}</div>
+                <div>Email: ${selectedClient.email || 'Not provided'}</div>
+            `;
+            
+            document.getElementById('clientInfo').style.display = 'block';
+        }
+
+        // Add new appointment
+        function addAppointment() {
+            appointmentCounter++;
+            const appointment = {
+                id: `appointment-${appointmentCounter}`,
+                date: '',
+                time: '',
+                location: '',
+                locationAddress: '',
+                appointmentNotes: ''
+            };
+
+            appointments.push(appointment);
+            displayAppointments();
+            updateSaveSection();
+
+            // Focus on the date field of the new appointment
+            setTimeout(() => {
+                const dateInput = document.getElementById(`date-${appointment.id}`);
+                if (dateInput) {
+                    dateInput.focus();
+                }
+            }, 100);
+        }
+
+        // Remove appointment
+        function removeAppointment(appointmentId) {
+            const index = appointments.findIndex(apt => apt.id === appointmentId);
+            if (index > -1) {
+                appointments.splice(index, 1);
+                displayAppointments();
+                updateSaveSection();
+            }
+        }
+
+        // Display appointments
+        function displayAppointments() {
+            const appointmentsList = document.getElementById('appointmentsList');
+            
+            if (appointments.length === 0) {
+                appointmentsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
+                        No appointments added yet. Click "Add Appointment" to begin.
+                    </div>
+                `;
+                return;
+            }
+
+            appointmentsList.innerHTML = appointments.map((appointment, index) => `
+                <div class="appointment-item" id="appointment-${appointment.id}">
+                    <div class="appointment-number">Appointment ${index + 1}</div>
+                    <button class="remove-appointment" onclick="removeAppointment('${appointment.id}')" title="Remove appointment">
+                        <i class="bi bi-x"></i>
+                    </button>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="date-${appointment.id}" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date-${appointment.id}" 
+                                   value="${appointment.date}" onchange="updateAppointment('${appointment.id}', 'date', this.value)">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="time-${appointment.id}" class="form-label">Time</label>
+                            <input type="time" class="form-control" id="time-${appointment.id}" 
+                                   value="${appointment.time}" onchange="updateAppointment('${appointment.id}', 'time', this.value)">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="location-${appointment.id}" class="form-label">Clinic Location</label>
+                            <select class="form-select" id="location-${appointment.id}" 
+                                    onchange="updateAppointmentLocation('${appointment.id}', this.value)">
+                                <option value="">Choose a clinic...</option>
+                                ${destinations.map(dest => `
+                                    <option value="${dest.name}" ${appointment.location === dest.name ? 'selected' : ''}>
+                                        ${dest.name}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <label for="notes-${appointment.id}" class="form-label">Appointment Notes</label>
+                            <textarea class="form-control" id="notes-${appointment.id}" rows="2" 
+                                      placeholder="Enter any notes for this appointment..."
+                                      onchange="updateAppointment('${appointment.id}', 'appointmentNotes', this.value)">${appointment.appointmentNotes}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update appointment field
+        function updateAppointment(appointmentId, field, value) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (appointment) {
+                appointment[field] = value;
+                updateSaveSection();
+            }
+        }
+
+        // Update appointment location and get address
+        function updateAppointmentLocation(appointmentId, locationName) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            const destination = destinations.find(dest => dest.name === locationName);
+            
+            if (appointment) {
+                appointment.location = locationName;
+                appointment.locationAddress = destination ? destination.address : '';
+                updateSaveSection();
+            }
+        }
+
+        // Update save section
+        function updateSaveSection() {
+            const validAppointments = appointments.filter(apt => 
+                apt.date && apt.time && apt.location
+            );
+
+            if (validAppointments.length > 0) {
+                document.getElementById('saveSection').style.display = 'block';
+                updateAppointmentSummary(validAppointments);
+            } else {
+                document.getElementById('saveSection').style.display = 'none';
+            }
+        }
+
+        // Update appointment summary
+        function updateAppointmentSummary(validAppointments) {
+            const summaryDiv = document.getElementById('appointmentSummary');
+            
+            summaryDiv.innerHTML = `
+                <div><strong>Ready to save:</strong> ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}</div>
+                <div class="mt-2">
+                    ${validAppointments.map((apt, index) => `
+                        <div class="text-muted">
+                            ${index + 1}. ${new Date(apt.date).toLocaleDateString()} at ${apt.time} - ${apt.location}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Save appointments
+        function saveAppointments() {
+            const validAppointments = appointments.filter(apt => 
+                apt.date && apt.time && apt.location
+            );
+
+            if (validAppointments.length === 0) {
+                showError('Please complete at least one appointment before saving.');
+                return;
+            }
+
+            if (!selectedClient) {
+                showError('Please select a client first.');
+                return;
+            }
+
+            // Show loading state
+            document.body.classList.add('is-loading');
+
+            // Get client address for Google Maps
+            const clientAddress = [
+                selectedClient.civicaddress,
+                selectedClient.city,
+                selectedClient.prov,
+                selectedClient.postalcode
+            ].filter(Boolean).join(', ');
+
+            // Prepare data for backend
+            const appointmentData = {
+                kNumber: selectedClient.knumber,
+                clientData: {
+                    firstName: selectedClient.firstname,
+                    lastName: selectedClient.lastname,
+                    phone: selectedClient.phone,
+                    email: selectedClient.email,
+                    civicAddress: selectedClient.civicaddress,
+                    city: selectedClient.city,
+                    province: selectedClient.prov,
+                    postalCode: selectedClient.postalcode,
+                    emergencyContactName: selectedClient.emergency_contact_name,
+                    emergencyContactNumber: selectedClient.emergency_contact_number,
+                    notes: selectedClient.notes
+                },
+                appointments: validAppointments.map(apt => ({
+                    date: apt.date,
+                    time: apt.time,
+                    location: apt.location,
+                    notes: apt.appointmentNotes || ''
+                })),
+                submittedBy: 'transport_admin',
+                submittedAt: new Date().toISOString()
+            };
+
+            // Send to save appointments workflow
+            fetch('https://newtonium-errant-2x6w.app.n8n.cloud/webhook/rrts-save-appointments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(appointmentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.body.classList.remove('is-loading');
+                showSuccess(`Successfully saved ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}!`);
+                clearForm();
+            })
+            .catch(error => {
+                document.body.classList.remove('is-loading');
+                console.error('Error:', error);
+                showError('Failed to save appointments. Please try again.');
+            });
+        }
+
+        // Clear form
+        function clearForm() {
+            document.getElementById('clientSelect').value = '';
+            selectedClient = null;
+            appointments = [];
+            appointmentCounter = 0;
+            
+            document.getElementById('clientInfo').style.display = 'none';
+            document.getElementById('appointmentsCard').style.display = 'none';
+            document.getElementById('saveSection').style.display = 'none';
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i>${message}`;
+
+            const container = document.querySelector('.container');
+            container.insertBefore(successDiv, container.firstChild);
+
+            setTimeout(() => successDiv.remove(), 5000);
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>${message}`;
+
+            const container = document.querySelector('.container');
+            container.insertBefore(errorDiv, container.firstChild);
+
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem('rrts_user');
+            window.location.href = 'admin-portal_v3_2_3.html';
+        }
+    </script>
+</body>
+</html>
+
+<!-- Version: v1.0.0 - Add new appointments with client selection and clinic dropdown -->
+<!-- Features: Client dropdown from Supabase, Clinic location dropdown with addresses, Multiple appointments per client, Google Maps integration ready -->
