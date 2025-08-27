@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RRTS - Appointment Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Appointment Management - RRTS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
             background-color: #f8f9fa;
@@ -15,10 +16,16 @@
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
             padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
         }
 
         .header h1 {
@@ -56,242 +63,249 @@
             background-color: rgba(255,255,255,0.2);
         }
 
-        .nav-tabs {
-            border-bottom: 2px solid #dee2e6;
-            margin-bottom: 20px;
+        .container {
+            margin-top: 100px;
+            padding: 2rem;
         }
 
-        .nav-tabs .nav-link {
+        .card {
             border: none;
-            color: #495057;
-            font-weight: 600;
-            padding: 15px 25px;
-        }
-
-        .nav-tabs .nav-link.active {
-            background-color: #3498db;
-            color: white;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .appointment-card {
-            background: white;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1rem 1.5rem;
+            border: none;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
             transition: all 0.3s ease;
         }
 
-        .appointment-card:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
-        .appointment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .appointment-status {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-            text-transform: capitalize;
-        }
-
-        .status-confirmed {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .status-completed, .status-done, .status-complete {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .status-cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-new {
-            background-color: #e7f3ff;
-            color: #0066cc;
-        }
-
-        .status-existing {
-            background-color: #f0f8e7;
-            color: #2d5016;
-        }
-
-        .status-modified {
-            background-color: #fff7e6;
-            color: #cc8800;
-        }
-
-        .appointment-date-time {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .appointment-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .client-info {
-            color: #495057;
-        }
-
-        .client-info strong {
-            color: #2c3e50;
-            font-size: 1.1em;
-        }
-
-        .appointment-details div {
-            margin: 5px 0;
+        .btn-outline-secondary {
+            border-color: #e9ecef;
             color: #6c757d;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: #3498db;
+            border-color: #3498db;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .btn-warning {
+            background: #fd7e14;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 1rem;
+        }
+
+        .table td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
         }
 
         .appointment-item {
             background: white;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1rem;
+            margin-bottom: 1rem;
             border-left: 4px solid #3498db;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .appointment-item.existing {
-            border-left-color: #28a745;
+        .appointment-item h6 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
         }
 
-        .appointment-item.modified {
-            border-left-color: #ffc107;
+        .appointment-meta {
+            color: #6c757d;
+            font-size: 0.9rem;
         }
 
-        .appointment-form {
-            margin-top: 15px;
+        .appointment-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: capitalize;
         }
 
-        .form-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
         }
 
-        .form-group {
-            flex: 1;
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #495057;
+        .status-completed, .status-complete {
+            background: #d1ecf1;
+            color: #0c5460;
         }
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .form-group textarea {
-            height: 80px;
-            resize: vertical;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background-color: #3498db;
-            border-color: #3498db;
-        }
-
-        .btn-success {
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-
-        .btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-        }
-
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 0.875rem;
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 2rem;
             color: #6c757d;
         }
 
         .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            border: 1px solid #f5c6cb;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideDown 0.5s ease;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px;
+        .success-message {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .readonly-field {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
             color: #6c757d;
-            font-style: italic;
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         @media (max-width: 768px) {
-            .appointment-content {
-                grid-template-columns: 1fr;
-                gap: 15px;
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+                position: relative;
             }
 
-            .form-row {
-                flex-direction: column;
-                gap: 10px;
+            .container {
+                margin-top: 20px;
+                padding: 1rem;
             }
 
-            .stats-row {
-                flex-direction: column;
-                gap: 10px;
+            .nav-links {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .table-responsive {
+                font-size: 0.9rem;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header matching add-appointments.html -->
     <div class="header">
         <h1>RRTS Dashboard</h1>
         <div class="header-info">
@@ -303,6 +317,7 @@
             <a href="dashboard.html">Dashboard</a>
             <a href="client-management.html">Clients</a>
             <a href="appointment-management.html" class="active">Appointments</a>
+            <a href="add-appointments.html">Add Appointments</a>
             <a href="operations.html">Operations</a>
             <a href="driver-management.html">Drivers</a>
             <a href="admin.html">Admin</a>
@@ -310,37 +325,36 @@
         </div>
     </div>
 
+    <!-- Main Content -->
     <div class="container">
-        <!-- Navigation Tabs -->
-        <ul class="nav nav-tabs" id="appointmentTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-appointments" type="button" role="tab">
-                    View All Appointments
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="book-tab" data-bs-toggle="tab" data-bs-target="#book-appointments" type="button" role="tab">
-                    Book New Appointments
-                </button>
-            </li>
-        </ul>
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Appointment Management
+                    </h2>
+                </div>
 
-        <!-- Tab Content -->
-        <div class="tab-content" id="appointmentTabContent">
-            <!-- View All Appointments Tab -->
-            <div class="tab-pane fade show active" id="view-appointments" role="tabpanel">
-                <!-- Filters -->
-                <div class="card mb-4">
+                <!-- Filters Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-funnel me-2"></i>
+                            Filter Appointments
+                        </h5>
+                    </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-3">
-                                <label for="statusFilter" class="form-label">Filter by Status:</label>
+                                <label for="statusFilter" class="form-label">Status:</label>
                                 <select class="form-select" id="statusFilter" onchange="filterAppointments()">
                                     <option value="">All Statuses</option>
                                     <option value="pending">Pending</option>
                                     <option value="confirmed">Confirmed</option>
                                     <option value="completed">Completed</option>
-                                    <option value="done">Done</option>
+                                    <option value="complete">Complete</option>
+                                    <option value="cancelled">Cancelled</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -363,337 +377,280 @@
                     </div>
                 </div>
 
-                <!-- All Appointments List -->
+                <!-- Appointments List -->
                 <div id="allAppointmentsList">
                     <div class="loading">Loading appointments...</div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Book New Appointments Tab -->
-            <div class="tab-pane fade" id="book-appointments" role="tabpanel">
-                <!-- Client Information Section -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Client Information</h5>
-                    </div>
-                    <div class="card-body">
+    <!-- Edit Appointment Modal -->
+    <div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editAppointmentModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>
+                        Edit Appointment
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editAppointmentForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editTableId" class="form-label">Table ID</label>
+                                    <input type="text" class="form-control readonly-field" id="editTableId" readonly>
+                                    <small class="text-muted">This ID cannot be changed</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editKNumber" class="form-label">K Number</label>
+                                    <input type="text" class="form-control" id="editKNumber">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editAppointmentTime" class="form-label">Appointment Date & Time</label>
+                                    <input type="datetime-local" class="form-control" id="editAppointmentTime">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editPickupTime" class="form-label">Pickup Time</label>
+                                    <input type="datetime-local" class="form-control" id="editPickupTime">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editLocationName" class="form-label">Location Name</label>
+                                    <input type="text" class="form-control" id="editLocationName">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editLocationAddress" class="form-label">Location Address</label>
+                                    <input type="text" class="form-control" id="editLocationAddress">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editAppointmentStatus" class="form-label">Status</label>
+                                    <select class="form-select" id="editAppointmentStatus">
+                                        <option value="pending">Pending</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="complete">Complete</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editTransitTime" class="form-label">Transit Time (minutes)</label>
+                                    <input type="number" class="form-control" id="editTransitTime">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editCustomRate" class="form-label">Custom Rate</label>
+                                    <input type="number" class="form-control" id="editCustomRate" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editDriverAssigned" class="form-label">Driver Assigned</label>
+                                    <input type="number" class="form-control" id="editDriverAssigned">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
-                            <label for="kNumberLookup" class="form-label">K Number Lookup</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="kNumberLookup" placeholder="Enter K number (e.g., K1234567)">
-                                <button class="btn btn-primary" type="button" onclick="lookupClient()">Lookup</button>
-                            </div>
+                            <label for="editNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="editNotes" rows="3"></textarea>
                         </div>
-
-                        <!-- Client Form -->
-                        <div id="clientForm" class="hidden">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="firstName" class="form-label">First Name *</label>
-                                        <input type="text" class="form-control" id="firstName" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="lastName" class="form-label">Last Name *</label>
-                                        <input type="text" class="form-control" id="lastName" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="phone" class="form-label">Phone</label>
-                                        <input type="tel" class="form-control" id="phone">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="email" class="form-label">Email</label>
-                                        <input type="email" class="form-control" id="email">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Address</label>
-                                <input type="text" class="form-control" id="address">
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="city" class="form-label">City</label>
-                                        <input type="text" class="form-control" id="city">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="province" class="form-label">Province</label>
-                                        <select class="form-select" id="province">
-                                            <option value="NS">Nova Scotia</option>
-                                            <option value="NB">New Brunswick</option>
-                                            <option value="PE">Prince Edward Island</option>
-                                            <option value="NL">Newfoundland and Labrador</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="postalCode" class="form-label">Postal Code</label>
-                                        <input type="text" class="form-control" id="postalCode">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    </form>
                 </div>
-
-                <!-- Appointments Section -->
-                <div class="card mb-4" id="appointmentsCard" style="display: none;">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Schedule Appointments</h5>
-                        <button type="button" class="btn btn-success" onclick="addAppointment()">+ Add Appointment</button>
-                    </div>
-                    <div class="card-body">
-                        <div id="appointmentsList">
-                            <div class="empty-state">No appointments scheduled. Click "Add Appointment" to begin.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Save Section -->
-                <div class="text-center" id="saveSection" style="display: none;">
-                    <button type="button" class="btn btn-primary btn-lg" onclick="saveClientData()">
-                        Save Client & Appointments
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="deleteAppointment()">
+                        <i class="bi bi-trash me-2"></i>Delete Appointment
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAppointmentChanges()">
+                        <i class="bi bi-check-lg me-2"></i>Save Changes
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading Indicator -->
-    <div id="loadingIndicator" class="loading hidden">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p>Processing...</p>
-    </div>
-
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Global variables
         let allAppointments = [];
         let filteredAppointments = [];
-        let appointments = [];
-        let appointmentCounter = 0;
-        let isNewClient = false;
-        let currentClient = null;
-        let kNumberValue = '';
+        let currentEditingAppointment = null;
 
-        // Load and display all appointments from the appointments list API
+        // Load all appointments on page load
         async function loadAllAppointments() {
             try {
-                console.log('Loading all appointments from API...');
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/appointments-list', {
+                const response = await fetch('https://rrts-booking-system-production.up.railway.app/webhook/get-all-appointments', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
+                    }
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error('Failed to load appointments');
                 }
 
                 const data = await response.json();
-                console.log('All appointments loaded:', data);
+                
+                if (data.appointments && Array.isArray(data.appointments)) {
+                    allAppointments = data.appointments.map(apt => {
+                        // Parse datetime fields
+                        let appointmentDateTime = new Date(apt.appointmenttime);
+                        let pickupDateTime = new Date(apt.pickuptime);
 
-                if (data.success && data.appointments) {
-                    allAppointments = data.appointments;
+                        return {
+                            id: apt.id,
+                            tableId: apt.id, // Store the actual database ID
+                            knumber: apt.knumber,
+                            clientName: `${apt.firstname || ''} ${apt.lastname || ''}`.trim() || 'Unknown Client',
+                            appointmenttime: apt.appointmenttime,
+                            pickuptime: apt.pickuptime,
+                            locationname: apt.locationname || '',
+                            locationaddress: apt.locationaddress || '',
+                            appointmentstatus: apt.appointmentstatus || 'pending',
+                            transittime: apt.transittime || 0,
+                            custom_rate: apt.custom_rate,
+                            driver_assigned: apt.driver_assigned,
+                            notes: apt.notes || '',
+                            appointmentDate: appointmentDateTime.toISOString().split('T')[0],
+                            appointmentTime: appointmentDateTime.toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            }),
+                            appointmentDateTime: appointmentDateTime,
+                            pickupDate: pickupDateTime.toISOString().split('T')[0],
+                            pickupTime: pickupDateTime.toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })
+                        };
+                    });
+
                     filteredAppointments = [...allAppointments];
                     displayAllAppointments();
                 } else {
-                    console.error('Invalid response format:', data);
-                    showError('Invalid response format from server');
+                    showError('No appointments found or invalid response format');
                 }
-
             } catch (error) {
                 console.error('Error loading appointments:', error);
-                showError('Failed to load appointments: ' + error.message);
+                showError('Failed to load appointments. Please try again.');
             }
         }
 
-        // Display all appointments in a read-only list
+        // Display appointments
         function displayAllAppointments() {
             const container = document.getElementById('allAppointmentsList');
-            if (!container) return;
-
-            if (!filteredAppointments || filteredAppointments.length === 0) {
-                container.innerHTML = '<div class="empty-state">No appointments found matching your filters.</div>';
+            
+            if (filteredAppointments.length === 0) {
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calendar-x display-4 mb-3 d-block text-muted"></i>
+                            <h5 class="text-muted">No appointments found</h5>
+                            <p class="text-muted">Try adjusting your filter criteria.</p>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = '';
-            
+            // Sort appointments by appointment date/time
+            filteredAppointments.sort((a, b) => a.appointmentDateTime - b.appointmentDateTime);
+
+            let appointmentsHtml = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ul me-2"></i>
+                            All Appointments (${filteredAppointments.length})
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Client</th>
+                                        <th>Date & Time</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+
             filteredAppointments.forEach(appointment => {
-                const appointmentDiv = document.createElement('div');
-                appointmentDiv.className = 'appointment-card';
-                appointmentDiv.innerHTML = createAppointmentCard(appointment, true);
-                container.appendChild(appointmentDiv);
-            });
-        }
-
-        // Create appointment card HTML
-        function createAppointmentCard(appointment, readOnly = false) {
-            const appointmentData = normalizeAppointmentData(appointment);
-            const statusClass = getStatusClass(appointmentData.status);
-            const clientName = appointmentData.clientName || 'Unknown Client';
-            
-            if (readOnly) {
-                return `
-                    <div class="appointment-header">
-                        <div class="appointment-status ${statusClass}">
-                            ${appointmentData.status}
-                        </div>
-                        <div class="appointment-date-time">
-                            ${appointmentData.date} at ${appointmentData.time}
-                        </div>
-                    </div>
-                    <div class="appointment-content">
-                        <div class="client-info">
-                            <strong>${clientName}</strong> (${appointmentData.knumber})<br>
-                            ${appointmentData.clientPhone ? `📞 ${appointmentData.clientPhone}<br>` : ''}
-                            ${appointmentData.clientEmail ? `📧 ${appointmentData.clientEmail}` : ''}
-                        </div>
-                        <div class="appointment-details">
-                            <div>📍 ${appointmentData.location}</div>
-                            <div>🚗 Pickup: ${formatDisplayTime(appointmentData.pickupTime)}</div>
-                            <div>⏱️ Transit: ${appointmentData.transitTime || 0} mins</div>
-                            ${appointmentData.notes ? `<div>📝 ${appointmentData.notes}</div>` : ''}
-                        </div>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="appointment-header">
-                        <span class="appointment-status ${appointmentData.isExisting ? 'status-existing' : 'status-new'}">
-                            ${appointmentData.isExisting ? 'Existing' : 'New'}
-                        </span>
-                        <div class="appointment-actions">
-                            <button type="button" class="btn btn-danger btn-sm" onclick="removeAppointment('${appointmentData.id}')" title="Remove Appointment">
-                                ✕
+                appointmentsHtml += `
+                    <tr>
+                        <td>
+                            <div class="fw-bold">${appointment.clientName}</div>
+                            <small class="text-muted">${appointment.knumber}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold">${appointment.appointmentDate}</div>
+                            <small class="text-muted">${appointment.appointmentTime}</small>
+                            ${appointment.pickupTime !== appointment.appointmentTime ? 
+                                `<br><small class="text-info">Pickup: ${appointment.pickupTime}</small>` : ''}
+                        </td>
+                        <td>
+                            <div class="fw-bold">${appointment.locationname}</div>
+                            <small class="text-muted">${appointment.locationaddress}</small>
+                        </td>
+                        <td>
+                            <span class="appointment-status status-${appointment.appointmentstatus}">
+                                ${appointment.appointmentstatus}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editAppointment(${appointment.tableId})">
+                                <i class="bi bi-pencil"></i> Edit
                             </button>
-                        </div>
-                    </div>
-                    <div class="appointment-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Date</label>
-                                <input type="date" id="date-${appointmentData.id}" value="${appointmentData.date}" 
-                                       onchange="updateAppointment('${appointmentData.id}', 'date', this.value)" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Time</label>
-                                <input type="time" id="time-${appointmentData.id}" value="${appointmentData.time}" 
-                                       onchange="updateAppointment('${appointmentData.id}', 'time', this.value)" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Location</label>
-                            <select id="location-${appointmentData.id}" 
-                                    onchange="updateAppointment('${appointmentData.id}', 'location', this.value)" required>
-                                <option value="">Select a clinic...</option>
-                                <option value="NuVista Psychedelic - Greenwood - 963 Central Ave, Greenwood, NS B0P 1N0" 
-                                        ${appointmentData.location && appointmentData.location.includes('Greenwood') ? 'selected' : ''}>
-                                    NuVista Psychedelic - Greenwood
-                                </option>
-                                <option value="NuVista Psychedelic - New Minas - 21 Roy Avenue Suite 230, New Minas, NS B4N 3R7" 
-                                        ${appointmentData.location && appointmentData.location.includes('New Minas') ? 'selected' : ''}>
-                                    NuVista Psychedelic - New Minas
-                                </option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Notes (Optional)</label>
-                            <textarea id="notes-${appointmentData.id}" placeholder="Any special instructions or notes..." 
-                                      onchange="updateAppointment('${appointmentData.id}', 'notes', this.value)">${appointmentData.notes}</textarea>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                 `;
-            }
-        }
+            });
 
-        // Normalize appointment data from different API sources
-        function normalizeAppointmentData(appointment) {
-            if (appointment.appointmentDate && appointment.appointmentTime) {
-                return {
-                    id: appointment.id,
-                    date: appointment.appointmentDate,
-                    time: appointment.appointmentTime,
-                    location: appointment.location,
-                    notes: appointment.notes || '',
-                    status: appointment.status,
-                    knumber: appointment.knumber,
-                    clientName: appointment.clientName,
-                    clientPhone: appointment.clientPhone,
-                    clientEmail: appointment.clientEmail,
-                    pickupTime: appointment.pickupTime,
-                    transitTime: appointment.transitTime,
-                    isExisting: true
-                };
-            }
-            
-            return {
-                id: appointment.id,
-                date: appointment.date,
-                time: appointment.time,
-                location: appointment.location,
-                notes: appointment.notes || '',
-                status: appointment.status || 'new',
-                knumber: appointment.knumber || '',
-                clientName: appointment.clientName || '',
-                clientPhone: appointment.clientPhone || '',
-                clientEmail: appointment.clientEmail || '',
-                pickupTime: appointment.pickupTime || '',
-                transitTime: appointment.transitTime || 0,
-                isExisting: appointment.isExisting || false
-            };
-        }
+            appointmentsHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-        // Format time for display
-        function formatDisplayTime(timeValue) {
-            if (!timeValue) return '';
-            
-            try {
-                if (typeof timeValue === 'string' && timeValue.match(/^\d{2}:\d{2}$/)) {
-                    return timeValue;
-                }
-                
-                const date = new Date(timeValue);
-                if (!isNaN(date.getTime())) {
-                    return date.toTimeString().slice(0, 5);
-                }
-                
-                return timeValue;
-            } catch (error) {
-                console.warn('Error formatting time:', error);
-                return timeValue || '';
-            }
-        }
-
-        // Get CSS class for appointment status
-        function getStatusClass(status) {
-            if (!status) return 'status-unknown';
-            
-            const statusLower = status.toLowerCase();
-            if (statusLower.includes('confirmed')) return 'status-confirmed';
-            if (statusLower.includes('pending')) return 'status-pending';
-            if (statusLower.includes('complete') || statusLower.includes('done')) return 'status-completed';
-            if (statusLower.includes('cancelled')) return 'status-cancelled';
-            return 'status-unknown';
+            container.innerHTML = appointmentsHtml;
         }
 
         // Filter appointments
@@ -704,15 +661,15 @@
             const futureOnlyFilter = document.getElementById('futureOnlyFilter').value;
 
             const now = new Date();
-            
+
             filteredAppointments = allAppointments.filter(appointment => {
                 // Status filter
-                const statusMatch = !statusFilter || (appointment.status && appointment.status.toLowerCase().includes(statusFilter));
+                const statusMatch = !statusFilter || appointment.appointmentstatus.toLowerCase() === statusFilter;
                 
                 // Client filter (search by name or K number)
                 const clientMatch = !clientFilter || 
-                    (appointment.clientName && appointment.clientName.toLowerCase().includes(clientFilter)) ||
-                    (appointment.knumber && appointment.knumber.toLowerCase().includes(clientFilter));
+                    appointment.clientName.toLowerCase().includes(clientFilter) ||
+                    appointment.knumber.toLowerCase().includes(clientFilter);
                 
                 // Date filter
                 const dateMatch = !dateFilter || appointment.appointmentDate === dateFilter;
@@ -720,7 +677,7 @@
                 // Future/Past filter
                 let timeMatch = true;
                 if (futureOnlyFilter) {
-                    const appointmentDate = new Date(appointment.appointmentDateTime);
+                    const appointmentDate = appointment.appointmentDateTime;
                     if (futureOnlyFilter === 'future') {
                         timeMatch = appointmentDate >= now;
                     } else if (futureOnlyFilter === 'past') {
@@ -734,197 +691,153 @@
             displayAllAppointments();
         }
 
-        // Client lookup function
-        async function lookupClient() {
-            const kNumber = document.getElementById('kNumberLookup').value.trim();
-            if (!kNumber) {
-                alert('Please enter a K number');
+        // Edit appointment function
+        function editAppointment(appointmentId) {
+            const appointment = allAppointments.find(apt => apt.tableId === appointmentId);
+            if (!appointment) {
+                showError('Appointment not found');
                 return;
             }
 
-            kNumberValue = kNumber;
-            document.getElementById('clientForm').classList.remove('hidden');
-            document.getElementById('appointmentsCard').style.display = 'block';
-            document.getElementById('saveSection').style.display = 'block';
+            currentEditingAppointment = appointment;
 
-            // You can add actual client lookup logic here
-            console.log('Looking up client:', kNumber);
+            // Populate form fields
+            document.getElementById('editTableId').value = appointment.tableId;
+            document.getElementById('editKNumber').value = appointment.knumber;
+            
+            // Convert datetime to the format expected by datetime-local input
+            const appointmentDatetime = new Date(appointment.appointmenttime);
+            const pickupDatetime = new Date(appointment.pickuptime);
+            
+            document.getElementById('editAppointmentTime').value = appointmentDatetime.toISOString().slice(0, 16);
+            document.getElementById('editPickupTime').value = pickupDatetime.toISOString().slice(0, 16);
+            
+            document.getElementById('editLocationName').value = appointment.locationname;
+            document.getElementById('editLocationAddress').value = appointment.locationaddress;
+            document.getElementById('editAppointmentStatus').value = appointment.appointmentstatus;
+            document.getElementById('editTransitTime').value = appointment.transittime;
+            document.getElementById('editCustomRate').value = appointment.custom_rate || '';
+            document.getElementById('editDriverAssigned').value = appointment.driver_assigned || '';
+            document.getElementById('editNotes').value = appointment.notes;
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editAppointmentModal'));
+            modal.show();
         }
 
-        // Appointment management functions
-        function updateAppointment(appointmentId, field, value) {
-            const appointment = appointments.find(apt => apt.id === appointmentId);
-            if (!appointment) return;
+        // Save appointment changes
+        async function saveAppointmentChanges() {
+            if (!currentEditingAppointment) return;
 
-            const originalValue = appointment[field];
-            appointment[field] = value;
-
-            if (appointment.isExisting && originalValue !== value) {
-                appointment.isModified = true;
-            }
-        }
-
-        function removeAppointment(appointmentId) {
-            const appointmentIndex = appointments.findIndex(apt => apt.id === appointmentId);
-            if (appointmentIndex === -1) return;
-
-            const appointment = appointments[appointmentIndex];
-
-            if (appointment.isExisting) {
-                appointment.isDeleted = true;
-                appointment.isModified = true;
-                const appointmentElement = document.getElementById(`appointment-${appointmentId}`);
-                if (appointmentElement) {
-                    appointmentElement.style.display = 'none';
-                }
-            } else {
-                appointments.splice(appointmentIndex, 1);
-                const appointmentElement = document.getElementById(`appointment-${appointmentId}`);
-                if (appointmentElement) {
-                    appointmentElement.remove();
-                }
-            }
-        }
-
-        function addAppointment() {
-            appointmentCounter++;
-            const appointmentId = `appointment-${appointmentCounter}`;
-
-            const appointment = {
-                id: appointmentId,
-                date: '',
-                time: '',
-                location: '',
-                notes: '',
-                isExisting: false,
-                isModified: false,
-                isDeleted: false,
-                isDraft: true
+            const formData = {
+                id: currentEditingAppointment.tableId,
+                knumber: document.getElementById('editKNumber').value,
+                appointmenttime: document.getElementById('editAppointmentTime').value + ':00',
+                pickuptime: document.getElementById('editPickupTime').value + ':00',
+                locationname: document.getElementById('editLocationName').value,
+                locationaddress: document.getElementById('editLocationAddress').value,
+                appointmentstatus: document.getElementById('editAppointmentStatus').value,
+                transittime: parseInt(document.getElementById('editTransitTime').value) || 0,
+                custom_rate: parseFloat(document.getElementById('editCustomRate').value) || null,
+                driver_assigned: parseInt(document.getElementById('editDriverAssigned').value) || null,
+                notes: document.getElementById('editNotes').value
             };
 
-            appointments.push(appointment);
-            displayBookingAppointments();
+            try {
+                const response = await fetch('https://rrts-booking-system-production.up.railway.app/webhook/update-appointment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
 
-            setTimeout(() => {
-                const dateInput = document.getElementById(`date-${appointmentId}`);
-                if (dateInput) {
-                    dateInput.focus();
+                if (!response.ok) {
+                    throw new Error('Failed to update appointment');
                 }
-            }, 100);
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Appointment updated successfully!');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal'));
+                    modal.hide();
+                    
+                    // Reload appointments
+                    loadAllAppointments();
+                } else {
+                    throw new Error(result.message || 'Update failed');
+                }
+            } catch (error) {
+                console.error('Error updating appointment:', error);
+                showError('Failed to update appointment. Please try again.');
+            }
         }
 
-        function displayBookingAppointments() {
-            const appointmentsList = document.getElementById('appointmentsList');
-            if (!appointmentsList) return;
+        // Delete appointment function
+        async function deleteAppointment() {
+            if (!currentEditingAppointment) return;
 
-            appointmentsList.innerHTML = '';
-
-            if (appointments.length === 0) {
-                appointmentsList.innerHTML = '<div class="empty-state">No appointments scheduled. Click "Add Appointment" to begin.</div>';
+            if (!confirm('Are you sure you want to delete this appointment? This action cannot be undone.')) {
                 return;
             }
 
-            appointments.forEach(appointment => {
-                if (appointment.isDeleted) return;
+            try {
+                const response = await fetch('https://rrts-booking-system-production.up.railway.app/webhook/delete-appointment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: currentEditingAppointment.tableId })
+                });
 
-                const appointmentDiv = document.createElement('div');
-                appointmentDiv.className = `appointment-item ${appointment.isExisting ? 'existing' : 'new'}${appointment.isModified ? ' modified' : ''}`;
-                appointmentDiv.id = `appointment-${appointment.id}`;
-                appointmentDiv.innerHTML = createAppointmentCard(appointment, false);
-                appointmentsList.appendChild(appointmentDiv);
-            });
-        }
+                if (!response.ok) {
+                    throw new Error('Failed to delete appointment');
+                }
 
-        function saveClientData() {
-            console.log('Saving new appointments...');
-            
-            const clientData = {
-                firstName: document.getElementById('firstName').value.trim(),
-                lastName: document.getElementById('lastName').value.trim(),
-                phone: document.getElementById('phone').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                address: document.getElementById('address').value.trim(),
-                city: document.getElementById('city').value.trim(),
-                province: document.getElementById('province').value.trim(),
-                postalCode: document.getElementById('postalCode').value.trim()
-            };
-
-            if (!clientData.firstName || !clientData.lastName) {
-                alert('Please fill in the client\'s first name and last name.');
-                return;
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Appointment deleted successfully!');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal'));
+                    modal.hide();
+                    
+                    // Reload appointments
+                    loadAllAppointments();
+                } else {
+                    throw new Error(result.message || 'Delete failed');
+                }
+            } catch (error) {
+                console.error('Error deleting appointment:', error);
+                showError('Failed to delete appointment. Please try again.');
             }
-
-            // Filter out deleted appointments and only include new appointments
-            const newAppointments = appointments.filter(apt => !apt.isDeleted && !apt.isExisting);
-            
-            if (newAppointments.length === 0) {
-                alert('Please add at least one appointment.');
-                return;
-            }
-
-            const submissionData = {
-                kNumber: kNumberValue,
-                clientData: clientData,
-                appointments: newAppointments,
-                submittedBy: 'admin',
-                submittedAt: new Date().toISOString()
-            };
-
-            console.log('Submission data:', submissionData);
-
-            fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submissionData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                alert('New appointments saved successfully!');
-                // Clear form and refresh appointments list
-                clearBookingForm();
-                loadAllAppointments();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error saving appointments. Please try again.');
-            });
         }
 
-        function clearBookingForm() {
-            // Reset form fields
-            document.getElementById('kNumberLookup').value = '';
-            document.getElementById('firstName').value = '';
-            document.getElementById('lastName').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('address').value = '';
-            document.getElementById('city').value = '';
-            document.getElementById('province').value = 'NS';
-            document.getElementById('postalCode').value = '';
-            
-            // Hide form sections
-            document.getElementById('clientForm').classList.add('hidden');
-            document.getElementById('appointmentsCard').style.display = 'none';
-            document.getElementById('saveSection').style.display = 'none';
-            
-            // Clear appointments array
-            appointments = [];
-            appointmentCounter = 0;
-            displayBookingAppointments();
-        }
-
+        // Utility functions
         function showError(message) {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
             errorDiv.textContent = message;
 
-            const container = document.getElementById('allAppointmentsList') || document.body;
+            const container = document.getElementById('allAppointmentsList');
             container.insertBefore(errorDiv, container.firstChild);
 
             setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+
+            const container = document.getElementById('allAppointmentsList');
+            container.insertBefore(successDiv, container.firstChild);
+
+            setTimeout(() => successDiv.remove(), 5000);
         }
 
         // Initialize the page
@@ -956,7 +869,17 @@
 </body>
 </html>
 
-<!-- Version: v2.2.0 - Viewing/Editing Appointments only -->
-<!-- v2.1.0: Updated to use new save-appointment endpoint, simplified booking to new appointments only -->
-<!-- v2.0.0: Removed statistics section, enhanced filtering with future/past appointments filter, real-time client search -->
-<!-- Features: View all appointments with advanced filtering, Book new appointments only, Consistent header navigation -->
+<!-- 
+Version: v3.0.0 - RRTS Appointment Management - Complete Redesign
+- v3.0.0: Complete redesign with edit and delete functionality
+  * Updated header navigation to match add-appointments.html design
+  * Removed book new appointments functionality (moved to separate page)
+  * Added comprehensive edit modal with all appointment data fields
+  * Table ID displayed but non-editable for backend identification
+  * Added delete functionality with confirmation
+  * Enhanced UI with improved styling and responsiveness
+  * Full CRUD operations for appointment management
+  * Professional modal design with proper form validation
+  * Integrated with existing webhook endpoints
+  * Maintains consistent RRTS branding and navigation
+-->
