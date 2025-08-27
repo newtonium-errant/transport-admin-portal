@@ -669,7 +669,7 @@
             hideError();
             
             try {
-                const response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/getAllClients', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -912,7 +912,7 @@
                 
                 if (isEditMode) {
                     // Update existing client
-                    response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/updateClient', {
+                    response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -924,7 +924,7 @@
                     });
                 } else {
                     // Create new client
-                    response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/createClient', {
+                    response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/createClient', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1011,7 +1011,11 @@
 </body>
 </html>
 <!-- 
-Version: v2.1.0 - RRTS Client Management with Active/Inactive Status
+Version: v2.1.1 - RRTS Client Management with Active/Inactive Status
+- v2.1.1: Updated webhook endpoints to production Railway URLs
+  * Get All Clients: https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients
+  * Update Client: https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient
+  * Create Client: https://webhook-processor-production-3bb8.up.railway.app/webhook/createClient
 - v2.1.0: Added active/inactive client status functionality
   * Added active column support in client data
   * Status filter dropdown (All/Active/Inactive)
@@ -1033,4 +1037,5 @@ Version: v2.1.0 - RRTS Client Management with Active/Inactive Status
   * Form validation and auto-formatting
   * Integration with RRTS workflows supporting active status
   * Supabase field mapping including active boolean column
+  * Ready for production with correct webhook endpoints
 -->
