@@ -382,15 +382,14 @@
 
         // Load clients from Supabase
         function loadClients() {
-            fetch(`${SUPABASE_URL}/rest/v1/clients?select=*&order=knumber.asc`, {
+            fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients`, {
                 headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    'Content-Type': 'application/json'
                 }
             })
             .then(response => response.json())
             .then(data => {
-                clients = data;
+                clients = data.clients || data; // Handle different response formats
                 populateClientDropdown();
             })
             .catch(error => {
@@ -401,15 +400,14 @@
 
         // Load destinations from Supabase
         function loadDestinations() {
-            fetch(`${SUPABASE_URL}/rest/v1/destinations?select=*&order=name.asc`, {
+            fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/clinic-locations`, {
                 headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    'Content-Type': 'application/json'
                 }
             })
             .then(response => response.json())
             .then(data => {
-                destinations = data;
+                destinations = data.destinations || data; // Handle different response formats
             })
             .catch(error => {
                 console.error('Error loading destinations:', error);
@@ -739,5 +737,7 @@
 </body>
 </html>
 
-<!-- Version: v1.0.0 - Add new appointments with client selection and clinic dropdown -->
-<!-- Features: Client dropdown from Supabase, Clinic location dropdown with addresses, Multiple appointments per client, Google Maps integration ready -->
+<!-- Version: v1.1.0 - Add new appointments with Railway webhook endpoints -->
+<!-- v1.1.0: Updated to use Railway webhook endpoints for clients and destinations -->
+<!-- v1.0.0: Initial add appointments page with client selection and clinic dropdown -->
+<!-- Features: Client dropdown from Railway webhook, Clinic location dropdown with addresses, Multiple appointments per client, Google Maps integration ready -->
