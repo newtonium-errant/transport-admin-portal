@@ -19,25 +19,46 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 2rem;
+            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .header h1 {
-            font-size: 2rem;
-            margin: 0;
-            font-weight: 600;
+            font-size: 1.8em;
+            font-weight: 300;
+            color: white;
         }
 
-        .header-nav {
+        .header-info {
             display: flex;
-            gap: 1rem;
             align-items: center;
+            gap: 20px;
+            font-size: 0.9em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a.active {
+            background-color: rgba(255,255,255,0.2);
         }
 
         .container {
@@ -326,10 +347,20 @@
 </head>
 <body>
     <div class="header">
-        <h1>🚐 RRTS Appointment Management</h1>
-        <div class="header-nav">
-            <a href="dashboard.html" class="btn btn-secondary">Back to Dashboard</a>
-            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        <h1>RRTS Dashboard</h1>
+        <div class="header-info">
+            <span id="currentDateTime"></span>
+            <span>•</span>
+            <span id="welcomeUser">Welcome, Admin</span>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="client-management.html">Clients</a>
+            <a href="appointment-management.html" class="active">Appointments</a>
+            <a href="operations.html">Operations</a>
+            <a href="driver-management.html">Drivers</a>
+            <a href="admin.html">Admin</a>
+            <a href="#" onclick="logout()">Logout</a>
         </div>
     </div>
 
@@ -399,6 +430,13 @@
             // Check authentication first
             checkAuthentication();
             
+            // Initialize clock
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // Initialize user welcome message
+            initializeUserWelcome();
+            
             // Check if we're loading a specific client's appointments
             const urlParams = new URLSearchParams(window.location.search);
             const clientKNumber = urlParams.get('client');
@@ -409,6 +447,28 @@
                 loadAllAppointments();
             }
         });
+
+        // Update date and time display
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Initialize user welcome message
+        function initializeUserWelcome() {
+            if (currentUser && currentUser.username) {
+                document.getElementById('welcomeUser').textContent = `Welcome, ${currentUser.username}`;
+            }
+        }
 
         // Check authentication
         function checkAuthentication() {
@@ -843,12 +903,13 @@
             sessionStorage.removeItem('rrts_user');
             isLoggedIn = false;
             currentUser = null;
-            window.location.href = 'dashboard.html';
+            window.location.href = 'admin-portal_v3_2_3.html';
         }
     </script>
 
-    <!-- Version: v4.2.0 - Appointment Management Page
+    <!-- Version: v4.3.0 - Appointment Management Page
          Updates:
+         - v4.3.0: Updated header to match new client-management.html navigation with live clock, welcome message, and full nav menu
          - v4.2.0: Updated API endpoints to use Railway webhook processor, simplified client appointments loading
          - v4.1.0: Updated header to match client-management.html navigation style
          - v4.0.0: Initial appointment management page
@@ -862,8 +923,9 @@
          - Responsive design with modern UI/UX
          - Visual indicators for modified/deleted appointments
          - Authentication check with session management
-         - Consistent header navigation matching client management
+         - Consistent header navigation with live clock and welcome message
          - Railway webhook integration for appointment data
+         - Full navigation menu matching client management interface
     -->
 </body>
 </html>
