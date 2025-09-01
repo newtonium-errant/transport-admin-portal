@@ -643,7 +643,9 @@
                 }
 
                 const data = await response.json();
-                allClients = data || [];
+                // Backend returns array with nested data structure
+                const clientData = Array.isArray(data) && data.length > 0 ? data[0] : data;
+                allClients = clientData.clients || [];
                 filteredClients = [...allClients];
                 displayClients(filteredClients);
                 updateClientCount(filteredClients.length);
@@ -722,7 +724,7 @@
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">Emergency Contact:</div>
-                            <div class="detail-value">${client.emergencyname || 'Not provided'}</div>
+                            <div class="detail-value">${client.emergency_contact_name || 'Not provided'}</div>
                         </div>
                     </div>
                     
@@ -744,9 +746,9 @@
 
         function formatAddress(client) {
             const parts = [
-                client.address,
+                client.civicaddress,
                 client.city,
-                client.province,
+                client.prov,
                 client.postalcode
             ].filter(part => part && part.trim());
             return parts.length > 0 ? parts.join(', ') : 'Not provided';
@@ -774,12 +776,12 @@
             document.getElementById('modalLastName').value = client.lastname || '';
             document.getElementById('modalPhone').value = client.phone || '';
             document.getElementById('modalEmail').value = client.email || '';
-            document.getElementById('modalAddress').value = client.address || '';
+            document.getElementById('modalAddress').value = client.civicaddress || '';
             document.getElementById('modalCity').value = client.city || '';
-            document.getElementById('modalProvince').value = client.province || '';
+            document.getElementById('modalProvince').value = client.prov || '';
             document.getElementById('modalPostalCode').value = client.postalcode || '';
-            document.getElementById('modalEmergencyName').value = client.emergencyname || '';
-            document.getElementById('modalEmergencyPhone').value = client.emergencyphone || '';
+            document.getElementById('modalEmergencyName').value = client.emergency_contact_name || '';
+            document.getElementById('modalEmergencyPhone').value = client.emergency_contact_number || '';
             document.getElementById('modalNotes').value = client.notes || '';
             
             document.getElementById('clientModal').classList.remove('hidden');
@@ -832,12 +834,12 @@
                 lastname: document.getElementById('modalLastName').value.trim(),
                 phone: document.getElementById('modalPhone').value.trim(),
                 email: document.getElementById('modalEmail').value.trim(),
-                address: document.getElementById('modalAddress').value.trim(),
+                civicaddress: document.getElementById('modalAddress').value.trim(),
                 city: document.getElementById('modalCity').value.trim(),
-                province: document.getElementById('modalProvince').value,
+                prov: document.getElementById('modalProvince').value,
                 postalcode: document.getElementById('modalPostalCode').value.trim(),
-                emergencyname: document.getElementById('modalEmergencyName').value.trim(),
-                emergencyphone: document.getElementById('modalEmergencyPhone').value.trim(),
+                emergency_contact_name: document.getElementById('modalEmergencyName').value.trim(),
+                emergency_contact_number: document.getElementById('modalEmergencyPhone').value.trim(),
                 notes: document.getElementById('modalNotes').value.trim()
             };
 
@@ -913,5 +915,5 @@
 </body>
 </html>
 <!-- 
-Version: v2.1.2 - Updated header to match add-appointments.html design and color scheme
+Version: v2.1.3 - Fixed data mapping for Supabase field names and response structure
 -->
