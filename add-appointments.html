@@ -3,170 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RRTS - Add Appointments</title>
+    <title>Add Appointments - RRTS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-blue: #2c3e50;
-            --secondary-blue: #3498db;
-            --success-green: #27ae60;
-            --danger-red: #e74c3c;
-            --warning-orange: #f39c12;
-            --light-gray: #ecf0f1;
-            --dark-gray: #34495e;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .header {
-            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 1rem 0;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .header .container-fluid {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
         .header h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
+            font-size: 1.8em;
+            font-weight: 300;
+            color: white;
             margin: 0;
         }
 
         .header-info {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            font-size: 0.9rem;
-            opacity: 0.9;
+            gap: 20px;
+            font-size: 0.9em;
         }
 
         .nav-links {
             display: flex;
-            gap: 0;
-            margin-top: 1rem;
+            gap: 20px;
         }
 
         .nav-links a {
-            color: rgba(255, 255, 255, 0.9);
+            color: white;
             text-decoration: none;
-            padding: 0.7rem 1.2rem;
-            border-radius: 8px 8px 0 0;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.1);
-            margin-right: 2px;
-            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
         }
 
         .nav-links a:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            transform: translateY(-2px);
+            background-color: rgba(255,255,255,0.1);
         }
 
         .nav-links a.active {
-            background: rgba(255, 255, 255, 0.95);
-            color: var(--primary-blue);
-            font-weight: 600;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+            background-color: rgba(255,255,255,0.2);
         }
 
         .card {
             border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            margin-bottom: 2rem;
         }
 
         .card-header {
-            background: var(--primary-blue);
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
             border-radius: 12px 12px 0 0 !important;
+            border: none;
             padding: 1rem 1.5rem;
-            border: none;
-        }
-
-        .card-header h5 {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .card-body {
-            padding: 2rem;
-        }
-
-        .form-control, .form-select {
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            padding: 0.75rem;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--secondary-blue);
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--dark-gray);
-            margin-bottom: 0.5rem;
-        }
-
-        .btn-primary {
-            background: var(--secondary-blue);
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: #2980b9;
-            transform: translateY(-1px);
-        }
-
-        .btn-success {
-            background: var(--success-green);
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-success:hover {
-            background: #219a52;
-            transform: translateY(-1px);
-        }
-
-        .client-info {
-            background: var(--success-green);
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6c757d;
         }
 
         .appointment-item {
@@ -180,17 +82,17 @@
         }
 
         .appointment-item:hover {
-            border-color: var(--secondary-blue);
+            border-color: #3498db;
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
         }
 
         .appointment-item.past-appointment {
             background: #fdf2f2;
-            border-color: var(--danger-red);
+            border-color: #e74c3c;
         }
 
         .appointment-item.past-appointment .form-label {
-            color: var(--danger-red);
+            color: #e74c3c;
             font-weight: 600;
         }
 
@@ -199,7 +101,7 @@
             position: absolute;
             top: -10px;
             right: 15px;
-            background: var(--danger-red);
+            background: #e74c3c;
             color: white;
             padding: 0.25rem 0.75rem;
             border-radius: 15px;
@@ -212,7 +114,7 @@
             position: absolute;
             top: -10px;
             left: 15px;
-            background: var(--secondary-blue);
+            background: #3498db;
             color: white;
             padding: 5px 12px;
             border-radius: 20px;
@@ -224,7 +126,7 @@
             position: absolute;
             top: 10px;
             right: 15px;
-            background: var(--danger-red);
+            background: #e74c3c;
             color: white;
             border: none;
             border-radius: 50%;
@@ -240,12 +142,99 @@
             transform: scale(1.1);
         }
 
-        .save-section {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .btn-outline-secondary {
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .empty-state {
             text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideDown 0.5s ease;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .client-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
         }
 
         .appointment-summary {
@@ -267,65 +256,32 @@
             display: none;
         }
 
-        /* Bottom controls styling */
         .appointments-bottom-controls {
             text-align: center;
             margin-top: 2rem;
             padding-top: 1.5rem;
             border-top: 2px solid #e9ecef;
         }
-
-        @media (max-width: 768px) {
-            .header .container-fluid {
-                padding: 0 1rem;
-            }
-
-            .nav-links {
-                flex-wrap: wrap;
-                gap: 0.2rem;
-            }
-
-            .nav-links a {
-                padding: 0.5rem 0.8rem;
-                font-size: 0.9rem;
-            }
-
-            .container {
-                padding: 1rem;
-            }
-
-            .card-body {
-                padding: 1rem;
-            }
-
-            .appointment-item {
-                padding: 1rem;
-            }
-        }
     </style>
 </head>
 <body>
     <!-- Header -->
     <div class="header">
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-start">
-                <h1>RRTS Dashboard</h1>
-                <div class="header-info">
-                    <span id="currentDateTime"></span>
-                    <span>•</span>
-                    <span id="welcomeUser">Welcome, Admin</span>
-                </div>
-            </div>
-            <div class="nav-links">
-                <a href="dashboard.html">Dashboard</a>
-                <a href="client-management.html">Clients</a>
-                <a href="appointment-management.html">Appointments</a>
-                <a href="add-appointments.html" class="active">Add Appointments</a>
-                <a href="operations.html">Operations</a>
-                <a href="driver-management.html">Drivers</a>
-                <a href="admin.html">Admin</a>
-                <a href="#" onclick="logout()">Logout</a>
-            </div>
+        <h1>RRTS Dashboard</h1>
+        <div class="header-info">
+            <span id="currentDateTime"></span>
+            <span>•</span>
+            <span id="welcomeUser">Welcome, Admin</span>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="client-management.html">Clients</a>
+            <a href="appointment-management.html">Appointments</a>
+            <a href="add-appointments.html" class="active">Add Appointments</a>
+            <a href="operations.html">Operations</a>
+            <a href="driver-management.html">Drivers</a>
+            <a href="admin.html">Admin</a>
+            <a href="#" onclick="logout()">Logout</a>
         </div>
     </div>
 
@@ -392,21 +348,32 @@
                     </div>
                 </div>
 
-                <!-- Save Section -->
-                <div class="save-section" id="saveSection" style="display: none;">
-                    <h5 class="mb-3">Ready to Save Appointments</h5>
-                    <div id="appointmentSummary" class="appointment-summary"></div>
-                    
-                    <button type="button" class="btn btn-success btn-lg" onclick="saveAppointments()" id="saveAppointmentsBtn">
-                        <span class="btn-text">
-                            <i class="bi bi-cloud-arrow-up me-2"></i>
-                            Save All Appointments
-                        </span>
-                        <span id="loadingSpinner">
-                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                            Saving...
-                        </span>
-                    </button>
+                <!-- Summary and Save Section -->
+                <div class="card" id="saveSection" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Save Appointments
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="appointmentSummary" class="appointment-summary mb-3"></div>
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-success" onclick="saveAppointments()">
+                                <div id="loadingSpinner" class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="btn-text">
+                                    <i class="bi bi-save me-1"></i>
+                                    Save All Appointments
+                                </span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Clear Form
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -415,25 +382,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Global variables
+        let clients = [];
+        let destinations = [];
         let selectedClient = null;
         let appointments = [];
         let appointmentCounter = 0;
-        let destinations = [];
 
-        // API Configuration
-        const API_CONFIG = {
-            baseUrl: 'https://webhook-processor-production-3bb8.up.railway.app/webhook',
-            endpoints: {
-                getClients: '/getAllClients',
-                getDestinations: '/clinic-locations',
-                saveAppointments: '/save-appointment'
-            }
-        };
+        // API endpoints
+        const SUPABASE_URL = 'https://prcfqfnqrxkbgygfqtfs.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByY2ZxZm5xcnhrYmd5Z2ZxdGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjI5NjEwNjUsImV4cCI6MjAzODUzNzA2NX0.8VbTFgJpj9pUNdZdMiK_8y1HmgLLf7qz8eQruOqvhcc';
 
-        // Initialize page
+        // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateDateTime();
-            setInterval(updateDateTime, 30000); // Update every 30 seconds
+            setInterval(updateDateTime, 1000);
             loadClients();
             loadDestinations();
         });
@@ -451,96 +413,108 @@
             document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
         }
 
-        // Load clients for dropdown (only active clients)
-        async function loadClients() {
-            try {
-                const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.getClients}`);
-                const clients = await response.json();
-                
-                const clientSelect = document.getElementById('clientSelect');
-                clientSelect.innerHTML = '<option value="">Choose a client...</option>';
-                
-                // Filter only active clients and format as "lastname, firstname - KNumber"
-                const activeClients = clients.filter(client => client.active === true);
-                
-                activeClients.forEach(client => {
-                    const option = document.createElement('option');
-                    option.value = client.id;
-                    option.textContent = `${client.lastname || ''}, ${client.firstname || ''} - ${client.knumber}`;
-                    option.dataset.client = JSON.stringify(client);
-                    clientSelect.appendChild(option);
-                });
-            } catch (error) {
+        // Load clients from Supabase
+        function loadClients() {
+            fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients`, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                clients = data.clients || data; // Handle different response formats
+                populateClientDropdown();
+            })
+            .catch(error => {
                 console.error('Error loading clients:', error);
-                showError('Failed to load clients. Please try again.');
-            }
+                showError('Failed to load clients. Please refresh the page.');
+            });
         }
 
-        // Load destinations
-        async function loadDestinations() {
-            try {
-                const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.getDestinations}`);
-                destinations = await response.json();
-            } catch (error) {
+        // Load destinations from Supabase
+        function loadDestinations() {
+            fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/clinic-locations`, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                destinations = data.destinations || data; // Handle different response formats
+            })
+            .catch(error => {
                 console.error('Error loading destinations:', error);
-                destinations = []; // Fallback to manual entry
-            }
+                showError('Failed to load clinic locations. Please refresh the page.');
+            });
         }
 
-        // Select client
+        // Populate client dropdown (filter for active clients only and format as lastname, firstname - KNumber)
+        function populateClientDropdown() {
+            const clientSelect = document.getElementById('clientSelect');
+            clientSelect.innerHTML = '<option value="">Choose a client...</option>';
+            
+            // Filter only active clients
+            const activeClients = clients.filter(client => client.active === true);
+            
+            activeClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.knumber;
+                option.textContent = `${client.lastname || ''}, ${client.firstname || ''} - ${client.knumber}`;
+                clientSelect.appendChild(option);
+            });
+        }
+
+        // Handle client selection
         function selectClient() {
             const clientSelect = document.getElementById('clientSelect');
-            const selectedOption = clientSelect.options[clientSelect.selectedIndex];
+            const knumber = clientSelect.value;
             
-            if (selectedOption.value) {
-                selectedClient = JSON.parse(selectedOption.dataset.client);
-                showClientInfo();
-                showAppointmentsSection();
-            } else {
+            if (!knumber) {
                 selectedClient = null;
-                hideClientInfo();
-                hideAppointmentsSection();
+                document.getElementById('clientInfo').style.display = 'none';
+                document.getElementById('appointmentsCard').style.display = 'none';
+                document.getElementById('saveSection').style.display = 'none';
+                appointments = [];
+                appointmentCounter = 0;
+                return;
             }
-        }
 
-        // Show client information
-        function showClientInfo() {
-            const clientInfo = document.getElementById('clientInfo');
-            const clientDetails = document.getElementById('clientDetails');
+            selectedClient = clients.find(client => client.knumber === knumber);
             
-            clientDetails.innerHTML = `
-                ${selectedClient.firstname} ${selectedClient.lastname} (${selectedClient.knumber})<br>
-                <small>${selectedClient.email || 'No email'} • ${selectedClient.phone || 'No phone'}</small>
-            `;
-            clientInfo.style.display = 'block';
-        }
-
-        // Hide client information
-        function hideClientInfo() {
-            document.getElementById('clientInfo').style.display = 'none';
-        }
-
-        // Show appointments section
-        function showAppointmentsSection() {
-            document.getElementById('appointmentsCard').style.display = 'block';
-            if (appointments.length === 0) {
-                addAppointment(); // Automatically add first appointment
+            if (selectedClient) {
+                displayClientInfo();
+                document.getElementById('appointmentsCard').style.display = 'block';
+                appointments = [];
+                appointmentCounter = 0;
+                displayAppointments();
             }
         }
 
-        // Hide appointments section
-        function hideAppointmentsSection() {
-            document.getElementById('appointmentsCard').style.display = 'none';
-            document.getElementById('saveSection').style.display = 'none';
-            appointments = [];
-            appointmentCounter = 0;
+        // Display selected client information
+        function displayClientInfo() {
+            const clientDetails = document.getElementById('clientDetails');
+            const fullAddress = [
+                selectedClient.civicaddress,
+                selectedClient.city,
+                selectedClient.prov,
+                selectedClient.postalcode
+            ].filter(Boolean).join(', ');
+
+            clientDetails.innerHTML = `
+                <div><strong>${selectedClient.firstname || ''} ${selectedClient.lastname || ''}</strong></div>
+                <div>${fullAddress}</div>
+                <div>Phone: ${selectedClient.phone || 'Not provided'}</div>
+                <div>Email: ${selectedClient.email || 'Not provided'}</div>
+            `;
+            
+            document.getElementById('clientInfo').style.display = 'block';
         }
 
         // Add new appointment
         function addAppointment() {
             appointmentCounter++;
             const appointment = {
-                id: `apt-${appointmentCounter}`,
+                id: `appointment-${appointmentCounter}`,
                 date: '',
                 time: '',
                 location: '',
@@ -594,54 +568,48 @@
                 return;
             }
 
-            appointmentsList.innerHTML = appointments.map((apt, index) => {
-                const isPast = isPastDate(apt.date);
+            appointmentsList.innerHTML = appointments.map((appointment, index) => {
+                const isPast = isPastDate(appointment.date);
                 const pastClass = isPast ? 'past-appointment' : '';
                 
                 return `
-                    <div class="appointment-item ${pastClass}" id="appointment-${apt.id}">
+                    <div class="appointment-item ${pastClass}" id="appointment-${appointment.id}">
                         <div class="appointment-number">Appointment ${index + 1}</div>
-                        <button type="button" class="remove-appointment" onclick="removeAppointment('${apt.id}')">×</button>
-                        
-                        <div class="row mt-3">
-                            <div class="col-md-6 mb-3">
-                                <label for="date-${apt.id}" class="form-label">Date *</label>
-                                <input type="date" class="form-control" id="date-${apt.id}" 
-                                       value="${apt.date}" onchange="updateAppointment('${apt.id}', 'date', this.value)" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="time-${apt.id}" class="form-label">Time *</label>
-                                <input type="time" class="form-control" id="time-${apt.id}" 
-                                       value="${apt.time}" onchange="updateAppointment('${apt.id}', 'time', this.value)" required>
-                            </div>
-                        </div>
+                        <button class="remove-appointment" onclick="removeAppointment('${appointment.id}')" title="Remove appointment">
+                            <i class="bi bi-x"></i>
+                        </button>
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="location-${apt.id}" class="form-label">Destination *</label>
-                                <select class="form-select" id="location-${apt.id}" onchange="updateAppointmentLocation('${apt.id}', this.value)" required>
-                                    <option value="">Select destination...</option>
+                            <div class="col-md-3">
+                                <label for="date-${appointment.id}" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date-${appointment.id}" 
+                                       value="${appointment.date}" onchange="updateAppointment('${appointment.id}', 'date', this.value)">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="time-${appointment.id}" class="form-label">Time</label>
+                                <input type="time" class="form-control" id="time-${appointment.id}" 
+                                       value="${appointment.time}" onchange="updateAppointment('${appointment.id}', 'time', this.value)">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="location-${appointment.id}" class="form-label">Clinic Location</label>
+                                <select class="form-select" id="location-${appointment.id}" 
+                                        onchange="updateAppointmentLocation('${appointment.id}', this.value)">
+                                    <option value="">Choose a clinic...</option>
                                     ${destinations.map(dest => `
-                                        <option value="${dest.name}" ${apt.location === dest.name ? 'selected' : ''}>
+                                        <option value="${dest.name}" ${appointment.location === dest.name ? 'selected' : ''}>
                                             ${dest.name}
                                         </option>
                                     `).join('')}
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="locationAddress-${apt.id}" class="form-label">Address</label>
-                                <input type="text" class="form-control" id="locationAddress-${apt.id}" 
-                                       placeholder="Auto-filled from destination"
-                                       value="${apt.locationAddress}" readonly>
-                            </div>
                         </div>
                         
-                        <div class="row">
+                        <div class="row mt-3">
                             <div class="col-12">
-                                <label for="notes-${apt.id}" class="form-label">Appointment Notes</label>
-                                <textarea class="form-control" id="notes-${apt.id}" rows="2" 
+                                <label for="notes-${appointment.id}" class="form-label">Appointment Notes</label>
+                                <textarea class="form-control" id="notes-${appointment.id}" rows="2" 
                                           placeholder="Enter any notes for this appointment..."
-                                          onchange="updateAppointment('${apt.id}', 'appointmentNotes', this.value)">${apt.appointmentNotes}</textarea>
+                                          onchange="updateAppointment('${appointment.id}', 'appointmentNotes', this.value)">${appointment.appointmentNotes}</textarea>
                             </div>
                         </div>
                     </div>
@@ -672,12 +640,6 @@
                 appointment.location = locationName;
                 appointment.locationAddress = destination ? destination.address : '';
                 updateSaveSection();
-                
-                // Update the address field in the UI
-                const addressInput = document.getElementById(`locationAddress-${appointmentId}`);
-                if (addressInput) {
-                    addressInput.value = appointment.locationAddress;
-                }
             }
         }
 
@@ -703,7 +665,7 @@
             let summary = `<div><strong>Ready to save:</strong> ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}</div>`;
             
             if (pastAppointments.length > 0) {
-                summary += `<div class="mt-2 text-danger"><strong>⚠️ Warning:</strong> ${pastAppointments.length} appointment(s) scheduled in the past</div>`;
+                summary += `<div class="mt-2" style="color: #e74c3c;"><strong>⚠️ Warning:</strong> ${pastAppointments.length} appointment(s) scheduled in the past</div>`;
             }
             
             summaryDiv.innerHTML = summary + `<div class="mt-2">
@@ -716,7 +678,7 @@
         }
 
         // Save appointments
-        async function saveAppointments() {
+        function saveAppointments() {
             const validAppointments = appointments.filter(apt => 
                 apt.date && apt.time && apt.location
             );
@@ -732,82 +694,106 @@
             }
 
             // Show loading state
-            const saveBtn = document.getElementById('saveAppointmentsBtn');
-            saveBtn.classList.add('is-loading');
-            saveBtn.disabled = true;
+            document.body.classList.add('is-loading');
 
-            try {
-                const payload = {
-                    clientId: selectedClient.id,
-                    clientKNumber: selectedClient.knumber,
-                    appointments: validAppointments.map(apt => ({
-                        client_id: selectedClient.id,
-                        client_knumber: selectedClient.knumber,
-                        appointment_date: apt.date,
-                        appointment_time: apt.time,
-                        destination: apt.location,
-                        destination_address: apt.locationAddress,
-                        appointment_notes: apt.appointmentNotes
-                    }))
-                };
+            // Get client address for Google Maps
+            const clientAddress = [
+                selectedClient.civicaddress,
+                selectedClient.city,
+                selectedClient.prov,
+                selectedClient.postalcode
+            ].filter(Boolean).join(', ');
 
-                const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.saveAppointments}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
+            // Prepare data for backend
+            const appointmentData = {
+                kNumber: selectedClient.knumber,
+                clientData: {
+                    firstName: selectedClient.firstname,
+                    lastName: selectedClient.lastname,
+                    phone: selectedClient.phone,
+                    email: selectedClient.email,
+                    civicAddress: selectedClient.civicaddress,
+                    city: selectedClient.city,
+                    province: selectedClient.prov,
+                    postalCode: selectedClient.postalcode,
+                    emergencyContactName: selectedClient.emergency_contact_name,
+                    emergencyContactNumber: selectedClient.emergency_contact_number,
+                    notes: selectedClient.notes
+                },
+                appointments: validAppointments.map(apt => ({
+                    date: apt.date,
+                    time: apt.time,
+                    location: apt.location,
+                    notes: apt.appointmentNotes || ''
+                })),
+                submittedBy: 'transport_admin',
+                submittedAt: new Date().toISOString()
+            };
 
-                if (response.ok) {
-                    showSuccess(`Successfully saved ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}!`);
-                    
-                    // Reset after successful save
-                    setTimeout(() => {
-                        resetForm();
-                    }, 2000);
-                } else {
-                    throw new Error('Failed to save appointments');
-                }
-            } catch (error) {
-                console.error('Save error:', error);
+            // Send to save appointments workflow
+            fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(appointmentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.body.classList.remove('is-loading');
+                showSuccess(`Successfully saved ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}!`);
+                clearForm();
+            })
+            .catch(error => {
+                document.body.classList.remove('is-loading');
+                console.error('Error:', error);
                 showError('Failed to save appointments. Please try again.');
-            } finally {
-                saveBtn.classList.remove('is-loading');
-                saveBtn.disabled = false;
-            }
+            });
         }
 
-        // Reset form
-        function resetForm() {
+        // Clear form
+        function clearForm() {
+            document.getElementById('clientSelect').value = '';
             selectedClient = null;
             appointments = [];
             appointmentCounter = 0;
             
-            document.getElementById('clientSelect').value = '';
-            hideClientInfo();
-            hideAppointmentsSection();
+            document.getElementById('clientInfo').style.display = 'none';
+            document.getElementById('appointmentsCard').style.display = 'none';
+            document.getElementById('saveSection').style.display = 'none';
         }
 
         // Show success message
         function showSuccess(message) {
-            // Simple success handling - you can enhance this
-            alert(message);
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i>${message}`;
+
+            const container = document.querySelector('.container');
+            container.insertBefore(successDiv, container.firstChild);
+
+            setTimeout(() => successDiv.remove(), 5000);
         }
 
         // Show error message
         function showError(message) {
-            // Simple error handling - you can enhance this
-            alert(message);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>${message}`;
+
+            const container = document.querySelector('.container');
+            container.insertBefore(errorDiv, container.firstChild);
+
+            setTimeout(() => errorDiv.remove(), 5000);
         }
 
         // Logout function
         function logout() {
             sessionStorage.removeItem('rrts_user');
-            window.location.href = 'admin-portal.html';
+            window.location.href = 'admin-portal_v3_2_3.html';
         }
     </script>
 </body>
 </html>
 
-<!-- Version: v2.7.7 - Fixed API endpoints to use working Railway URLs -->
+<!-- Version: v2.7.9 - Active clients only, lastname-firstname format, bottom Add button, past date visual indicator -->
