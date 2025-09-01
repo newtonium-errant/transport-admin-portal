@@ -12,43 +12,53 @@
         }
 
         body {
+            background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 300;
+            color: white;
+            margin: 0;
         }
 
         .header-info {
-            color: white;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 20px;
+            font-size: 0.9em;
         }
 
         .nav-links {
             display: flex;
-            gap: 1.5rem;
+            gap: 20px;
         }
 
         .nav-links a {
             color: white;
             text-decoration: none;
-            padding: 0.5rem 1rem;
+            padding: 8px 16px;
             border-radius: 6px;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s ease;
         }
 
-        .nav-links a:hover, .nav-links a.active {
-            background-color: rgba(255, 255, 255, 0.2);
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .nav-links a.active {
+            background-color: rgba(255,255,255,0.2);
         }
 
         .container {
@@ -58,11 +68,11 @@
         }
 
         .content {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
+            background: white;
+            border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: none;
         }
 
         .section-header {
@@ -83,6 +93,14 @@
             background: #f8f9fa;
             padding: 1.5rem;
             border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .search-section h2 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
         }
 
         .search-controls {
@@ -91,217 +109,176 @@
             align-items: end;
         }
 
-        .form-group {
-            flex: 1;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #2c3e50;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
+        .clients-section {
+            background: white;
         }
 
         .clients-grid {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 1rem;
         }
 
         .client-card {
-            background: white;
+            border: 2px solid #e9ecef;
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
+            background: white;
             transition: all 0.3s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            position: relative;
+        }
+
+        .client-card:hover {
+            border-color: #3498db;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
         }
 
         .client-card.inactive {
             opacity: 0.7;
-            background: #f8f9fa;
-            border-left: 4px solid #dc3545;
+            border-color: #dc3545;
+            background: #fdf2f2;
         }
 
-        .client-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-        }
-
-        .client-info {
+        .client-header {
             display: flex;
-            align-items: center;
-            gap: 2rem;
-            flex: 1;
-        }
-
-        .client-name-section {
-            min-width: 250px;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
         }
 
         .client-name {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 0.25rem;
         }
 
         .client-knumber {
-            font-size: 0.9rem;
-            color: #7f8c8d;
+            font-size: 1rem;
+            color: #6c757d;
             font-weight: 500;
         }
 
         .client-status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
+            padding: 0.4rem 0.8rem;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
-            margin-top: 0.25rem;
+            text-transform: uppercase;
         }
 
-        .client-status.active {
-            background-color: #d4edda;
+        .status-active {
+            background: #d4edda;
             color: #155724;
         }
 
-        .client-status.inactive {
-            background-color: #f8d7da;
+        .status-inactive {
+            background: #f8d7da;
             color: #721c24;
         }
 
         .client-details {
-            display: flex;
-            gap: 3rem;
-            flex: 1;
-        }
-
-        .detail-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
         .detail-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: #6c757d;
         }
 
         .detail-label {
-            font-weight: 500;
-            color: #7f8c8d;
-            font-size: 0.85rem;
-            min-width: 80px;
+            font-weight: 600;
+            color: #495057;
         }
 
         .detail-value {
-            color: #2c3e50;
-            font-size: 0.9rem;
+            margin-top: 0.2rem;
         }
 
         .client-actions {
             display: flex;
             gap: 0.75rem;
-            flex-shrink: 0;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 0.5rem 1rem;
+            padding: 8px 16px;
             border: none;
             border-radius: 6px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            text-align: center;
-            transition: all 0.3s;
-            font-weight: 500;
-        }
-
-        .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
         }
 
         .btn-primary {
-            background-color: #667eea;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
         }
 
         .btn-primary:hover {
-            background-color: #5a6fd8;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
         .btn-success {
-            background-color: #28a745;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
             color: white;
         }
 
         .btn-success:hover {
-            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
         }
 
-        .btn-outline-primary {
-            background-color: transparent;
-            color: #667eea;
-            border: 2px solid #667eea;
-        }
-
-        .btn-outline-primary:hover {
-            background-color: #667eea;
+        .btn-secondary {
+            background: #6c757d;
             color: white;
         }
 
-        .btn-outline-secondary {
-            background-color: transparent;
-            color: #6c757d;
-            border: 2px solid #6c757d;
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .btn-warning {
-            background-color: #ffc107;
-            color: #212529;
-            border: 2px solid #ffc107;
-        }
-
-        .btn-warning:hover {
-            background-color: #e0a800;
-            border-color: #d39e00;
+        .btn-secondary:hover {
+            background: #5a6268;
         }
 
         .btn-danger {
-            background-color: #dc3545;
+            background: #dc3545;
             color: white;
-            border: 2px solid #dc3545;
         }
 
         .btn-danger:hover {
-            background-color: #c82333;
-            border-color: #bd2130;
+            background: #c82333;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
         }
 
         .modal {
@@ -310,46 +287,42 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
 
-        .modal.hidden {
-            display: none;
-        }
-
         .modal-content {
             background: white;
             border-radius: 12px;
             width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
+            max-width: 600px;
+            max-height: 90%;
             overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e9ecef;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
         .modal-header h3 {
             color: #2c3e50;
             font-size: 1.3rem;
+            font-weight: 600;
         }
 
         .close-btn {
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 2rem;
+            color: #6c757d;
             cursor: pointer;
-            color: #adb5bd;
             padding: 0;
             width: 30px;
             height: 30px;
@@ -359,11 +332,11 @@
         }
 
         .close-btn:hover {
-            color: #6c757d;
+            color: #dc3545;
         }
 
-        .modal form {
-            padding: 1.5rem;
+        #clientForm {
+            padding: 2rem;
         }
 
         .section-title {
@@ -446,7 +419,9 @@
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
+        <h1>RRTS Dashboard</h1>
         <div class="header-info">
             <span id="currentDateTime"></span>
             <span>•</span>
@@ -456,6 +431,7 @@
             <a href="dashboard.html">Dashboard</a>
             <a href="client-management.html" class="active">Clients</a>
             <a href="appointment-management.html">Appointments</a>
+            <a href="add-appointments.html">Add Appointments</a>
             <a href="operations.html">Operations</a>
             <a href="driver-management.html">Drivers</a>
             <a href="admin.html">Admin</a>
@@ -546,35 +522,35 @@
                         <input type="text" id="modalLastName" required>
                     </div>
                 </div>
-                
+
+                <!-- Contact Information -->
+                <div class="section-title">Contact Information</div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="modalPhone">Phone <span class="required">*</span></label>
-                        <input type="tel" id="modalPhone" placeholder="(902) 123-4567" required>
+                        <input type="tel" id="modalPhone" placeholder="(555) 123-4567" required>
                     </div>
                     <div class="form-group">
-                        <label for="modalEmail">Email:</label>
-                        <input type="email" id="modalEmail" placeholder="client@email.com">
+                        <label for="modalEmail">Email</label>
+                        <input type="email" id="modalEmail" placeholder="client@example.com">
                     </div>
                 </div>
-                
+
                 <!-- Address Information -->
                 <div class="section-title">Address Information</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="modalAddress">Civic Address:</label>
-                        <input type="text" id="modalAddress" placeholder="123 Main Street">
-                    </div>
-                    <div class="form-group">
-                        <label for="modalCity">City:</label>
-                        <input type="text" id="modalCity" placeholder="Halifax">
-                    </div>
+                <div class="form-group">
+                    <label for="modalAddress">Street Address <span class="required">*</span></label>
+                    <input type="text" id="modalAddress" placeholder="123 Main Street" required>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="modalProvince">Province:</label>
-                        <select id="modalProvince">
+                        <label for="modalCity">City <span class="required">*</span></label>
+                        <input type="text" id="modalCity" placeholder="Halifax" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalProvince">Province <span class="required">*</span></label>
+                        <select id="modalProvince" required>
                             <option value="">Select Province</option>
                             <option value="NS">Nova Scotia</option>
                             <option value="NB">New Brunswick</option>
@@ -592,52 +568,48 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="modalPostalCode">Postal Code:</label>
-                        <input type="text" id="modalPostalCode" placeholder="B3H 4R2">
+                        <label for="modalPostalCode">Postal Code <span class="required">*</span></label>
+                        <input type="text" id="modalPostalCode" placeholder="B3H 4R2" required>
                     </div>
                 </div>
-                
+
                 <!-- Emergency Contact -->
                 <div class="section-title">Emergency Contact</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="modalEmergencyName">Emergency Contact Name:</label>
+                        <label for="modalEmergencyName">Emergency Contact Name</label>
                         <input type="text" id="modalEmergencyName" placeholder="Contact Name">
                     </div>
                     <div class="form-group">
-                        <label for="modalEmergencyPhone">Emergency Contact Phone:</label>
-                        <input type="tel" id="modalEmergencyPhone" placeholder="(902) 123-4567">
+                        <label for="modalEmergencyPhone">Emergency Contact Phone</label>
+                        <input type="tel" id="modalEmergencyPhone" placeholder="(555) 987-6543">
                     </div>
                 </div>
-                
-                <!-- Notes -->
+
+                <!-- Additional Information -->
                 <div class="section-title">Additional Information</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="modalNotes">Notes:</label>
-                        <textarea id="modalNotes" placeholder="Any special notes or requirements..." rows="3" style="resize: vertical; width: 100%; padding: 0.75rem; border: 2px solid #e9ecef; border-radius: 8px;"></textarea>
-                    </div>
+                <div class="form-group">
+                    <label for="modalNotes">Notes</label>
+                    <textarea id="modalNotes" placeholder="Any special notes or requirements..." rows="3" style="resize: vertical; font-family: inherit;"></textarea>
                 </div>
-                
+
                 <div class="form-actions">
-                    <button type="button" class="btn btn-outline-secondary" onclick="closeClientModal()">Cancel</button>
-                    <button type="submit" class="btn btn-success" id="saveClientBtn">Save Client</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Client</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // Global variables
         let allClients = [];
-        let isEditMode = false;
-        let editingClientId = null;
+        let filteredClients = [];
+        let currentEditingClient = null;
 
-        // Initialize the page
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateDateTime();
             setInterval(updateDateTime, 1000);
-            checkAuthentication();
             loadAllClients();
         });
 
@@ -647,32 +619,22 @@
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
             };
             document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
         }
 
-        function checkAuthentication() {
-            const user = sessionStorage.getItem('rrts_user');
-            if (!user) {
-                window.location.href = 'admin-portal_v3_2_3.html';
-                return;
-            }
-            document.getElementById('welcomeUser').textContent = `Welcome, ${user}`;
-        }
-
-        // Load all clients from API
         async function loadAllClients() {
-            showLoading(true);
-            hideError();
-            
             try {
+                showLoading(true);
+                hideError();
+                
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients', {
-                    method: 'GET',
+                    method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
 
@@ -681,289 +643,229 @@
                 }
 
                 const data = await response.json();
-                console.log('API Response:', data);
-
-                allClients = data.clients || [];
-                displayClients(allClients);
-                updateClientCount(allClients.length);
+                allClients = data || [];
+                filteredClients = [...allClients];
+                displayClients(filteredClients);
+                updateClientCount(filteredClients.length);
                 
             } catch (error) {
                 console.error('Error loading clients:', error);
-                showError('Failed to load clients. Please check your network connection and try again.');
+                showError('Failed to load clients. Please try again.');
             } finally {
                 showLoading(false);
             }
         }
 
-        // Search and filter clients
         function searchClients() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const statusFilter = document.getElementById('statusFilter').value;
             
-            let filteredClients = allClients;
+            let filtered = allClients;
 
-            // Filter by search term
+            // Apply status filter
+            if (statusFilter === 'active') {
+                filtered = filtered.filter(client => client.active === true);
+            } else if (statusFilter === 'inactive') {
+                filtered = filtered.filter(client => client.active === false);
+            }
+
+            // Apply search filter
             if (searchTerm) {
-                filteredClients = filteredClients.filter(client => {
+                filtered = filtered.filter(client => {
                     const fullName = `${client.firstname} ${client.lastname}`.toLowerCase();
-                    const kNumber = (client.knumber || '').toLowerCase();
+                    const kNumber = client.knumber.toLowerCase();
                     return fullName.includes(searchTerm) || kNumber.includes(searchTerm);
                 });
             }
 
-            // Filter by status
-            if (statusFilter !== 'all') {
-                const isActiveFilter = statusFilter === 'active';
-                filteredClients = filteredClients.filter(client => {
-                    const clientActive = client.active !== false; // Default to true if undefined
-                    return clientActive === isActiveFilter;
-                });
-            }
-
+            filteredClients = filtered;
             displayClients(filteredClients);
             updateClientCount(filteredClients.length);
         }
 
-        // Display clients in single column list
         function displayClients(clients) {
-            const clientsGrid = document.getElementById('clientsGrid');
+            const container = document.getElementById('clientsGrid');
             const emptyState = document.getElementById('emptyState');
             
             if (clients.length === 0) {
-                clientsGrid.innerHTML = '';
+                container.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 return;
             }
-            
+
             emptyState.classList.add('hidden');
             
-            clientsGrid.innerHTML = clients.map(client => {
-                const isActive = client.active !== false; // Default to true if undefined
-                const statusClass = isActive ? 'active' : 'inactive';
-                const cardClass = isActive ? '' : 'inactive';
-                
-                return `
-                <div class="client-card ${cardClass}">
-                    <div class="client-info">
-                        <div class="client-name-section">
-                            <div class="client-name">${client.lastname}, ${client.firstname}</div>
+            container.innerHTML = clients.map(client => `
+                <div class="client-card ${!client.active ? 'inactive' : ''}">
+                    <div class="client-header">
+                        <div>
+                            <div class="client-name">${client.firstname} ${client.lastname}</div>
                             <div class="client-knumber">${client.knumber}</div>
-                            <div class="client-status ${statusClass}">${isActive ? 'Active' : 'Inactive'}</div>
                         </div>
-                        
-                        <div class="client-details">
-                            <div class="detail-group">
-                                <div class="detail-item">
-                                    <span class="detail-label">📞 Phone:</span>
-                                    <span class="detail-value">${formatPhoneNumber(client.phone) || 'N/A'}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">📧 Email:</span>
-                                    <span class="detail-value">${client.email || 'N/A'}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="detail-group">
-                                <div class="detail-item">
-                                    <span class="detail-label">🏠 Address:</span>
-                                    <span class="detail-value">${client.civicaddress || 'N/A'}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">🏙️ City:</span>
-                                    <span class="detail-value">${client.city || 'N/A'}</span>
-                                </div>
-                            </div>
+                        <div class="client-status ${client.active ? 'status-active' : 'status-inactive'}">
+                            ${client.active ? 'Active' : 'Inactive'}
+                        </div>
+                    </div>
+                    
+                    <div class="client-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Phone:</div>
+                            <div class="detail-value">${client.phone || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Email:</div>
+                            <div class="detail-value">${client.email || 'Not provided'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Address:</div>
+                            <div class="detail-value">${formatAddress(client)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Emergency Contact:</div>
+                            <div class="detail-value">${client.emergencyname || 'Not provided'}</div>
                         </div>
                     </div>
                     
                     <div class="client-actions">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editClient('${client.knumber}')">
+                        <button class="btn btn-primary" onclick="editClient('${client.knumber}')">
                             ✏️ Edit
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="viewAppointments('${client.knumber}')">
+                        <a href="appointment-management.html?client=${client.knumber}" class="btn btn-secondary">
                             📅 Appointments
-                        </button>
-                        <button class="btn btn-sm ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleClientStatus('${client.knumber}', ${!isActive})">
-                            ${isActive ? '⏸️ Deactivate' : '▶️ Activate'}
+                        </a>
+                        <button class="btn ${client.active ? 'btn-danger' : 'btn-success'}" 
+                                onclick="toggleClientStatus('${client.knumber}', ${!client.active})">
+                            ${client.active ? '🚫 Deactivate' : '✅ Activate'}
                         </button>
                     </div>
                 </div>
-            `;
-            }).join('');
+            `).join('');
         }
 
-        // Toggle client active/inactive status
-        async function toggleClientStatus(knumber, newActiveStatus) {
-            const client = allClients.find(c => c.knumber === knumber);
+        function formatAddress(client) {
+            const parts = [
+                client.address,
+                client.city,
+                client.province,
+                client.postalcode
+            ].filter(part => part && part.trim());
+            return parts.length > 0 ? parts.join(', ') : 'Not provided';
+        }
+
+        function showAddClientModal() {
+            currentEditingClient = null;
+            document.getElementById('modalTitle').textContent = 'Add New Client';
+            document.getElementById('clientForm').reset();
+            document.getElementById('modalActive').value = 'true'; // Default to active
+            document.getElementById('clientModal').classList.remove('hidden');
+        }
+
+        function editClient(kNumber) {
+            const client = allClients.find(c => c.knumber === kNumber);
             if (!client) return;
 
-            const action = newActiveStatus ? 'activate' : 'deactivate';
-            if (!confirm(`Are you sure you want to ${action} ${client.firstname} ${client.lastname}?`)) {
+            currentEditingClient = client;
+            document.getElementById('modalTitle').textContent = 'Edit Client';
+            
+            // Populate form with client data
+            document.getElementById('modalKNumber').value = client.knumber;
+            document.getElementById('modalActive').value = client.active ? 'true' : 'false';
+            document.getElementById('modalFirstName').value = client.firstname || '';
+            document.getElementById('modalLastName').value = client.lastname || '';
+            document.getElementById('modalPhone').value = client.phone || '';
+            document.getElementById('modalEmail').value = client.email || '';
+            document.getElementById('modalAddress').value = client.address || '';
+            document.getElementById('modalCity').value = client.city || '';
+            document.getElementById('modalProvince').value = client.province || '';
+            document.getElementById('modalPostalCode').value = client.postalcode || '';
+            document.getElementById('modalEmergencyName').value = client.emergencyname || '';
+            document.getElementById('modalEmergencyPhone').value = client.emergencyphone || '';
+            document.getElementById('modalNotes').value = client.notes || '';
+            
+            document.getElementById('clientModal').classList.remove('hidden');
+        }
+
+        function closeClientModal() {
+            document.getElementById('clientModal').classList.add('hidden');
+            currentEditingClient = null;
+        }
+
+        async function toggleClientStatus(kNumber, newStatus) {
+            const action = newStatus ? 'activate' : 'deactivate';
+            if (!confirm(`Are you sure you want to ${action} this client?`)) {
                 return;
             }
 
             try {
-                const clientData = {
-                    ...client,
-                    active: newActiveStatus
-                };
+                const client = allClients.find(c => c.knumber === kNumber);
+                const updatedClient = { ...client, active: newStatus };
 
-                const response = await fetch('https://railway.app/project/1cef8ad0-5de8-4d8f-8b8f-7c8ed4f1e7a1.railway.app/updateClient', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        kNumber: knumber,
-                        clientData: clientData
-                    })
+                    body: JSON.stringify(updatedClient)
                 });
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                // Update local data and refresh display
-                client.active = newActiveStatus;
-                searchClients(); // Refresh the current view
-                
-                showSuccess(`Client ${newActiveStatus ? 'activated' : 'deactivated'} successfully!`);
+                showSuccess(`Client ${action}d successfully!`);
+                await loadAllClients(); // Refresh the client list
                 
             } catch (error) {
-                console.error('Error updating client status:', error);
+                console.error('Error toggling client status:', error);
                 showError(`Failed to ${action} client. Please try again.`);
             }
-        }
-
-        // Edit client
-        function editClient(knumber) {
-            const client = allClients.find(c => c.knumber === knumber);
-            if (!client) return;
-
-            isEditMode = true;
-            editingClientId = knumber;
-            
-            // Populate form with client data
-            document.getElementById('modalTitle').textContent = 'Edit Client';
-            document.getElementById('modalKNumber').value = client.knumber || '';
-            document.getElementById('modalKNumber').disabled = true; // Don't allow editing K number
-            document.getElementById('modalActive').value = client.active !== false ? 'true' : 'false';
-            document.getElementById('modalFirstName').value = client.firstname || '';
-            document.getElementById('modalLastName').value = client.lastname || '';
-            document.getElementById('modalPhone').value = client.phone || '';
-            document.getElementById('modalEmail').value = client.email || '';
-            document.getElementById('modalAddress').value = client.civicaddress || '';
-            document.getElementById('modalCity').value = client.city || '';
-            document.getElementById('modalProvince').value = client.prov || '';
-            document.getElementById('modalPostalCode').value = client.postalcode || '';
-            document.getElementById('modalEmergencyName').value = client.emergency_contact_name || '';
-            document.getElementById('modalEmergencyPhone').value = client.emergency_contact_number || '';
-            document.getElementById('modalNotes').value = client.notes || '';
-            document.getElementById('saveClientBtn').textContent = 'Update Client';
-            
-            document.getElementById('clientModal').classList.remove('hidden');
-        }
-
-        // Show add client modal
-        function showAddClientModal() {
-            isEditMode = false;
-            editingClientId = null;
-            
-            document.getElementById('modalTitle').textContent = 'Add New Client';
-            document.getElementById('clientForm').reset();
-            document.getElementById('modalKNumber').disabled = false;
-            document.getElementById('modalActive').value = 'true'; // Default to active
-            document.getElementById('saveClientBtn').textContent = 'Save Client';
-            
-            document.getElementById('clientModal').classList.remove('hidden');
-        }
-
-        // Close modal
-        function closeClientModal() {
-            document.getElementById('clientModal').classList.add('hidden');
-            document.getElementById('clientForm').reset();
-            isEditMode = false;
-            editingClientId = null;
         }
 
         // Handle form submission
         document.getElementById('clientForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const clientData = {
-                firstName: document.getElementById('modalFirstName').value,
-                lastName: document.getElementById('modalLastName').value,
-                phone: document.getElementById('modalPhone').value,
-                email: document.getElementById('modalEmail').value,
-                civicAddress: document.getElementById('modalAddress').value,
-                city: document.getElementById('modalCity').value,
+            const formData = {
+                knumber: document.getElementById('modalKNumber').value.trim(),
+                active: document.getElementById('modalActive').value === 'true',
+                firstname: document.getElementById('modalFirstName').value.trim(),
+                lastname: document.getElementById('modalLastName').value.trim(),
+                phone: document.getElementById('modalPhone').value.trim(),
+                email: document.getElementById('modalEmail').value.trim(),
+                address: document.getElementById('modalAddress').value.trim(),
+                city: document.getElementById('modalCity').value.trim(),
                 province: document.getElementById('modalProvince').value,
-                postalCode: document.getElementById('modalPostalCode').value,
-                emergencyContactName: document.getElementById('modalEmergencyName').value,
-                emergencyContactNumber: document.getElementById('modalEmergencyPhone').value,
-                notes: document.getElementById('modalNotes').value,
-                active: document.getElementById('modalActive').value === 'true'
+                postalcode: document.getElementById('modalPostalCode').value.trim(),
+                emergencyname: document.getElementById('modalEmergencyName').value.trim(),
+                emergencyphone: document.getElementById('modalEmergencyPhone').value.trim(),
+                notes: document.getElementById('modalNotes').value.trim()
             };
 
-            const kNumber = document.getElementById('modalKNumber').value;
-
             try {
-                let response;
+                const isEdit = currentEditingClient !== null;
+                const endpoint = isEdit ? 'updateClient' : 'createClient';
                 
-                if (isEditMode) {
-                    // Update existing client
-                    response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            kNumber: kNumber,
-                            clientData: clientData
-                        })
-                    });
-                } else {
-                    // Create new client
-                    response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/createClient', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            kNumber: kNumber,
-                            clientData: clientData
-                        })
-                    });
-                }
+                const response = await fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
+                showSuccess(`Client ${isEdit ? 'updated' : 'created'} successfully!`);
                 closeClientModal();
-                loadAllClients(); // Reload all clients
-                showSuccess(`Client ${isEditMode ? 'updated' : 'created'} successfully!`);
+                await loadAllClients();
                 
             } catch (error) {
                 console.error('Error saving client:', error);
-                showError(`Failed to ${isEditMode ? 'update' : 'create'} client. Please try again.`);
+                showError('Failed to save client. Please try again.');
             }
         });
-
-        // View appointments for client
-        function viewAppointments(knumber) {
-            window.location.href = `appointment-management.html?client=${knumber}`;
-        }
-
-        // Utility functions
-        function formatPhoneNumber(phone) {
-            if (!phone) return '';
-            const cleaned = phone.replace(/\D/g, '');
-            if (cleaned.length === 10) {
-                return `(${cleaned.substr(0,3)}) ${cleaned.substr(3,3)}-${cleaned.substr(6,4)}`;
-            }
-            return phone;
-        }
 
         function updateClientCount(count) {
             document.getElementById('clientCount').textContent = `${count} client${count !== 1 ? 's' : ''} found`;
@@ -1011,31 +913,5 @@
 </body>
 </html>
 <!-- 
-Version: v2.1.1 - RRTS Client Management with Active/Inactive Status
-- v2.1.1: Updated webhook endpoints to production Railway URLs
-  * Get All Clients: https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients
-  * Update Client: https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient
-  * Create Client: https://webhook-processor-production-3bb8.up.railway.app/webhook/createClient
-- v2.1.0: Added active/inactive client status functionality
-  * Added active column support in client data
-  * Status filter dropdown (All/Active/Inactive)
-  * Visual indicators for inactive clients (dimmed cards with red border)
-  * Toggle buttons to activate/deactivate clients
-  * Status badges showing "Active" or "Inactive"
-  * Updated form modal to include status selection
-  * API integration for status updates via updateClient endpoint
-- v2.0.6: Added appointment-management.html link to navigation header
-- Features: 
-  * Client search by name or K number with real-time filtering
-  * Status-based filtering (active, inactive, all)
-  * Single column client list with status indicators
-  * Edit client functionality with full form modal including status
-  * Add new client with comprehensive form and default active status
-  * Toggle client active/inactive status with confirmation
-  * Link to appointment management for each client
-  * Responsive design with modern UI matching dashboard
-  * Form validation and auto-formatting
-  * Integration with RRTS workflows supporting active status
-  * Supabase field mapping including active boolean column
-  * Ready for production with correct webhook endpoints
+Version: v2.1.2 - Updated header to match add-appointments.html design and color scheme
 -->
