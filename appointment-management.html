@@ -139,6 +139,16 @@
             color: #0c5460;
         }
 
+        .status-complete {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-done {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
         .notification-badge {
             font-size: 0.7em;
             padding: 2px 6px;
@@ -155,7 +165,7 @@
         }
 
         .edit-modal .modal-dialog {
-            max-width: 800px;
+            max-width: 900px;
         }
 
         .form-label {
@@ -327,36 +337,82 @@
                     <form id="editForm">
                         <input type="hidden" id="editAppointmentId">
                         
+                        <!-- Date and Time Row -->
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Appointment Date & Time</label>
-                                <input type="datetime-local" class="form-control" id="editAppointmentTime" required>
+                                <input type="datetime-local" class="form-control" id="editAppointmentTime" 
+                                       onchange="calculatePickupTime()" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="form-label">Transit Time (minutes)</label>
+                                <input type="number" class="form-control" id="editTransitTime" 
+                                       onchange="calculatePickupTime()" min="0" max="120">
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label">Pickup Date & Time</label>
                                 <input type="datetime-local" class="form-control" id="editPickupTime" required>
                             </div>
                         </div>
 
+                        <!-- Client Information Row -->
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">K Number</label>
                                 <input type="text" class="form-control" id="editKnumber" readonly>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="editFirstName" readonly>
+                                <input type="text" class="form-control" id="editFirstName">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="editLastName">
+                            </div>
+                        </div>
+
+                        <!-- Contact Information Row -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="editClientPhone">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="editClientEmail">
+                            </div>
+                        </div>
+
+                        <!-- Address Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Client Address</label>
+                                <input type="text" class="form-control" id="editClientAddress">
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="editLastName" readonly>
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" id="editClientCity">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Province</label>
+                                <input type="text" class="form-control" id="editClientProvince" maxlength="2">
                             </div>
                         </div>
 
                         <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Postal Code</label>
+                                <input type="text" class="form-control" id="editClientPostalCode">
+                            </div>
+                        </div>
+
+                        <!-- Clinic Information -->
+                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Clinic Name</label>
-                                <input type="text" class="form-control" id="editLocationName" required>
+                                <select class="form-select" id="editLocationName" onchange="onClinicChange()" required>
+                                    <option value="">Select clinic...</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Clinic Address</label>
@@ -364,25 +420,32 @@
                             </div>
                         </div>
 
+                        <!-- Status and Driver -->
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Status</label>
                                 <select class="form-select" id="editStatus" required>
                                     <option value="pending">Pending</option>
                                     <option value="confirmed">Confirmed</option>
+                                    <option value="complete">Complete</option>
                                     <option value="completed">Completed</option>
+                                    <option value="done">Done</option>
                                     <option value="cancelled">Cancelled</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Assigned Driver</label>
                                 <select class="form-select" id="editDriver">
                                     <option value="">No driver assigned</option>
-                                    <!-- Driver options will be loaded dynamically -->
                                 </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Custom Rate ($)</label>
+                                <input type="number" class="form-control" id="editCustomRate" min="0" step="0.01">
                             </div>
                         </div>
 
+                        <!-- Notes -->
                         <div class="mb-3">
                             <label class="form-label">Notes</label>
                             <textarea class="form-control" id="editNotes" rows="3"></textarea>
@@ -452,6 +515,8 @@
         let allAppointments = [];
         let filteredAppointments = [];
         let currentDeleteId = null;
+        let clinicLocations = [];
+        let allDrivers = [];
 
         // Update current date and time
         function updateDateTime() {
@@ -471,8 +536,91 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
+            loadClinicLocations();
+            loadAllDrivers();
             loadAllAppointments();
         });
+
+        // Load clinic locations for dropdown
+        async function loadClinicLocations() {
+            try {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/clinic-locations');
+                if (response.ok) {
+                    const data = await response.json();
+                    clinicLocations = data.locations || [];
+                    populateClinicDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading clinic locations:', error);
+            }
+        }
+
+        // Load all drivers for dropdown
+        async function loadAllDrivers() {
+            try {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/allDrivers');
+                if (response.ok) {
+                    const data = await response.json();
+                    allDrivers = data.drivers || [];
+                    populateDriverDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+            }
+        }
+
+        // Populate clinic dropdown
+        function populateClinicDropdown() {
+            const clinicSelect = document.getElementById('editLocationName');
+            clinicSelect.innerHTML = '<option value="">Select clinic...</option>';
+            
+            clinicLocations.forEach(clinic => {
+                const option = document.createElement('option');
+                option.value = clinic.name;
+                option.textContent = clinic.name;
+                option.dataset.address = clinic.address;
+                clinicSelect.appendChild(option);
+            });
+        }
+
+        // Populate driver dropdown
+        function populateDriverDropdown() {
+            const driverSelect = document.getElementById('editDriver');
+            driverSelect.innerHTML = '<option value="">No driver assigned</option>';
+            
+            allDrivers.forEach(driver => {
+                const option = document.createElement('option');
+                option.value = driver.name;
+                option.textContent = driver.name;
+                driverSelect.appendChild(option);
+            });
+        }
+
+        // Calculate pickup time based on appointment time and transit time
+        function calculatePickupTime() {
+            const appointmentTimeInput = document.getElementById('editAppointmentTime');
+            const transitTimeInput = document.getElementById('editTransitTime');
+            const pickupTimeInput = document.getElementById('editPickupTime');
+            
+            if (appointmentTimeInput.value && transitTimeInput.value) {
+                const appointmentTime = new Date(appointmentTimeInput.value);
+                const transitMinutes = parseInt(transitTimeInput.value) || 0;
+                
+                const pickupTime = new Date(appointmentTime.getTime() - (transitMinutes * 60000));
+                pickupTimeInput.value = formatDateTimeForInput(pickupTime.toISOString());
+            }
+        }
+
+        // Handle clinic selection change
+        function onClinicChange() {
+            const clinicSelect = document.getElementById('editLocationName');
+            const addressInput = document.getElementById('editLocationAddress');
+            
+            const selectedOption = clinicSelect.options[clinicSelect.selectedIndex];
+            if (selectedOption.dataset.address) {
+                addressInput.value = selectedOption.dataset.address;
+            }
+        }
 
         // Load all appointments from API
         async function loadAllAppointments() {
@@ -645,17 +793,25 @@
             const appointment = allAppointments.find(a => a.id === appointmentId);
             if (!appointment) return;
 
-            // Populate edit form
+            // Populate edit form with all fields
             document.getElementById('editAppointmentId').value = appointment.id;
             document.getElementById('editAppointmentTime').value = formatDateTimeForInput(appointment.appointmentDateTime);
             document.getElementById('editPickupTime').value = formatDateTimeForInput(appointment.pickupTime);
+            document.getElementById('editTransitTime').value = appointment.transitTime || '';
             document.getElementById('editKnumber').value = appointment.knumber || '';
             document.getElementById('editFirstName').value = appointment.clientFirstName || '';
             document.getElementById('editLastName').value = appointment.clientLastName || '';
+            document.getElementById('editClientPhone').value = appointment.clientPhone || '';
+            document.getElementById('editClientEmail').value = appointment.clientEmail || '';
+            document.getElementById('editClientAddress').value = appointment.clientAddress || '';
+            document.getElementById('editClientCity').value = appointment.clientCity || '';
+            document.getElementById('editClientProvince').value = appointment.clientProvince || '';
+            document.getElementById('editClientPostalCode').value = appointment.clientPostalCode || '';
             document.getElementById('editLocationName').value = appointment.location || '';
             document.getElementById('editLocationAddress').value = appointment.locationAddress || '';
             document.getElementById('editStatus').value = appointment.status || 'pending';
             document.getElementById('editDriver').value = appointment.driver_assigned || '';
+            document.getElementById('editCustomRate').value = appointment.customRate || '';
             document.getElementById('editNotes').value = appointment.notes || '';
 
             // Populate notification status (read-only)
@@ -691,12 +847,23 @@
             try {
                 const appointmentData = {
                     id: document.getElementById('editAppointmentId').value,
-                    appointmenttime: document.getElementById('editAppointmentTime').value,
-                    pickuptime: document.getElementById('editPickupTime').value,
-                    locationname: document.getElementById('editLocationName').value,
-                    locationaddress: document.getElementById('editLocationAddress').value,
-                    appointmentstatus: document.getElementById('editStatus').value,
+                    appointmentDateTime: document.getElementById('editAppointmentTime').value,
+                    pickupTime: document.getElementById('editPickupTime').value,
+                    transitTime: parseInt(document.getElementById('editTransitTime').value) || null,
+                    knumber: document.getElementById('editKnumber').value,
+                    clientFirstName: document.getElementById('editFirstName').value,
+                    clientLastName: document.getElementById('editLastName').value,
+                    clientPhone: document.getElementById('editClientPhone').value,
+                    clientEmail: document.getElementById('editClientEmail').value,
+                    clientAddress: document.getElementById('editClientAddress').value,
+                    clientCity: document.getElementById('editClientCity').value,
+                    clientProvince: document.getElementById('editClientProvince').value,
+                    clientPostalCode: document.getElementById('editClientPostalCode').value,
+                    location: document.getElementById('editLocationName').value,
+                    locationAddress: document.getElementById('editLocationAddress').value,
+                    status: document.getElementById('editStatus').value,
                     driver_assigned: document.getElementById('editDriver').value,
+                    customRate: parseFloat(document.getElementById('editCustomRate').value) || null,
                     notes: document.getElementById('editNotes').value
                 };
 
@@ -799,32 +966,4 @@
     </script>
 </body>
 </html>
-<!-- 
-Version: v4.0.4 - RRTS Appointment Management Portal
-- v4.0.4: Updated delete endpoint URL to /webhook/deleteAppointment (removed hyphen)
-- v4.0.3: Highlighted location of delete and update endpoint URLs for easy modification
-- v4.0.2: Fixed field name mapping to match API response (appointmentDateTime, pickupTime, clientFirstName, etc.)
-- v4.0.1: Fixed HTTP method for get-all-appointments endpoint to use GET instead of POST
-- v4.0.0: Updated version numbering and endpoint verification
-- v1.0.0: Initial appointment management interface with comprehensive CRUD operations
-- Features: 
-  * Load all appointments from Supabase via get-all-appointments API endpoint
-  * Sort appointments by date (newest to oldest) 
-  * Filter by status (all, confirmed, pending, cancelled, completed)
-  * Search by K number or client name with real-time filtering
-  * Time period filter (all, future only, past only)
-  * Clear filters functionality
-  * Appointment table showing: appointment date/time, pickup date/time, K number, client name, clinic name, status, assigned driver, notification statuses, notes
-  * Edit appointment modal with full form (except table ID field is not editable)
-  * Delete appointment with confirmation modal and warning
-  * Notification status display (client notification sent, client reminder sent, driver notification sent, driver reminder sent)
-  * Responsive design with consistent RRTS header matching add-appointments.html
-  * Real-time date/time display in header
-  * Success/error notification system
-  * Integration with Railway webhook endpoints for update and delete operations
-  * Bootstrap 5 styling with modern UI components
-  * Live filtering without page reload
-  * Mobile-responsive table and filters
-- Ready for integration with existing RRTS booking workflow
-- Uses Railway webhook endpoints: /get-all-appointments, /updateAppointment, /deleteAppointment
--->
+<!-- Version: v4.0.9 - RRTS Appointment Management Portal -->
