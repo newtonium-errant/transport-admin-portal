@@ -16,16 +16,10 @@
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
             padding: 20px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .header h1 {
@@ -63,162 +57,110 @@
             background-color: rgba(255,255,255,0.2);
         }
 
-        .container {
-            margin-top: 100px;
-            padding: 2rem;
-        }
-
         .card {
             border: none;
-            border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            border-radius: 12px;
         }
 
         .card-header {
             background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
             border-radius: 12px 12px 0 0 !important;
+            border: none;
             padding: 1rem 1.5rem;
-            border: none;
         }
 
-        .card-header h5 {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .card-body {
+        .filters-section {
+            background: #ffffff;
+            border-radius: 8px;
             padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e9ecef;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            border: none;
-            border-radius: 8px;
-            padding: 12px 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-        }
-
-        .btn-outline-secondary {
-            border-color: #e9ecef;
-            color: #6c757d;
-            border-radius: 8px;
-            padding: 12px 30px;
-            font-weight: 600;
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: #3498db;
-            border-color: #3498db;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #e74c3c;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 30px;
-            font-weight: 600;
-        }
-
-        .btn-warning {
-            background: #fd7e14;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            padding: 12px 30px;
-            font-weight: 600;
-        }
-
-        .form-control, .form-select {
-            border-radius: 8px;
-            border: 2px solid #e9ecef;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: #3498db;
-            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-        }
-
-        .table {
+        .appointments-table {
+            background: white;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .table th {
-            background-color: #3498db;
-            color: white;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
             font-weight: 600;
-            border: none;
-            padding: 1rem;
+            color: #495057;
+            padding: 12px 8px;
+            font-size: 0.9em;
         }
 
         .table td {
-            padding: 1rem;
+            padding: 10px 8px;
             vertical-align: middle;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #f1f3f4;
+            font-size: 0.9em;
         }
 
         .table tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.1);
+            background-color: #f8f9fa;
         }
 
-        .appointment-item {
-            background: white;
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #3498db;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.8em;
+            margin: 1px;
         }
 
-        .appointment-item h6 {
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-
-        .appointment-meta {
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-
-        .appointment-status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            text-transform: capitalize;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
         .status-confirmed {
-            background: #d4edda;
+            background-color: #d4edda;
             color: #155724;
         }
 
-        .status-completed, .status-complete {
-            background: #d1ecf1;
-            color: #0c5460;
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
         }
 
         .status-cancelled {
-            background: #f8d7da;
+            background-color: #f8d7da;
             color: #721c24;
+        }
+
+        .status-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .notification-badge {
+            font-size: 0.7em;
+            padding: 2px 6px;
+        }
+
+        .notification-sent {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .notification-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .edit-modal .modal-dialog {
+            max-width: 800px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
         }
 
         .loading {
@@ -227,85 +169,40 @@
             color: #6c757d;
         }
 
-        .error-message {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            animation: slideDown 0.5s ease;
-        }
-
-        .success-message {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            animation: slideDown 0.5s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .modal-content {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-
-        .readonly-field {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
+        .no-appointments {
+            text-align: center;
+            padding: 3rem;
             color: #6c757d;
         }
 
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .filter-col {
+            flex: 1;
+            min-width: 150px;
+        }
+
         @media (max-width: 768px) {
-            .header {
+            .filter-row {
                 flex-direction: column;
-                gap: 1rem;
-                padding: 1rem;
-                position: relative;
             }
-
-            .container {
-                margin-top: 20px;
-                padding: 1rem;
-            }
-
-            .nav-links {
+            
+            .filter-col {
                 width: 100%;
-                justify-content: center;
             }
-
+            
             .table-responsive {
-                font-size: 0.9rem;
+                font-size: 0.8em;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Header matching add-appointments.html -->
+    <!-- Header -->
     <div class="header">
         <h1>RRTS Dashboard</h1>
         <div class="header-info">
@@ -326,601 +223,577 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>
-                        <i class="bi bi-calendar-check me-2"></i>
-                        Appointment Management
-                    </h2>
+    <div class="container-fluid mt-4">
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <h5 class="mb-3">
+                <i class="bi bi-funnel me-2"></i>
+                Filter Appointments
+            </h5>
+            <div class="filter-row">
+                <div class="filter-col">
+                    <label for="statusFilter" class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                        <option value="">All Statuses</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                    </select>
                 </div>
+                <div class="filter-col">
+                    <label for="clientFilter" class="form-label">K Number / Client Name</label>
+                    <input type="text" class="form-control" id="clientFilter" 
+                           placeholder="Search by K number or name" onchange="applyFilters()">
+                </div>
+                <div class="filter-col">
+                    <label for="dateFilter" class="form-label">Time Period</label>
+                    <select class="form-select" id="dateFilter" onchange="applyFilters()">
+                        <option value="all">All Appointments</option>
+                        <option value="future">Future Only</option>
+                        <option value="past">Past Only</option>
+                    </select>
+                </div>
+                <div class="filter-col">
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
 
-                <!-- Filters Section -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="bi bi-funnel me-2"></i>
-                            Filter Appointments
-                        </h5>
+        <!-- Appointments Table -->
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        Appointments Management
+                    </h5>
+                    <span id="appointmentCount" class="badge bg-light text-dark">0 appointments</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="loadingSpinner" class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label for="statusFilter" class="form-label">Status:</label>
-                                <select class="form-select" id="statusFilter" onchange="filterAppointments()">
-                                    <option value="">All Statuses</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="confirmed">Confirmed</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="complete">Complete</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="clientFilter" class="form-label">Search Client:</label>
-                                <input type="text" class="form-control" id="clientFilter" placeholder="Enter client name or K number" oninput="filterAppointments()">
-                            </div>
-                            <div class="col-md-3">
-                                <label for="dateFilter" class="form-label">Filter by Date:</label>
-                                <input type="date" class="form-control" id="dateFilter" onchange="filterAppointments()">
-                            </div>
-                            <div class="col-md-3">
-                                <label for="futureOnlyFilter" class="form-label">Time Filter:</label>
-                                <select class="form-select" id="futureOnlyFilter" onchange="filterAppointments()">
-                                    <option value="">All Appointments</option>
-                                    <option value="future">Future Only</option>
-                                    <option value="past">Past Only</option>
-                                </select>
-                            </div>
-                        </div>
+                    <p class="mt-2">Loading appointments...</p>
+                </div>
+                
+                <div id="appointmentsContainer" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Appointment</th>
+                                    <th>Pickup Time</th>
+                                    <th>Client</th>
+                                    <th>Clinic</th>
+                                    <th>Status</th>
+                                    <th>Driver</th>
+                                    <th>Notifications</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointmentsTableBody">
+                                <!-- Appointments will be loaded here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-
-                <!-- Appointments List -->
-                <div id="allAppointmentsList">
-                    <div class="loading">Loading appointments...</div>
+                
+                <div id="noAppointments" class="no-appointments" style="display: none;">
+                    <i class="bi bi-calendar-x display-4 mb-3"></i>
+                    <h5>No appointments found</h5>
+                    <p>Try adjusting your filters or <a href="add-appointments.html">add a new appointment</a>.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Edit Appointment Modal -->
-    <div class="modal fade" id="editAppointmentModal" tabindex="-1" aria-labelledby="editAppointmentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade edit-modal" id="editModal" tabindex="-1">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editAppointmentModalLabel">
+                    <h5 class="modal-title">
                         <i class="bi bi-pencil-square me-2"></i>
                         Edit Appointment
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="editAppointmentForm">
-                        <div class="row">
+                    <form id="editForm">
+                        <input type="hidden" id="editAppointmentId">
+                        
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editTableId" class="form-label">Table ID</label>
-                                    <input type="text" class="form-control readonly-field" id="editTableId" readonly>
-                                    <small class="text-muted">This ID cannot be changed</small>
-                                </div>
+                                <label class="form-label">Appointment Date & Time</label>
+                                <input type="datetime-local" class="form-control" id="editAppointmentTime" required>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editKNumber" class="form-label">K Number</label>
-                                    <input type="text" class="form-control" id="editKNumber">
-                                </div>
+                                <label class="form-label">Pickup Date & Time</label>
+                                <input type="datetime-local" class="form-control" id="editPickupTime" required>
                             </div>
                         </div>
 
-                        <div class="row">
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editAppointmentTime" class="form-label">Appointment Date & Time</label>
-                                    <input type="datetime-local" class="form-control" id="editAppointmentTime">
-                                </div>
+                                <label class="form-label">K Number</label>
+                                <input type="text" class="form-control" id="editKnumber" readonly>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editPickupTime" class="form-label">Pickup Time</label>
-                                    <input type="datetime-local" class="form-control" id="editPickupTime">
-                                </div>
+                            <div class="col-md-3">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="editFirstName" readonly>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editLocationName" class="form-label">Location Name</label>
-                                    <input type="text" class="form-control" id="editLocationName">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editLocationAddress" class="form-label">Location Address</label>
-                                    <input type="text" class="form-control" id="editLocationAddress">
-                                </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="editLastName" readonly>
                             </div>
                         </div>
 
-                        <div class="row">
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editAppointmentStatus" class="form-label">Status</label>
-                                    <select class="form-select" id="editAppointmentStatus">
-                                        <option value="pending">Pending</option>
-                                        <option value="confirmed">Confirmed</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="complete">Complete</option>
-                                        <option value="cancelled">Cancelled</option>
-                                    </select>
-                                </div>
+                                <label class="form-label">Clinic Name</label>
+                                <input type="text" class="form-control" id="editLocationName" required>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editTransitTime" class="form-label">Transit Time (minutes)</label>
-                                    <input type="number" class="form-control" id="editTransitTime">
-                                </div>
+                                <label class="form-label">Clinic Address</label>
+                                <input type="text" class="form-control" id="editLocationAddress">
                             </div>
                         </div>
 
-                        <div class="row">
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editCustomRate" class="form-label">Custom Rate</label>
-                                    <input type="number" class="form-control" id="editCustomRate" step="0.01">
-                                </div>
+                                <label class="form-label">Status</label>
+                                <select class="form-select" id="editStatus" required>
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="editDriverAssigned" class="form-label">Driver Assigned</label>
-                                    <input type="number" class="form-control" id="editDriverAssigned">
-                                </div>
+                                <label class="form-label">Assigned Driver</label>
+                                <select class="form-select" id="editDriver">
+                                    <option value="">No driver assigned</option>
+                                    <!-- Driver options will be loaded dynamically -->
+                                </select>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="editNotes" class="form-label">Notes</label>
+                            <label class="form-label">Notes</label>
                             <textarea class="form-control" id="editNotes" rows="3"></textarea>
+                        </div>
+
+                        <!-- Notification Status (Read-only display) -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Client Notification</label>
+                                <div id="editClientNotification" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Client Reminder</label>
+                                <div id="editClientReminder" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Driver Notification</label>
+                                <div id="editDriverNotification" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Driver Reminder</label>
+                                <div id="editDriverReminder" class="form-control-plaintext"></div>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" onclick="deleteAppointment()">
-                        <i class="bi bi-trash me-2"></i>Delete Appointment
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveAppointmentChanges()">
-                        <i class="bi bi-check-lg me-2"></i>Save Changes
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveAppointment()">
+                        <i class="bi bi-check-lg me-1"></i>Save Changes
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Delete Appointment
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Are you sure you want to delete this appointment?</strong></p>
+                    <div id="deleteAppointmentDetails" class="alert alert-warning">
+                        <!-- Appointment details will be shown here -->
+                    </div>
+                    <p class="text-muted">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                        <i class="bi bi-trash me-1"></i>Delete Appointment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let allAppointments = [];
         let filteredAppointments = [];
-        let currentEditingAppointment = null;
+        let currentDeleteId = null;
 
-        // Load all appointments on page load
+        // Update current date and time
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentDateTime').textContent = 
+                now.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 60000); // Update every minute
+            loadAllAppointments();
+        });
+
+        // Load all appointments from API
         async function loadAllAppointments() {
             try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
+                document.getElementById('loadingSpinner').style.display = 'block';
+                document.getElementById('appointmentsContainer').style.display = 'none';
+                document.getElementById('noAppointments').style.display = 'none';
 
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments');
+                
                 if (!response.ok) {
-                    throw new Error('Failed to load appointments');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();
+                allAppointments = data.appointments || [];
                 
-                // Handle the nested response structure from your backend
-                const appointmentsData = data[0]?.response?.body?.appointments || data.appointments;
+                // Sort by appointment date (newest first)
+                allAppointments.sort((a, b) => new Date(b.appointmenttime) - new Date(a.appointmenttime));
                 
-                if (appointmentsData && Array.isArray(appointmentsData)) {
-                    allAppointments = appointmentsData.map(apt => {
-                        // Parse datetime fields - your backend uses different field names
-                        let appointmentDateTime, pickupDateTime;
-                        let appointmentDate = '', appointmentTime = '', pickupDate = '', pickupTime = '';
-
-                        try {
-                            if (apt.appointmentDateTime) {
-                                appointmentDateTime = new Date(apt.appointmentDateTime);
-                                if (!isNaN(appointmentDateTime.getTime())) {
-                                    appointmentDate = apt.appointmentDate; // Backend already provides formatted date
-                                    appointmentTime = apt.appointmentTime; // Backend already provides formatted time
-                                }
-                            }
-                        } catch (e) {
-                            console.warn('Invalid appointmentDateTime:', apt.appointmentDateTime);
-                            appointmentDateTime = new Date();
-                        }
-
-                        try {
-                            if (apt.pickupTime) {
-                                pickupDateTime = new Date(apt.pickupTime);
-                                if (!isNaN(pickupDateTime.getTime())) {
-                                    pickupDate = pickupDateTime.toISOString().split('T')[0];
-                                    pickupTime = pickupDateTime.toLocaleTimeString('en-US', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit' 
-                                    });
-                                }
-                            }
-                        } catch (e) {
-                            console.warn('Invalid pickupTime:', apt.pickupTime);
-                            pickupDateTime = appointmentDateTime || new Date();
-                        }
-
-                        return {
-                            id: apt.id,
-                            tableId: apt.id, // Store the actual database ID
-                            knumber: apt.knumber || '',
-                            clientName: apt.clientName || `${apt.clientFirstName || ''} ${apt.clientLastName || ''}`.trim() || 'Unknown Client',
-                            appointmenttime: apt.appointmentDateTime || '', // Use the ISO datetime
-                            pickuptime: apt.pickupTime || '', // Use the ISO datetime
-                            locationname: apt.location || '', // Backend uses 'location' not 'locationname'
-                            locationaddress: apt.locationAddress || '', // Backend uses 'locationAddress'
-                            appointmentstatus: apt.status || 'pending', // Backend uses 'status' not 'appointmentstatus'
-                            transittime: apt.transitTime || 0, // Backend uses 'transitTime'
-                            custom_rate: apt.customRate, // Backend uses 'customRate'
-                            driver_assigned: apt.driver_assigned,
-                            notes: apt.notes || '',
-                            appointmentDate: appointmentDate,
-                            appointmentTime: appointmentTime,
-                            appointmentDateTime: appointmentDateTime || new Date(),
-                            pickupDate: pickupDate,
-                            pickupTime: pickupTime
-                        };
-                    }); new Date(apt.appointmenttime);
-                        let pickupDateTime = new Date(apt.pickuptime);
-
-                        return {
-                            id: apt.id,
-                            tableId: apt.id, // Store the actual database ID
-                            knumber: apt.knumber,
-                            clientName: `${apt.firstname || ''} ${apt.lastname || ''}`.trim() || 'Unknown Client',
-                            appointmenttime: apt.appointmenttime,
-                            pickuptime: apt.pickuptime,
-                            locationname: apt.locationname || '',
-                            locationaddress: apt.locationaddress || '',
-                            appointmentstatus: apt.appointmentstatus || 'pending',
-                            transittime: apt.transittime || 0,
-                            custom_rate: apt.custom_rate,
-                            driver_assigned: apt.driver_assigned,
-                            notes: apt.notes || '',
-                            appointmentDate: appointmentDateTime.toISOString().split('T')[0],
-                            appointmentTime: appointmentDateTime.toLocaleTimeString('en-US', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                            }),
-                            appointmentDateTime: appointmentDateTime,
-                            pickupDate: pickupDateTime.toISOString().split('T')[0],
-                            pickupTime: pickupDateTime.toLocaleTimeString('en-US', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                            })
-                        };
-                    });
-
-                    filteredAppointments = [...allAppointments];
-                    displayAllAppointments();
-                } else {
-                    showError('No appointments found or invalid response format');
-                }
+                applyFilters();
+                
             } catch (error) {
                 console.error('Error loading appointments:', error);
-                showError('Failed to load appointments. Please try again.');
+                document.getElementById('loadingSpinner').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error loading appointments. Please try again.
+                    </div>
+                `;
             }
         }
 
-        // Display appointments
-        function displayAllAppointments() {
-            const container = document.getElementById('allAppointmentsList');
-            
-            if (filteredAppointments.length === 0) {
-                container.innerHTML = `
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <i class="bi bi-calendar-x display-4 mb-3 d-block text-muted"></i>
-                            <h5 class="text-muted">No appointments found</h5>
-                            <p class="text-muted">Try adjusting your filter criteria.</p>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            // Sort appointments by appointment date/time
-            filteredAppointments.sort((a, b) => a.appointmentDateTime - b.appointmentDateTime);
-
-            let appointmentsHtml = `
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="bi bi-list-ul me-2"></i>
-                            All Appointments (${filteredAppointments.length})
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Client</th>
-                                        <th>Date & Time</th>
-                                        <th>Location</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-            `;
-
-            filteredAppointments.forEach(appointment => {
-                appointmentsHtml += `
-                    <tr>
-                        <td>
-                            <div class="fw-bold">${appointment.clientName}</div>
-                            <small class="text-muted">${appointment.knumber}</small>
-                        </td>
-                        <td>
-                            <div class="fw-bold">${appointment.appointmentDate}</div>
-                            <small class="text-muted">${appointment.appointmentTime}</small>
-                            ${appointment.pickupTime !== appointment.appointmentTime ? 
-                                `<br><small class="text-info">Pickup: ${appointment.pickupTime}</small>` : ''}
-                        </td>
-                        <td>
-                            <div class="fw-bold">${appointment.locationname}</div>
-                            <small class="text-muted">${appointment.locationaddress}</small>
-                        </td>
-                        <td>
-                            <span class="appointment-status status-${appointment.appointmentstatus}">
-                                ${appointment.appointmentstatus}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editAppointment(${appointment.tableId})">
-                                <i class="bi bi-pencil"></i> Edit
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            appointmentsHtml += `
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            container.innerHTML = appointmentsHtml;
-        }
-
-        // Filter appointments
-        function filterAppointments() {
+        // Apply current filters
+        function applyFilters() {
             const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
             const clientFilter = document.getElementById('clientFilter').value.toLowerCase();
             const dateFilter = document.getElementById('dateFilter').value;
-            const futureOnlyFilter = document.getElementById('futureOnlyFilter').value;
-
             const now = new Date();
 
             filteredAppointments = allAppointments.filter(appointment => {
                 // Status filter
-                const statusMatch = !statusFilter || appointment.appointmentstatus.toLowerCase() === statusFilter;
-                
-                // Client filter (search by name or K number)
-                const clientMatch = !clientFilter || 
-                    appointment.clientName.toLowerCase().includes(clientFilter) ||
-                    appointment.knumber.toLowerCase().includes(clientFilter);
-                
-                // Date filter
-                const dateMatch = !dateFilter || appointment.appointmentDate === dateFilter;
-                
-                // Future/Past filter
-                let timeMatch = true;
-                if (futureOnlyFilter) {
-                    const appointmentDate = appointment.appointmentDateTime;
-                    if (futureOnlyFilter === 'future') {
-                        timeMatch = appointmentDate >= now;
-                    } else if (futureOnlyFilter === 'past') {
-                        timeMatch = appointmentDate < now;
+                if (statusFilter && appointment.appointmentstatus?.toLowerCase() !== statusFilter) {
+                    return false;
+                }
+
+                // Client filter (K number or name)
+                if (clientFilter) {
+                    const knumber = appointment.knumber?.toLowerCase() || '';
+                    const firstName = appointment.firstname?.toLowerCase() || '';
+                    const lastName = appointment.lastname?.toLowerCase() || '';
+                    const fullName = `${firstName} ${lastName}`.toLowerCase();
+                    
+                    if (!knumber.includes(clientFilter) && 
+                        !firstName.includes(clientFilter) && 
+                        !lastName.includes(clientFilter) && 
+                        !fullName.includes(clientFilter)) {
+                        return false;
                     }
                 }
 
-                return statusMatch && clientMatch && dateMatch && timeMatch;
+                // Date filter
+                if (dateFilter !== 'all') {
+                    const appointmentDate = new Date(appointment.appointmenttime);
+                    if (dateFilter === 'future' && appointmentDate <= now) {
+                        return false;
+                    }
+                    if (dateFilter === 'past' && appointmentDate > now) {
+                        return false;
+                    }
+                }
+
+                return true;
             });
 
-            displayAllAppointments();
+            displayAppointments();
         }
 
-        // Edit appointment function
-        function editAppointment(appointmentId) {
-            const appointment = allAppointments.find(apt => apt.tableId === appointmentId);
-            if (!appointment) {
-                showError('Appointment not found');
+        // Display appointments in table
+        function displayAppointments() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            
+            const tbody = document.getElementById('appointmentsTableBody');
+            const countElement = document.getElementById('appointmentCount');
+            
+            if (filteredAppointments.length === 0) {
+                document.getElementById('appointmentsContainer').style.display = 'none';
+                document.getElementById('noAppointments').style.display = 'block';
+                countElement.textContent = '0 appointments';
                 return;
             }
 
-            currentEditingAppointment = appointment;
+            document.getElementById('appointmentsContainer').style.display = 'block';
+            document.getElementById('noAppointments').style.display = 'none';
+            countElement.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length !== 1 ? 's' : ''}`;
 
-            // Populate form fields
-            document.getElementById('editTableId').value = appointment.tableId;
-            document.getElementById('editKNumber').value = appointment.knumber;
-            
-            // Convert datetime to the format expected by datetime-local input
-            const appointmentDatetime = new Date(appointment.appointmenttime);
-            const pickupDatetime = new Date(appointment.pickuptime);
-            
-            document.getElementById('editAppointmentTime').value = appointmentDatetime.toISOString().slice(0, 16);
-            document.getElementById('editPickupTime').value = pickupDatetime.toISOString().slice(0, 16);
-            document.getElementById('editLocationName').value = appointment.locationname;
-            document.getElementById('editLocationAddress').value = appointment.locationaddress;
-            document.getElementById('editAppointmentStatus').value = appointment.appointmentstatus;
-            document.getElementById('editTransitTime').value = appointment.transittime;
-            document.getElementById('editCustomRate').value = appointment.custom_rate || '';
-            document.getElementById('editDriverAssigned').value = appointment.driver_assigned || '';
-            document.getElementById('editNotes').value = appointment.notes;
+            tbody.innerHTML = filteredAppointments.map(appointment => {
+                const appointmentDate = new Date(appointment.appointmenttime);
+                const pickupDate = new Date(appointment.pickuptime);
+                
+                return `
+                    <tr>
+                        <td>
+                            <div><strong>${appointmentDate.toLocaleDateString()}</strong></div>
+                            <div class="text-muted">${appointmentDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </td>
+                        <td>
+                            <div><strong>${pickupDate.toLocaleDateString()}</strong></div>
+                            <div class="text-muted">${pickupDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </td>
+                        <td>
+                            <div><strong>${appointment.knumber || ''}</strong></div>
+                            <div>${appointment.firstname || ''} ${appointment.lastname || ''}</div>
+                        </td>
+                        <td>
+                            <div>${appointment.locationname || 'N/A'}</div>
+                        </td>
+                        <td>
+                            <span class="status-badge status-${appointment.appointmentstatus || 'pending'}">
+                                ${appointment.appointmentstatus || 'pending'}
+                            </span>
+                        </td>
+                        <td>
+                            ${appointment.driver_assigned || 'Not assigned'}
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge notification-badge ${appointment.client_notification_sent ? 'notification-sent' : 'notification-pending'}">
+                                    C: ${appointment.client_notification_sent ? 'Sent' : 'Pending'}
+                                </span>
+                                <span class="badge notification-badge ${appointment.reminder_sent_client ? 'notification-sent' : 'notification-pending'}">
+                                    CR: ${appointment.reminder_sent_client ? 'Sent' : 'Pending'}
+                                </span>
+                                <span class="badge notification-badge ${appointment.driver_notification_sent ? 'notification-sent' : 'notification-pending'}">
+                                    D: ${appointment.driver_notification_sent ? 'Sent' : 'Pending'}
+                                </span>
+                                <span class="badge notification-badge ${appointment.reminder_sent_driver ? 'notification-sent' : 'notification-pending'}">
+                                    DR: ${appointment.reminder_sent_driver ? 'Sent' : 'Pending'}
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editAppointment('${appointment.id}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteAppointment('${appointment.id}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('clientFilter').value = '';
+            document.getElementById('dateFilter').value = 'all';
+            applyFilters();
+        }
+
+        // Edit appointment
+        function editAppointment(appointmentId) {
+            const appointment = allAppointments.find(a => a.id === appointmentId);
+            if (!appointment) return;
+
+            // Populate edit form
+            document.getElementById('editAppointmentId').value = appointment.id;
+            document.getElementById('editAppointmentTime').value = formatDateTimeForInput(appointment.appointmenttime);
+            document.getElementById('editPickupTime').value = formatDateTimeForInput(appointment.pickuptime);
+            document.getElementById('editKnumber').value = appointment.knumber || '';
+            document.getElementById('editFirstName').value = appointment.firstname || '';
+            document.getElementById('editLastName').value = appointment.lastname || '';
+            document.getElementById('editLocationName').value = appointment.locationname || '';
+            document.getElementById('editLocationAddress').value = appointment.locationaddress || '';
+            document.getElementById('editStatus').value = appointment.appointmentstatus || 'pending';
+            document.getElementById('editDriver').value = appointment.driver_assigned || '';
+            document.getElementById('editNotes').value = appointment.notes || '';
+
+            // Populate notification status (read-only)
+            document.getElementById('editClientNotification').innerHTML = getNotificationBadge(appointment.client_notification_sent);
+            document.getElementById('editClientReminder').innerHTML = getNotificationBadge(appointment.reminder_sent_client);
+            document.getElementById('editDriverNotification').innerHTML = getNotificationBadge(appointment.driver_notification_sent);
+            document.getElementById('editDriverReminder').innerHTML = getNotificationBadge(appointment.reminder_sent_driver);
 
             // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('editAppointmentModal'));
-            modal.show();
+            new bootstrap.Modal(document.getElementById('editModal')).show();
+        }
+
+        // Delete appointment
+        function deleteAppointment(appointmentId) {
+            const appointment = allAppointments.find(a => a.id === appointmentId);
+            if (!appointment) return;
+
+            currentDeleteId = appointmentId;
+            
+            // Show appointment details in delete confirmation
+            const appointmentDate = new Date(appointment.appointmenttime);
+            document.getElementById('deleteAppointmentDetails').innerHTML = `
+                <strong>Client:</strong> ${appointment.knumber || ''} - ${appointment.firstname || ''} ${appointment.lastname || ''}<br>
+                <strong>Appointment:</strong> ${appointmentDate.toLocaleDateString()} at ${appointmentDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}<br>
+                <strong>Clinic:</strong> ${appointment.locationname || 'N/A'}
+            `;
+
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
         }
 
         // Save appointment changes
-        async function saveAppointmentChanges() {
-            if (!currentEditingAppointment) return;
-
-            const formData = {
-                id: currentEditingAppointment.tableId,
-                knumber: document.getElementById('editKNumber').value,
-                appointmenttime: document.getElementById('editAppointmentTime').value + ':00',
-                pickuptime: document.getElementById('editPickupTime').value + ':00',
-                locationname: document.getElementById('editLocationName').value,
-                locationaddress: document.getElementById('editLocationAddress').value,
-                appointmentstatus: document.getElementById('editAppointmentStatus').value,
-                transittime: parseInt(document.getElementById('editTransitTime').value) || 0,
-                custom_rate: parseFloat(document.getElementById('editCustomRate').value) || null,
-                driver_assigned: parseInt(document.getElementById('editDriverAssigned').value) || null,
-                notes: document.getElementById('editNotes').value
-            };
-
+        async function saveAppointment() {
             try {
-                const response = await fetch('https://rrts-booking-system-production.up.railway.app/webhook/update-appointment', {
+                const appointmentData = {
+                    id: document.getElementById('editAppointmentId').value,
+                    appointmenttime: document.getElementById('editAppointmentTime').value,
+                    pickuptime: document.getElementById('editPickupTime').value,
+                    locationname: document.getElementById('editLocationName').value,
+                    locationaddress: document.getElementById('editLocationAddress').value,
+                    appointmentstatus: document.getElementById('editStatus').value,
+                    driver_assigned: document.getElementById('editDriver').value,
+                    notes: document.getElementById('editNotes').value
+                };
+
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(appointmentData)
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to update appointment');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                // Close modal and reload data
+                bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                await loadAllAppointments();
                 
-                if (result.success) {
-                    showSuccess('Appointment updated successfully!');
-                    
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal'));
-                    modal.hide();
-                    
-                    // Reload appointments
-                    loadAllAppointments();
-                } else {
-                    throw new Error(result.message || 'Update failed');
-                }
+                // Show success message
+                showNotification('Appointment updated successfully!', 'success');
+
             } catch (error) {
-                console.error('Error updating appointment:', error);
-                showError('Failed to update appointment. Please try again.');
+                console.error('Error saving appointment:', error);
+                showNotification('Error updating appointment. Please try again.', 'error');
             }
         }
 
-        // Delete appointment function
-        async function deleteAppointment() {
-            if (!currentEditingAppointment) return;
-
-            if (!confirm('Are you sure you want to delete this appointment? This action cannot be undone.')) {
-                return;
-            }
+        // Confirm delete
+        async function confirmDelete() {
+            if (!currentDeleteId) return;
 
             try {
-                const response = await fetch('https://rrts-booking-system-production.up.railway.app/webhook/delete-appointment', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-appointment', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id: currentEditingAppointment.tableId })
+                    body: JSON.stringify({ id: currentDeleteId })
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to delete appointment');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const result = await response.json();
+                // Close modal and reload data
+                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                currentDeleteId = null;
+                await loadAllAppointments();
                 
-                if (result.success) {
-                    showSuccess('Appointment deleted successfully!');
-                    
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal'));
-                    modal.hide();
-                    
-                    // Reload appointments
-                    loadAllAppointments();
-                } else {
-                    throw new Error(result.message || 'Delete failed');
-                }
+                // Show success message
+                showNotification('Appointment deleted successfully!', 'success');
+
             } catch (error) {
                 console.error('Error deleting appointment:', error);
-                showError('Failed to delete appointment. Please try again.');
+                showNotification('Error deleting appointment. Please try again.', 'error');
             }
         }
 
-        // Utility functions
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.textContent = message;
-
-            const container = document.getElementById('allAppointmentsList');
-            container.insertBefore(errorDiv, container.firstChild);
-
-            setTimeout(() => errorDiv.remove(), 5000);
+        // Helper functions
+        function formatDateTimeForInput(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toISOString().slice(0, 16);
         }
 
-        function showSuccess(message) {
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-message';
-            successDiv.textContent = message;
-
-            const container = document.getElementById('allAppointmentsList');
-            container.insertBefore(successDiv, container.firstChild);
-
-            setTimeout(() => successDiv.remove(), 5000);
+        function getNotificationBadge(sent) {
+            const className = sent ? 'notification-sent' : 'notification-pending';
+            const text = sent ? 'Sent' : 'Pending';
+            return `<span class="badge notification-badge ${className}">${text}</span>`;
         }
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            loadAllAppointments();
-            updateDateTime();
-            setInterval(updateDateTime, 1000); // Update every second
-        };
-
-        // Update date and time in header
-        function updateDateTime() {
-            const now = new Date();
-            const options = { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit', 
-                minute: '2-digit'
-            };
-            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+        function showNotification(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle';
+            
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <i class="bi ${icon} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
         }
 
-        // Logout function
         function logout() {
             sessionStorage.removeItem('rrts_user');
-            window.location.href = 'admin-portal_v3_2_3.html';
+            window.location.href = 'admin-portal_v3_1_0.html';
         }
     </script>
 </body>
 </html>
-
-<!-- Version: v3.0.6 - Completely rewrote JavaScript section to fix syntax errors -->
+// Version: v4.0.0 - RRTS Appointment Management Portal - Updated version numbering and endpoint verification
