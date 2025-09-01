@@ -422,11 +422,11 @@
 
         // API Configuration
         const API_CONFIG = {
-            baseUrl: 'https://your-n8n-instance.app.n8n.cloud/webhook',
+            baseUrl: 'https://webhook-processor-production-3bb8.up.railway.app/webhook',
             endpoints: {
-                getClients: '/get-clients',
-                getDestinations: '/get-destinations',
-                saveAppointments: '/save-appointments'
+                getClients: '/getAllClients',
+                getDestinations: '/clinic-locations',
+                saveAppointments: '/save-appointment'
             }
         };
 
@@ -810,4 +810,4 @@
 </body>
 </html>
 
-<!-- Version: v2.7.6 - Active clients only, lastname-firstname format, bottom Add button, past date visual indicator -->
+<!-- Version: v2.7.7 - Fixed API endpoints to use working Railway URLs -->
