@@ -766,7 +766,6 @@
             
             document.getElementById('editAppointmentTime').value = appointmentDatetime.toISOString().slice(0, 16);
             document.getElementById('editPickupTime').value = pickupDatetime.toISOString().slice(0, 16);
-            
             document.getElementById('editLocationName').value = appointment.locationname;
             document.getElementById('editLocationAddress').value = appointment.locationaddress;
             document.getElementById('editAppointmentStatus').value = appointment.appointmentstatus;
@@ -924,35 +923,4 @@
 </body>
 </html>
 
-<!-- 
-Version: v3.0.4 - RRTS Appointment Management - Fixed JavaScript Syntax Error
-- v3.0.4: Fixed JavaScript syntax error in loadAllAppointments function
-  * Removed incomplete code fragments causing syntax errors
-  * Ensured proper function structure and completion
-  * Fixed parsing logic for backend response data
-- v3.0.3: Fixed data parsing for new backend response structure
-  * Updated to handle nested response.body.appointments structure
-  * Mapped backend field names: location → locationname, status → appointmentstatus, etc.
-  * Fixed date/time parsing to use backend's pre-formatted fields
-  * Added fallback for different response structures
-- v3.0.2: Updated get-all-appointments endpoint URL
-  * Changed from rrts-booking-system-production.up.railway.app to webhook-processor-production-3bb8.up.railway.app
-  * Updated loadAllAppointments() function with new endpoint
-- v3.0.1: Fixed color scheme to match add-appointments.html exactly
-  * Header gradient: #2c3e50 to #34495e (dark blue-gray)
-  * Card headers: #3498db to #2980b9 (blue gradient)
-  * Primary buttons: Same blue gradient as cards
-  * Modal headers: Same as main header gradient
-  * Enhanced visual consistency across RRTS admin portal
-- v3.0.0: Complete redesign with edit and delete functionality
-  * Updated header navigation to match add-appointments.html design
-  * Removed book new appointments functionality (moved to separate page)
-  * Added comprehensive edit modal with all appointment data fields
-  * Table ID displayed but non-editable for backend identification
-  * Added delete functionality with confirmation
-  * Enhanced UI with improved styling and responsiveness
-  * Full CRUD operations for appointment management
-  * Professional modal design with proper form validation
-  * Integrated with existing webhook endpoints
-  * Maintains consistent RRTS branding and navigation
--->
+<!-- Version: v3.0.5 - Fixed JavaScript syntax structure and function definitions -->
