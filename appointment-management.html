@@ -730,7 +730,7 @@
             if (!currentDeleteId) return;
 
             try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-appointment', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/deleteAppointment', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -800,7 +800,9 @@
 </body>
 </html>
 <!-- 
-Version: v4.0.2 - RRTS Appointment Management Portal
+Version: v4.0.4 - RRTS Appointment Management Portal
+- v4.0.4: Updated delete endpoint URL to /webhook/deleteAppointment (removed hyphen)
+- v4.0.3: Highlighted location of delete and update endpoint URLs for easy modification
 - v4.0.2: Fixed field name mapping to match API response (appointmentDateTime, pickupTime, clientFirstName, etc.)
 - v4.0.1: Fixed HTTP method for get-all-appointments endpoint to use GET instead of POST
 - v4.0.0: Updated version numbering and endpoint verification
@@ -824,5 +826,5 @@ Version: v4.0.2 - RRTS Appointment Management Portal
   * Live filtering without page reload
   * Mobile-responsive table and filters
 - Ready for integration with existing RRTS booking workflow
-- Uses Railway webhook endpoints: /get-all-appointments, /update-appointment, /delete-appointment
+- Uses Railway webhook endpoints: /get-all-appointments, /updateAppointment, /deleteAppointment
 -->
