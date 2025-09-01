@@ -488,10 +488,13 @@
                 }
 
                 const data = await response.json();
-                allAppointments = data.appointments || [];
+                
+                // Handle the response format - data appears to be wrapped in an array
+                const responseData = Array.isArray(data) ? data[0] : data;
+                allAppointments = responseData.appointments || [];
                 
                 // Sort by appointment date (newest first)
-                allAppointments.sort((a, b) => new Date(b.appointmenttime) - new Date(a.appointmenttime));
+                allAppointments.sort((a, b) => new Date(b.appointmentDateTime) - new Date(a.appointmentDateTime));
                 
                 applyFilters();
                 
@@ -515,15 +518,15 @@
 
             filteredAppointments = allAppointments.filter(appointment => {
                 // Status filter
-                if (statusFilter && appointment.appointmentstatus?.toLowerCase() !== statusFilter) {
+                if (statusFilter && appointment.status?.toLowerCase() !== statusFilter) {
                     return false;
                 }
 
                 // Client filter (K number or name)
                 if (clientFilter) {
                     const knumber = appointment.knumber?.toLowerCase() || '';
-                    const firstName = appointment.firstname?.toLowerCase() || '';
-                    const lastName = appointment.lastname?.toLowerCase() || '';
+                    const firstName = appointment.clientFirstName?.toLowerCase() || '';
+                    const lastName = appointment.clientLastName?.toLowerCase() || '';
                     const fullName = `${firstName} ${lastName}`.toLowerCase();
                     
                     if (!knumber.includes(clientFilter) && 
@@ -536,7 +539,7 @@
 
                 // Date filter
                 if (dateFilter !== 'all') {
-                    const appointmentDate = new Date(appointment.appointmenttime);
+                    const appointmentDate = new Date(appointment.appointmentDateTime);
                     if (dateFilter === 'future' && appointmentDate <= now) {
                         return false;
                     }
@@ -570,8 +573,8 @@
             countElement.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length !== 1 ? 's' : ''}`;
 
             tbody.innerHTML = filteredAppointments.map(appointment => {
-                const appointmentDate = new Date(appointment.appointmenttime);
-                const pickupDate = new Date(appointment.pickuptime);
+                const appointmentDate = new Date(appointment.appointmentDateTime);
+                const pickupDate = new Date(appointment.pickupTime);
                 
                 return `
                     <tr>
@@ -585,14 +588,14 @@
                         </td>
                         <td>
                             <div><strong>${appointment.knumber || ''}</strong></div>
-                            <div>${appointment.firstname || ''} ${appointment.lastname || ''}</div>
+                            <div>${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}</div>
                         </td>
                         <td>
-                            <div>${appointment.locationname || 'N/A'}</div>
+                            <div>${appointment.location || 'N/A'}</div>
                         </td>
                         <td>
-                            <span class="status-badge status-${appointment.appointmentstatus || 'pending'}">
-                                ${appointment.appointmentstatus || 'pending'}
+                            <span class="status-badge status-${appointment.status || 'pending'}">
+                                ${appointment.status || 'pending'}
                             </span>
                         </td>
                         <td>
@@ -644,14 +647,14 @@
 
             // Populate edit form
             document.getElementById('editAppointmentId').value = appointment.id;
-            document.getElementById('editAppointmentTime').value = formatDateTimeForInput(appointment.appointmenttime);
-            document.getElementById('editPickupTime').value = formatDateTimeForInput(appointment.pickuptime);
+            document.getElementById('editAppointmentTime').value = formatDateTimeForInput(appointment.appointmentDateTime);
+            document.getElementById('editPickupTime').value = formatDateTimeForInput(appointment.pickupTime);
             document.getElementById('editKnumber').value = appointment.knumber || '';
-            document.getElementById('editFirstName').value = appointment.firstname || '';
-            document.getElementById('editLastName').value = appointment.lastname || '';
-            document.getElementById('editLocationName').value = appointment.locationname || '';
-            document.getElementById('editLocationAddress').value = appointment.locationaddress || '';
-            document.getElementById('editStatus').value = appointment.appointmentstatus || 'pending';
+            document.getElementById('editFirstName').value = appointment.clientFirstName || '';
+            document.getElementById('editLastName').value = appointment.clientLastName || '';
+            document.getElementById('editLocationName').value = appointment.location || '';
+            document.getElementById('editLocationAddress').value = appointment.locationAddress || '';
+            document.getElementById('editStatus').value = appointment.status || 'pending';
             document.getElementById('editDriver').value = appointment.driver_assigned || '';
             document.getElementById('editNotes').value = appointment.notes || '';
 
@@ -673,11 +676,11 @@
             currentDeleteId = appointmentId;
             
             // Show appointment details in delete confirmation
-            const appointmentDate = new Date(appointment.appointmenttime);
+            const appointmentDate = new Date(appointment.appointmentDateTime);
             document.getElementById('deleteAppointmentDetails').innerHTML = `
-                <strong>Client:</strong> ${appointment.knumber || ''} - ${appointment.firstname || ''} ${appointment.lastname || ''}<br>
+                <strong>Client:</strong> ${appointment.knumber || ''} - ${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}<br>
                 <strong>Appointment:</strong> ${appointmentDate.toLocaleDateString()} at ${appointmentDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}<br>
-                <strong>Clinic:</strong> ${appointment.locationname || 'N/A'}
+                <strong>Clinic:</strong> ${appointment.location || 'N/A'}
             `;
 
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
@@ -797,7 +800,8 @@
 </body>
 </html>
 <!-- 
-Version: v4.0.1 - RRTS Appointment Management Portal
+Version: v4.0.2 - RRTS Appointment Management Portal
+- v4.0.2: Fixed field name mapping to match API response (appointmentDateTime, pickupTime, clientFirstName, etc.)
 - v4.0.1: Fixed HTTP method for get-all-appointments endpoint to use GET instead of POST
 - v4.0.0: Updated version numbering and endpoint verification
 - v1.0.0: Initial appointment management interface with comprehensive CRUD operations
