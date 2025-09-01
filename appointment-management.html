@@ -510,7 +510,7 @@
         // Load all appointments on page load
         async function loadAllAppointments() {
             try {
-                const response = await fetch('https://rrts-booking-system-production.up.railway.app/webhook/get-all-appointments', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -870,7 +870,10 @@
 </html>
 
 <!-- 
-Version: v3.0.1 - RRTS Appointment Management - Color Scheme Fixed
+Version: v3.0.2 - RRTS Appointment Management - Updated Get All Appointments Endpoint
+- v3.0.2: Updated get-all-appointments endpoint URL
+  * Changed from rrts-booking-system-production.up.railway.app to webhook-processor-production-3bb8.up.railway.app
+  * Updated loadAllAppointments() function with new endpoint
 - v3.0.1: Fixed color scheme to match add-appointments.html exactly
   * Header gradient: #2c3e50 to #34495e (dark blue-gray)
   * Card headers: #3498db to #2980b9 (blue gradient)
