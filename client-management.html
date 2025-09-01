@@ -800,7 +800,27 @@
 
             try {
                 const client = allClients.find(c => c.knumber === kNumber);
-                const updatedClient = { ...client, active: newStatus };
+                if (!client) {
+                    throw new Error('Client not found');
+                }
+
+                // Create updated client object with all required fields
+                const updatedClient = {
+                    id: client.id,
+                    knumber: client.knumber,
+                    active: newStatus,
+                    firstname: client.firstname,
+                    lastname: client.lastname,
+                    phone: client.phone,
+                    email: client.email,
+                    civicaddress: client.civicaddress,
+                    city: client.city,
+                    prov: client.prov,
+                    postalcode: client.postalcode,
+                    emergency_contact_name: client.emergency_contact_name,
+                    emergency_contact_number: client.emergency_contact_number,
+                    notes: client.notes
+                };
 
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient', {
                     method: 'POST',
@@ -915,5 +935,5 @@
 </body>
 </html>
 <!-- 
-Version: v2.1.4 - Changed getAllClients request from POST to GET method
+Version: v2.1.5 - Fixed toggleClientStatus function to work with Supabase field structure and include required ID field
 -->
