@@ -523,10 +523,65 @@
 
                 const data = await response.json();
                 
-                if (data.appointments && Array.isArray(data.appointments)) {
-                    allAppointments = data.appointments.map(apt => {
-                        // Parse datetime fields
-                        let appointmentDateTime = new Date(apt.appointmenttime);
+                // Handle the nested response structure from your backend
+                const appointmentsData = data[0]?.response?.body?.appointments || data.appointments;
+                
+                if (appointmentsData && Array.isArray(appointmentsData)) {
+                    allAppointments = appointmentsData.map(apt => {
+                        // Parse datetime fields - your backend uses different field names
+                        let appointmentDateTime, pickupDateTime;
+                        let appointmentDate = '', appointmentTime = '', pickupDate = '', pickupTime = '';
+
+                        try {
+                            if (apt.appointmentDateTime) {
+                                appointmentDateTime = new Date(apt.appointmentDateTime);
+                                if (!isNaN(appointmentDateTime.getTime())) {
+                                    appointmentDate = apt.appointmentDate; // Backend already provides formatted date
+                                    appointmentTime = apt.appointmentTime; // Backend already provides formatted time
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Invalid appointmentDateTime:', apt.appointmentDateTime);
+                            appointmentDateTime = new Date();
+                        }
+
+                        try {
+                            if (apt.pickupTime) {
+                                pickupDateTime = new Date(apt.pickupTime);
+                                if (!isNaN(pickupDateTime.getTime())) {
+                                    pickupDate = pickupDateTime.toISOString().split('T')[0];
+                                    pickupTime = pickupDateTime.toLocaleTimeString('en-US', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                    });
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Invalid pickupTime:', apt.pickupTime);
+                            pickupDateTime = appointmentDateTime || new Date();
+                        }
+
+                        return {
+                            id: apt.id,
+                            tableId: apt.id, // Store the actual database ID
+                            knumber: apt.knumber || '',
+                            clientName: apt.clientName || `${apt.clientFirstName || ''} ${apt.clientLastName || ''}`.trim() || 'Unknown Client',
+                            appointmenttime: apt.appointmentDateTime || '', // Use the ISO datetime
+                            pickuptime: apt.pickupTime || '', // Use the ISO datetime
+                            locationname: apt.location || '', // Backend uses 'location' not 'locationname'
+                            locationaddress: apt.locationAddress || '', // Backend uses 'locationAddress'
+                            appointmentstatus: apt.status || 'pending', // Backend uses 'status' not 'appointmentstatus'
+                            transittime: apt.transitTime || 0, // Backend uses 'transitTime'
+                            custom_rate: apt.customRate, // Backend uses 'customRate'
+                            driver_assigned: apt.driver_assigned,
+                            notes: apt.notes || '',
+                            appointmentDate: appointmentDate,
+                            appointmentTime: appointmentTime,
+                            appointmentDateTime: appointmentDateTime || new Date(),
+                            pickupDate: pickupDate,
+                            pickupTime: pickupTime
+                        };
+                    }); new Date(apt.appointmenttime);
                         let pickupDateTime = new Date(apt.pickuptime);
 
                         return {
@@ -870,7 +925,12 @@
 </html>
 
 <!-- 
-Version: v3.0.2 - RRTS Appointment Management - Updated Get All Appointments Endpoint
+Version: v3.0.3 - RRTS Appointment Management - Fixed Backend Data Parsing
+- v3.0.3: Fixed data parsing for new backend response structure
+  * Updated to handle nested response.body.appointments structure
+  * Mapped backend field names: location → locationname, status → appointmentstatus, etc.
+  * Fixed date/time parsing to use backend's pre-formatted fields
+  * Added fallback for different response structures
 - v3.0.2: Updated get-all-appointments endpoint URL
   * Changed from rrts-booking-system-production.up.railway.app to webhook-processor-production-3bb8.up.railway.app
   * Updated loadAllAppointments() function with new endpoint
