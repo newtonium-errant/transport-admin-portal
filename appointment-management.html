@@ -796,4 +796,29 @@
     </script>
 </body>
 </html>
-// Version: v4.0.0 - RRTS Appointment Management Portal - Updated version numbering and endpoint verification
+<!-- 
+Version: v4.0.1 - RRTS Appointment Management Portal
+- v4.0.1: Fixed HTTP method for get-all-appointments endpoint to use GET instead of POST
+- v4.0.0: Updated version numbering and endpoint verification
+- v1.0.0: Initial appointment management interface with comprehensive CRUD operations
+- Features: 
+  * Load all appointments from Supabase via get-all-appointments API endpoint
+  * Sort appointments by date (newest to oldest) 
+  * Filter by status (all, confirmed, pending, cancelled, completed)
+  * Search by K number or client name with real-time filtering
+  * Time period filter (all, future only, past only)
+  * Clear filters functionality
+  * Appointment table showing: appointment date/time, pickup date/time, K number, client name, clinic name, status, assigned driver, notification statuses, notes
+  * Edit appointment modal with full form (except table ID field is not editable)
+  * Delete appointment with confirmation modal and warning
+  * Notification status display (client notification sent, client reminder sent, driver notification sent, driver reminder sent)
+  * Responsive design with consistent RRTS header matching add-appointments.html
+  * Real-time date/time display in header
+  * Success/error notification system
+  * Integration with Railway webhook endpoints for update and delete operations
+  * Bootstrap 5 styling with modern UI components
+  * Live filtering without page reload
+  * Mobile-responsive table and filters
+- Ready for integration with existing RRTS booking workflow
+- Uses Railway webhook endpoints: /get-all-appointments, /update-appointment, /delete-appointment
+-->
