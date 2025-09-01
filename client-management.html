@@ -632,9 +632,9 @@
                 hideError();
                 
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients', {
-                    method: 'POST',
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     }
                 });
 
@@ -915,5 +915,5 @@
 </body>
 </html>
 <!-- 
-Version: v2.1.3 - Fixed data mapping for Supabase field names and response structure
+Version: v2.1.4 - Changed getAllClients request from POST to GET method
 -->
