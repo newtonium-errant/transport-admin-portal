@@ -735,10 +735,6 @@
                         <a href="appointment-management.html?client=${client.knumber}" class="btn btn-secondary">
                             📅 Appointments
                         </a>
-                        <button class="btn ${client.active ? 'btn-danger' : 'btn-success'}" 
-                                onclick="toggleClientStatus('${client.knumber}', ${!client.active})">
-                            ${client.active ? '🚫 Deactivate' : '✅ Activate'}
-                        </button>
                     </div>
                 </div>
             `).join('');
@@ -938,5 +934,5 @@
 </body>
 </html>
 <!-- 
-Version: v2.1.6 - Fixed data structure to match backend expectations (nested clientData object with camelCase fields)
+Version: v2.1.7 - Removed deactivate/activate buttons from client cards, status only editable through edit modal
 -->
