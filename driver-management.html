@@ -359,6 +359,84 @@
             color: #3498db;
             font-weight: bold;
         }
+
+        /* Weekly Schedule Styles */
+        .form-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .weekly-schedule-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .schedule-day {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #ecf0f1;
+        }
+
+        .day-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 100px;
+        }
+
+        .day-header input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .day-header label {
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-inputs.disabled {
+            opacity: 0.5;
+        }
+
+        .time-input {
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 90px;
+            font-size: 14px;
+        }
+
+        .time-inputs span {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Modal Schedule Styles */
+        .weekly-schedule-grid-modal {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .time-inputs-modal {
+            margin-top: 5px;
+        }
+
+        .time-inputs-modal.disabled {
+            opacity: 0.5;
+        }
         
         @media (max-width: 768px) {
             .driver-grid {
@@ -516,6 +594,96 @@
                                 </div>
                             </div>
 
+                            <!-- Weekly Schedule Section -->
+                            <div class="form-section">
+                                <h4 style="margin-bottom: 15px; color: #34495e; border-bottom: 1px solid #ecf0f1; padding-bottom: 8px;">📅 Weekly Work Schedule</h4>
+                                <div class="weekly-schedule-grid">
+                                    <div class="schedule-day">
+                                        <div class="day-header">
+                                            <input type="checkbox" id="available-monday" onchange="toggleDayAvailability('monday')" checked>
+                                            <label for="available-monday">Monday</label>
+                                        </div>
+                                        <div class="time-inputs" id="times-monday">
+                                            <input type="time" id="start-monday" value="08:00" class="time-input">
+                                            <span>to</span>
+                                            <input type="time" id="end-monday" value="16:00" class="time-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <div class="day-header">
+                                            <input type="checkbox" id="available-tuesday" onchange="toggleDayAvailability('tuesday')" checked>
+                                            <label for="available-tuesday">Tuesday</label>
+                                        </div>
+                                        <div class="time-inputs" id="times-tuesday">
+                                            <input type="time" id="start-tuesday" value="08:00" class="time-input">
+                                            <span>to</span>
+                                            <input type="time" id="end-tuesday" value="16:00" class="time-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <div class="day-header">
+                                            <input type="checkbox" id="available-wednesday" onchange="toggleDayAvailability('wednesday')" checked>
+                                            <label for="available-wednesday">Wednesday</label>
+                                        </div>
+                                        <div class="time-inputs" id="times-wednesday">
+                                            <input type="time" id="start-wednesday" value="08:00" class="time-input">
+                                            <span>to</span>
+                                            <input type="time" id="end-wednesday" value="16:00" class="time-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <div class="day-header">
+                                            <input type="checkbox" id="available-thursday" onchange="toggleDayAvailability('thursday')" checked>
+                                            <label for="available-thursday">Thursday</label>
+                                        </div>
+                                        <div class="time-inputs" id="times-thursday">
+                                            <input type="time" id="start-thursday" value="08:00" class="time-input">
+                                            <span>to</span>
+                                            <input type="time" id="end-thursday" value="16:00" class="time-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <div class="day-header">
+                                            <input type="checkbox" id="available-friday" onchange="toggleDayAvailability('friday')" checked>
+                                            <label for="available-friday">Friday</label>
+                                        </div>
+                                        <div class="time-inputs" id="times-friday">
+                                            <input type="time" id="start-friday" value="08:00" class="time-input">
+                                            <span>to</span>
+                                            <input type="time" id="end-friday" value="16:00" class="time-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <div class="day-header">
+                                            <input type="checkbox" id="available-saturday" onchange="toggleDayAvailability('saturday')">
+                                            <label for="available-saturday">Saturday</label>
+                                        </div>
+                                        <div class="time-inputs disabled" id="times-saturday">
+                                            <input type="time" id="start-saturday" value="08:00" class="time-input" disabled>
+                                            <span>to</span>
+                                            <input type="time" id="end-saturday" value="16:00" class="time-input" disabled>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <div class="day-header">
+                                            <input type="checkbox" id="available-sunday" onchange="toggleDayAvailability('sunday')">
+                                            <label for="available-sunday">Sunday</label>
+                                        </div>
+                                        <div class="time-inputs disabled" id="times-sunday">
+                                            <input type="time" id="start-sunday" value="08:00" class="time-input" disabled>
+                                            <span>to</span>
+                                            <input type="time" id="end-sunday" value="16:00" class="time-input" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-actions">
                                 <button type="button" class="btn-secondary" onclick="clearForm()">🔄 Clear Form</button>
                                 <button type="button" class="btn-primary" onclick="saveDriver()">💾 Save Driver</button>
@@ -550,6 +718,210 @@
         </div>
     </div>
 
+    <!-- Edit Driver Modal -->
+    <div class="modal fade" id="editDriverModal" tabindex="-1" aria-labelledby="editDriverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDriverModalLabel">Edit Driver</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDriverForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editDriverFirstName" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="editDriverFirstName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editDriverLastName" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="editDriverLastName" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editDriverLegalName" class="form-label">Legal Name (if different)</label>
+                                <input type="text" class="form-control" id="editDriverLegalName" placeholder="Leave blank if same as First + Last">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editDriverEmail" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="editDriverEmail" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editDriverPhone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="editDriverPhone">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editDriverGender" class="form-label">Gender *</label>
+                                <select class="form-select" id="editDriverGender" required>
+                                    <option value="">Select gender...</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="non-binary">Non-binary</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editDriverWorkload" class="form-label">Workload Preference *</label>
+                                <select class="form-select" id="editDriverWorkload" required onchange="updateEditWorkloadPercentage()">
+                                    <option value="">Select workload...</option>
+                                    <option value="minimal">Minimal (25%)</option>
+                                    <option value="light">Light (50%)</option>
+                                    <option value="normal">Normal (100%)</option>
+                                    <option value="heavy">Heavy (150%)</option>
+                                    <option value="maximum">Maximum (200%)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editDriverWorkloadPct" class="form-label">Workload Percentage</label>
+                                <input type="number" class="form-control" id="editDriverWorkloadPct" min="0" max="300" readonly style="background-color: #f8f9fa;">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editDriverCalendarType" class="form-label">Preferred Calendar</label>
+                                <select class="form-select" id="editDriverCalendarType">
+                                    <option value="google">Google Calendar</option>
+                                    <option value="outlook">Outlook Calendar</option>
+                                    <option value="apple">Apple Calendar</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editDriverStatus" class="form-label">Status</label>
+                                <select class="form-select" id="editDriverStatus">
+                                    <option value="available">Available</option>
+                                    <option value="busy">Busy</option>
+                                    <option value="offline">Offline</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editDriverActive" class="form-label">Active Status</label>
+                                <select class="form-select" id="editDriverActive">
+                                    <option value="true">Active</option>
+                                    <option value="false">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Schedule Section for Edit Modal -->
+                        <div class="mb-4">
+                            <h5 style="margin-bottom: 15px; color: #34495e; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;">📅 Weekly Work Schedule</h5>
+                            <div class="weekly-schedule-grid-modal">
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit-available-monday" onchange="toggleEditDayAvailability('monday')" checked>
+                                            <label class="form-check-label" for="edit-available-monday"><strong>Monday</strong></label>
+                                        </div>
+                                        <div class="time-inputs-modal" id="edit-times-monday">
+                                            <input type="time" id="edit-start-monday" value="08:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                            <span class="mx-1">to</span>
+                                            <input type="time" id="edit-end-monday" value="16:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit-available-tuesday" onchange="toggleEditDayAvailability('tuesday')" checked>
+                                            <label class="form-check-label" for="edit-available-tuesday"><strong>Tuesday</strong></label>
+                                        </div>
+                                        <div class="time-inputs-modal" id="edit-times-tuesday">
+                                            <input type="time" id="edit-start-tuesday" value="08:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                            <span class="mx-1">to</span>
+                                            <input type="time" id="edit-end-tuesday" value="16:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit-available-wednesday" onchange="toggleEditDayAvailability('wednesday')" checked>
+                                            <label class="form-check-label" for="edit-available-wednesday"><strong>Wednesday</strong></label>
+                                        </div>
+                                        <div class="time-inputs-modal" id="edit-times-wednesday">
+                                            <input type="time" id="edit-start-wednesday" value="08:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                            <span class="mx-1">to</span>
+                                            <input type="time" id="edit-end-wednesday" value="16:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit-available-thursday" onchange="toggleEditDayAvailability('thursday')" checked>
+                                            <label class="form-check-label" for="edit-available-thursday"><strong>Thursday</strong></label>
+                                        </div>
+                                        <div class="time-inputs-modal" id="edit-times-thursday">
+                                            <input type="time" id="edit-start-thursday" value="08:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                            <span class="mx-1">to</span>
+                                            <input type="time" id="edit-end-thursday" value="16:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit-available-friday" onchange="toggleEditDayAvailability('friday')" checked>
+                                            <label class="form-check-label" for="edit-available-friday"><strong>Friday</strong></label>
+                                        </div>
+                                        <div class="time-inputs-modal" id="edit-times-friday">
+                                            <input type="time" id="edit-start-friday" value="08:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                            <span class="mx-1">to</span>
+                                            <input type="time" id="edit-end-friday" value="16:00" class="form-control form-control-sm d-inline-block" style="width: 90px;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit-available-saturday" onchange="toggleEditDayAvailability('saturday')">
+                                            <label class="form-check-label" for="edit-available-saturday"><strong>Saturday</strong></label>
+                                        </div>
+                                        <div class="time-inputs-modal disabled" id="edit-times-saturday">
+                                            <input type="time" id="edit-start-saturday" value="08:00" class="form-control form-control-sm d-inline-block" style="width: 90px;" disabled>
+                                            <span class="mx-1">to</span>
+                                            <input type="time" id="edit-end-saturday" value="16:00" class="form-control form-control-sm d-inline-block" style="width: 90px;" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit-available-sunday" onchange="toggleEditDayAvailability('sunday')">
+                                            <label class="form-check-label" for="edit-available-sunday"><strong>Sunday</strong></label>
+                                        </div>
+                                        <div class="time-inputs-modal disabled" id="edit-times-sunday">
+                                            <input type="time" id="edit-start-sunday" value="08:00" class="form-control form-control-sm d-inline-block" style="width: 90px;" disabled>
+                                            <span class="mx-1">to</span>
+                                            <input type="time" id="edit-end-sunday" value="16:00" class="form-control form-control-sm d-inline-block" style="width: 90px;" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="editDriverId">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="updateDriver()">
+                        <span class="btn-text">💾 Update Driver</span>
+                        <div class="spinner-border spinner-border-sm d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // API Configuration - Updated with Production Endpoints
         const API_ENDPOINTS = {
@@ -561,12 +933,11 @@
 
         // Global variables
         let driversData = null;
-        let editingDriverId = null;
         let addDriverFormExpanded = false;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('RRTS Driver Management Portal v1.5.0 Loaded');
+            console.log('RRTS Driver Management Portal v1.5.4 Loaded');
             
             // Check authentication
             const savedUser = sessionStorage.getItem('rrts_user');
@@ -581,6 +952,93 @@
             loadDrivers();
             loadPerformanceMetrics();
         });
+
+        // Toggle day availability for add form
+        function toggleDayAvailability(day) {
+            const checkbox = document.getElementById(`available-${day}`);
+            const timeInputs = document.getElementById(`times-${day}`);
+            const startTime = document.getElementById(`start-${day}`);
+            const endTime = document.getElementById(`end-${day}`);
+            
+            if (checkbox.checked) {
+                timeInputs.classList.remove('disabled');
+                startTime.disabled = false;
+                endTime.disabled = false;
+            } else {
+                timeInputs.classList.add('disabled');
+                startTime.disabled = true;
+                endTime.disabled = true;
+            }
+        }
+
+        // Toggle day availability for edit modal
+        function toggleEditDayAvailability(day) {
+            const checkbox = document.getElementById(`edit-available-${day}`);
+            const timeInputs = document.getElementById(`edit-times-${day}`);
+            const startTime = document.getElementById(`edit-start-${day}`);
+            const endTime = document.getElementById(`edit-end-${day}`);
+            
+            if (checkbox.checked) {
+                timeInputs.classList.remove('disabled');
+                startTime.disabled = false;
+                endTime.disabled = false;
+            } else {
+                timeInputs.classList.add('disabled');
+                startTime.disabled = true;
+                endTime.disabled = true;
+            }
+        }
+
+        // Get weekly hours data from form
+        function getWeeklyHoursData(prefix = '') {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            const weeklyHours = {};
+            
+            days.forEach(day => {
+                const availableCheckbox = document.getElementById(`${prefix}available-${day}`);
+                const startTime = document.getElementById(`${prefix}start-${day}`);
+                const endTime = document.getElementById(`${prefix}end-${day}`);
+                
+                weeklyHours[day] = {
+                    available: availableCheckbox ? availableCheckbox.checked : false,
+                    start: (availableCheckbox && availableCheckbox.checked && startTime) ? startTime.value : null,
+                    end: (availableCheckbox && availableCheckbox.checked && endTime) ? endTime.value : null
+                };
+            });
+            
+            return weeklyHours;
+        }
+
+        // Set weekly hours data to form
+        function setWeeklyHoursData(weeklyHours, prefix = '') {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            
+            days.forEach(day => {
+                const dayData = weeklyHours[day];
+                if (dayData) {
+                    const availableCheckbox = document.getElementById(`${prefix}available-${day}`);
+                    const startTime = document.getElementById(`${prefix}start-${day}`);
+                    const endTime = document.getElementById(`${prefix}end-${day}`);
+                    
+                    if (availableCheckbox) {
+                        availableCheckbox.checked = dayData.available || false;
+                    }
+                    if (startTime && dayData.start) {
+                        startTime.value = dayData.start;
+                    }
+                    if (endTime && dayData.end) {
+                        endTime.value = dayData.end;
+                    }
+                    
+                    // Update the UI
+                    if (prefix === 'edit-') {
+                        toggleEditDayAvailability(day);
+                    } else {
+                        toggleDayAvailability(day);
+                    }
+                }
+            });
+        }
 
         // Toggle Add Driver Form
         function toggleAddDriverForm() {
@@ -602,10 +1060,26 @@
             }
         }
 
-        // Update workload percentage based on selection
+        // Update workload percentage based on selection (for add form)
         function updateWorkloadPercentage() {
             const workloadSelect = document.getElementById('driverWorkload');
             const percentageInput = document.getElementById('driverWorkloadPct');
+            
+            const workloadMap = {
+                'minimal': 25,
+                'light': 50,
+                'normal': 100,
+                'heavy': 150,
+                'maximum': 200
+            };
+            
+            percentageInput.value = workloadMap[workloadSelect.value] || '';
+        }
+
+        // Update workload percentage for edit form
+        function updateEditWorkloadPercentage() {
+            const workloadSelect = document.getElementById('editDriverWorkload');
+            const percentageInput = document.getElementById('editDriverWorkloadPct');
             
             const workloadMap = {
                 'minimal': 25,
@@ -632,11 +1106,22 @@
             document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
         }
 
-        // Clear form
+        // Clear form (add form only)
         function clearForm() {
             document.getElementById('driverForm').reset();
             document.getElementById('driverWorkloadPct').value = '';
-            editingDriverId = null;
+            
+            // Reset weekly schedule to defaults
+            const defaultSchedule = {
+                monday: {available: true, start: '08:00', end: '16:00'},
+                tuesday: {available: true, start: '08:00', end: '16:00'},
+                wednesday: {available: true, start: '08:00', end: '16:00'},
+                thursday: {available: true, start: '08:00', end: '16:00'},
+                friday: {available: true, start: '08:00', end: '16:00'},
+                saturday: {available: false, start: '08:00', end: '16:00'},
+                sunday: {available: false, start: '08:00', end: '16:00'}
+            };
+            setWeeklyHoursData(defaultSchedule);
         }
 
         // Load drivers from API
@@ -793,7 +1278,7 @@
             console.log('Performance metrics loaded from main API or using fallback');
         }
 
-        // Save driver (add new or update existing)
+        // Save driver (add new only)
         async function saveDriver() {
             try {
                 const formData = {
@@ -808,7 +1293,8 @@
                     workload_percentage: parseInt(document.getElementById('driverWorkloadPct').value) || 100,
                     preferred_calendar_type: document.getElementById('driverCalendarType').value,
                     status: document.getElementById('driverStatus').value,
-                    active: true
+                    active: true,
+                    weekly_hours: getWeeklyHoursData()
                 };
 
                 // Validate required fields
@@ -819,12 +1305,7 @@
 
                 console.log('Saving driver:', formData);
 
-                const endpoint = editingDriverId ? API_ENDPOINTS.UPDATE_DRIVER : API_ENDPOINTS.ADD_DRIVER;
-                if (editingDriverId) {
-                    formData.id = editingDriverId;
-                }
-
-                const response = await fetch(endpoint, {
+                const response = await fetch(API_ENDPOINTS.ADD_DRIVER, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -836,7 +1317,7 @@
                 console.log('Save response:', result);
 
                 if (result.success) {
-                    alert(editingDriverId ? 'Driver updated successfully!' : 'Driver added successfully!');
+                    alert('Driver added successfully!');
                     clearForm();
                     
                     // Collapse form after successful save
@@ -855,7 +1336,7 @@
             }
         }
 
-        // Edit driver
+        // Edit driver - now opens modal
         function editDriver(driverId) {
             const driver = driversData.find(d => d.id === driverId);
             if (!driver) {
@@ -863,24 +1344,114 @@
                 return;
             }
 
-            // Expand form if collapsed
-            if (!addDriverFormExpanded) {
-                toggleAddDriverForm();
+            // Populate modal form
+            document.getElementById('editDriverId').value = driverId;
+            document.getElementById('editDriverFirstName').value = driver.first_name || '';
+            document.getElementById('editDriverLastName').value = driver.last_name || '';
+            document.getElementById('editDriverLegalName').value = driver.name !== `${driver.first_name} ${driver.last_name}`.trim() ? driver.name || '' : '';
+            document.getElementById('editDriverEmail').value = driver.email || '';
+            document.getElementById('editDriverPhone').value = driver.phone || '';
+            document.getElementById('editDriverGender').value = driver.gender || '';
+            document.getElementById('editDriverWorkload').value = driver.workload_preference || 'normal';
+            document.getElementById('editDriverWorkloadPct').value = driver.workload_percentage || 100;
+            document.getElementById('editDriverCalendarType').value = driver.preferred_calendar_type || 'google';
+            document.getElementById('editDriverStatus').value = driver.status || 'available';
+            document.getElementById('editDriverActive').value = driver.active !== false ? 'true' : 'false';
+
+            // Populate weekly schedule
+            if (driver.weekly_hours) {
+                setWeeklyHoursData(driver.weekly_hours, 'edit-');
+            } else {
+                // Set default schedule for existing drivers without weekly_hours
+                const defaultSchedule = {
+                    monday: {available: true, start: '08:00', end: '16:00'},
+                    tuesday: {available: true, start: '08:00', end: '16:00'},
+                    wednesday: {available: true, start: '08:00', end: '16:00'},
+                    thursday: {available: true, start: '08:00', end: '16:00'},
+                    friday: {available: true, start: '08:00', end: '16:00'},
+                    saturday: {available: false, start: null, end: null},
+                    sunday: {available: false, start: null, end: null}
+                };
+                setWeeklyHoursData(defaultSchedule, 'edit-');
             }
 
-            // Populate form
-            document.getElementById('driverFirstName').value = driver.first_name || '';
-            document.getElementById('driverLastName').value = driver.last_name || '';
-            document.getElementById('driverLegalName').value = driver.name !== `${driver.first_name} ${driver.last_name}`.trim() ? driver.name : '';
-            document.getElementById('driverEmail').value = driver.email || '';
-            document.getElementById('driverPhone').value = driver.phone || '';
-            document.getElementById('driverGender').value = driver.gender || '';
-            document.getElementById('driverWorkload').value = driver.workload_preference || 'normal';
-            document.getElementById('driverWorkloadPct').value = driver.workload_percentage || 100;
-            document.getElementById('driverCalendarType').value = driver.preferred_calendar_type || 'google';
-            document.getElementById('driverStatus').value = driver.status || 'available';
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editDriverModal'));
+            modal.show();
+        }
 
-            editingDriverId = driverId;
+        // Update driver (separate from save driver)
+        async function updateDriver() {
+            const submitBtn = document.querySelector('#editDriverModal .btn-primary');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const spinner = submitBtn.querySelector('.spinner-border');
+
+            try {
+                // Show loading state
+                btnText.classList.add('d-none');
+                spinner.classList.remove('d-none');
+                submitBtn.disabled = true;
+
+                const driverId = document.getElementById('editDriverId').value;
+                const formData = {
+                    id: parseInt(driverId),
+                    first_name: document.getElementById('editDriverFirstName').value,
+                    last_name: document.getElementById('editDriverLastName').value,
+                    name: document.getElementById('editDriverLegalName').value || 
+                          `${document.getElementById('editDriverFirstName').value} ${document.getElementById('editDriverLastName').value}`.trim(),
+                    email: document.getElementById('editDriverEmail').value,
+                    phone: document.getElementById('editDriverPhone').value,
+                    gender: document.getElementById('editDriverGender').value,
+                    workload_preference: document.getElementById('editDriverWorkload').value,
+                    workload_percentage: parseInt(document.getElementById('editDriverWorkloadPct').value) || 100,
+                    preferred_calendar_type: document.getElementById('editDriverCalendarType').value,
+                    status: document.getElementById('editDriverStatus').value,
+                    active: document.getElementById('editDriverActive').value === 'true',
+                    weekly_hours: getWeeklyHoursData('edit-')
+                };
+
+                // Validate required fields
+                if (!formData.first_name || !formData.last_name || !formData.email || !formData.gender || !formData.workload_preference) {
+                    alert('Please fill in all required fields (marked with *)');
+                    return;
+                }
+
+                console.log('Updating driver:', formData);
+
+                const response = await fetch(API_ENDPOINTS.UPDATE_DRIVER, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                console.log('Update response:', result);
+
+                if (result.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editDriverModal'));
+                    modal.hide();
+
+                    // Show success message
+                    alert('Driver updated successfully!');
+                    
+                    // Reload drivers list
+                    loadDrivers();
+                } else {
+                    throw new Error(result.message || 'Failed to update driver');
+                }
+
+            } catch (error) {
+                console.error('Error updating driver:', error);
+                alert(`Error updating driver: ${error.message}`);
+            } finally {
+                // Reset loading state
+                btnText.classList.remove('d-none');
+                spinner.classList.add('d-none');
+                submitBtn.disabled = false;
+            }
         }
 
         // Toggle driver status
@@ -932,10 +1503,10 @@
 </body>
 </html>
 
-<!-- Version: 1.5.2 - RRTS Driver Management Portal
+<!-- Version: 1.5.4 - RRTS Driver Management Portal
+- v1.5.4: Added comprehensive weekly work schedule interface for both add and edit forms with JSONB weekly_hours support
+- v1.5.3: Added edit driver modal with separate update function using UPDATE_DRIVER endpoint instead of expanding add form
 - v1.5.2: Fixed API data display - now properly shows driver stats and performance metrics from API response
 - v1.5.1: Added proper API response structure handling for drivers array and stats object
-- v1.5.0: Updated header navigation to match add-appointments.html and made Add New Driver section collapsible (default collapsed)  
-- v1.4.0: Enhanced responsive design and accessibility with proper toggle controls and visual indicators
-- v1.3.0: Added driver CRUD operations with real API integration and performance metrics display
---> 
+- v1.5.0: Updated header navigation to match add-appointments.html and made Add New Driver section collapsible (default collapsed)
+-->
