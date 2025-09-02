@@ -338,20 +338,37 @@
                         <div class="add-driver-form">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="driverName">Full Name *</label>
-                                    <input type="text" id="driverName" required>
+                                    <label for="driverFirstName">First Name *</label>
+                                    <input type="text" id="driverFirstName" required placeholder="John">
                                 </div>
                                 <div class="form-group">
-                                    <label for="driverEmail">Email Address *</label>
-                                    <input type="email" id="driverEmail" required>
+                                    <label for="driverLastName">Last Name</label>
+                                    <input type="text" id="driverLastName" placeholder="Smith">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label for="driverLegalName">Legal Name (for tax documents) *</label>
+                                    <input type="text" id="driverLegalName" required placeholder="John Michael Smith Jr.">
+                                    <small style="color: #7f8c8d; font-size: 12px; margin-top: 4px; display: block;">
+                                        Full legal name as it appears on official documents
+                                    </small>
                                 </div>
                             </div>
                             
                             <div class="form-row">
                                 <div class="form-group">
+                                    <label for="driverEmail">Email Address *</label>
+                                    <input type="email" id="driverEmail" required>
+                                </div>
+                                <div class="form-group">
                                     <label for="driverPhone">Phone Number</label>
                                     <input type="tel" id="driverPhone">
                                 </div>
+                            </div>
+
+                            <div class="form-row">
                                 <div class="form-group">
                                     <label for="driverGender">Gender</label>
                                     <select id="driverGender">
@@ -361,9 +378,6 @@
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
-                            </div>
-
-                            <div class="form-row">
                                 <div class="form-group">
                                     <label for="workloadPreference">Workload Preference</label>
                                     <select id="workloadPreference">
@@ -373,6 +387,9 @@
                                         <option value="maximum">Maximum (125%)</option>
                                     </select>
                                 </div>
+                            </div>
+
+                            <div class="form-row">
                                 <div class="form-group">
                                     <label for="calendarType">Preferred Calendar</label>
                                     <select id="calendarType">
@@ -380,6 +397,9 @@
                                         <option value="outlook">Microsoft Outlook</option>
                                         <option value="apple">Apple Calendar</option>
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <!-- Empty space for layout balance -->
                                 </div>
                             </div>
 
@@ -433,6 +453,7 @@
         const API_ENDPOINTS = {
             DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management',
             ADD_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/add-driver',
+            UPDATE_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver',
             GET_ASSIGNMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments'
         };
 
@@ -619,7 +640,10 @@
 
             driversList.innerHTML = drivers.map(driver => {
                 // Safely handle missing properties
-                const name = driver.name || 'Unknown Driver';
+                const firstName = driver.first_name || '';
+                const lastName = driver.last_name || '';
+                const displayName = `${firstName} ${lastName}`.trim() || driver.name || 'Unknown Driver';
+                const legalName = driver.name || `${firstName} ${lastName}`.trim();
                 const email = driver.email || 'No email';
                 const phone = driver.phone || '';
                 const status = (driver.status || 'offline').toLowerCase();
@@ -633,7 +657,8 @@
                     <div class="driver-card ${status}" style="background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; border-left: 4px solid ${status === 'available' ? '#27ae60' : status === 'busy' ? '#f39c12' : '#e74c3c'}; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <div class="driver-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div class="driver-info">
-                                <h4 style="margin: 0 0 4px 0; font-size: 16px;">${name}</h4>
+                                <h4 style="margin: 0 0 4px 0; font-size: 16px;">${displayName}</h4>
+                                ${legalName !== displayName ? `<div style="font-size: 12px; color: #7f8c8d; font-style: italic;">Legal: ${legalName}</div>` : ''}
                                 <span class="driver-status" style="font-size: 12px; padding: 2px 8px; border-radius: 12px; font-weight: bold; background-color: ${status === 'available' ? '#d4edda' : status === 'busy' ? '#fff3cd' : '#f8d7da'}; color: ${status === 'available' ? '#155724' : status === 'busy' ? '#856404' : '#721c24'};">
                                     ${status.toUpperCase()}
                                 </span>
@@ -702,7 +727,9 @@
             try {
                 // Collect form data
                 const driverData = {
-                    name: document.getElementById('driverName').value.trim(),
+                    first_name: document.getElementById('driverFirstName').value.trim(),
+                    last_name: document.getElementById('driverLastName').value.trim(),
+                    name: document.getElementById('driverLegalName').value.trim(),
                     email: document.getElementById('driverEmail').value.trim(),
                     phone: document.getElementById('driverPhone').value.trim(),
                     gender: document.getElementById('driverGender').value,
@@ -718,14 +745,23 @@
                 }
 
                 // Validate required fields
-                if (!driverData.name || !driverData.email) {
-                    showToast('Please fill in all required fields', 'error');
+                if (!driverData.first_name || !driverData.name || !driverData.email) {
+                    showToast('Please fill in first name, legal name, and email address', 'error');
                     return;
+                }
+
+                // Auto-populate legal name if empty but first/last are provided
+                if (!driverData.name && driverData.first_name) {
+                    driverData.name = `${driverData.first_name} ${driverData.last_name}`.trim();
+                    document.getElementById('driverLegalName').value = driverData.name;
                 }
 
                 console.log('Saving driver data:', driverData);
 
-                const response = await fetch(API_ENDPOINTS.ADD_DRIVER, {
+                // Choose endpoint based on whether editing or adding
+                const endpoint = editingDriverId ? API_ENDPOINTS.UPDATE_DRIVER : API_ENDPOINTS.ADD_DRIVER;
+
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(driverData)
@@ -771,7 +807,9 @@
         }
 
         function clearForm() {
-            document.getElementById('driverName').value = '';
+            document.getElementById('driverFirstName').value = '';
+            document.getElementById('driverLastName').value = '';
+            document.getElementById('driverLegalName').value = '';
             document.getElementById('driverEmail').value = '';
             document.getElementById('driverPhone').value = '';
             document.getElementById('driverGender').value = '';
@@ -797,7 +835,9 @@
             if (!driver) return;
 
             // Populate form with driver data
-            document.getElementById('driverName').value = driver.name;
+            document.getElementById('driverFirstName').value = driver.first_name || '';
+            document.getElementById('driverLastName').value = driver.last_name || '';
+            document.getElementById('driverLegalName').value = driver.name || '';
             document.getElementById('driverEmail').value = driver.email;
             document.getElementById('driverPhone').value = driver.phone || '';
             document.getElementById('driverGender').value = driver.gender || '';
@@ -819,7 +859,8 @@
             }
 
             editingDriverId = driverId;
-            showToast(`Editing ${driver.name}`, 'info');
+            const displayName = `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || driver.name;
+            showToast(`Editing ${displayName}`, 'info');
         }
 
         function contactDriver(driverId) {
@@ -1021,13 +1062,5 @@
 </body>
 </html>
 <!-- 
-Version: v1.1.1 - RRTS Driver Management Portal - Bug Fixes
-- v1.1.1: Fixed loading errors and undefined property handling
-  * Embedded CSS to eliminate 404 styles.css error
-  * Added robust error handling for undefined API responses
-  * Safe property access with fallback values
-  * Better console logging for debugging API responses
-  * Improved empty state messaging
-- v1.1.0: Connected to live production API endpoints
-- v1.0.0: Initial driver management interface with full CRUD operations
+Version: v1.3.1 - Added UPDATE_DRIVER endpoint to API configuration for consistency
 -->
