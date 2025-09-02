@@ -596,34 +596,35 @@
             // so users can manually enter the address
         }
 
-        // Load appointment data from API (using get-all-appointments for now)
+        // Load appointment data from the new get-appointment API
         async function loadAppointmentData() {
             try {
                 showLoading();
 
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments');
+                const response = await fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/get-appointment?id=${appointmentId}`);
                 
                 if (response.ok) {
-                    const data = await response.json();
-                    // Handle the response format - data appears to be wrapped in an array
-                    const responseData = Array.isArray(data) ? data[0] : data;
-                    const allAppointments = responseData.appointments || [];
+                    appointmentData = await response.json();
                     
-                    // Find the specific appointment by ID
-                    appointmentData = allAppointments.find(apt => apt.id === appointmentId);
-                    
-                    if (appointmentData) {
-                        populateForm(appointmentData);
-                        hideLoading();
-                    } else {
-                        throw new Error('Appointment not found');
+                    // Handle API error responses
+                    if (appointmentData.error) {
+                        throw new Error(appointmentData.message || appointmentData.error);
                     }
+                    
+                    // Show warning if client data wasn't found but continue with appointment data
+                    if (appointmentData.warning) {
+                        console.warn('Client data warning:', appointmentData.warning);
+                        showWarning(appointmentData.warning);
+                    }
+                    
+                    populateForm(appointmentData);
+                    hideLoading();
                 } else {
-                    throw new Error('Failed to load appointments data');
+                    throw new Error(`HTTP ${response.status}: Failed to load appointment data`);
                 }
             } catch (error) {
                 console.error('Error loading appointment:', error);
-                showError('Failed to load appointment data. Please check the appointment ID and try again.');
+                showError(`Failed to load appointment data: ${error.message}`);
                 hideLoading();
             }
         }
@@ -874,6 +875,27 @@
             errorDiv.style.display = 'block';
         }
 
+        // Show warning message
+        function showWarning(message) {
+            // Create warning message div if it doesn't exist
+            let warningDiv = document.querySelector('.warning-message');
+            if (!warningDiv) {
+                warningDiv = document.createElement('div');
+                warningDiv.className = 'warning-message alert alert-warning';
+                warningDiv.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i><span></span>';
+                document.getElementById('editFormContainer').insertBefore(warningDiv, document.querySelector('.card'));
+            }
+            
+            const warningText = warningDiv.querySelector('span');
+            warningText.textContent = message;
+            warningDiv.style.display = 'block';
+            
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                warningDiv.style.display = 'none';
+            }, 8000);
+        }
+
         // Show success message
         function showSuccessMessage(message) {
             // Create success message div if it doesn't exist
@@ -905,6 +927,7 @@
 </body>
 </html>
 
-<!-- Version: v1.1.0 - Enhanced edit appointment page with improved functionality -->
+<!-- Version: v1.2.0 - Enhanced edit appointment page with proper API integration -->
 <!-- - v1.0.0: Standalone edit page with appointment data loading, form validation, and update functionality -->
 <!-- - v1.1.0: Added clinic dropdown, driver dropdown, full client editing, notification status display, and improved data handling -->
+<!-- - v1.2.0: Integrated with new get-appointment API endpoint, enhanced error handling, and warning display for client lookup issues -->
