@@ -589,20 +589,19 @@
                     allAppointments = appointmentsArray.map(appointment => ({
                         id: appointment.id,
                         knumber: appointment.knumber,
-                        // Combine date and time back to datetime for display
-                        appointmentDateTime: appointment.date && appointment.time ? `${appointment.date}T${appointment.time}:00` : appointment.appointmenttime,
-                        // Handle pickup time format
-                        pickupTime: appointment.pickuptime ? (appointment.pickuptime.includes('T') ? appointment.pickuptime : `${appointment.date}T${appointment.pickuptime}:00`) : null,
-                        location: appointment.locationname,
-                        locationAddress: appointment.locationaddress,
-                        status: appointment.appointmentstatus,
+                        // Use the correct field names from the API response
+                        appointmentDateTime: appointment.appointmentDateTime,
+                        pickupTime: appointment.pickupTime,
+                        location: appointment.location,
+                        locationAddress: appointment.locationAddress,
+                        status: appointment.status,
                         notes: appointment.notes,
-                        transitTime: appointment.transittime,
-                        customRate: appointment.custom_rate,
-                        // Parse client name if it's combined, or use separate fields
-                        clientFirstName: appointment.clientName ? appointment.clientName.split(' ')[0] : '',
-                        clientLastName: appointment.clientName ? appointment.clientName.split(' ').slice(1).join(' ') : '',
-                        clientPhone: appointment.clientPhone || appointment.client_phone || '',
+                        transitTime: appointment.transitTime,
+                        customRate: appointment.customRate,
+                        // Use the correct client field names
+                        clientFirstName: appointment.clientFirstName,
+                        clientLastName: appointment.clientLastName,
+                        clientPhone: appointment.clientPhone,
                         driver_assigned: appointment.driver_assigned || '',
                         driver_id: appointment.driver_id,
                         client_notification_sent: appointment.client_notification_sent || false,
@@ -1001,9 +1000,9 @@
 </html>
 
 <!-- Version History:
+v4.2.0: Fixed field mapping to match actual API response format (appointmentDateTime, pickupTime, location, etc.)
 v4.1.9: Fixed data mapping to handle RRTS Get All Appointments workflow response format
 v4.1.8: Surgical fix - only changed header/colors to match add-appointments.html, timezone display function, and Railway endpoints
 v4.1.7: Enhanced notification status display with multiple badge types
 v4.1.6: Added driver assignment functionality with dropdown selection
-v4.1.5: Improved appointment filtering with client search capabilities
 -->
