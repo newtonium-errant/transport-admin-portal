@@ -583,6 +583,32 @@
             });
         }
 
+        // Set the selected clinic in dropdown (including custom entries not in the list)
+        function setSelectedClinic(currentLocation) {
+            const clinicSelect = document.getElementById('editLocationName');
+            
+            if (!currentLocation) return;
+            
+            // First try to find exact match in existing options
+            let found = false;
+            for (let i = 0; i < clinicSelect.options.length; i++) {
+                if (clinicSelect.options[i].value === currentLocation) {
+                    clinicSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            
+            // If not found in dropdown options, add it as a custom option
+            if (!found && currentLocation.trim() !== '') {
+                const customOption = document.createElement('option');
+                customOption.value = currentLocation;
+                customOption.textContent = currentLocation + ' (Custom)';
+                customOption.selected = true;
+                clinicSelect.appendChild(customOption);
+            }
+        }
+
         // Populate driver dropdown
         function populateDriverDropdown() {
             const driverSelect = document.getElementById('editDriver');
@@ -632,9 +658,14 @@
             const addressInput = document.getElementById('editLocationAddress');
             
             const selectedOption = clinicSelect.options[clinicSelect.selectedIndex];
-            if (selectedOption.dataset.address) {
+            
+            // Only auto-fill address if the selected option has an address in dataset
+            // This prevents overwriting addresses for custom clinic entries
+            if (selectedOption && selectedOption.dataset.address) {
                 addressInput.value = selectedOption.dataset.address;
             }
+            // If it's a custom clinic (no dataset.address), leave the address field as-is
+            // so users can manually enter the address
         }
 
         // Load all appointments from API
@@ -736,18 +767,25 @@
             countElement.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length !== 1 ? 's' : ''}`;
 
             tbody.innerHTML = filteredAppointments.map(appointment => {
+                // Parse dates without timezone conversion issues
                 const appointmentDate = new Date(appointment.appointmentDateTime);
                 const pickupDate = new Date(appointment.pickupTime);
+                
+                // Use the same timezone-safe formatting as the edit modal
+                const appointmentDateStr = appointmentDate.toLocaleDateString();
+                const appointmentTimeStr = appointmentDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', timeZone: 'America/Halifax'});
+                const pickupDateStr = pickupDate.toLocaleDateString();
+                const pickupTimeStr = pickupDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', timeZone: 'America/Halifax'});
                 
                 return `
                     <tr>
                         <td>
-                            <div><strong>${appointmentDate.toLocaleDateString()}</strong></div>
-                            <div class="text-muted">${appointmentDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            <div><strong>${appointmentDateStr}</strong></div>
+                            <div class="text-muted">${appointmentTimeStr}</div>
                         </td>
                         <td>
-                            <div><strong>${pickupDate.toLocaleDateString()}</strong></div>
-                            <div class="text-muted">${pickupDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            <div><strong>${pickupDateStr}</strong></div>
+                            <div class="text-muted">${pickupTimeStr}</div>
                         </td>
                         <td>
                             <div><strong>${appointment.knumber || ''}</strong></div>
@@ -822,12 +860,14 @@
             document.getElementById('editClientCity').value = appointment.clientCity || '';
             document.getElementById('editClientProvince').value = appointment.clientProvince || '';
             document.getElementById('editClientPostalCode').value = appointment.clientPostalCode || '';
-            document.getElementById('editLocationName').value = appointment.location || '';
             document.getElementById('editLocationAddress').value = appointment.locationAddress || '';
             document.getElementById('editStatus').value = appointment.status || 'pending';
             document.getElementById('editDriver').value = appointment.driver_assigned || '';
             document.getElementById('editCustomRate').value = appointment.customRate || '';
             document.getElementById('editNotes').value = appointment.notes || '';
+
+            // Set the clinic location (this handles both dropdown options and custom entries)
+            setSelectedClinic(appointment.location || '');
 
             // Populate notification status (read-only)
             document.getElementById('editClientNotification').innerHTML = getNotificationBadge(appointment.client_notification_sent);
@@ -981,4 +1021,4 @@
     </script>
 </body>
 </html>
-<!-- Version: v4.1.1 - RRTS Appointment Management Portal - fixed time zone errors -->
+<!-- Version: v4.1.4 - RRTS Appointment Management Portal -->
