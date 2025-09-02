@@ -609,32 +609,27 @@
             }).join('');
         }
 
-        // Helper function to format datetime consistently across the app
+        // Helper function to format datetime - times are already local, no conversion needed
         function formatDateTimeDisplay(dateTimeString) {
             if (!dateTimeString) return { date: 'N/A', time: 'N/A' };
             
-            // Parse the UTC datetime and convert to Atlantic timezone
-            const utcDate = new Date(dateTimeString);
+            const date = new Date(dateTimeString);
             
-            // Atlantic timezone is UTC-4 (ADT) or UTC-3 (AST)
-            // Use Intl.DateTimeFormat for consistent timezone handling
-            const atlanticDate = new Intl.DateTimeFormat('en-CA', {
-                timeZone: 'America/Halifax',
+            const dateFormatted = date.toLocaleDateString('en-CA', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit'
-            }).format(utcDate);
+            });
             
-            const atlanticTime = new Intl.DateTimeFormat('en-US', {
-                timeZone: 'America/Halifax',
+            const timeFormatted = date.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true
-            }).format(utcDate);
+            });
             
             return { 
-                date: atlanticDate, 
-                time: atlanticTime 
+                date: dateFormatted, 
+                time: timeFormatted 
             };
         }
 
@@ -813,8 +808,9 @@
 </body>
 </html>
 
-<!-- Version: v1.7.0 - Default view shows only future appointments (including current day) on page load -->
+<!-- Version: v1.8.0 - Removed timezone conversion as times are stored in local time, not UTC -->
 <!-- - v1.4.0: Added appointment management with filters and CRUD operations -->
 <!-- - v1.5.0: Removed edit modal functionality, edit button now redirects to edit-appointment.html -->
 <!-- - v1.6.0: Updated with working API endpoints, proper data handling, timezone formatting, and notification system -->
 <!-- - v1.7.0: Initial load now shows only future appointments including current day, filters still allow viewing all/past appointments -->
+<!-- - v1.8.0: Simplified datetime display since times are stored as local time and don't require timezone conversion -->
