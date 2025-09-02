@@ -518,6 +518,35 @@
         let clinicLocations = [];
         let allDrivers = [];
 
+        // Helper function to format datetime consistently across the app
+        function formatDateTimeDisplay(dateTimeString) {
+            if (!dateTimeString) return { date: 'N/A', time: 'N/A' };
+            
+            // Parse the UTC datetime and convert to Atlantic timezone
+            const utcDate = new Date(dateTimeString);
+            
+            // Atlantic timezone is UTC-4 (ADT) or UTC-3 (AST)
+            // Use Intl.DateTimeFormat for consistent timezone handling
+            const atlanticDate = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Halifax',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(utcDate);
+            
+            const atlanticTime = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Halifax',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }).format(utcDate);
+            
+            return { 
+                date: atlanticDate, 
+                time: atlanticTime 
+            };
+        }
+
         // Update current date and time
         function updateDateTime() {
             const now = new Date();
@@ -767,25 +796,19 @@
             countElement.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length !== 1 ? 's' : ''}`;
 
             tbody.innerHTML = filteredAppointments.map(appointment => {
-                // Parse dates without timezone conversion issues
-                const appointmentDate = new Date(appointment.appointmentDateTime);
-                const pickupDate = new Date(appointment.pickupTime);
-                
-                // Use the same timezone-safe formatting as the edit modal
-                const appointmentDateStr = appointmentDate.toLocaleDateString();
-                const appointmentTimeStr = appointmentDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', timeZone: 'America/Halifax'});
-                const pickupDateStr = pickupDate.toLocaleDateString();
-                const pickupTimeStr = pickupDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', timeZone: 'America/Halifax'});
+                // Use consistent timezone formatting
+                const appointmentDateTime = formatDateTimeDisplay(appointment.appointmentDateTime);
+                const pickupDateTime = formatDateTimeDisplay(appointment.pickupTime);
                 
                 return `
                     <tr>
                         <td>
-                            <div><strong>${appointmentDateStr}</strong></div>
-                            <div class="text-muted">${appointmentTimeStr}</div>
+                            <div><strong>${appointmentDateTime.date}</strong></div>
+                            <div class="text-muted">${appointmentDateTime.time}</div>
                         </td>
                         <td>
-                            <div><strong>${pickupDateStr}</strong></div>
-                            <div class="text-muted">${pickupTimeStr}</div>
+                            <div><strong>${pickupDateTime.date}</strong></div>
+                            <div class="text-muted">${pickupDateTime.time}</div>
                         </td>
                         <td>
                             <div><strong>${appointment.knumber || ''}</strong></div>
@@ -1021,4 +1044,4 @@
     </script>
 </body>
 </html>
-<!-- Version: v4.1.4 - RRTS Appointment Management Portal -->
+<!-- Version: v4.1.5 - RRTS Appointment Management Portal -->
