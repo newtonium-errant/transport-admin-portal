@@ -485,7 +485,7 @@
             loadAppointmentData();
         });
 
-        // Update date and time display
+        // Update date and time display (times are stored as local time, no conversion needed)
         function updateDateTime() {
             const now = new Date();
             const options = {
@@ -968,9 +968,10 @@
 </body>
 </html>
 
-<!-- Version: v1.4.0 - Client details read-only, improved clinic dropdown with API integration, driver names using firstname/lastname -->
+<!-- Version: v1.5.0 - Removed timezone conversion, confirmed client fields read-only, clinic dropdown with API integration, driver names using firstname/lastname -->
 <!-- - v1.0.0: Standalone edit page with appointment data loading, form validation, and update functionality -->
 <!-- - v1.1.0: Added clinic dropdown, driver dropdown, full client editing, notification status display, and improved data handling -->
 <!-- - v1.2.0: Integrated with new get-appointment API endpoint, enhanced error handling, and warning display for client lookup issues -->
 <!-- - v1.3.0: Changed API call from GET to POST method to resolve CORS issues with n8n webhook -->
 <!-- - v1.4.0: Made client details read-only, clinic dropdown includes current + API locations with auto-address fill, driver dropdown uses firstname lastname -->
+<!-- - v1.5.0: Removed timezone conversion as times are stored in local time, confirmed all client fields properly read-only -->
