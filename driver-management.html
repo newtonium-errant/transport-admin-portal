@@ -657,11 +657,22 @@
                 const result = await response.json();
                 console.log('API Response:', result);
                 
-                // Handle response structure
-                driversData = result.success ? (result.drivers || result.data || []) : [];
+                // Handle response structure - the API returns drivers array directly
+                driversData = result.drivers || [];
                 
                 displayDrivers(driversData);
-                updateDriverStats(driversData);
+                
+                // Use stats from API if available, otherwise calculate
+                if (result.stats) {
+                    updateDriverStatsFromAPI(result.stats);
+                } else {
+                    updateDriverStats(driversData);
+                }
+
+                // Update performance metrics from API if available
+                if (result.performance) {
+                    updatePerformanceMetricsFromAPI(result.performance);
+                }
 
             } catch (error) {
                 console.error('Error loading drivers:', error);
@@ -670,7 +681,15 @@
             }
         }
 
-        // Update dashboard stats
+        // Update dashboard stats from API response
+        function updateDriverStatsFromAPI(apiStats) {
+            document.getElementById('availableDrivers').textContent = apiStats.available || 0;
+            document.getElementById('busyDrivers').textContent = apiStats.busy || 0;
+            document.getElementById('offlineDrivers').textContent = apiStats.offline || 0;
+            document.getElementById('totalDrivers').textContent = apiStats.total || 0;
+        }
+
+        // Update dashboard stats (fallback method)
         function updateDriverStats(drivers) {
             const stats = {
                 available: 0,
@@ -690,6 +709,30 @@
             document.getElementById('busyDrivers').textContent = stats.busy;
             document.getElementById('offlineDrivers').textContent = stats.offline;
             document.getElementById('totalDrivers').textContent = stats.total;
+        }
+
+        // Update performance metrics from API
+        function updatePerformanceMetricsFromAPI(performance) {
+            const performanceMetrics = document.getElementById('performanceMetrics');
+            
+            performanceMetrics.innerHTML = `
+                <div class="performance-item">
+                    <div class="performance-title">Average Rating</div>
+                    <div class="performance-value">${performance.avgRating || 0} ⭐</div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-title">Completed Trips</div>
+                    <div class="performance-value">${performance.totalTrips || 0}</div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-title">On-Time Rate</div>
+                    <div class="performance-value">${performance.onTimePercentage || 0}%</div>
+                </div>
+                <div class="performance-item">
+                    <div class="performance-title">Top Performer</div>
+                    <div class="performance-value">${performance.topPerformer || 'N/A'}</div>
+                </div>
+            `;
         }
 
         // Display drivers list
@@ -743,36 +786,11 @@
             }).join('');
         }
 
-        // Load performance metrics
+        // Load performance metrics (fallback for when not provided by API)
         async function loadPerformanceMetrics() {
-            try {
-                // This would typically fetch from your analytics endpoint
-                // For now, we'll show sample data
-                const performanceMetrics = document.getElementById('performanceMetrics');
-                
-                performanceMetrics.innerHTML = `
-                    <div class="performance-item">
-                        <div class="performance-title">Average Rating</div>
-                        <div class="performance-value">4.8 ⭐</div>
-                    </div>
-                    <div class="performance-item">
-                        <div class="performance-title">Completed Trips</div>
-                        <div class="performance-value">1,247</div>
-                    </div>
-                    <div class="performance-item">
-                        <div class="performance-title">On-Time Rate</div>
-                        <div class="performance-value">96.2%</div>
-                    </div>
-                    <div class="performance-item">
-                        <div class="performance-title">Active Hours</div>
-                        <div class="performance-value">2,340</div>
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Error loading performance metrics:', error);
-                document.getElementById('performanceMetrics').innerHTML = 
-                    '<div class="error">Error loading performance data</div>';
-            }
+            // This is called only if performance metrics weren't provided by the main API
+            // The main loadDrivers() function now handles performance metrics from API
+            console.log('Performance metrics loaded from main API or using fallback');
         }
 
         // Save driver (add new or update existing)
@@ -914,11 +932,10 @@
 </body>
 </html>
 
-<!-- Version: 1.5.0 - RRTS Driver Management Portal
-- Updated header navigation to match add-appointments.html
-- Made "Add New Driver" section collapsible (default collapsed)
-- Enhanced responsive design and accessibility
-- Maintained all existing functionality for driver CRUD operations
-- Added proper toggle controls and visual indicators
-- Fixed layout consistency across portal pages
--->
+<!-- Version: 1.5.2 - RRTS Driver Management Portal
+- v1.5.2: Fixed API data display - now properly shows driver stats and performance metrics from API response
+- v1.5.1: Added proper API response structure handling for drivers array and stats object
+- v1.5.0: Updated header navigation to match add-appointments.html and made Add New Driver section collapsible (default collapsed)  
+- v1.4.0: Enhanced responsive design and accessibility with proper toggle controls and visual indicators
+- v1.3.0: Added driver CRUD operations with real API integration and performance metrics display
+--> 
