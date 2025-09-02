@@ -316,16 +316,6 @@
             color: white;
         }
         
-        .btn-toggle {
-            background-color: #f39c12;
-            color: white;
-        }
-        
-        .btn-delete {
-            background-color: #e74c3c;
-            color: white;
-        }
-        
         .driver-meta {
             font-size: 11px;
             color: #7f8c8d;
@@ -1254,7 +1244,6 @@
                             </div>
                             <div class="driver-actions" style="display: flex; gap: 8px;">
                                 <button class="btn-small btn-edit" onclick="editDriver(${driverId})" style="padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; background-color: #3498db; color: white;">Edit</button>
-                                <button class="btn-small btn-toggle" onclick="toggleDriverStatus(${driverId})" style="padding: 4px 8px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; background-color: #f39c12; color: white;">Toggle</button>
                             </div>
                         </div>
                         <div class="driver-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-top: 8px;">
@@ -1454,45 +1443,6 @@
             }
         }
 
-        // Toggle driver status
-        async function toggleDriverStatus(driverId) {
-            const driver = driversData.find(d => d.id === driverId);
-            if (!driver) {
-                alert('Driver not found');
-                return;
-            }
-
-            const newStatus = driver.status === 'available' ? 'offline' : 'available';
-            
-            try {
-                const response = await fetch(API_ENDPOINTS.UPDATE_DRIVER, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: driverId,
-                        status: newStatus
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    loadDrivers(); // Reload the list
-                } else {
-                    throw new Error(result.message || 'Failed to update driver status');
-                }
-            } catch (error) {
-                console.error('Error updating driver status:', error);
-                alert(`Error updating driver status: ${error.message}`);
-            }
-        }
-
-        // Format plural text
-        function pluralize(count, singular, plural) {
-            return count === 1 ? singular : (plural || singular + 's');
-        }
-
         // Logout function
         function logout() {
             sessionStorage.removeItem('rrts_user');
@@ -1503,10 +1453,10 @@
 </body>
 </html>
 
-<!-- Version: 1.5.4 - RRTS Driver Management Portal
+<!-- Version: 1.5.5 - RRTS Driver Management Portal
+- v1.5.5: Removed toggle button since driver status is automatically calculated from active state, assignments, and time-off
 - v1.5.4: Added comprehensive weekly work schedule interface for both add and edit forms with JSONB weekly_hours support
 - v1.5.3: Added edit driver modal with separate update function using UPDATE_DRIVER endpoint instead of expanding add form
 - v1.5.2: Fixed API data display - now properly shows driver stats and performance metrics from API response
 - v1.5.1: Added proper API response structure handling for drivers array and stats object
-- v1.5.0: Updated header navigation to match add-appointments.html and made Add New Driver section collapsible (default collapsed)
 -->
