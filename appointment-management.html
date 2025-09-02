@@ -456,7 +456,7 @@
     </div>
 
     <!-- Toast for notifications -->
-    <div class="toast" id="notificationToast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast" id="notificationToast" role="alert" aria-live="assertive" aria-atomic="true" style="display: none;">
         <div class="toast-header">
             <strong class="me-auto" id="toastTitle">Notification</strong>
             <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
@@ -501,161 +501,139 @@
                 document.getElementById('appointmentsContainer').style.display = 'none';
                 document.getElementById('noAppointments').style.display = 'none';
 
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-appointments');
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments');
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    allAppointments = data.appointments || [];
-                    
-                    // Apply current filters
-                    applyFilters();
-                } else {
-                    throw new Error('Failed to load appointments');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const data = await response.json();
+                
+                // Handle the response format - data appears to be wrapped in an array
+                const responseData = Array.isArray(data) ? data[0] : data;
+                allAppointments = responseData.appointments || [];
+                
+                // Sort by appointment date (newest first)
+                allAppointments.sort((a, b) => new Date(b.appointmentDateTime) - new Date(a.appointmentDateTime));
+                
+                applyFilters();
+                
             } catch (error) {
                 console.error('Error loading appointments:', error);
-                showError('Failed to load appointments. Please refresh the page.');
-                allAppointments = [];
-                displayAppointments([]);
-            } finally {
-                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('loadingSpinner').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error loading appointments. Please try again.
+                    </div>
+                `;
             }
         }
 
         // Display appointments in the table
-        function displayAppointments(appointments) {
-            const tableBody = document.getElementById('appointmentsTableBody');
-            const appointmentsContainer = document.getElementById('appointmentsContainer');
-            const noAppointments = document.getElementById('noAppointments');
-            const appointmentCount = document.getElementById('appointmentCount');
-
-            // Update count
-            appointmentCount.textContent = `${appointments.length} appointment${appointments.length !== 1 ? 's' : ''}`;
-
-            if (appointments.length === 0) {
-                appointmentsContainer.style.display = 'none';
-                noAppointments.style.display = 'block';
+        function displayAppointments() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            
+            const tbody = document.getElementById('appointmentsTableBody');
+            const countElement = document.getElementById('appointmentCount');
+            
+            if (filteredAppointments.length === 0) {
+                document.getElementById('appointmentsContainer').style.display = 'none';
+                document.getElementById('noAppointments').style.display = 'block';
+                countElement.textContent = '0 appointments';
                 return;
             }
 
-            appointmentsContainer.style.display = 'block';
-            noAppointments.style.display = 'none';
+            document.getElementById('appointmentsContainer').style.display = 'block';
+            document.getElementById('noAppointments').style.display = 'none';
+            countElement.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length !== 1 ? 's' : ''}`;
 
-            // Clear existing rows
-            tableBody.innerHTML = '';
-
-            // Sort appointments by date/time (newest first)
-            appointments.sort((a, b) => new Date(b.appointmenttime) - new Date(a.appointmenttime));
-
-            appointments.forEach(appointment => {
-                const row = document.createElement('tr');
+            tbody.innerHTML = filteredAppointments.map(appointment => {
+                // Use consistent timezone formatting
+                const appointmentDateTime = formatDateTimeDisplay(appointment.appointmentDateTime);
+                const pickupDateTime = formatDateTimeDisplay(appointment.pickupTime);
                 
-                // Format dates
-                const appointmentDateTime = formatDateTimeDisplay(appointment.appointmenttime);
-                const pickupDateTime = formatDateTimeDisplay(appointment.pickuptime);
-                
-                // Format client name
-                const clientName = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim() || 'Unknown Client';
-                
-                // Format location
-                const locationParts = (appointment.locationname || '').split(' - ');
-                const locationName = locationParts[0] || 'Unknown Location';
-                const locationAddress = appointment.locationaddress || 'No address provided';
-                
-                // Format status
-                const status = appointment.status || 'pending';
-                
-                // Format driver info
-                const driverName = appointment.driverName || null;
-                
-                // Format notification status
-                const clientNotification = appointment.client_notification_sent ? 'sent' : 'pending';
-                const driverNotification = appointment.driver_notification_sent ? 'sent' : 'pending';
-
-                row.innerHTML = `
-                    <td>
-                        <div class="appointment-info">
-                            <div class="appointment-time">${appointmentDateTime.time}</div>
-                            <div class="appointment-date">${appointmentDateTime.date}</div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="appointment-info">
-                            <div class="appointment-time">${pickupDateTime.time}</div>
-                            <div class="appointment-date">${pickupDateTime.date}</div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="client-info">
-                            <div class="client-name">${clientName}</div>
-                            <div class="client-knumber">${appointment.knumber || 'No K#'}</div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="location-info">
-                            <div class="location-name">${locationName}</div>
-                            <div class="location-address">${locationAddress}</div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-badge status-${status}">${status}</span>
-                    </td>
-                    <td>
-                        <div class="driver-info">
-                            ${driverName ? 
-                                `<span class="driver-assigned">${driverName}</span>` : 
-                                `<span class="driver-unassigned">Unassigned</span>`
-                            }
-                        </div>
-                    </td>
-                    <td>
-                        <div class="notification-icons">
-                            <span class="notification-icon notification-${clientNotification}" title="Client notification ${clientNotification}">
-                                <i class="bi bi-person"></i>
+                return `
+                    <tr>
+                        <td>
+                            <div><strong>${appointmentDateTime.date}</strong></div>
+                            <div class="text-muted">${appointmentDateTime.time}</div>
+                        </td>
+                        <td>
+                            <div><strong>${pickupDateTime.date}</strong></div>
+                            <div class="text-muted">${pickupDateTime.time}</div>
+                        </td>
+                        <td>
+                            <div><strong>${appointment.knumber || ''}</strong></div>
+                            <div>${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}</div>
+                        </td>
+                        <td>
+                            <div>${appointment.location || 'N/A'}</div>
+                        </td>
+                        <td>
+                            <span class="status-badge status-${appointment.status || 'pending'}">
+                                ${appointment.status || 'pending'}
                             </span>
-                            <span class="notification-icon notification-${driverNotification}" title="Driver notification ${driverNotification}">
-                                <i class="bi bi-truck"></i>
-                            </span>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-primary" onclick="editAppointment('${appointment.id}')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" onclick="deleteAppointment('${appointment.id}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </td>
+                        </td>
+                        <td>
+                            ${appointment.driver_assigned || 'Not assigned'}
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge notification-badge ${appointment.client_notification_sent ? 'notification-sent' : 'notification-pending'}">
+                                    C: ${appointment.client_notification_sent ? 'Sent' : 'Pending'}
+                                </span>
+                                <span class="badge notification-badge ${appointment.reminder_sent_client ? 'notification-sent' : 'notification-pending'}">
+                                    CR: ${appointment.reminder_sent_client ? 'Sent' : 'Pending'}
+                                </span>
+                                <span class="badge notification-badge ${appointment.driver_notification_sent ? 'notification-sent' : 'notification-pending'}">
+                                    D: ${appointment.driver_notification_sent ? 'Sent' : 'Pending'}
+                                </span>
+                                <span class="badge notification-badge ${appointment.reminder_sent_driver ? 'notification-sent' : 'notification-pending'}">
+                                    DR: ${appointment.reminder_sent_driver ? 'Sent' : 'Pending'}
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editAppointment('${appointment.id}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteAppointment('${appointment.id}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
                 `;
-                
-                tableBody.appendChild(row);
-            });
+            }).join('');
         }
 
-        // Format date and time for display
+        // Helper function to format datetime consistently across the app
         function formatDateTimeDisplay(dateTimeString) {
-            if (!dateTimeString) return { date: 'No date', time: 'No time' };
+            if (!dateTimeString) return { date: 'N/A', time: 'N/A' };
             
-            const date = new Date(dateTimeString);
-            if (isNaN(date.getTime())) return { date: 'Invalid date', time: 'Invalid time' };
+            // Parse the UTC datetime and convert to Atlantic timezone
+            const utcDate = new Date(dateTimeString);
             
-            const dateOptions = { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-            };
-            const timeOptions = { 
-                hour: 'numeric', 
-                minute: '2-digit', 
-                hour12: true 
-            };
+            // Atlantic timezone is UTC-4 (ADT) or UTC-3 (AST)
+            // Use Intl.DateTimeFormat for consistent timezone handling
+            const atlanticDate = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Halifax',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(utcDate);
             
-            return {
-                date: date.toLocaleDateString('en-US', dateOptions),
-                time: date.toLocaleTimeString('en-US', timeOptions)
+            const atlanticTime = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Halifax',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }).format(utcDate);
+            
+            return { 
+                date: atlanticDate, 
+                time: atlanticTime 
             };
         }
 
@@ -692,29 +670,29 @@
             if (!currentDeleteId) return;
 
             try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-appointment', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/deleteAppointment', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        id: currentDeleteId
-                    })
+                    body: JSON.stringify({ id: currentDeleteId })
                 });
 
-                if (response.ok) {
-                    // Close modal and reload appointments
-                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-                    currentDeleteId = null;
-                    await loadAllAppointments();
-                    showSuccess('Appointment deleted successfully!');
-                } else {
-                    throw new Error('Failed to delete appointment');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                // Close modal and reload data
+                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                currentDeleteId = null;
+                await loadAllAppointments();
+                
+                // Show success message
+                showSuccess('Appointment deleted successfully!');
 
             } catch (error) {
                 console.error('Error deleting appointment:', error);
-                showError('Failed to delete appointment. Please try again.');
+                showError('Error deleting appointment. Please try again.');
             }
         }
 
@@ -748,10 +726,11 @@
 
                 // Date filter
                 if (dateFilter !== 'all') {
-                    const appointmentDate = new Date(appointment.appointmenttime);
+                    const appointmentDate = new Date(appointment.appointmentDateTime);
                     if (dateFilter === 'future' && appointmentDate <= now) {
                         return false;
-                    } else if (dateFilter === 'past' && appointmentDate > now) {
+                    }
+                    if (dateFilter === 'past' && appointmentDate > now) {
                         return false;
                     }
                 }
@@ -759,7 +738,7 @@
                 return true;
             });
 
-            displayAppointments(filteredAppointments);
+            displayAppointments();
         }
 
         // Clear all filters
@@ -772,47 +751,50 @@
 
         // Show success toast
         function showSuccess(message) {
-            showToast('Success', message, 'success');
+            showNotification(message, 'success');
         }
 
         // Show error toast
         function showError(message) {
-            showToast('Error', message, 'error');
+            showNotification(message, 'error');
         }
 
         // Show toast notification
-        function showToast(title, message, type = 'info') {
-            const toast = document.getElementById('notificationToast');
-            const toastTitle = document.getElementById('toastTitle');
-            const toastMessage = document.getElementById('toastMessage');
-
-            toastTitle.textContent = title;
-            toastMessage.textContent = message;
-
-            // Add appropriate class for styling
-            toast.className = `toast ${type === 'success' ? 'bg-success text-white' : 
-                                     type === 'error' ? 'bg-danger text-white' : 
-                                     'bg-info text-white'}`;
-
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-
-            // Reset classes after toast is hidden
-            toast.addEventListener('hidden.bs.toast', function() {
-                toast.className = 'toast';
-            }, { once: true });
+        function showNotification(message, type = 'info') {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle';
+            
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <i class="bi ${icon} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
         }
 
         // Logout function
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                window.location.href = 'index.html';
+                sessionStorage.removeItem('rrts_user');
+                window.location.href = 'admin-portal_v3_1_0.html';
             }
         }
     </script>
 </body>
 </html>
 
-<!-- Version: v1.5.0 - Removed edit modal, updated edit button to redirect to separate page -->
+<!-- Version: v1.6.0 - Removed edit modal, edit button redirects to edit-appointment.html, working API integration -->
 <!-- - v1.4.0: Added appointment management with filters and CRUD operations -->
 <!-- - v1.5.0: Removed edit modal functionality, edit button now redirects to edit-appointment.html -->
+<!-- - v1.6.0: Updated with working API endpoints, proper data handling, timezone formatting, and notification system -->
