@@ -323,7 +323,7 @@
                             </div>
                         </div>
 
-                        <!-- Client Information Row -->
+                        <!-- Client Information Row (Read-only) -->
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label">K Number</label>
@@ -331,46 +331,46 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="editFirstName">
+                                <input type="text" class="form-control" id="editFirstName" readonly>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="editLastName">
+                                <input type="text" class="form-control" id="editLastName" readonly>
                             </div>
                         </div>
 
-                        <!-- Contact Information Row -->
+                        <!-- Contact Information Row (Read-only) -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Phone</label>
-                                <input type="tel" class="form-control" id="editClientPhone">
+                                <input type="tel" class="form-control" id="editClientPhone" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
-                                <input type="email" class="form-control" id="editClientEmail">
+                                <input type="email" class="form-control" id="editClientEmail" readonly>
                             </div>
                         </div>
 
-                        <!-- Address Information -->
+                        <!-- Address Information (Read-only) -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Client Address</label>
-                                <input type="text" class="form-control" id="editClientAddress">
+                                <input type="text" class="form-control" id="editClientAddress" readonly>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">City</label>
-                                <input type="text" class="form-control" id="editClientCity">
+                                <input type="text" class="form-control" id="editClientCity" readonly>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Province</label>
-                                <input type="text" class="form-control" id="editClientProvince" maxlength="2">
+                                <input type="text" class="form-control" id="editClientProvince" readonly>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label">Postal Code</label>
-                                <input type="text" class="form-control" id="editClientPostalCode">
+                                <input type="text" class="form-control" id="editClientPostalCode" readonly>
                             </div>
                         </div>
 
@@ -506,10 +506,11 @@
                 if (response.ok) {
                     const data = await response.json();
                     clinicLocations = data.locations || [];
-                    populateClinicDropdown();
+                    // Don't populate dropdown here - wait for appointment data to determine current location
                 }
             } catch (error) {
                 console.error('Error loading clinic locations:', error);
+                clinicLocations = []; // Set empty array as fallback
             }
         }
 
@@ -527,17 +528,48 @@
             }
         }
 
-        // Populate clinic dropdown
-        function populateClinicDropdown() {
+        // Populate clinic dropdown with API locations and current appointment location
+        function populateClinicDropdown(currentLocation = null) {
             const clinicSelect = document.getElementById('editLocationName');
             clinicSelect.innerHTML = '<option value="">Select clinic...</option>';
             
-            clinicLocations.forEach(clinic => {
+            // First, add current location if it exists and is not in API list
+            let currentLocationAdded = false;
+            if (currentLocation && currentLocation.trim() !== '') {
                 const option = document.createElement('option');
-                option.value = clinic.name;
-                option.textContent = clinic.name;
-                option.dataset.address = clinic.address;
+                option.value = currentLocation;
+                option.textContent = currentLocation + ' (Current)';
+                option.selected = true;
                 clinicSelect.appendChild(option);
+                currentLocationAdded = true;
+            }
+            
+            // Add all API locations
+            clinicLocations.forEach(clinic => {
+                // Skip if this is the same as current location
+                if (currentLocation && clinic.name === currentLocation) {
+                    if (!currentLocationAdded) {
+                        const option = document.createElement('option');
+                        option.value = clinic.name;
+                        option.textContent = clinic.name;
+                        option.dataset.address = clinic.address;
+                        option.selected = true;
+                        clinicSelect.appendChild(option);
+                    } else {
+                        // Update the current option to include address data
+                        const currentOption = clinicSelect.querySelector(`option[value="${currentLocation}"]`);
+                        if (currentOption) {
+                            currentOption.dataset.address = clinic.address;
+                            currentOption.textContent = clinic.name; // Remove "(Current)" label
+                        }
+                    }
+                } else {
+                    const option = document.createElement('option');
+                    option.value = clinic.name;
+                    option.textContent = clinic.name;
+                    option.dataset.address = clinic.address;
+                    clinicSelect.appendChild(option);
+                }
             });
         }
 
@@ -567,15 +599,16 @@
             }
         }
 
-        // Populate driver dropdown
+        // Populate driver dropdown using firstname lastname instead of name
         function populateDriverDropdown() {
             const driverSelect = document.getElementById('editDriver');
             driverSelect.innerHTML = '<option value="">No driver assigned</option>';
             
             allDrivers.forEach(driver => {
                 const option = document.createElement('option');
-                option.value = driver.name;
-                option.textContent = driver.name;
+                const driverName = `${driver.firstname || ''} ${driver.lastname || ''}`.trim();
+                option.value = driverName;
+                option.textContent = driverName;
                 driverSelect.appendChild(option);
             });
         }
@@ -661,7 +694,7 @@
                 document.getElementById('editTransitTime').value = Math.max(0, transitTimeMinutes);
             }
             
-            // Client information
+            // Client information (read-only)
             document.getElementById('editKnumber').value = data.knumber || '';
             document.getElementById('editFirstName').value = data.clientFirstName || '';
             document.getElementById('editLastName').value = data.clientLastName || '';
@@ -672,8 +705,8 @@
             document.getElementById('editClientProvince').value = data.clientProvince || '';
             document.getElementById('editClientPostalCode').value = data.clientPostalCode || '';
             
-            // Location information - use setSelectedClinic to handle custom locations
-            setSelectedClinic(data.location || '');
+            // Location information - populate dropdown with current location
+            populateClinicDropdown(data.location || '');
             document.getElementById('editLocationAddress').value = data.locationAddress || '';
             
             // Status, driver, and other fields
@@ -935,8 +968,9 @@
 </body>
 </html>
 
-<!-- Version: v1.3.0 - Fixed CORS issue by using POST method for appointment data loading -->
+<!-- Version: v1.4.0 - Client details read-only, improved clinic dropdown with API integration, driver names using firstname/lastname -->
 <!-- - v1.0.0: Standalone edit page with appointment data loading, form validation, and update functionality -->
 <!-- - v1.1.0: Added clinic dropdown, driver dropdown, full client editing, notification status display, and improved data handling -->
 <!-- - v1.2.0: Integrated with new get-appointment API endpoint, enhanced error handling, and warning display for client lookup issues -->
 <!-- - v1.3.0: Changed API call from GET to POST method to resolve CORS issues with n8n webhook -->
+<!-- - v1.4.0: Made client details read-only, clinic dropdown includes current + API locations with auto-address fill, driver dropdown uses firstname lastname -->
