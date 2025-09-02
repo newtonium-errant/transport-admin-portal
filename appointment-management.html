@@ -475,50 +475,45 @@
         let filteredAppointments = [];
         let currentDeleteId = null;
 
-        // Fixed timezone display function - matches edit modal exactly
+        // Display time as stored (local AST/ADT) without timezone conversion
         function formatDateTimeDisplay(dateTimeString) {
             if (!dateTimeString) return { date: 'N/A', time: 'N/A' };
             
-            // Parse the UTC datetime and convert to Atlantic timezone
-            const utcDate = new Date(dateTimeString);
-            
-            // Atlantic timezone is UTC-4 (ADT) or UTC-3 (AST)
-            // Use Intl.DateTimeFormat for consistent timezone handling
-            const options = {
-                timeZone: 'America/Halifax', // Atlantic timezone
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            };
-            
-            const atlanticTime = utcDate.toLocaleString('en-US', options);
-            const [datePart, timePart] = atlanticTime.split(', ');
-            
-            return {
-                date: datePart,
-                time: timePart
-            };
+            try {
+                // Parse the datetime as-is without timezone conversion
+                const date = new Date(dateTimeString);
+                
+                // Format as local time (no timezone conversion)
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return {
+                    date: `${month}/${day}/${year}`,
+                    time: `${hours}:${minutes}`
+                };
+            } catch (error) {
+                console.error('Error formatting date:', error, dateTimeString);
+                return { date: 'Invalid Date', time: 'Invalid Time' };
+            }
         }
 
-        // Helper function for datetime-local inputs (for edit modal)
+        // For datetime-local inputs, parse stored time as local (no conversion)
         function formatDateTimeForInput(dateTimeString) {
             if (!dateTimeString) return '';
             
             try {
+                // Parse the stored datetime as local time
                 const date = new Date(dateTimeString);
                 
-                // Convert to Atlantic time for datetime-local input
-                const atlanticTime = new Date(date.toLocaleString("en-US", {timeZone: "America/Halifax"}));
-                
-                // Format as YYYY-MM-DDTHH:MM for datetime-local input
-                const year = atlanticTime.getFullYear();
-                const month = String(atlanticTime.getMonth() + 1).padStart(2, '0');
-                const day = String(atlanticTime.getDate()).padStart(2, '0');
-                const hours = String(atlanticTime.getHours()).padStart(2, '0');
-                const minutes = String(atlanticTime.getMinutes()).padStart(2, '0');
+                // Format as YYYY-MM-DDTHH:MM for datetime-local input (no timezone conversion)
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
                 
                 return `${year}-${month}-${day}T${hours}:${minutes}`;
             } catch (error) {
@@ -617,11 +612,12 @@
                         return dateA - dateB; // Ascending order (future first)
                     });
                     
-                    // Filter to only show future appointments by default
+                    // Filter to show current day and future appointments by default
                     const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
                     filteredAppointments = allAppointments.filter(appointment => {
                         const appointmentDate = new Date(appointment.appointmentDateTime);
-                        return appointmentDate > now;
+                        return appointmentDate >= today; // Include today and future
                     });
                     
                     // Set the date filter to "future" by default
@@ -727,11 +723,12 @@
                 // Date filter
                 if (dateFilter !== 'all') {
                     const appointmentDate = new Date(appointment.appointmentDateTime);
-                    if (dateFilter === 'future' && appointmentDate <= now) {
-                        return false;
-                    }
-                    if (dateFilter === 'past' && appointmentDate > now) {
-                        return false;
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
+                    
+                    if (dateFilter === 'future' && appointmentDate < today) {
+                        return false; // Exclude appointments before today
+                    } else if (dateFilter === 'past' && appointmentDate >= today) {
+                        return false; // Exclude appointments today and after
                     }
                 }
 
@@ -1017,9 +1014,9 @@
 </html>
 
 <!-- Version History:
+v4.2.2: Include current day in 'future only' filter and display times as stored (no timezone conversion)
 v4.2.1: Default to showing future appointments only, sorted from soonest to latest
 v4.2.0: Fixed field mapping to match actual API response format (appointmentDateTime, pickupTime, location, etc.)
 v4.1.9: Fixed data mapping to handle RRTS Get All Appointments workflow response format
 v4.1.8: Surgical fix - only changed header/colors to match add-appointments.html, timezone display function, and Railway endpoints
-v4.1.7: Enhanced notification status display with multiple badge types
 -->
