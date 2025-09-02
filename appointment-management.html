@@ -610,14 +610,31 @@
                         reminder_sent_driver: appointment.reminder_sent_driver || false
                     }));
                     
-                    console.log(`Loaded ${allAppointments.length} appointments`);
+                    // Sort appointments from future to past (soonest first)
+                    allAppointments.sort((a, b) => {
+                        const dateA = new Date(a.appointmentDateTime);
+                        const dateB = new Date(b.appointmentDateTime);
+                        return dateA - dateB; // Ascending order (future first)
+                    });
+                    
+                    // Filter to only show future appointments by default
+                    const now = new Date();
+                    filteredAppointments = allAppointments.filter(appointment => {
+                        const appointmentDate = new Date(appointment.appointmentDateTime);
+                        return appointmentDate > now;
+                    });
+                    
+                    // Set the date filter to "future" by default
+                    document.getElementById('dateFilter').value = 'future';
+                    
+                    console.log(`Loaded ${allAppointments.length} total appointments`);
+                    console.log(`Showing ${filteredAppointments.length} future appointments`);
                     console.log('First appointment sample:', allAppointments[0]);
                 } else {
                     console.log('No appointments found in response');
                     allAppointments = [];
+                    filteredAppointments = [];
                 }
-
-                filteredAppointments = [...allAppointments];
                 displayAppointments();
                 
             } catch (error) {
@@ -1000,9 +1017,9 @@
 </html>
 
 <!-- Version History:
+v4.2.1: Default to showing future appointments only, sorted from soonest to latest
 v4.2.0: Fixed field mapping to match actual API response format (appointmentDateTime, pickupTime, location, etc.)
 v4.1.9: Fixed data mapping to handle RRTS Get All Appointments workflow response format
 v4.1.8: Surgical fix - only changed header/colors to match add-appointments.html, timezone display function, and Railway endpoints
 v4.1.7: Enhanced notification status display with multiple badge types
-v4.1.6: Added driver assignment functionality with dropdown selection
 -->
