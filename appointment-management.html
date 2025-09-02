@@ -3,61 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RRTS - Appointments Management</title>
+    <title>Appointment Management - RRTS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8fafc;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .navbar-custom {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            padding: 1rem 0;
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .navbar-brand {
-            font-weight: 700;
-            color: white !important;
-            font-size: 1.5rem;
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 300;
+            color: white;
+            margin: 0;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 0.9em;
         }
 
         .nav-links {
             display: flex;
-            gap: 2rem;
-            align-items: center;
+            gap: 20px;
         }
 
         .nav-links a {
-            color: rgba(255, 255, 255, 0.9) !important;
+            color: white;
             text-decoration: none;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
+            padding: 8px 16px;
             border-radius: 6px;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease;
         }
 
-        .nav-links a:hover,
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
         .nav-links a.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: white !important;
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            padding: 1rem 1.5rem;
         }
 
         .filters-section {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
             border: 1px solid #e9ecef;
+        }
+
+        .appointments-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            padding: 12px 8px;
+            font-size: 0.9em;
+        }
+
+        .table td {
+            padding: 12px 8px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .btn-sm {
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .no-appointments {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #6c757d;
+        }
+
+        .no-appointments i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
         }
 
         .filter-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
+            gap: 1rem;
             align-items: end;
         }
 
@@ -67,225 +161,31 @@
             margin-bottom: 0.5rem;
         }
 
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .card-header {
-            background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 12px 12px 0 0 !important;
-            border-bottom: 1px solid #dee2e6;
-            padding: 1.5rem;
-        }
-
-        .table {
-            margin-bottom: 0;
-        }
-
-        .table th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #dee2e6;
-            padding: 1rem 0.75rem;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .table td {
-            padding: 1rem 0.75rem;
-            vertical-align: middle;
-            border-bottom: 1px solid #f1f3f4;
-        }
-
-        .table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .appointment-time {
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.95rem;
-        }
-
-        .pickup-time {
-            font-size: 0.85rem;
-            color: #6c757d;
-        }
-
-        .client-info {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .client-details {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 2px;
-        }
-
-        .clinic-info {
-            font-weight: 500;
-            color: #495057;
-        }
-
-        .clinic-address {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 2px;
-        }
-
-        .status-badge {
-            padding: 0.35rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .status-confirmed {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-completed {
-            background-color: #e2e3e5;
-            color: #383d41;
-            border: 1px solid #d6d8db;
-        }
-
-        .status-cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .driver-info {
-            font-weight: 500;
-            color: #495057;
-        }
-
-        .driver-unassigned {
-            color: #ffc107;
-            font-style: italic;
-            font-weight: 500;
-        }
-
-        .notification-status {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .notification-badge {
-            font-size: 0.7rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .notification-sent {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .notification-pending {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .btn-action {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
-            border-radius: 6px;
-            margin: 0.1rem;
-            font-weight: 500;
-        }
-
-        .loading, .no-appointments {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #6c757d;
-        }
-
-        .no-appointments i {
-            color: #dee2e6;
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .edit-modal .modal-content {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .edit-modal .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px 12px 0 0;
-            padding: 1.5rem;
-        }
-
-        .edit-modal .modal-header .btn-close {
-            filter: brightness(0) invert(1);
-        }
-
-        .edit-modal .form-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-
-        .edit-modal .form-control:focus,
-        .edit-modal .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-
         @media (max-width: 768px) {
-            .filter-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .table-responsive {
-                font-size: 0.9rem;
-            }
-            
-            .btn-action {
-                padding: 0.3rem 0.6rem;
-                font-size: 0.75rem;
+            .header {
+                flex-direction: column;
+                gap: 15px;
             }
             
             .nav-links {
-                flex-direction: column;
-                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .filter-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-custom">
-        <div class="container-fluid">
-            <span class="navbar-brand">
-                <i class="bi bi-truck me-2"></i>
-                RRTS Admin Portal
-            </span>
+    <!-- Header -->
+    <div class="header">
+        <h1>RRTS Dashboard</h1>
+        <div class="header-info">
+            <span id="currentDateTime"></span>
+            <span>•</span>
             <span id="welcomeUser">Welcome, Admin</span>
         </div>
         <div class="nav-links">
@@ -298,10 +198,10 @@
             <a href="admin.html">Admin</a>
             <a href="#" onclick="logout()">Logout</a>
         </div>
-    </nav>
+    </div>
 
     <!-- Main Content -->
-    <div class="container-fluid mt-4">
+    <div class="container mt-4">
         <!-- Filters Section -->
         <div class="filters-section">
             <h5 class="mb-3">
@@ -391,7 +291,7 @@
     </div>
 
     <!-- Edit Appointment Modal -->
-    <div class="modal fade edit-modal" id="editModal" tabindex="-1">
+    <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -450,21 +350,37 @@
                                 <select class="form-select" id="editStatus">
                                     <option value="pending">Pending</option>
                                     <option value="confirmed">Confirmed</option>
+                                    <option value="complete">Complete</option>
                                     <option value="completed">Completed</option>
+                                    <option value="done">Done</option>
                                     <option value="cancelled">Cancelled</option>
                                 </select>
                             </div>
                         </div>
 
-                        <!-- Location Information -->
+                        <!-- Location and Driver Row -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Location Name</label>
                                 <input type="text" class="form-control" id="editLocationName">
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Assigned Driver</label>
+                                <select class="form-select" id="editDriver">
+                                    <option value="">No driver assigned</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Location Address and Custom Rate Row -->
+                        <div class="row mb-3">
+                            <div class="col-md-8">
                                 <label class="form-label">Location Address</label>
                                 <input type="text" class="form-control" id="editLocationAddress">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Custom Rate ($)</label>
+                                <input type="number" class="form-control" id="editCustomRate" min="0" step="0.01">
                             </div>
                         </div>
 
@@ -474,17 +390,23 @@
                             <textarea class="form-control" id="editNotes" rows="3"></textarea>
                         </div>
 
-                        <!-- Driver Assignment -->
+                        <!-- Notification Status (Read-only display) -->
                         <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Assigned Driver</label>
-                                <select class="form-select" id="editDriver">
-                                    <option value="">Unassigned</option>
-                                </select>
+                            <div class="col-md-3">
+                                <label class="form-label">Client Notification</label>
+                                <div id="editClientNotification" class="form-control-plaintext"></div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Custom Rate</label>
-                                <input type="number" class="form-control" id="editCustomRate" min="0" step="0.01" placeholder="Leave blank for standard rate">
+                            <div class="col-md-3">
+                                <label class="form-label">Client Reminder</label>
+                                <div id="editClientReminder" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Driver Notification</label>
+                                <div id="editDriverNotification" class="form-control-plaintext"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Driver Reminder</label>
+                                <div id="editDriverReminder" class="form-control-plaintext"></div>
                             </div>
                         </div>
                     </form>
@@ -532,10 +454,8 @@
         let allAppointments = [];
         let filteredAppointments = [];
         let currentDeleteId = null;
-        let clinicLocations = [];
-        let allDrivers = [];
 
-        // Fixed timezone display function - works exactly like edit modal
+        // Fixed timezone display function - matches edit modal exactly
         function formatDateTimeDisplay(dateTimeString) {
             if (!dateTimeString) return { date: 'N/A', time: 'N/A' };
             
@@ -559,8 +479,7 @@
             
             return {
                 date: datePart,
-                time: timePart,
-                full: `${datePart} at ${timePart}`
+                time: timePart
             };
         }
 
@@ -588,17 +507,87 @@
             }
         }
 
+        // Update current date time in header
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                timeZone: 'America/Halifax',
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
+        }
+
         // API Configuration
         const SUPABASE_URL = 'https://prcfqfnqrxkbgygfqtfs.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByY2ZxZm5xcnhrYmd5Z2ZxdGZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjI5NjEwNjUsImV4cCI6MjAzODUzNzA2NX0.8VbTFgJpj9pUNdZdMiK_8y1HmgLLf7qz8eRRTSdKlqw';
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 60000); // Update every minute
             loadDrivers();
             loadAppointments();
         });
 
-        // Load all drivers for the dropdown
+        // Load appointments from Supabase
+        async function loadAppointments() {
+            try {
+                showLoading(true);
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?select=*,clients(*),drivers(*)`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Raw appointments data:', data);
+                
+                allAppointments = data.map(appointment => ({
+                    id: appointment.id,
+                    knumber: appointment.knumber,
+                    appointmentDateTime: appointment.appointmenttime,
+                    pickupTime: appointment.pickuptime,
+                    location: appointment.locationname,
+                    locationAddress: appointment.locationaddress,
+                    status: appointment.appointmentstatus,
+                    notes: appointment.notes,
+                    transitTime: appointment.transittime,
+                    customRate: appointment.custom_rate,
+                    clientFirstName: appointment.clients?.firstname || '',
+                    clientLastName: appointment.clients?.lastname || '',
+                    clientPhone: appointment.clients?.phone || '',
+                    driver_assigned: appointment.drivers ? `${appointment.drivers.firstname} ${appointment.drivers.lastname}` : '',
+                    driver_id: appointment.driver_id,
+                    client_notification_sent: appointment.client_notification_sent,
+                    reminder_sent_client: appointment.reminder_sent_client,
+                    driver_notification_sent: appointment.driver_notification_sent,
+                    reminder_sent_driver: appointment.reminder_sent_driver
+                }));
+
+                filteredAppointments = [...allAppointments];
+                displayAppointments();
+                
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                showError('Failed to load appointments. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load drivers for dropdown
         async function loadDrivers() {
             try {
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/drivers?select=*`, {
@@ -609,22 +598,20 @@
                 });
 
                 if (response.ok) {
-                    allDrivers = await response.json();
-                    populateDriverFilters();
+                    const drivers = await response.json();
+                    populateDriverDropdown(drivers);
                 }
             } catch (error) {
                 console.error('Error loading drivers:', error);
             }
         }
 
-        // Populate driver filter dropdown
-        function populateDriverFilters() {
+        // Populate driver dropdown
+        function populateDriverDropdown(drivers) {
             const editDriver = document.getElementById('editDriver');
+            editDriver.innerHTML = '<option value="">No driver assigned</option>';
             
-            editDriver.innerHTML = '<option value="">Unassigned</option>';
-
-            // Add drivers to dropdown
-            allDrivers.forEach(driver => {
+            drivers.forEach(driver => {
                 const option = document.createElement('option');
                 option.value = driver.id;
                 option.textContent = `${driver.firstname} ${driver.lastname}`;
@@ -632,110 +619,98 @@
             });
         }
 
-        // Load appointments from Supabase
-        async function loadAppointments() {
-            try {
-                document.getElementById('loadingSpinner').style.display = 'block';
-                document.getElementById('appointmentsContainer').style.display = 'none';
-                document.getElementById('noAppointments').style.display = 'none';
+        // Show/hide loading state
+        function showLoading(show) {
+            document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+            document.getElementById('appointmentsContainer').style.display = show ? 'none' : 'block';
+        }
 
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?select=*,clients(*),drivers(*)&order=appointmenttime.asc`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                });
-
-                if (response.ok) {
-                    allAppointments = await response.json();
-                    filteredAppointments = [...allAppointments];
-                    displayAppointments();
-                } else {
-                    throw new Error('Failed to load appointments');
+        // Show error message
+        function showError(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alert.innerHTML = `
+                <strong>Error:</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
                 }
-
-            } catch (error) {
-                console.error('Error loading appointments:', error);
-                showError('Failed to load appointments. Please try again.');
-            } finally {
-                document.getElementById('loadingSpinner').style.display = 'none';
-            }
+            }, 5000);
         }
 
         // Display appointments in table
         function displayAppointments() {
-            const tableBody = document.getElementById('appointmentsTableBody');
-            const appointmentCount = document.getElementById('appointmentCount');
-            const appointmentsContainer = document.getElementById('appointmentsContainer');
-            const noAppointments = document.getElementById('noAppointments');
-
+            document.getElementById('loadingSpinner').style.display = 'none';
+            
+            const tbody = document.getElementById('appointmentsTableBody');
+            const countElement = document.getElementById('appointmentCount');
+            
             if (filteredAppointments.length === 0) {
-                appointmentsContainer.style.display = 'none';
-                noAppointments.style.display = 'block';
-                appointmentCount.textContent = '0 appointments';
+                document.getElementById('appointmentsContainer').style.display = 'none';
+                document.getElementById('noAppointments').style.display = 'block';
+                countElement.textContent = '0 appointments';
                 return;
             }
 
-            appointmentsContainer.style.display = 'block';
-            noAppointments.style.display = 'none';
-            appointmentCount.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length !== 1 ? 's' : ''}`;
+            document.getElementById('appointmentsContainer').style.display = 'block';
+            document.getElementById('noAppointments').style.display = 'none';
+            countElement.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length !== 1 ? 's' : ''}`;
 
             // Use consistent timezone formatting for both appointment and pickup times
-            tableBody.innerHTML = filteredAppointments.map(appointment => {
-                const appointmentDateTime = formatDateTimeDisplay(appointment.appointmenttime);
-                const pickupDateTime = formatDateTimeDisplay(appointment.pickuptime);
+            tbody.innerHTML = filteredAppointments.map(appointment => {
+                const appointmentDateTime = formatDateTimeDisplay(appointment.appointmentDateTime);
+                const pickupDateTime = formatDateTimeDisplay(appointment.pickupTime);
                 
                 return `
                     <tr>
                         <td>
-                            <div class="appointment-time">${appointmentDateTime.date}</div>
-                            <div class="pickup-time">${appointmentDateTime.time}</div>
+                            <div><strong>${appointmentDateTime.date}</strong></div>
+                            <div class="text-muted">${appointmentDateTime.time}</div>
                         </td>
                         <td>
-                            <div class="appointment-time">${pickupDateTime.date}</div>
-                            <div class="pickup-time">${pickupDateTime.time}</div>
+                            <div><strong>${pickupDateTime.date}</strong></div>
+                            <div class="text-muted">${pickupDateTime.time}</div>
                         </td>
                         <td>
-                            <div class="client-info">${appointment.clients ? `${appointment.clients.firstname} ${appointment.clients.lastname}` : 'Unknown Client'}</div>
-                            <div class="client-details">${appointment.knumber || ''}</div>
-                            <div class="client-details">${appointment.clients ? (appointment.clients.phone || 'No phone') : ''}</div>
+                            <div><strong>${appointment.knumber || ''}</strong></div>
+                            <div>${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}</div>
                         </td>
                         <td>
-                            <div class="clinic-info">${appointment.locationname || 'N/A'}</div>
-                            <div class="clinic-address">${appointment.locationaddress || ''}</div>
+                            <div>${appointment.location || 'N/A'}</div>
                         </td>
                         <td>
-                            <span class="status-badge status-${appointment.appointmentstatus || 'pending'}">
-                                ${appointment.appointmentstatus || 'pending'}
-                            </span>
+                            <span class="badge bg-secondary">${appointment.status || 'pending'}</span>
                         </td>
                         <td>
-                            <div class="driver-info ${!appointment.drivers ? 'driver-unassigned' : ''}">
-                                ${appointment.drivers ? `${appointment.drivers.firstname} ${appointment.drivers.lastname}` : 'Not assigned'}
-                            </div>
+                            ${appointment.driver_assigned || 'Not assigned'}
                         </td>
                         <td>
-                            <div class="notification-status">
-                                <span class="notification-badge ${appointment.client_notification_sent ? 'notification-sent' : 'notification-pending'}">
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge ${appointment.client_notification_sent ? 'bg-success' : 'bg-warning'}">
                                     C: ${appointment.client_notification_sent ? 'Sent' : 'Pending'}
                                 </span>
-                                <span class="notification-badge ${appointment.reminder_sent_client ? 'notification-sent' : 'notification-pending'}">
+                                <span class="badge ${appointment.reminder_sent_client ? 'bg-success' : 'bg-warning'}">
                                     CR: ${appointment.reminder_sent_client ? 'Sent' : 'Pending'}
                                 </span>
-                                <span class="notification-badge ${appointment.driver_notification_sent ? 'notification-sent' : 'notification-pending'}">
+                                <span class="badge ${appointment.driver_notification_sent ? 'bg-success' : 'bg-warning'}">
                                     D: ${appointment.driver_notification_sent ? 'Sent' : 'Pending'}
                                 </span>
-                                <span class="notification-badge ${appointment.reminder_sent_driver ? 'notification-sent' : 'notification-pending'}">
+                                <span class="badge ${appointment.reminder_sent_driver ? 'bg-success' : 'bg-warning'}">
                                     DR: ${appointment.reminder_sent_driver ? 'Sent' : 'Pending'}
                                 </span>
                             </div>
                         </td>
                         <td>
                             <div class="d-flex gap-1">
-                                <button class="btn btn-outline-primary btn-action" onclick="editAppointment('${appointment.id}')">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editAppointment('${appointment.id}')">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-outline-danger btn-action" onclick="deleteAppointment('${appointment.id}')">
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteAppointment('${appointment.id}')">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -745,39 +720,41 @@
             }).join('');
         }
 
-        // Apply filters
+        // Apply current filters
         function applyFilters() {
-            const statusFilter = document.getElementById('statusFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
             const clientFilter = document.getElementById('clientFilter').value.toLowerCase();
             const dateFilter = document.getElementById('dateFilter').value;
+            const now = new Date();
 
             filteredAppointments = allAppointments.filter(appointment => {
                 // Status filter
-                if (statusFilter && appointment.appointmentstatus !== statusFilter) {
+                if (statusFilter && appointment.status?.toLowerCase() !== statusFilter) {
                     return false;
                 }
 
-                // Client filter (search in K number, first name, or last name)
+                // Client filter (K number or name)
                 if (clientFilter) {
-                    const knumber = (appointment.knumber || '').toLowerCase();
-                    const firstName = appointment.clients ? (appointment.clients.firstname || '').toLowerCase() : '';
-                    const lastName = appointment.clients ? (appointment.clients.lastname || '').toLowerCase() : '';
+                    const knumber = appointment.knumber?.toLowerCase() || '';
+                    const firstName = appointment.clientFirstName?.toLowerCase() || '';
+                    const lastName = appointment.clientLastName?.toLowerCase() || '';
+                    const fullName = `${firstName} ${lastName}`.toLowerCase();
                     
                     if (!knumber.includes(clientFilter) && 
                         !firstName.includes(clientFilter) && 
-                        !lastName.includes(clientFilter)) {
+                        !lastName.includes(clientFilter) && 
+                        !fullName.includes(clientFilter)) {
                         return false;
                     }
                 }
 
                 // Date filter
                 if (dateFilter !== 'all') {
-                    const appointmentDate = new Date(appointment.appointmenttime);
-                    const now = new Date();
-                    
+                    const appointmentDate = new Date(appointment.appointmentDateTime);
                     if (dateFilter === 'future' && appointmentDate <= now) {
                         return false;
-                    } else if (dateFilter === 'past' && appointmentDate >= now) {
+                    }
+                    if (dateFilter === 'past' && appointmentDate > now) {
                         return false;
                     }
                 }
@@ -803,23 +780,25 @@
 
             // Populate edit form with all fields
             document.getElementById('editAppointmentId').value = appointment.id;
-            document.getElementById('editAppointmentTime').value = formatDateTimeForInput(appointment.appointmenttime);
-            document.getElementById('editPickupTime').value = formatDateTimeForInput(appointment.pickuptime);
-            document.getElementById('editTransitTime').value = appointment.transittime || '';
+            document.getElementById('editAppointmentTime').value = formatDateTimeForInput(appointment.appointmentDateTime);
+            document.getElementById('editPickupTime').value = formatDateTimeForInput(appointment.pickupTime);
+            document.getElementById('editTransitTime').value = appointment.transitTime || '';
             document.getElementById('editKnumber').value = appointment.knumber || '';
-            document.getElementById('editLocationName').value = appointment.locationname || '';
-            document.getElementById('editLocationAddress').value = appointment.locationaddress || '';
+            document.getElementById('editFirstName').value = appointment.clientFirstName || '';
+            document.getElementById('editLastName').value = appointment.clientLastName || '';
+            document.getElementById('editClientPhone').value = appointment.clientPhone || '';
+            document.getElementById('editLocationName').value = appointment.location || '';
+            document.getElementById('editLocationAddress').value = appointment.locationAddress || '';
             document.getElementById('editNotes').value = appointment.notes || '';
-            document.getElementById('editStatus').value = appointment.appointmentstatus || 'pending';
+            document.getElementById('editStatus').value = appointment.status || 'pending';
             document.getElementById('editDriver').value = appointment.driver_id || '';
-            document.getElementById('editCustomRate').value = appointment.custom_rate || '';
+            document.getElementById('editCustomRate').value = appointment.customRate || '';
 
-            // Populate client info if available
-            if (appointment.clients) {
-                document.getElementById('editFirstName').value = appointment.clients.firstname || '';
-                document.getElementById('editLastName').value = appointment.clients.lastname || '';
-                document.getElementById('editClientPhone').value = appointment.clients.phone || '';
-            }
+            // Display notification status
+            document.getElementById('editClientNotification').textContent = appointment.client_notification_sent ? 'Sent' : 'Pending';
+            document.getElementById('editClientReminder').textContent = appointment.reminder_sent_client ? 'Sent' : 'Pending';
+            document.getElementById('editDriverNotification').textContent = appointment.driver_notification_sent ? 'Sent' : 'Pending';
+            document.getElementById('editDriverReminder').textContent = appointment.reminder_sent_driver ? 'Sent' : 'Pending';
 
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('editModal'));
@@ -905,15 +884,13 @@
             currentDeleteId = appointmentId;
 
             // Show appointment details in delete modal
-            const appointmentDateTime = formatDateTimeDisplay(appointment.appointmenttime);
-            const clientName = appointment.clients 
-                ? `${appointment.clients.firstname} ${appointment.clients.lastname}`
-                : 'Unknown Client';
+            const appointmentDateTime = formatDateTimeDisplay(appointment.appointmentDateTime);
+            const clientName = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim() || 'Unknown Client';
 
             document.getElementById('deleteAppointmentDetails').innerHTML = `
                 <strong>Client:</strong> ${clientName} (${appointment.knumber || 'No K#'})<br>
-                <strong>Date & Time:</strong> ${appointmentDateTime.full}<br>
-                <strong>Location:</strong> ${appointment.locationname || 'No location specified'}
+                <strong>Date & Time:</strong> ${appointmentDateTime.date} at ${appointmentDateTime.time}<br>
+                <strong>Location:</strong> ${appointment.location || 'No location specified'}
             `;
 
             // Show delete modal
@@ -956,25 +933,7 @@
             alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
             alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
             alert.innerHTML = `
-                <i class="bi bi-check-circle me-2"></i>${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(alert);
-
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.parentNode.removeChild(alert);
-                }
-            }, 5000);
-        }
-
-        // Show error message
-        function showError(message) {
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-            alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            alert.innerHTML = `
-                <i class="bi bi-exclamation-triangle me-2"></i>${message}
+                <strong>Success:</strong> ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.body.appendChild(alert);
@@ -988,17 +947,18 @@
 
         // Logout function
         function logout() {
-            // Add logout logic here if needed
-            window.location.href = 'login.html';
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = 'login.html';
+            }
         }
     </script>
 </body>
 </html>
 
 <!-- Version History:
-v4.1.6: Fixed timezone display consistency between main table and edit modal
-v4.1.5: Enhanced notification status display with multiple badge types
-v4.1.4: Added driver assignment functionality with dropdown selection
-v4.1.3: Improved appointment filtering with client search capabilities
-v4.1.2: Added delete confirmation modal with appointment details display
+v4.1.7: Updated header and color scheme to match add-appointments.html, fixed timezone display
+v4.1.6: Enhanced notification status display with multiple badge types
+v4.1.5: Added driver assignment functionality with dropdown selection
+v4.1.4: Improved appointment filtering with client search capabilities
+v4.1.3: Added delete confirmation modal with appointment details display
 -->
