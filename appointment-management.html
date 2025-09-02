@@ -516,7 +516,8 @@
                 // Sort by appointment date (newest first)
                 allAppointments.sort((a, b) => new Date(b.appointmentDateTime) - new Date(a.appointmentDateTime));
                 
-                applyFilters();
+                // Apply initial filter to show only future appointments (including today) on load
+                applyInitialFilter();
                 
             } catch (error) {
                 console.error('Error loading appointments:', error);
@@ -702,6 +703,10 @@
             const clientFilter = document.getElementById('clientFilter').value.toLowerCase();
             const dateFilter = document.getElementById('dateFilter').value;
             const now = new Date();
+            
+            // Start of today (midnight) for current day inclusion
+            const todayStart = new Date(now);
+            todayStart.setHours(0, 0, 0, 0);
 
             filteredAppointments = allAppointments.filter(appointment => {
                 // Status filter
@@ -727,15 +732,29 @@
                 // Date filter
                 if (dateFilter !== 'all') {
                     const appointmentDate = new Date(appointment.appointmentDateTime);
-                    if (dateFilter === 'future' && appointmentDate <= now) {
+                    if (dateFilter === 'future' && appointmentDate < todayStart) {
                         return false;
                     }
-                    if (dateFilter === 'past' && appointmentDate > now) {
+                    if (dateFilter === 'past' && appointmentDate >= todayStart) {
                         return false;
                     }
                 }
 
                 return true;
+            });
+
+            displayAppointments();
+        }
+
+        // Apply initial filter on page load to show only future appointments (including today)
+        function applyInitialFilter() {
+            const now = new Date();
+            const todayStart = new Date(now);
+            todayStart.setHours(0, 0, 0, 0);
+
+            filteredAppointments = allAppointments.filter(appointment => {
+                const appointmentDate = new Date(appointment.appointmentDateTime);
+                return appointmentDate >= todayStart; // Include today and future appointments
             });
 
             displayAppointments();
@@ -794,7 +813,8 @@
 </body>
 </html>
 
-<!-- Version: v1.6.0 - Removed edit modal, edit button redirects to edit-appointment.html, working API integration -->
+<!-- Version: v1.7.0 - Default view shows only future appointments (including current day) on page load -->
 <!-- - v1.4.0: Added appointment management with filters and CRUD operations -->
 <!-- - v1.5.0: Removed edit modal functionality, edit button now redirects to edit-appointment.html -->
 <!-- - v1.6.0: Updated with working API endpoints, proper data handling, timezone formatting, and notification system -->
+<!-- - v1.7.0: Initial load now shows only future appointments including current day, filters still allow viewing all/past appointments -->
