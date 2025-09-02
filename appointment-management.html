@@ -603,11 +603,26 @@
             const pickupTimeInput = document.getElementById('editPickupTime');
             
             if (appointmentTimeInput.value && transitTimeInput.value) {
-                const appointmentTime = new Date(appointmentTimeInput.value);
+                // Parse the datetime-local value as local time (not UTC)
+                const appointmentTimeStr = appointmentTimeInput.value;
                 const transitMinutes = parseInt(transitTimeInput.value) || 0;
                 
+                // Create date object from the local datetime string
+                // This prevents timezone conversion issues
+                const appointmentTime = new Date(appointmentTimeStr);
+                
+                // Subtract transit time to get pickup time
                 const pickupTime = new Date(appointmentTime.getTime() - (transitMinutes * 60000));
-                pickupTimeInput.value = formatDateTimeForInput(pickupTime.toISOString());
+                
+                // Format back to datetime-local format (YYYY-MM-DDTHH:MM)
+                const year = pickupTime.getFullYear();
+                const month = String(pickupTime.getMonth() + 1).padStart(2, '0');
+                const day = String(pickupTime.getDate()).padStart(2, '0');
+                const hours = String(pickupTime.getHours()).padStart(2, '0');
+                const minutes = String(pickupTime.getMinutes()).padStart(2, '0');
+                
+                const formattedPickupTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                pickupTimeInput.value = formattedPickupTime;
             }
         }
 
@@ -966,4 +981,4 @@
     </script>
 </body>
 </html>
-<!-- Version: v4.1.0 - RRTS Appointment Management Portal -->
+<!-- Version: v4.1.1 - RRTS Appointment Management Portal - fixed time zone errors -->
