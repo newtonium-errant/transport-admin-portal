@@ -20,6 +20,8 @@
         .alert-warning { border-left: 4px solid #ffc107; }
         .alert-info { border-left: 4px solid #17a2b8; }
         .spinner-border-sm { width: 1rem; height: 1rem; }
+        .time-input-group { display: flex; align-items: center; gap: 0.5rem; }
+        .time-display { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.375rem 0.75rem; font-size: 1.1em; color: #495057; min-width: 120px; text-align: center; }
     </style>
 </head>
 <body>
@@ -87,21 +89,38 @@
                     <form id="editForm">
                         <input type="hidden" id="editAppointmentId">
                         
-                        <!-- Date and Time Row -->
+                        <!-- Date Row -->
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <label class="form-label">Appointment Date & Time <span class="required">*</span></label>
-                                <input type="datetime-local" class="form-control" id="editAppointmentTime" 
-                                       onchange="calculatePickupTime()" required>
+                                <label class="form-label">Appointment Date <span class="required">*</span></label>
+                                <input type="date" class="form-control" id="editAppointmentDate" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Appointment Time <span class="required">*</span></label>
+                                <div class="time-input-group">
+                                    <input type="time" class="form-control" id="editAppointmentTime" onchange="calculatePickupTime()" required>
+                                    <div class="time-display" id="appointmentTimeDisplay">--:-- --</div>
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Transit Time (minutes)</label>
                                 <input type="number" class="form-control" id="editTransitTime" 
                                        onchange="calculatePickupTime()" min="0" max="120">
                             </div>
+                        </div>
+
+                        <!-- Pickup Time Row -->
+                        <div class="row mb-3">
                             <div class="col-md-4">
-                                <label class="form-label">Pickup Date & Time <span class="required">*</span></label>
-                                <input type="datetime-local" class="form-control" id="editPickupTime" required>
+                                <label class="form-label">Pickup Date <span class="required">*</span></label>
+                                <input type="date" class="form-control" id="editPickupDate" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Pickup Time <span class="required">*</span></label>
+                                <div class="time-input-group">
+                                    <input type="time" class="form-control" id="editPickupTime" required>
+                                    <div class="time-display" id="pickupTimeDisplay">--:-- --</div>
+                                </div>
                             </div>
                         </div>
 
@@ -138,47 +157,50 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Custom Rate ($)</label>
-                                <input type="number" class="form-control" id="editCustomRate" 
-                                       min="0" max="500" step="0.01">
+                                <input type="number" class="form-control" id="editCustomRate" min="0" step="0.01">
                             </div>
                         </div>
 
                         <!-- Notes Row -->
                         <div class="row mb-3">
                             <div class="col-12">
-                                <label class="form-label">Notes or Special Requests</label>
+                                <label class="form-label">Appointment Notes</label>
                                 <textarea class="form-control" id="editNotes" rows="3" 
-                                          placeholder="Any special instructions or requests..."></textarea>
+                                          placeholder="Special instructions, accessibility requirements, etc."></textarea>
                             </div>
                         </div>
 
-                        <!-- Notification Status Display -->
-                        <div class="alert alert-info">
-                            <h6><i class="bi bi-info-circle me-2"></i>Notification Status</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>Client Notification:</strong> <span id="editClientNotification">Not sent</span></p>
-                                    <p><strong>Client Reminder:</strong> <span id="editClientReminder">Not sent</span></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>Driver Notification:</strong> <span id="editDriverNotification">Not sent</span></p>
-                                    <p><strong>Driver Reminder:</strong> <span id="editDriverReminder">Not sent</span></p>
-                                </div>
+                        <!-- Notification Status (Read-Only) -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Client Notification</label>
+                                <p class="form-control-plaintext" id="editClientNotification">Not sent</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Driver Notification</label>
+                                <p class="form-control-plaintext" id="editDriverNotification">Not sent</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Client Reminder</label>
+                                <p class="form-control-plaintext" id="editClientReminder">Not sent</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Driver Reminder</label>
+                                <p class="form-control-plaintext" id="editDriverReminder">Not sent</p>
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="row">
-                            <div class="col-12 text-center">
-                                <button type="button" class="btn btn-secondary me-2" onclick="window.location.href='appointment-management.html'">
-                                    <i class="bi bi-arrow-left me-1"></i>Back to Appointments
-                                </button>
-                                <button type="submit" class="btn btn-primary me-2">
-                                    <i class="bi bi-check-circle me-1"></i>Update Appointment
-                                </button>
-                                <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
-                                    <i class="bi bi-trash me-1"></i>Delete Appointment
-                                </button>
+                            <div class="col-12">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='appointment-management.html'">
+                                        <i class="bi bi-arrow-left me-1"></i>Back to Appointments
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-lg me-1"></i>Save Changes
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -189,164 +211,55 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Global variables
         let appointmentId = null;
         let appointmentData = null;
         let clinicLocations = [];
         let allDrivers = [];
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Update date and time display
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Update date/time display
             updateDateTime();
             setInterval(updateDateTime, 1000);
-            
+
             // Get appointment ID from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             appointmentId = urlParams.get('id');
-            
+
             if (!appointmentId) {
-                showError('No appointment ID provided');
+                showError('No appointment ID provided in URL parameters.');
                 return;
             }
-            
-            // Load required data
-            loadClinicLocations();
-            loadAllDrivers();
-            loadAppointmentData();
+
+            // Load initial data
+            await Promise.all([
+                loadClinicLocations(),
+                loadDrivers(),
+                loadAppointmentData()
+            ]);
+
+            // Add event listeners for time display updates
+            document.getElementById('editAppointmentTime').addEventListener('change', updateTimeDisplays);
+            document.getElementById('editPickupTime').addEventListener('change', updateTimeDisplays);
         });
 
-        // Update date and time display (times are stored as local time, no conversion needed)
+        // Update current date/time display
         function updateDateTime() {
             const now = new Date();
-            const options = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZone: 'America/Halifax'
             };
-            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-CA', options);
         }
 
-        // Load clinic locations for dropdown
-        async function loadClinicLocations() {
-            try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/clinic-locations');
-                if (response.ok) {
-                    const data = await response.json();
-                    clinicLocations = data.locations || [];
-                    // Don't populate dropdown here - wait for appointment data to determine current location
-                }
-            } catch (error) {
-                console.error('Error loading clinic locations:', error);
-                clinicLocations = []; // Set empty array as fallback
-            }
-        }
-
-        // Load all drivers for dropdown  
-        async function loadAllDrivers() {
-            try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/allDrivers');
-                if (response.ok) {
-                    const data = await response.json();
-                    allDrivers = data.drivers || [];
-                    populateDriverDropdown();
-                }
-            } catch (error) {
-                console.error('Error loading drivers:', error);
-            }
-        }
-
-        // Populate clinic dropdown with API locations and current appointment location
-        function populateClinicDropdown(currentLocation = null) {
-            const clinicSelect = document.getElementById('editLocationName');
-            clinicSelect.innerHTML = '<option value="">Select a clinic location...</option>';
-
-            // Fixed clinic addresses mapping
-            const CLINIC_ADDRESSES = {
-                'NuVista Psychedelic - Greenwood': '963 Central Ave, Greenwood, NS, B0P 1N0',
-                'NuVista Psychedelic - New Minas': '21 Roy Avenue Suite 230, New Minas, NS B4N 3R7'
-            };
-
-            // Add the current appointment location first (if it exists and isn't in our fixed list)
-            if (currentLocation && !CLINIC_ADDRESSES[currentLocation]) {
-                const option = document.createElement('option');
-                option.value = currentLocation;
-                option.textContent = currentLocation;
-                option.selected = true;
-                clinicSelect.appendChild(option);
-            }
-
-            // Add fixed clinic locations
-            Object.keys(CLINIC_ADDRESSES).forEach(clinic => {
-                const option = document.createElement('option');
-                option.value = clinic;
-                option.textContent = clinic;
-                if (currentLocation === clinic) {
-                    option.selected = true;
-                }
-                clinicSelect.appendChild(option);
-            });
-
-            // Add any additional locations from API that aren't already included
-            if (clinicLocations && clinicLocations.length > 0) {
-                clinicLocations.forEach(location => {
-                    // Only add if not already in our fixed list
-                    if (!CLINIC_ADDRESSES[location.name] && location.name !== currentLocation) {
-                        const option = document.createElement('option');
-                        option.value = location.name;
-                        option.textContent = location.name;
-                        clinicSelect.appendChild(option);
-                    }
-                });
-            }
-        }
-
-        // Update clinic address when clinic selection changes
-        function updateClinicAddress() {
-            const clinicSelect = document.getElementById('editLocationName');
-            const addressInput = document.getElementById('editLocationAddress');
-            const selectedClinic = clinicSelect.value;
-
-            // Fixed clinic addresses mapping
-            const CLINIC_ADDRESSES = {
-                'NuVista Psychedelic - Greenwood': '963 Central Ave, Greenwood, NS, B0P 1N0',
-                'NuVista Psychedelic - New Minas': '21 Roy Avenue Suite 230, New Minas, NS B4N 3R7'
-            };
-
-            if (CLINIC_ADDRESSES[selectedClinic]) {
-                addressInput.value = CLINIC_ADDRESSES[selectedClinic];
-            } else {
-                // Try to find address in API locations
-                const location = clinicLocations.find(loc => loc.name === selectedClinic);
-                if (location) {
-                    addressInput.value = location.address;
-                } else {
-                    addressInput.value = selectedClinic; // Fallback to name
-                }
-            }
-        }
-
-        // Populate driver dropdown using firstname lastname (not name field)
-        function populateDriverDropdown() {
-            const driverSelect = document.getElementById('editDriver');
-            driverSelect.innerHTML = '<option value="">Select a driver...</option>';
-
-            if (allDrivers && allDrivers.length > 0) {
-                allDrivers.forEach(driver => {
-                    const option = document.createElement('option');
-                    option.value = driver.id;
-                    // Use firstname and lastname fields, not name
-                    const firstName = driver.firstname || driver.first_name || '';
-                    const lastName = driver.lastname || driver.last_name || '';
-                    const displayName = `${firstName} ${lastName}`.trim() || driver.name || `Driver ${driver.id}`;
-                    option.textContent = displayName;
-                    driverSelect.appendChild(option);
-                });
-            }
-        }
-
-        // Load appointment data
+        // Load appointment data - Fixed to handle workflow response format
         async function loadAppointmentData() {
             try {
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-appointment', {
@@ -364,15 +277,19 @@
                 }
 
                 const data = await response.json();
+                console.log('API Response:', data);
                 
-                if (data.found && data.appointment) {
-                    appointmentData = data.appointment;
+                // Handle the workflow response format - data is an array with the appointment object
+                if (Array.isArray(data) && data.length > 0 && data[0].success) {
+                    appointmentData = data[0];
                     populateForm(appointmentData);
                     
                     document.getElementById('loadingContainer').style.display = 'none';
                     document.getElementById('editFormContainer').style.display = 'block';
+                } else if (data.error) {
+                    throw new Error(data.message || data.error);
                 } else {
-                    throw new Error(data.message || 'Appointment not found');
+                    throw new Error('Appointment not found or invalid response format');
                 }
 
             } catch (error) {
@@ -381,156 +298,314 @@
             }
         }
 
-        // Populate form with appointment data
-        function populateForm(appointment) {
-            // Basic appointment data
-            document.getElementById('editAppointmentId').value = appointment.id;
-            document.getElementById('editAppointmentTime').value = formatDateTimeForInput(appointment.appointmenttime);
-            document.getElementById('editPickupTime').value = formatDateTimeForInput(appointment.pickuptime);
-            document.getElementById('editTransitTime').value = appointment.transittime || '';
-            document.getElementById('editNotes').value = appointment.notes || '';
-            document.getElementById('editStatus').value = appointment.appointmentstatus || 'pending';
-            document.getElementById('editCustomRate').value = appointment.custom_rate || '';
+        // Show error function
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (errorContainer && errorMessage) {
+                errorMessage.textContent = message;
+                errorContainer.style.display = 'block';
+                document.getElementById('loadingContainer').style.display = 'none';
+            } else {
+                alert('Error: ' + message);
+            }
+        }
 
-            // Client information (read-only display)
-            document.getElementById('clientKNumberDisplay').textContent = appointment.knumber || 'N/A';
+        // Parse datetime string as local time (no timezone conversion)
+        function parseAsLocalTime(dateTimeString) {
+            if (!dateTimeString) return null;
+            
+            // Remove timezone info and normalize format
+            let normalizedStr = dateTimeString;
+            if (normalizedStr.includes('+') || normalizedStr.includes('Z')) {
+                normalizedStr = normalizedStr.split('+')[0].split('Z')[0];
+            }
+            normalizedStr = normalizedStr.replace(' ', 'T');
+            
+            // Parse components manually to avoid timezone conversion
+            const parts = normalizedStr.split('T');
+            if (parts.length !== 2) return null;
+            
+            const [datePart, timePart] = parts;
+            const [year, month, day] = datePart.split('-').map(Number);
+            const [hours, minutes, seconds] = timePart.split(':').map(Number);
+            
+            return new Date(year, month - 1, day, hours, minutes, seconds || 0);
+        }
+
+        // Populate form with appointment data
+        function populateForm(data) {
+            // Set appointment ID
+            document.getElementById('editAppointmentId').value = data.id || '';
+            
+            // Parse appointment datetime as local time
+            const appointmentDateTime = parseAsLocalTime(data.appointmentDateTime);
+            if (appointmentDateTime) {
+                document.getElementById('editAppointmentDate').value = appointmentDateTime.toISOString().split('T')[0];
+                document.getElementById('editAppointmentTime').value = 
+                    appointmentDateTime.toTimeString().slice(0, 5); // HH:MM format
+            }
+            
+            // Parse pickup datetime as local time
+            const pickupDateTime = parseAsLocalTime(data.pickupTime);
+            if (pickupDateTime) {
+                document.getElementById('editPickupDate').value = pickupDateTime.toISOString().split('T')[0];
+                document.getElementById('editPickupTime').value = 
+                    pickupDateTime.toTimeString().slice(0, 5); // HH:MM format
+            }
+            
+            // Set other form fields
+            document.getElementById('editTransitTime').value = data.transitTime || '';
+            document.getElementById('editNotes').value = data.notes || '';
+            document.getElementById('editStatus').value = data.status || 'pending';
+            document.getElementById('editCustomRate').value = data.customRate || '';
+
+            // Client information display
+            document.getElementById('clientKNumberDisplay').textContent = data.knumber || 'N/A';
             document.getElementById('clientNameDisplay').textContent = 
-                `${appointment.firstname || ''} ${appointment.lastname || ''}`.trim() || 'N/A';
-            document.getElementById('clientPhoneDisplay').textContent = appointment.phone || 'N/A';
-            document.getElementById('clientEmailDisplay').textContent = appointment.email || 'N/A';
+                `${data.clientFirstName || ''} ${data.clientLastName || ''}`.trim() || 'N/A';
+            document.getElementById('clientPhoneDisplay').textContent = data.clientPhone || 'N/A';
+            document.getElementById('clientEmailDisplay').textContent = data.clientEmail || 'N/A';
             
             // Build address display
             const addressParts = [
-                appointment.civicaddress,
-                appointment.city,
-                appointment.prov,
-                appointment.postalcode
+                data.clientAddress,
+                data.clientCity,
+                data.clientProvince,
+                data.clientPostalCode
             ].filter(Boolean);
             document.getElementById('clientAddressDisplay').textContent = 
                 addressParts.join(', ') || 'N/A';
 
-            // Populate clinic dropdown and set current selection
-            populateClinicDropdown(appointment.locationname);
-            document.getElementById('editLocationAddress').value = appointment.locationaddress || '';
-
-            // Set driver selection
-            if (appointment.driver_assigned) {
-                document.getElementById('editDriver').value = appointment.driver_assigned;
+            // Set location and driver
+            populateClinicDropdown(data.location);
+            document.getElementById('editLocationAddress').value = data.locationAddress || '';
+            
+            if (data.driver_assigned) {
+                document.getElementById('editDriver').value = data.driver_assigned;
             }
 
             // Notification status
             document.getElementById('editClientNotification').textContent = 
-                appointment.client_notification_sent ? 'Sent' : 'Not sent';
+                data.client_notification_sent ? 'Sent' : 'Not sent';
             document.getElementById('editDriverNotification').textContent = 
-                appointment.driver_notification_sent ? 'Sent' : 'Not sent';
+                data.driver_notification_sent ? 'Sent' : 'Not sent';
             document.getElementById('editClientReminder').textContent = 
-                appointment.reminder_sent_client ? 'Sent' : 'Not sent';
+                data.reminder_sent_client ? 'Sent' : 'Not sent';
             document.getElementById('editDriverReminder').textContent = 
-                appointment.reminder_sent_driver ? 'Sent' : 'Not sent';
+                data.reminder_sent_driver ? 'Sent' : 'Not sent';
+
+            // Update AM/PM time displays
+            updateTimeDisplays();
         }
 
-        // Format datetime for HTML input
-        function formatDateTimeForInput(dateTimeString) {
-            if (!dateTimeString) return '';
+        // Update 12-hour AM/PM time displays
+        function updateTimeDisplays() {
+            const appointmentTime = document.getElementById('editAppointmentTime').value;
+            const pickupTime = document.getElementById('editPickupTime').value;
             
-            try {
-                // Parse the datetime string and format for input
-                const date = new Date(dateTimeString);
-                if (isNaN(date.getTime())) return '';
-                
-                // Return local datetime string for input (no timezone conversion)
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                
-                return `${year}-${month}-${day}T${hours}:${minutes}`;
-            } catch (error) {
-                console.error('Error formatting datetime:', error);
-                return '';
+            if (appointmentTime) {
+                const display = convertTo12Hour(appointmentTime);
+                document.getElementById('appointmentTimeDisplay').textContent = display;
             }
+            
+            if (pickupTime) {
+                const display = convertTo12Hour(pickupTime);
+                document.getElementById('pickupTimeDisplay').textContent = display;
+            }
+        }
+
+        // Convert 24-hour time to 12-hour AM/PM format
+        function convertTo12Hour(timeString) {
+            if (!timeString) return '--:-- --';
+            
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const min = minutes;
+            
+            if (hour === 0) return `12:${min} AM`;
+            if (hour < 12) return `${hour}:${min} AM`;
+            if (hour === 12) return `12:${min} PM`;
+            return `${hour - 12}:${min} PM`;
         }
 
         // Calculate pickup time based on appointment time and transit time
         function calculatePickupTime() {
-            const appointmentTimeInput = document.getElementById('editAppointmentTime');
-            const transitTimeInput = document.getElementById('editTransitTime');
-            const pickupTimeInput = document.getElementById('editPickupTime');
+            const appointmentDate = document.getElementById('editAppointmentDate').value;
+            const appointmentTime = document.getElementById('editAppointmentTime').value;
+            const transitTime = parseInt(document.getElementById('editTransitTime').value) || 0;
 
-            if (appointmentTimeInput.value && transitTimeInput.value) {
-                const appointmentTime = new Date(appointmentTimeInput.value);
-                const transitMinutes = parseInt(transitTimeInput.value) || 0;
+            if (appointmentDate && appointmentTime && transitTime > 0) {
+                // Create appointment datetime from separate date and time inputs (local time)
+                const appointmentDateTime = new Date(`${appointmentDate}T${appointmentTime}:00`);
                 
-                // Subtract transit time from appointment time to get pickup time
-                const pickupTime = new Date(appointmentTime.getTime() - (transitMinutes * 60000));
-                pickupTimeInput.value = formatDateTimeForInput(pickupTime.toISOString());
+                // Subtract transit time to get pickup time
+                const pickupDateTime = new Date(appointmentDateTime.getTime() - (transitTime * 60000));
+                
+                // Set pickup date and time
+                document.getElementById('editPickupDate').value = pickupDateTime.toISOString().split('T')[0];
+                document.getElementById('editPickupTime').value = 
+                    pickupDateTime.toTimeString().slice(0, 5);
+                
+                // Update time displays
+                updateTimeDisplays();
             }
         }
 
-        // Show error message
-        function showError(message) {
-            document.getElementById('loadingContainer').style.display = 'none';
-            document.getElementById('editFormContainer').style.display = 'none';
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('errorContainer').style.display = 'block';
-        }
-
-        // Confirm deletion
-        function confirmDelete() {
-            if (confirm('Are you sure you want to delete this appointment? This action cannot be undone.')) {
-                deleteAppointment();
-            }
-        }
-
-        // Delete appointment
-        async function deleteAppointment() {
+        // Load clinic locations
+        async function loadClinicLocations() {
             try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-appointment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        appointmentId: appointmentId
-                    })
-                });
-
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-locations');
                 if (response.ok) {
-                    alert('Appointment deleted successfully');
-                    window.location.href = 'appointment-management.html';
-                } else {
-                    throw new Error('Failed to delete appointment');
+                    const data = await response.json();
+                    clinicLocations = data.locations || [];
                 }
             } catch (error) {
-                console.error('Error deleting appointment:', error);
-                alert('Error deleting appointment: ' + error.message);
+                console.error('Error loading clinic locations:', error);
+                clinicLocations = [];
+            }
+        }
+
+        // Load drivers
+        async function loadDrivers() {
+            try {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-drivers');
+                if (response.ok) {
+                    const data = await response.json();
+                    allDrivers = data.drivers || [];
+                    populateDriverDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+                allDrivers = [];
+            }
+        }
+
+        // Populate clinic dropdown
+        function populateClinicDropdown(selectedClinic = '') {
+            const locationSelect = document.getElementById('editLocationName');
+            locationSelect.innerHTML = '<option value="">Select a clinic location...</option>';
+
+            const CLINIC_LOCATIONS = [
+                'Valley Regional Hospital - Kentville',
+                'IWK Health Centre - Halifax',
+                'Dartmouth General Hospital - Dartmouth',
+                'Nova Scotia Hospital - Dartmouth',
+                'Aberdeen Hospital - New Glasgow',
+                'Colchester East Hants Health Centre - Truro',
+                'Roseway Hospital - Shelburne',
+                'Cobequid Community Health Centre - Lower Sackville',
+                'Cape Breton Regional Hospital - Sydney',
+                'Glace Bay Hospital - Glace Bay',
+                'NuVista Psychedelic - New Minas',
+                'Other Location'
+            ];
+
+            CLINIC_LOCATIONS.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                if (location === selectedClinic) {
+                    option.selected = true;
+                }
+                locationSelect.appendChild(option);
+            });
+
+            if (clinicLocations && clinicLocations.length > 0) {
+                clinicLocations.forEach(location => {
+                    if (!CLINIC_LOCATIONS.includes(location.name)) {
+                        const option = document.createElement('option');
+                        option.value = location.name;
+                        option.textContent = location.name;
+                        if (location.name === selectedClinic) {
+                            option.selected = true;
+                        }
+                        locationSelect.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        // Update clinic address when selection changes
+        function updateClinicAddress() {
+            const selectedClinic = document.getElementById('editLocationName').value;
+            const addressInput = document.getElementById('editLocationAddress');
+
+            const CLINIC_ADDRESSES = {
+                'Valley Regional Hospital - Kentville': '155 Exhibition St, Kentville, NS B4N 5E3',
+                'IWK Health Centre - Halifax': '5850 University Ave, Halifax, NS B3K 6R8',
+                'Dartmouth General Hospital - Dartmouth': '325 Pleasant St, Dartmouth, NS B2Y 4G8',
+                'Nova Scotia Hospital - Dartmouth': '300 Pleasant St, Dartmouth, NS B2Y 3Z9',
+                'Aberdeen Hospital - New Glasgow': '835 East River Rd, New Glasgow, NS B2H 3S6',
+                'Colchester East Hants Health Centre - Truro': '600 Abenaki Rd, Truro, NS B2N 5A1',
+                'Roseway Hospital - Shelburne': '411 Sandy Point Rd, Shelburne, NS B0T 1W0',
+                'Cobequid Community Health Centre - Lower Sackville': '40 Glen Allan Dr, Bridgewater, NS B4V 0G5',
+                'Cape Breton Regional Hospital - Sydney': '1482 George St, Sydney, NS B1P 1P3',
+                'Glace Bay Hospital - Glace Bay': '1 Sterling Dr, Glace Bay, NS B1A 6S8',
+                'NuVista Psychedelic - New Minas': '21 Roy Avenue Suite 230, New Minas, NS B4N 3R7'
+            };
+
+            if (CLINIC_ADDRESSES[selectedClinic]) {
+                addressInput.value = CLINIC_ADDRESSES[selectedClinic];
+            } else {
+                const location = clinicLocations.find(loc => loc.name === selectedClinic);
+                if (location) {
+                    addressInput.value = location.address;
+                } else {
+                    addressInput.value = selectedClinic;
+                }
+            }
+        }
+
+        // Populate driver dropdown
+        function populateDriverDropdown() {
+            const driverSelect = document.getElementById('editDriver');
+            driverSelect.innerHTML = '<option value="">Select a driver...</option>';
+
+            if (allDrivers && allDrivers.length > 0) {
+                allDrivers.forEach(driver => {
+                    const option = document.createElement('option');
+                    option.value = driver.id;
+                    const firstName = driver.firstname || driver.first_name || '';
+                    const lastName = driver.lastname || driver.last_name || '';
+                    const displayName = `${firstName} ${lastName}`.trim() || driver.name || `Driver ${driver.id}`;
+                    option.textContent = displayName;
+                    driverSelect.appendChild(option);
+                });
             }
         }
 
         // Handle form submission
         document.getElementById('editForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
-            const submitButton = e.target.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Updating...';
-            submitButton.disabled = true;
-
+            
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
             try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+                
+                // Combine date and time fields into datetime strings (local time)
+                const appointmentDate = document.getElementById('editAppointmentDate').value;
+                const appointmentTime = document.getElementById('editAppointmentTime').value;
+                const pickupDate = document.getElementById('editPickupDate').value;
+                const pickupTime = document.getElementById('editPickupTime').value;
+                
                 const formData = {
                     appointmentId: document.getElementById('editAppointmentId').value,
-                    appointmentTime: document.getElementById('editAppointmentTime').value,
-                    pickupTime: document.getElementById('editPickupTime').value,
+                    appointmentDateTime: `${appointmentDate} ${appointmentTime}:00`,
+                    pickupTime: `${pickupDate} ${pickupTime}:00`,
                     transitTime: parseInt(document.getElementById('editTransitTime').value) || null,
                     locationName: document.getElementById('editLocationName').value,
                     locationAddress: document.getElementById('editLocationAddress').value,
-                    driverAssigned: document.getElementById('editDriver').value || null,
+                    notes: document.getElementById('editNotes').value,
                     status: document.getElementById('editStatus').value,
-                    customRate: parseFloat(document.getElementById('editCustomRate').value) || null,
-                    notes: document.getElementById('editNotes').value
+                    driverId: document.getElementById('editDriver').value || null,
+                    customRate: parseFloat(document.getElementById('editCustomRate').value) || null
                 };
-
+                
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment', {
                     method: 'POST',
                     headers: {
@@ -538,33 +613,58 @@
                     },
                     body: JSON.stringify(formData)
                 });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    alert('Appointment updated successfully!');
-                    window.location.href = 'appointment-management.html';
-                } else {
-                    throw new Error('Failed to update appointment');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-check-circle me-2"></i>
+                        Appointment updated successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    const form = document.getElementById('editForm');
+                    form.parentNode.insertBefore(alertDiv, form);
+                    window.scrollTo(0, 0);
+                    
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 5000);
+                    
+                } else {
+                    throw new Error(result.message || 'Failed to update appointment');
+                }
+                
             } catch (error) {
                 console.error('Error updating appointment:', error);
-                alert('Error updating appointment: ' + error.message);
+                
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Failed to update appointment: ${error.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                const form = document.getElementById('editForm');
+                form.parentNode.insertBefore(alertDiv, form);
+                window.scrollTo(0, 0);
+                
             } finally {
-                submitButton.innerHTML = originalText;
-                submitButton.disabled = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         });
     </script>
 </body>
 </html>
 
-<!-- Version: v1.7.0 - Fixed timezone conversion issues by parsing datetimes as local time instead of using new Date() -->
-<!-- - v1.0.0: Standalone edit page with appointment data loading, form validation, and update functionality -->
-<!-- - v1.1.0: Added clinic dropdown, driver dropdown, full client editing, notification status display, and improved data handling -->
-<!-- - v1.2.0: Integrated with new get-appointment API endpoint, enhanced error handling, and warning display for client lookup issues -->
-<!-- - v1.3.0: Changed API call from GET to POST method to resolve CORS issues with n8n webhook -->
-<!-- - v1.4.0: Made client details read-only, clinic dropdown includes current + API locations with auto-address fill, driver dropdown uses firstname lastname -->
-<!-- - v1.5.0: Removed timezone conversion as times are stored in local time, confirmed all client fields properly read-only -->
-<!-- - v1.6.0: Client fields read-only display only, clinic dropdown with API + fixed locations, driver dropdown uses firstname/lastname -->
-<!-- - v1.7.0: Fixed timezone conversion issues by parsing datetimes as local time instead of using new Date() -->
+<!-- Version: v2.4.0 - Separated date/time inputs with 12-hour AM/PM display and proper local timezone handling -->
