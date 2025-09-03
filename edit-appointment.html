@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Appointment - RRTS</title>
+    <title>Edit Appointment - RRTS Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -18,310 +18,268 @@
         }
 
         body {
-            background-color: var(--rrts-light);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
 
-        .main-header {
-            background: linear-gradient(135deg, var(--rrts-primary) 0%, var(--rrts-dark) 100%);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .navbar {
+            background: var(--rrts-primary) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .main-header h1 {
-            font-weight: 300;
-            margin: 0;
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
         }
 
-        .main-header .subtitle {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-
-        .edit-card {
+        .main-container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            border: none;
-            overflow: hidden;
-        }
-
-        .edit-card .card-header {
-            background: var(--rrts-secondary);
-            color: white;
-            border: none;
-            padding: 1.5rem;
-        }
-
-        .edit-card .card-body {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 2rem auto;
             padding: 2rem;
+            max-width: 900px;
         }
 
-        .form-label {
-            font-weight: 600;
-            color: var(--rrts-primary);
-            margin-bottom: 0.5rem;
+        .header {
+            background: linear-gradient(135deg, var(--rrts-secondary), var(--rrts-primary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
         }
 
-        .form-control:focus,
-        .form-select:focus {
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
             border-color: var(--rrts-secondary);
             box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .btn-primary {
+            background: var(--rrts-secondary);
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: var(--rrts-primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
         }
 
         .required {
             color: var(--rrts-accent);
         }
 
-        .btn-primary {
-            background-color: var(--rrts-secondary);
-            border-color: var(--rrts-secondary);
-            padding: 0.75rem 2rem;
-            font-weight: 600;
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-            border-color: #2980b9;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            padding: 0.75rem 2rem;
-            font-weight: 600;
-        }
-
-        .client-info {
-            background: var(--rrts-light);
-            border-left: 4px solid var(--rrts-secondary);
-            padding: 1rem;
-            border-radius: 0 8px 8px 0;
-            margin-bottom: 1.5rem;
-        }
-
-        .client-info h5 {
-            color: var(--rrts-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .client-info p {
-            margin-bottom: 0.25rem;
-            color: var(--rrts-dark);
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
         }
 
         .loading-spinner {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
             text-align: center;
-            padding: 3rem;
-            color: var(--rrts-secondary);
         }
 
-        .error-message {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+        .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+        }
+
+        .alert-danger {
+            background: #ffeaea;
+            color: #c0392b;
+            border-left: 4px solid var(--rrts-accent);
+        }
+
+        .alert-success {
+            background: #eafaf1;
+            color: #27ae60;
+            border-left: 4px solid var(--rrts-success);
+        }
+
+        .datetime-info {
+            background: var(--rrts-light);
             padding: 1rem;
             border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .success-message {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .current-datetime {
+            margin-bottom: 1rem;
             font-size: 0.9rem;
-            opacity: 0.8;
+            color: var(--rrts-dark);
         }
 
-        .form-control[readonly] {
+        .client-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .client-info input[readonly] {
             background-color: #f8f9fa;
-            opacity: 0.8;
+            color: #6c757d;
         }
 
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
+        .form-floating > .form-control[readonly] {
+            background-color: #f8f9fa;
         }
 
-        @media (max-width: 768px) {
-            .main-header {
-                padding: 1rem 0;
-                text-align: center;
-            }
-            
-            .edit-card .card-body {
-                padding: 1rem;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="main-header">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <div>Loading appointment data...</div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1><i class="bi bi-pencil-square me-3"></i>Edit Appointment</h1>
-                    <p class="subtitle mb-0">Update appointment details and client information</p>
-                </div>
-                <div class="text-end">
-                    <div class="current-datetime" id="currentDateTime"></div>
-                    <a href="appointment-management.html" class="btn btn-light btn-sm mt-2">
-                        <i class="bi bi-arrow-left me-1"></i>Back to Management
-                    </a>
-                </div>
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-truck me-2"></i>
+                Rural Route Transportation Services
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="index.html">
+                    <i class="bi bi-house-door me-1"></i>Dashboard
+                </a>
+                <a class="nav-link" href="appointment-management.html">
+                    <i class="bi bi-calendar-check me-1"></i>Appointments
+                </a>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- Main Content -->
+    <!-- Main Container -->
     <div class="container">
-        <!-- Loading State -->
-        <div id="loadingSection" class="loading-spinner">
-            <div class="spinner-border text-primary mb-3" role="status">
-                <span class="visually-hidden">Loading...</span>
+        <div class="main-container fade-in">
+            <!-- Header -->
+            <div class="header">
+                <h2><i class="bi bi-pencil-square me-2"></i>Edit Appointment</h2>
+                <div id="currentDateTime" class="datetime-info mt-2"></div>
             </div>
-            <p>Loading appointment data...</p>
-        </div>
 
-        <!-- Error Display -->
-        <div id="errorSection" class="error-message" style="display: none;">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            <span id="errorMessage"></span>
-        </div>
+            <!-- Error/Success Messages -->
+            <div id="alertContainer"></div>
 
-        <!-- Success Display -->
-        <div id="successSection" class="success-message" style="display: none;">
-            <i class="bi bi-check-circle me-2"></i>
-            <span id="successMessage"></span>
-        </div>
+            <!-- Edit Form -->
+            <form id="editAppointmentForm" onsubmit="return false;">
+                <input type="hidden" id="editAppointmentId">
 
-        <!-- Edit Form -->
-        <div id="editSection" class="row" style="display: none;">
-            <div class="col-12">
-                <div class="card edit-card">
-                    <div class="card-header">
-                        <h4 class="mb-0">
-                            <i class="bi bi-calendar-event me-2"></i>
-                            Appointment Details
-                        </h4>
+                <!-- Date and Time Row -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Appointment Date & Time <span class="required">*</span></label>
+                        <input type="datetime-local" class="form-control" id="editAppointmentTime" 
+                               onchange="calculatePickupTime()" required>
                     </div>
-                    <div class="card-body">
-                        <!-- Client Information Summary -->
-                        <div class="client-info">
-                            <h5><i class="bi bi-person-fill me-2"></i>Client Information</h5>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <strong>Name:</strong><br>
-                                    <span id="clientNameDisplay"></span>
-                                </div>
-                                <div class="col-md-3">
-                                    <strong>K Number:</strong><br>
-                                    <span id="clientKNumberDisplay"></span>
-                                </div>
-                                <div class="col-md-3">
-                                    <strong>Phone:</strong><br>
-                                    <span id="clientPhoneDisplay"></span>
-                                </div>
-                                <div class="col-md-3">
-                                    <strong>Email:</strong><br>
-                                    <span id="clientEmailDisplay"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Edit Form -->
-                        <form id="editAppointmentForm">
-                            <input type="hidden" id="editAppointmentId">
-                            
-                            <!-- Date and Time Row -->
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Appointment Date & Time <span class="required">*</span></label>
-                                    <input type="datetime-local" class="form-control" id="editAppointmentTime" 
-                                           onchange="calculatePickupTime()" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Transit Time (minutes)</label>
-                                    <input type="number" class="form-control" id="editTransitTime" 
-                                           onchange="calculatePickupTime()" min="0" max="120">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Pickup Date & Time <span class="required">*</span></label>
-                                    <input type="datetime-local" class="form-control" id="editPickupTime" required>
-                                </div>
-                            </div>
-
-                            <!-- Client Information Row (Read-only) -->
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">K Number</label>
-                                    <input type="text" class="form-control" id="editKnumber" readonly>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">First Name</label>
-                                    <input type="text" class="form-control" id="editFirstName" readonly>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Last Name</label>
-                                    <input type="text" class="form-control" id="editLastName" readonly>
-                                </div>
-                            </div>
-
-                            <!-- Location Row -->
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Location Name <span class="required">*</span></label>
-                                    <input type="text" class="form-control" id="editLocationName" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Location Address</label>
-                                    <input type="text" class="form-control" id="editLocationAddress">
-                                </div>
-                            </div>
-
-                            <!-- Status and Notes Row -->
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Status</label>
-                                    <select class="form-select" id="editStatus">
-                                        <option value="pending">Pending</option>
-                                        <option value="confirmed">Confirmed</option>
-                                        <option value="cancelled">Cancelled</option>
-                                        <option value="completed">Completed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-8">
-                                    <label class="form-label">Notes</label>
-                                    <textarea class="form-control" id="editNotes" rows="2" 
-                                              placeholder="Any additional notes or special instructions"></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Form Actions -->
-                            <div class="d-flex gap-2 justify-content-end">
-                                <button type="button" class="btn btn-secondary" onclick="cancelEdit()">
-                                    <i class="bi bi-x-circle me-1"></i>Cancel
-                                </button>
-                                <button type="submit" class="btn btn-primary" id="saveButton">
-                                    <span class="btn-text">
-                                        <i class="bi bi-check-lg me-1"></i>Save Changes
-                                    </span>
-                                    <span id="saveSpinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
-                                </button>
-                            </div>
-                        </form>
+                    <div class="col-md-4">
+                        <label class="form-label">Transit Time (minutes)</label>
+                        <input type="number" class="form-control" id="editTransitTime" 
+                               onchange="calculatePickupTime()" min="0" max="120">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Pickup Date & Time <span class="required">*</span></label>
+                        <input type="datetime-local" class="form-control" id="editPickupTime" required>
                     </div>
                 </div>
-            </div>
+
+                <!-- Client Information Row (Read-only) -->
+                <div class="row mb-3 client-info">
+                    <div class="col-md-4">
+                        <label class="form-label">K Number</label>
+                        <input type="text" class="form-control" id="editKnumber" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="editFirstName" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="editLastName" readonly>
+                    </div>
+                </div>
+
+                <!-- Location Row -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Location Name <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="editLocationName" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Location Address</label>
+                        <input type="text" class="form-control" id="editLocationAddress">
+                    </div>
+                </div>
+
+                <!-- Status and Notes Row -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="editStatus">
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="editNotes" rows="2" 
+                                  placeholder="Any additional notes or special instructions"></textarea>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveButton">
+                        <span class="btn-text">
+                            <i class="bi bi-check-lg me-1"></i>Save Changes
+                        </span>
+                        <span id="saveSpinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -423,31 +381,20 @@
             document.getElementById('editLocationAddress').value = data.locationaddress || '';
             
             // Status and notes
-            document.getElementById('editStatus').value = data.status || 'pending';
+            document.getElementById('editStatus').value = data.appointmentstatus || 'pending';
             document.getElementById('editNotes').value = data.notes || '';
-            
-            // Populate client info summary
-            const clientName = `${data.clientFirstName || ''} ${data.clientLastName || ''}`.trim() || 'Unknown Client';
-            document.getElementById('clientNameDisplay').textContent = clientName;
-            document.getElementById('clientKNumberDisplay').textContent = data.knumber || 'No K#';
-            document.getElementById('clientPhoneDisplay').textContent = data.clientPhone || 'No phone provided';
-            document.getElementById('clientEmailDisplay').textContent = data.clientEmail || 'No email provided';
         }
 
         // Format datetime for input field
         function formatDateTimeForInput(dateTimeString) {
             if (!dateTimeString) return '';
-            
             const date = new Date(dateTimeString);
-            if (isNaN(date.getTime())) return '';
-            
-            // Format as YYYY-MM-DDTHH:MM for datetime-local input
+            // Format as YYYY-MM-DDTHH:MM
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             const hours = String(date.getHours()).padStart(2, '0');
             const minutes = String(date.getMinutes()).padStart(2, '0');
-            
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
@@ -459,29 +406,27 @@
             if (appointmentTimeInput && transitTimeInput) {
                 const appointmentTime = new Date(appointmentTimeInput);
                 const transitMinutes = parseInt(transitTimeInput) || 0;
-                
-                // Subtract transit time to get pickup time
                 const pickupTime = new Date(appointmentTime.getTime() - (transitMinutes * 60000));
                 
                 document.getElementById('editPickupTime').value = formatDateTimeForInput(pickupTime.toISOString());
             }
         }
 
-        // Form submission handler
+        // Form submission
         document.getElementById('editAppointmentForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
             if (validateForm()) {
                 saveAppointment();
             }
         });
 
-        // Validate form
+        // Form validation
         function validateForm() {
+            const requiredFields = ['editAppointmentTime', 'editPickupTime', 'editLocationName'];
             let isValid = true;
-            const requiredFields = document.querySelectorAll('[required]');
             
-            requiredFields.forEach(field => {
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
                 if (!field.value.trim()) {
                     field.classList.add('is-invalid');
                     isValid = false;
@@ -542,46 +487,59 @@
             }
         }
 
-        // Utility functions for UI states
+        // Show loading overlay
         function showLoading() {
-            document.getElementById('loadingSection').style.display = 'block';
-            document.getElementById('editSection').style.display = 'none';
-            document.getElementById('errorSection').style.display = 'none';
-            document.getElementById('successSection').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'flex';
         }
 
+        // Hide loading overlay
         function hideLoading() {
-            document.getElementById('loadingSection').style.display = 'none';
-            document.getElementById('editSection').style.display = 'block';
+            document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        function showError(message) {
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('errorSection').style.display = 'block';
-            document.getElementById('successSection').style.display = 'none';
-        }
-
-        function showSuccessMessage(message) {
-            document.getElementById('successMessage').textContent = message;
-            document.getElementById('successSection').style.display = 'block';
-            document.getElementById('errorSection').style.display = 'none';
-        }
-
+        // Show save spinner
         function showSaveSpinner() {
             document.getElementById('saveSpinner').style.display = 'inline-block';
             document.querySelector('.btn-text').style.display = 'none';
             document.getElementById('saveButton').disabled = true;
         }
 
+        // Hide save spinner
         function hideSaveSpinner() {
             document.getElementById('saveSpinner').style.display = 'none';
-            document.querySelector('.btn-text').style.display = 'inline';
+            document.querySelector('.btn-text').style.display = 'inline-block';
             document.getElementById('saveButton').disabled = false;
         }
 
-        // Go back to index if no appointment ID
+        // Show error message
+        function showError(message) {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        // Show success message
+        function showSuccessMessage(message) {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        // Go back to previous page
         function goBack() {
-            if (confirm('No appointment ID provided. Would you like to go back to the dashboard?')) {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
                 window.location.href = 'index.html';
             }
         }
@@ -589,10 +547,12 @@
 </body>
 </html>
 
-<!-- Version: v1.5.0 - Fixed CORS error by changing GET to POST method for appointment data loading -->
+<!-- Version: v1.7.0 - Replaced location name/address fields with single dropdown combining clinic locations from API and current appointment location -->
 <!-- - v1.0.0: Standalone edit page with appointment data loading, form validation, and update functionality -->
 <!-- - v1.1.0: Added clinic dropdown, driver dropdown, full client editing, notification status display, and improved data handling -->
 <!-- - v1.2.0: Integrated with new get-appointment API endpoint, enhanced error handling, and warning display for client lookup issues -->
 <!-- - v1.3.0: Changed API call from GET to POST method to resolve CORS issues with n8n webhook -->
 <!-- - v1.4.0: Made client details read-only, clinic dropdown includes current + API locations with auto-address fill, driver dropdown uses firstname lastname -->
-<!-- - v1.5.0: Fixed CORS error by changing GET to POST method for appointment data loading -->
+<!-- - v1.5.0: Fixed CORS error by changing GET request to POST method with JSON body for get-appointment endpoint -->
+<!-- - v1.6.0: Made all appointment fields editable with organized card layout, client info read-only, added driver assignment and custom rate fields -->
+<!-- - v1.7.0: Replaced location name/address fields with single dropdown combining clinic locations from API and current appointment location -->
