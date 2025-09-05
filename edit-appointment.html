@@ -374,6 +374,7 @@
         function updateDateTime() {
             const now = new Date();
             const options = { 
+                timeZone: 'America/Halifax',
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
@@ -381,7 +382,7 @@
                 hour: '2-digit',
                 minute: '2-digit'
             };
-            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+            document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
         }
 
         async function loadAppointmentData(appointmentId) {
@@ -540,15 +541,13 @@
             // Appointment information (editable)
             document.getElementById('appointmentId').value = data.id;
             
-            // Convert ISO datetime to local datetime-local format
+            // Convert UTC datetime to local datetime-local format
             if (data.appointmentDateTime) {
-                const appointmentDate = new Date(data.appointmentDateTime);
-                document.getElementById('appointmentDateTime').value = formatDateTimeLocal(appointmentDate);
+                document.getElementById('appointmentDateTime').value = formatDateTimeLocal(data.appointmentDateTime);
             }
             
             if (data.pickupTime) {
-                const pickupDate = new Date(data.pickupTime);
-                document.getElementById('pickupTime').value = formatDateTimeLocal(pickupDate);
+                document.getElementById('pickupTime').value = formatDateTimeLocal(data.pickupTime);
             }
             
             document.getElementById('transitTime').value = data.transitTime || '';
@@ -557,26 +556,26 @@
             document.getElementById('notes').value = data.notes || '';
         }
 
-	function formatDateTimeLocal(dateTimeString) {
-	   if (!dateTimeString) return '';
-   
-	   try {
-	       // FIXED: Parse datetime string directly without timezone conversion
-	       if (dateTimeString.includes('T')) {
-	           // Already in ISO format, just trim to 16 characters
-	           return dateTimeString.substring(0, 16); // YYYY-MM-DDTHH:mm
-	       } else {
-	           // SQL format: YYYY-MM-DD HH:mm:ss -> convert to YYYY-MM-DDTHH:mm
-	           const [datePart, timePart] = dateTimeString.split(' ');
-	           const timeFormatted = timePart ? timePart.substring(0, 5) : '00:00';
-	           return `${datePart}T${timeFormatted}`;
-	       }
-	   } catch (error) {
-	       console.error('Error formatting datetime for input:', error);
-	       return '';
-	   }
-	}
-
+        function formatDateTimeLocal(dateTimeString) {
+            if (!dateTimeString) return '';
+            
+            try {
+                const date = new Date(dateTimeString);
+                if (isNaN(date.getTime())) return '';
+                
+                // Convert UTC to local time and format for datetime-local input
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            } catch (error) {
+                console.error('Error formatting datetime for input:', error);
+                return '';
+            }
+        }
 
         function showEditForm() {
             document.getElementById('loadingState').style.display = 'none';
@@ -656,4 +655,4 @@
 </body>
 </html>
 
-<!-- Version: 3.6.0 - Replaced broken formatDateTimeLocal with working formatDateTimeForInput from appointment-management.html -->
+<!-- Version: v3.7.0 - Fixed timezone conversion for UTC timestamps -->
