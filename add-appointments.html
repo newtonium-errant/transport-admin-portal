@@ -333,17 +333,18 @@
         });
 
         // Update current date/time
-        function updateDateTime() {
-            const now = new Date();
-            const options = { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit', 
-                minute: '2-digit'
-            };
-            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
-        }
+	function updateDateTime() {
+	    const now = new Date();
+	    const options = { 
+	        timeZone: 'America/Halifax',
+	        year: 'numeric', 
+	        month: 'short', 
+	        day: 'numeric',
+      		hour: '2-digit', 
+        	minute: '2-digit'
+   	     };
+	     document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
+	}
 
         // Load clients from API
         function loadClients() {
@@ -478,14 +479,13 @@
             }
         }
 
-        // Check if appointment date is in the past
-        function isPastDate(dateStr) {
-            if (!dateStr) return false;
-            const appointmentDate = new Date(dateStr);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            return appointmentDate < today;
-        }
+	function isPastDate(dateStr) {
+	    if (!dateStr) return false;
+	    const appointmentDate = new Date(dateStr + 'T00:00:00');
+	    const today = new Date();
+	    today.setHours(0, 0, 0, 0);
+	    return appointmentDate < today;
+	}
 
         // Display appointments
         function displayAppointments() {
@@ -625,7 +625,7 @@
             summaryDiv.innerHTML = summary + `<div class="mt-2">
                 ${validAppointments.map((apt, index) => `
                     <div class="text-muted">
-                        ${index + 1}. ${new Date(apt.date).toLocaleDateString()} at ${apt.time} - ${apt.location}
+                        ${index + 1}. ${new Date(apt.date + 'T00:00:00').toLocaleDateString('en-CA', { timeZone: 'America/Halifax' })} at ${apt.time} - ${apt.location}
                     </div>
                 `).join('')}
             </div>`;
@@ -666,14 +666,20 @@
                     phone: selectedClient.phone,
                     email: selectedClient.email
                 },
-                appointments: validAppointments.map(apt => ({
-                    date: apt.date,
-                    time: apt.time,
-                    location: apt.location,
-                    locationId: apt.locationId, // Include the ID
-                    locationAddress: apt.locationAddress, // Include the address
-                    notes: apt.appointmentNotes || ''
-                }))
+                appointments: validAppointments.map(apt => {
+    			// Convert local date/time to UTC for storage
+			const localDateTime = new Date(apt.date + 'T' + apt.time + ':00');
+    
+			return {
+		        date: apt.date,
+		        time: apt.time,
+		        appointmenttime: localDateTime.toISOString(), // Send UTC timestamp
+		        location: apt.location,
+		        locationId: apt.locationId,
+		        locationAddress: apt.locationAddress,
+		        notes: apt.appointmentNotes || ''
+		    };
+		})
             };
 
             // Send to backend
@@ -747,7 +753,7 @@
 </body>
 </html>
 
-<!-- Version: v3.0.6 - Fixed address completion -->
+<!-- Version: v3.1.0 - Remove Time Zone Conversion code -->
 <!-- - v3.0.0: Initial version with client selection, appointment creation, and backend integration -->
 <!-- - v3.0.1: Enhanced form validation and user experience improvements -->
 <!-- - v3.0.2: Fixed appointment display and save functionality with proper error handling -->
