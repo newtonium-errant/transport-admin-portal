@@ -557,16 +557,26 @@
             document.getElementById('notes').value = data.notes || '';
         }
 
-        function formatDateTimeLocal(date) {
-            // Convert date to local datetime-local format (YYYY-MM-DDTHH:MM)
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
+	function formatDateTimeLocal(dateTimeString) {
+	   if (!dateTimeString) return '';
+   
+	   try {
+	       // FIXED: Parse datetime string directly without timezone conversion
+	       if (dateTimeString.includes('T')) {
+	           // Already in ISO format, just trim to 16 characters
+	           return dateTimeString.substring(0, 16); // YYYY-MM-DDTHH:mm
+	       } else {
+	           // SQL format: YYYY-MM-DD HH:mm:ss -> convert to YYYY-MM-DDTHH:mm
+	           const [datePart, timePart] = dateTimeString.split(' ');
+	           const timeFormatted = timePart ? timePart.substring(0, 5) : '00:00';
+	           return `${datePart}T${timeFormatted}`;
+	       }
+	   } catch (error) {
+	       console.error('Error formatting datetime for input:', error);
+	       return '';
+	   }
+	}
+
 
         function showEditForm() {
             document.getElementById('loadingState').style.display = 'none';
@@ -646,4 +656,4 @@
 </body>
 </html>
 
-<!-- Version: 3.5.0 - Enhanced timezone handling to properly strip timezone info (+00:00, Z) before parsing -->
+<!-- Version: 3.6.0 - Replaced broken formatDateTimeLocal with working formatDateTimeForInput from appointment-management.html -->
