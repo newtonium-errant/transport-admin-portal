@@ -328,60 +328,27 @@
         let filteredAppointments = [];
         let currentDeleteId = null;
 
-        // FIXED v2.0.1: Display time as stored (local AST/ADT) without timezone conversion
-        function formatDateTimeDisplay(dateTimeString) {
-            if (!dateTimeString) return { date: 'N/A', time: 'N/A' };
-            
-            try {
-                // FIXED: Parse datetime string directly without timezone conversion
-                let dateStr, timeStr;
-                
-                if (dateTimeString.includes('T')) {
-                    // ISO format: YYYY-MM-DDTHH:mm:ss
-                    [dateStr, timeStr] = dateTimeString.split('T');
-                    timeStr = timeStr.substring(0, 5); // Get HH:mm part only
-                } else {
-                    // SQL format: YYYY-MM-DD HH:mm:ss
-                    [dateStr, timeStr] = dateTimeString.split(' ');
-                    timeStr = timeStr ? timeStr.substring(0, 5) : '00:00'; // Get HH:mm part
-                }
-                
-                // Parse date components manually to avoid timezone conversion
-                const [year, month, day] = dateStr.split('-');
-                
-                // Format date as MM/DD/YYYY
-                const formattedDate = `${month.padStart(2, '0')}/${day.padStart(2, '0')}/${year}`;
-                
-                return {
-                    date: formattedDate,
-                    time: timeStr
-                };
-            } catch (error) {
-                console.error('Error formatting date:', error, dateTimeString);
-                return { date: 'Invalid Date', time: 'Invalid Time' };
-            }
-        }
 
-        // FIXED v2.0.1: For datetime-local inputs, parse stored time as local (no conversion)
-        function formatDateTimeForInput(dateTimeString) {
-            if (!dateTimeString) return '';
-            
-            try {
-                // FIXED: Parse datetime string directly without timezone conversion
-                if (dateTimeString.includes('T')) {
-                    // Already in ISO format, just trim to 16 characters
-                    return dateTimeString.substring(0, 16); // YYYY-MM-DDTHH:mm
-                } else {
-                    // SQL format: YYYY-MM-DD HH:mm:ss -> convert to YYYY-MM-DDTHH:mm
-                    const [datePart, timePart] = dateTimeString.split(' ');
-                    const timeFormatted = timePart ? timePart.substring(0, 5) : '00:00';
-                    return `${datePart}T${timeFormatted}`;
-                }
-            } catch (error) {
-                console.error('Error formatting datetime for input:', error);
-                return '';
-            }
-        }
+	// Simplified - let browser handle timezone conversion to local time
+	function formatDateTimeDisplay(dateTimeString) {
+	    if (!dateTimeString) return { date: 'N/A', time: 'N/A' };
+    
+	    try {
+	        const date = new Date(dateTimeString);
+        
+	        return {
+	            date: date.toLocaleDateString('en-CA'),
+	            time: date.toLocaleTimeString('en-CA', { 
+        	        hour: '2-digit', 
+                	minute: '2-digit',
+	                timeZone: 'America/Halifax'
+        	    })
+	        };
+	    } catch (error) {
+	        console.error('Error formatting date:', error, dateTimeString);
+        	return { date: 'Invalid Date', time: 'Invalid Time' };
+	    }
+	}
 
         // Update current date time in header
         function updateDateTime() {
@@ -510,32 +477,18 @@
                     }
                 }
 
-                // Date filter - FIXED: Use direct string parsing to avoid timezone issues
-                if (dateFilter !== 'all') {
-                    try {
-                        // Parse appointment date directly from string without timezone conversion
-                        const appointmentDateStr = appointment.appointmentDateTime;
-                        if (!appointmentDateStr) return true; // If no date, include it
-                        
-                        // Extract date part (YYYY-MM-DD) from either format
-                        const datePart = appointmentDateStr.includes('T') 
-                            ? appointmentDateStr.split('T')[0] 
-                            : appointmentDateStr.split(' ')[0];
-                        
-                        const [year, month, day] = datePart.split('-').map(Number);
-                        const appointmentDate = new Date(year, month - 1, day); // Create local date
-                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Start of today
-                        
-                        if (dateFilter === 'future' && appointmentDate < today) {
-                            return false; // Exclude appointments before today
-                        } else if (dateFilter === 'past' && appointmentDate >= today) {
-                            return false; // Exclude appointments today and after
-                        }
-                    } catch (error) {
-                        console.error('Error parsing appointment date:', error);
-                        return true; // Include appointment if date parsing fails
-                    }
-                }
+                // Date filter - now using simple date comparison
+		if (dateFilter !== 'all') {
+		    const appointmentDate = new Date(appointment.appointmentDateTime);
+		    const today = new Date();
+		    today.setHours(0, 0, 0, 0); // Start of today
+    
+		    if (dateFilter === 'future') {
+		        if (appointmentDate < today) return false;
+		    } else if (dateFilter === 'past') {
+		        if (appointmentDate >= today) return false;
+		    }
+		}
 
                 return true;
             });
@@ -714,4 +667,4 @@
 </body>
 </html>
 
-<!-- Version: v2.0.2 - Fixed timezone conversion and added 12-hour AM/PM time format, removed edit modal, redirects to edit-appointment.html -->
+<!-- Version: v2.1.0 removed time zone conversions -->
