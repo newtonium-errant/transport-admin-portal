@@ -386,6 +386,8 @@
 
         async function loadAppointmentData(appointmentId) {
             try {
+                console.log('Loading appointment with ID:', appointmentId);
+                
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-appointment', {
                     method: 'POST',
                     headers: {
@@ -401,13 +403,21 @@
                 }
 
                 const data = await response.json();
+                console.log('Appointment API response:', data);
                 
-                if (data && data.length > 0) {
+                // Handle different response formats
+                if (Array.isArray(data) && data.length > 0) {
                     appointmentData = data[0];
                     populateForm(appointmentData);
                     showEditForm();
+                } else if (data && data.id) {
+                    // Single object response
+                    appointmentData = data;
+                    populateForm(appointmentData);
+                    showEditForm();
                 } else {
-                    throw new Error('Appointment not found');
+                    console.error('Unexpected appointment response format:', data);
+                    throw new Error('Appointment not found or invalid response format');
                 }
             } catch (error) {
                 console.error('Error loading appointment:', error);
@@ -417,19 +427,42 @@
 
         async function loadClinicLocations() {
             try {
+                console.log('Loading clinic locations...');
+                
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/clinic-locations');
-                const locations = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Clinic locations API response:', data);
+                
+                // Handle the actual API response format: [{ success: true, destinations: [...] }]
+                let locations = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].destinations) {
+                    locations = data[0].destinations;
+                } else if (data && data.destinations && Array.isArray(data.destinations)) {
+                    locations = data.destinations;
+                } else {
+                    console.warn('Unexpected clinic locations response format:', data);
+                    locations = [];
+                }
                 
                 clinicLocations = locations;
                 const select = document.getElementById('clinicLocation');
                 select.innerHTML = '<option value="">Select a clinic...</option>';
                 
-                locations.forEach(location => {
-                    const option = document.createElement('option');
-                    option.value = location.id;
-                    option.textContent = `${location.name} - ${location.address}`;
-                    select.appendChild(option);
-                });
+                if (locations.length > 0) {
+                    locations.forEach(location => {
+                        const option = document.createElement('option');
+                        option.value = location.id;
+                        option.textContent = `${location.name} - ${location.address}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No clinics available</option>';
+                }
                 
                 // Set the current clinic if appointment data is loaded
                 if (appointmentData && appointmentData.clinic_id) {
@@ -442,19 +475,46 @@
 
         async function loadDrivers() {
             try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/allDrivers');
-                const driverData = await response.json();
+                console.log('Loading drivers...');
                 
-                drivers = driverData;
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/allDrivers');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Drivers API response:', data);
+                
+                // Handle the actual API response format: [{ success: true, drivers: [...] }]
+                let driverList = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].drivers) {
+                    driverList = data[0].drivers;
+                } else if (data && data.drivers && Array.isArray(data.drivers)) {
+                    driverList = data.drivers;
+                } else {
+                    console.warn('Unexpected drivers response format:', data);
+                    driverList = [];
+                }
+                
+                drivers = driverList;
                 const select = document.getElementById('driverAssigned');
                 select.innerHTML = '<option value="">No driver assigned</option>';
                 
-                driverData.forEach(driver => {
-                    const option = document.createElement('option');
-                    option.value = driver.id;
-                    option.textContent = `${driver.firstname} ${driver.lastname}`;
-                    select.appendChild(option);
-                });
+                if (driverList.length > 0) {
+                    driverList.forEach(driver => {
+                        const option = document.createElement('option');
+                        option.value = driver.id;
+                        // Extract first and last name from the full name field
+                        const nameParts = driver.name.split(' ');
+                        const firstName = nameParts[0] || '';
+                        const lastName = nameParts.slice(1).join(' ') || '';
+                        option.textContent = `${firstName} ${lastName}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No drivers available</option>';
+                }
                 
                 // Set the current driver if appointment data is loaded
                 if (appointmentData && appointmentData.driver_assigned) {
@@ -586,4 +646,4 @@
 </body>
 </html>
 
-<!-- Version: 3.1.0 - Initial edit appointment page with client info display and appointment editing functionality -->
+<!-- Version: 3.2.0 - Fixed API response handling for drivers and clinic locations endpoints -->
