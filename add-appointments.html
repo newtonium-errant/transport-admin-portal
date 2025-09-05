@@ -625,7 +625,7 @@
             summaryDiv.innerHTML = summary + `<div class="mt-2">
                 ${validAppointments.map((apt, index) => `
                     <div class="text-muted">
-                        ${index + 1}. ${new Date(apt.date + 'T00:00:00').toLocaleDateString('en-CA', { timeZone: 'America/Halifax' })} at ${apt.time} - ${apt.location}
+                        ${index + 1}. ${apt.date} at ${apt.time} - ${apt.location}
                     </div>
                 `).join('')}
             </div>`;
@@ -753,7 +753,7 @@
 </body>
 </html>
 
-<!-- Version: v3.1.0 - Remove Time Zone Conversion code -->
+<!-- Version: v3.1.1 - fix date summary error -->
 <!-- - v3.0.0: Initial version with client selection, appointment creation, and backend integration -->
 <!-- - v3.0.1: Enhanced form validation and user experience improvements -->
 <!-- - v3.0.2: Fixed appointment display and save functionality with proper error handling -->
