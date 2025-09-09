@@ -150,6 +150,16 @@
             text-decoration: underline;
         }
 
+        .auto-calculated {
+            background-color: #f0f8ff;
+            border-color: #3498db;
+        }
+
+        .auto-calculated-label {
+            color: #3498db;
+            font-size: 0.85em;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -287,10 +297,17 @@
                             <input type="datetime-local" class="form-control" id="appointmentDateTime" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="pickupTime" class="form-label">Pickup Time</label>
-                            <input type="datetime-local" class="form-control" id="pickupTime" required>
+                            <label for="pickupTime" class="form-label">
+                                Pickup Time 
+                                <span class="auto-calculated-label">(auto-calculated)</span>
+                            </label>
+                            <input type="datetime-local" class="form-control auto-calculated" id="pickupTime" readonly>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="transitTime" class="form-label">Transit Time (minutes)</label>
+                            <input type="number" class="form-control" id="transitTime" min="1" max="300" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
                             <label for="clinicLocation" class="form-label">Clinic Location</label>
                             <select class="form-select" id="clinicLocation" required>
                                 <option value="">Loading locations...</option>
@@ -302,11 +319,7 @@
                                 <option value="">Loading drivers...</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="transitTime" class="form-label">Transit Time (minutes)</label>
-                            <input type="number" class="form-control" id="transitTime" min="1" max="300">
-                        </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" required>
                                 <option value="pending">Pending</option>
@@ -315,7 +328,7 @@
                                 <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label for="customRate" class="form-label">Custom Rate ($)</label>
                             <input type="number" class="form-control" id="customRate" step="0.01" min="0">
                         </div>
@@ -375,9 +388,8 @@
             const now = new Date();
             const options = { 
                 timeZone: 'America/Halifax',
-                weekday: 'long', 
                 year: 'numeric', 
-                month: 'long', 
+                month: 'short', 
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
@@ -458,7 +470,7 @@
                     locations.forEach(location => {
                         const option = document.createElement('option');
                         option.value = location.id;
-                        option.textContent = `${location.name} - ${location.address}`;
+                        option.textContent = `${location.name} - ${location.address}, ${location.city}`;
                         select.appendChild(option);
                     });
                 } else {
@@ -506,11 +518,7 @@
                     driverList.forEach(driver => {
                         const option = document.createElement('option');
                         option.value = driver.id;
-                        // Extract first and last name from the full name field
-                        const nameParts = driver.name.split(' ');
-                        const firstName = nameParts[0] || '';
-                        const lastName = nameParts.slice(1).join(' ') || '';
-                        option.textContent = `${firstName} ${lastName}`;
+                        option.textContent = driver.name;
                         select.appendChild(option);
                     });
                 } else {
@@ -554,6 +562,9 @@
             document.getElementById('status').value = data.status || 'pending';
             document.getElementById('customRate').value = data.customRate || '';
             document.getElementById('notes').value = data.notes || '';
+
+            // Set up event listeners for automatic pickup time calculation
+            setupPickupTimeCalculation();
         }
 
         function formatDateTimeLocal(dateTimeString) {
@@ -575,6 +586,27 @@
                 console.error('Error formatting datetime for input:', error);
                 return '';
             }
+        }
+
+        function setupPickupTimeCalculation() {
+            const appointmentDateTimeField = document.getElementById('appointmentDateTime');
+            const transitTimeField = document.getElementById('transitTime');
+            
+            function calculatePickupTime() {
+                const appointmentDateTime = appointmentDateTimeField.value;
+                const transitTime = parseInt(transitTimeField.value) || 0;
+                
+                if (appointmentDateTime && transitTime > 0) {
+                    const appointmentDate = new Date(appointmentDateTime);
+                    const pickupDate = new Date(appointmentDate.getTime() - (transitTime * 60 * 1000));
+                    
+                    document.getElementById('pickupTime').value = formatDateTimeLocal(pickupDate.toISOString());
+                }
+            }
+            
+            // Add event listeners
+            appointmentDateTimeField.addEventListener('change', calculatePickupTime);
+            transitTimeField.addEventListener('input', calculatePickupTime);
         }
 
         function showEditForm() {
@@ -602,6 +634,11 @@
             loadingText.style.display = 'inline-flex';
             
             try {
+                // Get selected clinic details
+                const clinicSelect = document.getElementById('clinicLocation');
+                const selectedClinicId = clinicSelect.value;
+                const selectedClinic = clinicLocations.find(clinic => clinic.id == selectedClinicId);
+                
                 const formData = {
                     id: document.getElementById('appointmentId').value,
                     appointmentDateTime: new Date(document.getElementById('appointmentDateTime').value).toISOString(),
@@ -610,9 +647,12 @@
                     status: document.getElementById('status').value,
                     notes: document.getElementById('notes').value,
                     customRate: parseFloat(document.getElementById('customRate').value) || null,
-                    clinic_id: document.getElementById('clinicLocation').value || null,
-                    driver_assigned: document.getElementById('driverAssigned').value || null
+                    driver_assigned: document.getElementById('driverAssigned').value || null,
+                    location: selectedClinic ? selectedClinic.name : null,
+                    locationAddress: selectedClinic ? `${selectedClinic.address}, ${selectedClinic.city}, ${selectedClinic.province}` : null
                 };
+
+                console.log('Sending update data:', formData);
 
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment', {
                     method: 'POST',
@@ -627,6 +667,7 @@
                 }
 
                 const result = await response.json();
+                console.log('Update response:', result);
                 
                 if (result.success) {
                     // Show success message and redirect
@@ -655,4 +696,8 @@
 </body>
 </html>
 
-<!-- Version: v3.7.0 - Fixed timezone conversion for UTC timestamps -->
+<!-- Version: v4.0.0 - Fixed clinic location selection and automatic pickup time calculation -->
+<!-- - v3.7.0: Fixed timezone conversion for UTC timestamps -->
+<!-- - v3.8.0: Enhanced error handling for API responses -->
+<!-- - v3.9.0: Improved form validation and user feedback -->
+<!-- - v4.0.0: Added automatic pickup time calculation and proper clinic location mapping -->
