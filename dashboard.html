@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RRTS - Dashboard</title>
+    <link href="shared-styles.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -25,48 +26,6 @@
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 1.8em;
-            font-weight: 300;
-        }
-
-        .header-info {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            font-size: 0.9em;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: background-color 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-
-        .nav-links a.active {
-            background-color: rgba(255,255,255,0.2);
         }
 
         .content {
@@ -439,6 +398,8 @@
                 <div class="nav-links">
                     <a href="dashboard.html" class="active">Dashboard</a>
                     <a href="client-management.html">Clients</a>
+                    <a href="appointment-management.html">Appointments</a>
+                    <a href="add-appointments.html">Add Appointments</a>
                     <a href="operations.html">Operations</a>
                     <a href="driver-management.html">Drivers</a>
                     <a href="admin.html">Admin</a>
