@@ -324,6 +324,13 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            const savedUser = sessionStorage.getItem('rrts_user');
+            if (!savedUser) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
             updateDateTime();
             setInterval(updateDateTime, 60000);
             
