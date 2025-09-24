@@ -409,7 +409,7 @@
                         <label for="statusFilter">Filter by Status:</label>
                         <select id="statusFilter" onchange="searchClients()" class="status-filter">
                             <option value="all">All Clients</option>
-                            <option value="active">Active Only</option>
+                            <option value="active" selected>Active Only</option>
                             <option value="inactive">Inactive Only</option>
                         </select>
                     </div>
@@ -499,6 +499,11 @@
                     <input type="text" id="modalAddress" placeholder="123 Main Street" required>
                 </div>
                 
+                <div class="form-group">
+                    <label for="modalMapAddress">Map Address</label>
+                    <input type="text" id="modalMapAddress" placeholder="Optional: Different address for mapping/navigation">
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="modalCity">City <span class="required">*</span></label>
@@ -545,6 +550,26 @@
                 <!-- Additional Information -->
                 <div class="section-title">Additional Information</div>
                 <div class="form-group">
+                    <label for="modalAppointmentLength">Appointment Length (minutes)</label>
+                    <input type="number" id="modalAppointmentLength" placeholder="120" value="120" min="1" max="480">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modalDriverGenderRequirement">Driver Gender Requirement</label>
+                        <select id="modalDriverGenderRequirement">
+                            <option value="">No Preference</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalPreferredDriver">Preferred Driver</label>
+                        <input type="text" id="modalPreferredDriver" placeholder="Driver name or ID">
+                    </div>
+                </div>
+                
+                <div class="form-group">
                     <label for="modalNotes">Notes</label>
                     <textarea id="modalNotes" placeholder="Any special notes or requirements..." rows="3" style="resize: vertical; font-family: inherit;"></textarea>
                 </div>
@@ -573,7 +598,7 @@
 
             updateDateTime();
             setInterval(updateDateTime, 1000);
-            loadAllClients();
+            loadActiveClients();
         });
 
         function updateDateTime() {
@@ -587,6 +612,41 @@
                 minute: '2-digit' 
             };
             document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        async function loadActiveClients() {
+            try {
+                showLoading(true);
+                hideError();
+                
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getActiveClients', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                // Backend returns array with nested data structure
+                const clientData = Array.isArray(data) && data.length > 0 ? data[0] : data;
+                allClients = clientData.clients || [];
+                filteredClients = [...allClients];
+                displayClients(filteredClients);
+                updateClientCount(filteredClients.length);
+                
+                // Set filter to "Active Only" when loading active clients
+                document.getElementById('statusFilter').value = 'active';
+                
+            } catch (error) {
+                console.error('Error loading active clients:', error);
+                showError('Failed to load active clients. Please try again.');
+            } finally {
+                showLoading(false);
+            }
         }
 
         async function loadAllClients() {
@@ -613,9 +673,12 @@
                 displayClients(filteredClients);
                 updateClientCount(filteredClients.length);
                 
+                // Set filter to "All Clients" when loading all clients
+                document.getElementById('statusFilter').value = 'all';
+                
             } catch (error) {
-                console.error('Error loading clients:', error);
-                showError('Failed to load clients. Please try again.');
+                console.error('Error loading all clients:', error);
+                showError('Failed to load all clients. Please try again.');
             } finally {
                 showLoading(false);
             }
@@ -686,8 +749,12 @@
                             <div class="detail-value">${formatAddress(client)}</div>
                         </div>
                         <div class="detail-item">
+                            <div class="detail-label">Appointment Length:</div>
+                            <div class="detail-value">${client.appointment_length || client.appointmentLength || '120'} minutes</div>
+                        </div>
+                        <div class="detail-item">
                             <div class="detail-label">Emergency Contact:</div>
-                            <div class="detail-value">${client.emergency_contact_name || 'Not provided'}</div>
+                            <div class="detail-value">${formatEmergencyContact(client)}</div>
                         </div>
                     </div>
                     
@@ -713,11 +780,28 @@
             return parts.length > 0 ? parts.join(', ') : 'Not provided';
         }
 
+        function formatEmergencyContact(client) {
+            const name = client.emergency_contact_name;
+            const phone = client.emergency_contact_number;
+            
+            if (name && phone) {
+                return `${name} - ${phone}`;
+            } else if (name) {
+                return name;
+            } else if (phone) {
+                return phone;
+            } else {
+                return 'Not provided';
+            }
+        }
+
         function showAddClientModal() {
             currentEditingClient = null;
             document.getElementById('modalTitle').textContent = 'Add New Client';
             document.getElementById('clientForm').reset();
             document.getElementById('modalActive').value = 'true'; // Default to active
+            document.getElementById('modalAppointmentLength').value = '120'; // Default appointment length
+            document.getElementById('modalDriverGenderRequirement').value = ''; // No preference
             document.getElementById('clientModal').classList.remove('hidden');
         }
 
@@ -736,12 +820,16 @@
             document.getElementById('modalPhone').value = client.phone || '';
             document.getElementById('modalEmail').value = client.email || '';
             document.getElementById('modalAddress').value = client.civicaddress || '';
+            document.getElementById('modalMapAddress').value = client.mapaddress || '';
             document.getElementById('modalCity').value = client.city || '';
             document.getElementById('modalProvince').value = client.prov || '';
             document.getElementById('modalPostalCode').value = client.postalcode || '';
             document.getElementById('modalEmergencyName').value = client.emergency_contact_name || '';
             document.getElementById('modalEmergencyPhone').value = client.emergency_contact_number || '';
             document.getElementById('modalNotes').value = client.notes || '';
+            document.getElementById('modalAppointmentLength').value = client.appointment_length || client.appointmentLength || '120';
+            document.getElementById('modalDriverGenderRequirement').value = client.driver_gender_requirement || '';
+            document.getElementById('modalPreferredDriver').value = client.preferred_driver || '';
             
             document.getElementById('clientModal').classList.remove('hidden');
         }
@@ -772,12 +860,16 @@
                         phone: client.phone,
                         email: client.email,
                         civicAddress: client.civicaddress,
+                        mapAddress: client.mapaddress,
                         city: client.city,
                         province: client.prov,
                         postalCode: client.postalcode,
                         emergencyContactName: client.emergency_contact_name,
                         emergencyContactNumber: client.emergency_contact_number,
                         notes: client.notes,
+                        appointmentLength: client.appointment_length || client.appointmentLength || 120,
+                        driverGenderRequirement: client.driver_gender_requirement,
+                        preferredDriver: client.preferred_driver,
                         active: newStatus
                     }
                 };
@@ -815,12 +907,16 @@
                     phone: document.getElementById('modalPhone').value.trim(),
                     email: document.getElementById('modalEmail').value.trim(),
                     civicAddress: document.getElementById('modalAddress').value.trim(),
+                    mapAddress: document.getElementById('modalMapAddress').value.trim(),
                     city: document.getElementById('modalCity').value.trim(),
                     province: document.getElementById('modalProvince').value,
                     postalCode: document.getElementById('modalPostalCode').value.trim(),
                     emergencyContactName: document.getElementById('modalEmergencyName').value.trim(),
                     emergencyContactNumber: document.getElementById('modalEmergencyPhone').value.trim(),
                     notes: document.getElementById('modalNotes').value.trim(),
+                    appointmentLength: parseInt(document.getElementById('modalAppointmentLength').value) || 120,
+                    driverGenderRequirement: document.getElementById('modalDriverGenderRequirement').value,
+                    preferredDriver: document.getElementById('modalPreferredDriver').value.trim(),
                     active: document.getElementById('modalActive').value === 'true'
                 }
             };

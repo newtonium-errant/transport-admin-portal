@@ -311,7 +311,7 @@
 
         // Load clients from API
         function loadClients() {
-            fetch(`${apiBaseUrl}/getAllClients`, {
+            fetch(`${apiBaseUrl}/getActiveClients`, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -382,7 +382,9 @@
                 document.getElementById('appointmentsCard').style.display = 'block';
                 appointments = [];
                 appointmentCounter = 0;
-                displayAppointments();
+                
+                // Automatically add the first appointment
+                addAppointment();
             }
         }
 
@@ -416,7 +418,8 @@
                 location: '',
                 locationId: '', // Add location ID field
                 locationAddress: '',
-                appointmentNotes: ''
+                appointmentNotes: '',
+                appointmentLength: selectedClient ? (selectedClient.appointmentLength || selectedClient.appointment_length || 120) : 120
             };
 
             appointments.push(appointment);
@@ -486,7 +489,7 @@
                                 <input type="time" class="form-control" id="time-${appointment.id}" 
                                        value="${appointment.time}" onchange="updateAppointment('${appointment.id}', 'time', this.value)">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="location-${appointment.id}" class="form-label">Clinic Location</label>
                                 <select class="form-select" id="location-${appointment.id}" 
                                         onchange="updateAppointmentLocation('${appointment.id}', this.value)">
@@ -497,6 +500,12 @@
                                         </option>
                                     `).join('')}
                                 </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="length-${appointment.id}" class="form-label">Length (minutes)</label>
+                                <input type="number" class="form-control" id="length-${appointment.id}" 
+                                       value="${appointment.appointmentLength}" min="15" max="480" step="15"
+                                       onchange="updateAppointment('${appointment.id}', 'appointmentLength', parseInt(this.value))">
                             </div>
                         </div>
                         
@@ -588,7 +597,7 @@
             summaryDiv.innerHTML = summary + `<div class="mt-2">
                 ${validAppointments.map((apt, index) => `
                     <div class="text-muted">
-                        ${index + 1}. ${apt.date} at ${apt.time} - ${apt.location}
+                        ${index + 1}. ${apt.date} at ${apt.time} - ${apt.location} (${apt.appointmentLength} min)
                     </div>
                 `).join('')}
             </div>`;
@@ -630,7 +639,7 @@
                     email: selectedClient.email
                 },
                 appointments: validAppointments.map(apt => {
-    			// Convert local date/time to UTC for storage
+			// Convert local date/time to UTC for storage
 			const localDateTime = new Date(apt.date + 'T' + apt.time + ':00');
     
 			return {
@@ -640,7 +649,8 @@
 		        location: apt.location,
 		        locationId: apt.locationId,
 		        locationAddress: apt.locationAddress,
-		        notes: apt.appointmentNotes || ''
+		        notes: apt.appointmentNotes || '',
+		        appointmentLength: apt.appointmentLength || 120
 		    };
 		})
             };
