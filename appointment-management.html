@@ -183,6 +183,11 @@
                     </select>
                 </div>
                 <div class="filter-col">
+                    <button class="btn btn-outline-primary" onclick="loadAllAppointments()">
+                        <i class="bi bi-list-ul me-1"></i>Show All Appointments
+                    </button>
+                </div>
+                <div class="filter-col">
                     <button class="btn btn-outline-secondary" onclick="clearFilters()">
                         <i class="bi bi-x-circle me-1"></i>Clear Filters
                     </button>
@@ -218,6 +223,7 @@
                                 <th>Pickup Time</th>
                                 <th>Client (K Number)</th>
                                 <th>Location</th>
+                                <th>Duration</th>
                                 <th>Status</th>
                                 <th>Driver</th>
                                 <th>Notifications</th>
@@ -322,8 +328,51 @@
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
             loadDrivers();
-            loadAllAppointments();
+            loadActiveAppointments();
         });
+
+        // Load active appointments (present and future) from API
+        async function loadActiveAppointments() {
+            try {
+                document.getElementById('loadingSpinner').style.display = 'block';
+                document.getElementById('appointmentsContainer').style.display = 'none';
+                document.getElementById('noAppointments').style.display = 'none';
+
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.appointments && Array.isArray(data.appointments)) {
+                    allAppointments = data.appointments.map(appointment => ({
+                        ...appointment,
+                        // Ensure consistent field mapping for display
+                        appointmentDateTime: appointment.appointmenttime || appointment.appointmentDateTime,
+                        pickupTime: appointment.pickuptime || appointment.pickupTime,
+                        location: appointment.locationname || appointment.location,
+                        locationAddress: appointment.locationaddress || appointment.locationAddress,
+                        status: appointment.appointmentstatus || appointment.status,
+                        clientFirstName: appointment.firstname || appointment.clientFirstName,
+                        clientLastName: appointment.lastname || appointment.clientLastName,
+                        clientPhone: appointment.phone || appointment.clientPhone,
+                        appointmentLength: appointment.appointmentlength || appointment.appointmentLength
+                    }));
+
+                    console.log(`Loaded ${allAppointments.length} active appointments`);
+                    applyFilters(); // This will call displayAppointments()
+                } else {
+                    console.error('Invalid appointments data received:', data);
+                    showError('Invalid data format received from server');
+                }
+
+            } catch (error) {
+                console.error('Error loading active appointments:', error);
+                showError('Failed to load appointments. Please try again later.');
+            }
+        }
 
         // Load all appointments from API
         async function loadAllAppointments() {
@@ -351,7 +400,8 @@
                         status: appointment.appointmentstatus || appointment.status,
                         clientFirstName: appointment.firstname || appointment.clientFirstName,
                         clientLastName: appointment.lastname || appointment.clientLastName,
-                        clientPhone: appointment.phone || appointment.clientPhone
+                        clientPhone: appointment.phone || appointment.clientPhone,
+                        appointmentLength: appointment.appointmentlength || appointment.appointmentLength
                     }));
 
                     console.log(`Loaded ${allAppointments.length} appointments`);
@@ -487,6 +537,11 @@
                         </td>
                         <td>
                             <div>${appointment.location || 'N/A'}</div>
+                        </td>
+                        <td>
+                            <div class="text-center">
+                                <span class="badge bg-info">${appointment.appointmentLength || 0} min</span>
+                            </div>
                         </td>
                         <td>
                             <span class="badge bg-secondary">${appointment.status || 'pending'}</span>
