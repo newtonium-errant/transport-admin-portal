@@ -346,10 +346,19 @@
 
                 const data = await response.json();
                 
-                if (data.appointments && Array.isArray(data.appointments)) {
-                    allAppointments = data.appointments.map(appointment => ({
+                // Handle the actual API response format: [{ success: true, appointments: [...] }]
+                let appointments = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].appointments) {
+                    appointments = data[0].appointments;
+                } else if (data.appointments && Array.isArray(data.appointments)) {
+                    appointments = data.appointments;
+                }
+                
+                if (appointments && appointments.length > 0) {
+                    allAppointments = appointments.map(appointment => ({
                         ...appointment,
                         // Ensure consistent field mapping for display
+                        id: appointment.id || appointment.appointment_id || appointment.appointmentid,
                         appointmentDateTime: appointment.appointmenttime || appointment.appointmentDateTime,
                         pickupTime: appointment.pickuptime || appointment.pickupTime,
                         location: appointment.locationname || appointment.location,
@@ -358,7 +367,12 @@
                         clientFirstName: appointment.firstname || appointment.clientFirstName,
                         clientLastName: appointment.lastname || appointment.clientLastName,
                         clientPhone: appointment.phone || appointment.clientPhone,
-                        appointmentLength: appointment.appointmentlength || appointment.appointmentLength
+                        appointmentLength: appointment.appointmentlength || appointment.appointmentLength,
+                        driverAssigned: appointment.driverAssigned || appointment.driver_assigned,
+                        clientNotificationSent: appointment.clientNotificationSent || appointment.client_notification_sent,
+                        driverNotificationSent: appointment.driverNotificationSent || appointment.driver_notification_sent,
+                        reminderSentClient: appointment.reminderSentClient || appointment.reminder_sent_client,
+                        reminderSentDriver: appointment.reminderSentDriver || appointment.reminder_sent_driver
                     }));
 
                     console.log(`Loaded ${allAppointments.length} active appointments`);
@@ -389,10 +403,19 @@
 
                 const data = await response.json();
                 
-                if (data.appointments && Array.isArray(data.appointments)) {
-                    allAppointments = data.appointments.map(appointment => ({
+                // Handle the actual API response format: [{ success: true, appointments: [...] }]
+                let appointments = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].appointments) {
+                    appointments = data[0].appointments;
+                } else if (data.appointments && Array.isArray(data.appointments)) {
+                    appointments = data.appointments;
+                }
+                
+                if (appointments && appointments.length > 0) {
+                    allAppointments = appointments.map(appointment => ({
                         ...appointment,
                         // Ensure consistent field mapping for display
+                        id: appointment.id || appointment.appointment_id || appointment.appointmentid,
                         appointmentDateTime: appointment.appointmenttime || appointment.appointmentDateTime,
                         pickupTime: appointment.pickuptime || appointment.pickupTime,
                         location: appointment.locationname || appointment.location,
@@ -401,7 +424,12 @@
                         clientFirstName: appointment.firstname || appointment.clientFirstName,
                         clientLastName: appointment.lastname || appointment.clientLastName,
                         clientPhone: appointment.phone || appointment.clientPhone,
-                        appointmentLength: appointment.appointmentlength || appointment.appointmentLength
+                        appointmentLength: appointment.appointmentlength || appointment.appointmentLength,
+                        driverAssigned: appointment.driverAssigned || appointment.driver_assigned,
+                        clientNotificationSent: appointment.clientNotificationSent || appointment.client_notification_sent,
+                        driverNotificationSent: appointment.driverNotificationSent || appointment.driver_notification_sent,
+                        reminderSentClient: appointment.reminderSentClient || appointment.reminder_sent_client,
+                        reminderSentDriver: appointment.reminderSentDriver || appointment.reminder_sent_driver
                     }));
 
                     console.log(`Loaded ${allAppointments.length} appointments`);
@@ -547,21 +575,21 @@
                             <span class="badge bg-secondary">${appointment.status || 'pending'}</span>
                         </td>
                         <td>
-                            ${appointment.driver_assigned || 'Not assigned'}
+                            ${appointment.driverAssigned || 'Not assigned'}
                         </td>
                         <td>
                             <div class="d-flex flex-wrap gap-1">
-                                <span class="badge notification-badge ${appointment.client_notification_sent ? 'notification-sent' : 'notification-pending'}">
-                                    C: ${appointment.client_notification_sent ? 'Sent' : 'Pending'}
+                                <span class="badge notification-badge ${appointment.clientNotificationSent ? 'notification-sent' : 'notification-pending'}">
+                                    C: ${appointment.clientNotificationSent ? 'Sent' : 'Pending'}
                                 </span>
-                                <span class="badge notification-badge ${appointment.reminder_sent_client ? 'notification-sent' : 'notification-pending'}">
-                                    CR: ${appointment.reminder_sent_client ? 'Sent' : 'Pending'}
+                                <span class="badge notification-badge ${appointment.reminderSentClient ? 'notification-sent' : 'notification-pending'}">
+                                    CR: ${appointment.reminderSentClient ? 'Sent' : 'Pending'}
                                 </span>
-                                <span class="badge notification-badge ${appointment.driver_notification_sent ? 'notification-sent' : 'notification-pending'}">
-                                    D: ${appointment.driver_notification_sent ? 'Sent' : 'Pending'}
+                                <span class="badge notification-badge ${appointment.driverNotificationSent ? 'notification-sent' : 'notification-pending'}">
+                                    D: ${appointment.driverNotificationSent ? 'Sent' : 'Pending'}
                                 </span>
-                                <span class="badge notification-badge ${appointment.reminder_sent_driver ? 'notification-sent' : 'notification-pending'}">
-                                    DR: ${appointment.reminder_sent_driver ? 'Sent' : 'Pending'}
+                                <span class="badge notification-badge ${appointment.reminderSentDriver ? 'notification-sent' : 'notification-pending'}">
+                                    DR: ${appointment.reminderSentDriver ? 'Sent' : 'Pending'}
                                 </span>
                             </div>
                         </td>
