@@ -192,6 +192,11 @@
                         <i class="bi bi-x-circle me-1"></i>Clear Filters
                     </button>
                 </div>
+                <div class="filter-col" id="clearClientFilterCol" style="display: none;">
+                    <button class="btn btn-outline-warning" onclick="clearClientFilter()">
+                        <i class="bi bi-person-x me-1"></i>Clear Client Filter
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -278,6 +283,7 @@
         let allAppointments = [];
         let filteredAppointments = [];
         let currentDeleteId = null;
+        let driversData = [];
 
 
 	// Simplified - let browser handle timezone conversion to local time
@@ -328,6 +334,27 @@
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
             loadDrivers();
+            
+            // Check for client parameter in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientKNumber = urlParams.get('client');
+            
+            if (clientKNumber) {
+                console.log('Filtering appointments by client:', clientKNumber);
+                
+                // Set the client filter and disable it
+                document.getElementById('clientFilter').value = clientKNumber;
+                document.getElementById('clientFilter').disabled = true;
+                document.getElementById('clientFilter').placeholder = `Filtered by client: ${clientKNumber}`;
+                
+                // Add a visual indicator that we're filtering by a specific client
+                const clientFilterLabel = document.querySelector('label[for="clientFilter"]');
+                clientFilterLabel.innerHTML = `K Number / Client Name <span class="badge bg-primary ms-2">Filtered by: ${clientKNumber}</span>`;
+                
+                // Show the clear client filter button
+                document.getElementById('clearClientFilterCol').style.display = 'block';
+            }
+            
             loadActiveAppointments();
         });
 
@@ -448,14 +475,42 @@
         // Load drivers for dropdown
         async function loadDrivers() {
             try {
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/allDrivers');
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-basic-info');
                 if (response.ok) {
                     const data = await response.json();
-                    // Store drivers for potential future use
+                    
+                    // Handle the actual API response format: [{ success: true, drivers: [...] }]
+                    if (Array.isArray(data) && data.length > 0 && data[0].drivers) {
+                        driversData = data[0].drivers;
+                    } else if (data && data.drivers && Array.isArray(data.drivers)) {
+                        driversData = data.drivers;
+                    } else {
+                        console.warn('Unexpected drivers response format:', data);
+                        driversData = [];
+                    }
+                    
+                    console.log(`Loaded ${driversData.length} drivers`);
                 }
             } catch (error) {
                 console.error('Error loading drivers:', error);
+                driversData = [];
             }
+        }
+
+        // Get driver name from driver ID
+        function getDriverName(driverId) {
+            if (!driverId || !driversData || driversData.length === 0) {
+                return 'Not assigned';
+            }
+            
+            const driver = driversData.find(d => d.id === driverId || d.id === parseInt(driverId));
+            if (!driver) {
+                return 'Unknown driver';
+            }
+            
+            const firstName = driver.first_name || '';
+            const lastName = driver.last_name || '';
+            return `${firstName} ${lastName}`.trim() || 'Unknown driver';
         }
 
         // Show error message
@@ -485,6 +540,8 @@
             const clientFilter = document.getElementById('clientFilter').value.toLowerCase();
             const dateFilter = document.getElementById('dateFilter').value;
             const now = new Date();
+            
+            console.log('Applying filters:', { statusFilter, clientFilter, dateFilter });
 
             filteredAppointments = allAppointments.filter(appointment => {
                 // Status filter
@@ -499,10 +556,14 @@
                     const lastName = appointment.clientLastName?.toLowerCase() || '';
                     const fullName = `${firstName} ${lastName}`.toLowerCase();
                     
-                    if (!knumber.includes(clientFilter) && 
-                        !firstName.includes(clientFilter) && 
-                        !lastName.includes(clientFilter) && 
-                        !fullName.includes(clientFilter)) {
+                    // Check for exact K number match first, then partial matches
+                    const exactKNumberMatch = knumber === clientFilter;
+                    const partialMatch = knumber.includes(clientFilter) || 
+                                      firstName.includes(clientFilter) || 
+                                      lastName.includes(clientFilter) || 
+                                      fullName.includes(clientFilter);
+                    
+                    if (!exactKNumberMatch && !partialMatch) {
                         return false;
                     }
                 }
@@ -523,6 +584,7 @@
                 return true;
             });
 
+            console.log(`Filtered ${filteredAppointments.length} appointments from ${allAppointments.length} total`);
             displayAppointments();
         }
 
@@ -575,7 +637,7 @@
                             <span class="badge bg-secondary">${appointment.status || 'pending'}</span>
                         </td>
                         <td>
-                            ${appointment.driverAssigned || 'Not assigned'}
+                            ${getDriverName(appointment.driverAssigned)}
                         </td>
                         <td>
                             <div class="d-flex flex-wrap gap-1">
@@ -613,7 +675,28 @@
             document.getElementById('statusFilter').value = '';
             document.getElementById('clientFilter').value = '';
             document.getElementById('dateFilter').value = 'all';
+            
+            // Re-enable client filter if it was disabled
+            const clientFilter = document.getElementById('clientFilter');
+            clientFilter.disabled = false;
+            clientFilter.placeholder = 'Search by K number or name';
+            
+            // Reset client filter label
+            const clientFilterLabel = document.querySelector('label[for="clientFilter"]');
+            clientFilterLabel.innerHTML = 'K Number / Client Name';
+            
+            // Hide clear client filter button
+            document.getElementById('clearClientFilterCol').style.display = 'none';
+            
             applyFilters();
+        }
+
+        // Clear client-specific filter
+        function clearClientFilter() {
+            // Remove client parameter from URL and reload
+            const url = new URL(window.location);
+            url.searchParams.delete('client');
+            window.location.href = url.toString();
         }
 
         // Edit appointment - REDIRECT to edit-appointment.html (MODAL REMOVED)
