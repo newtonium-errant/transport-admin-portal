@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RRTS - Daily Operations</title>
+    <title>RRTS - Weekly Driver Assignment</title>
     <link href="shared-styles.css" rel="stylesheet">
     <style>
         * {
@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
             background: white;
             border-radius: 12px;
@@ -32,23 +32,314 @@
             padding: 30px;
         }
 
-        .operations-grid {
-            display: grid;
-            grid-template-columns: 1fr 350px;
+        .weekly-schedule-container {
+            display: flex;
+            flex-direction: column;
             gap: 30px;
+        }
+
+        .week-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .week-display {
+            text-align: center;
+            flex: 1;
+        }
+
+        .week-display h3 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 1.5em;
+        }
+
+        .week-summary {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .weekly-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
             margin-bottom: 30px;
         }
 
-        .main-schedule {
+        .day-column {
             background: #f8f9fa;
             border-radius: 12px;
-            padding: 25px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
         }
 
-        .sidebar {
+        .day-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .day-header h4 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+        }
+
+        .date {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .appointment-count {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .appointments-list {
+            padding: 15px;
+            min-height: 200px;
+        }
+
+        .appointment-slot {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .appointment-slot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .appointment-time {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .appointment-client {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .appointment-location {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .driver-assignment-dropdown {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .driver-assignment-dropdown:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .available-driver {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .outside-hours-driver {
+            color: #f39c12;
+            font-weight: 500;
+            font-style: italic;
+        }
+
+        .unavailable-driver {
+            color: #95a5a6;
+            text-decoration: line-through;
+        }
+
+        optgroup {
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 8px 0 4px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        optgroup[label*="Available"] {
+            color: #27ae60;
+        }
+
+        optgroup[label*="Outside"] {
+            color: #f39c12;
+        }
+
+        optgroup[label*="Unavailable"] {
+            color: #e74c3c;
+        }
+
+        .submit-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .assignment-summary {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 10px;
+        }
+
+        .assignment-stats {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .assignment-warnings {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .warning-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .warning-item.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .warning-item.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-secondary {
+            background: transparent;
+            color: #6c757d;
+            border: 2px solid #6c757d;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #6c757d;
+            color: white;
+        }
+
+        .weekend-day {
+            opacity: 0.6;
+        }
+
+        .weekend-day .day-header {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+
+        .no-appointments {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .weekly-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .weekend-day {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+
+            .weekly-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .week-navigation {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .submit-section {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
         }
 
         .card {
@@ -473,97 +764,38 @@
         </div>
 
         <div class="content">
-            <!-- Emergency Alerts -->
-            <div id="emergencyAlerts"></div>
-
-            <div class="operations-grid">
-                <!-- Main Schedule -->
-                <div class="main-schedule">
-                    <div class="section-title">📅 Today's Schedule</div>
-                    
-                    <!-- Time Filter -->
-                    <div class="time-filter">
-                        <button class="filter-btn active" data-filter="all">All Day</button>
-                        <button class="filter-btn" data-filter="current">Current Hour</button>
-                        <button class="filter-btn" data-filter="next2">Next 2 Hours</button>
-                        <button class="filter-btn" data-filter="morning">Morning</button>
-                        <button class="filter-btn" data-filter="afternoon">Afternoon</button>
-                        <button class="filter-btn" data-filter="flagged">Flagged Only</button>
+            <div class="weekly-schedule-container">
+                <!-- Week Navigation -->
+                <div class="week-navigation">
+                    <button class="btn btn-outline-secondary" onclick="previousWeek()">
+                        ← Previous Week
+                    </button>
+                    <div class="week-display">
+                        <h3 id="currentWeekDisplay">Loading...</h3>
+                        <span class="week-summary" id="weekSummary">Loading appointments...</span>
                     </div>
-
-                    <!-- Appointments List -->
-                    <div id="appointmentsList">
-                        <div class="loading">Loading today's appointments...</div>
-                    </div>
+                    <button class="btn btn-outline-secondary" onclick="nextWeek()">
+                        Next Week →
+                    </button>
+                    <button class="btn btn-primary" onclick="goToThisWeek()">
+                        This Week
+                    </button>
                 </div>
 
-                <!-- Sidebar -->
-                <div class="sidebar">
-                    <!-- Operations Summary -->
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-icon">📊</span>
-                            <div class="card-title">Today's Summary</div>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-value" id="totalAppointments">--</span>
-                            <span class="metric-label">Total Appointments</span>
-                        </div>
-                        <div class="metric success">
-                            <span class="metric-value" id="completedAppointments">--</span>
-                            <span class="metric-label">Completed</span>
-                        </div>
-                        <div class="metric warning">
-                            <span class="metric-value" id="pendingAppointments">--</span>
-                            <span class="metric-label">Pending</span>
-                        </div>
-                        <div class="metric danger">
-                            <span class="metric-value" id="flaggedAppointments">--</span>
-                            <span class="metric-label">Flagged</span>
-                        </div>
-                    </div>
+                <!-- Weekly Grid -->
+                <div class="weekly-grid" id="weeklyGrid">
+                    <!-- Days will be populated by JavaScript -->
+                </div>
 
-                    <!-- Driver Status -->
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-icon">🚗</span>
-                            <div class="card-title">Driver Status</div>
-                        </div>
-                        <div id="driverStatusList">
-                            <div class="loading">Loading driver status...</div>
-                        </div>
+                <!-- Submit Section -->
+                <div class="submit-section">
+                    <div class="assignment-summary">
+                        <div class="assignment-stats" id="assignmentStats">Loading...</div>
+                        <div class="assignment-warnings" id="assignmentWarnings"></div>
                     </div>
-
-                    <!-- Quick Actions -->
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-icon">⚡</span>
-                            <div class="card-title">Quick Actions</div>
-                        </div>
-                        <button class="action-btn primary quick-action" onclick="addEmergencyAppointment()">
-                            🚨 Emergency Booking
-                        </button>
-                        <button class="action-btn warning quick-action" onclick="viewPendingApprovals()">
-                            ⚠️ Review Approvals
-                        </button>
-                        <button class="action-btn secondary quick-action" onclick="exportDailyReport()">
-                            📄 Export Daily Report
-                        </button>
-                        <a href="client-management.html" class="action-btn success quick-action">
-                            👤 Add New Client
-                        </a>
-                    </div>
-
-                    <!-- System Alerts -->
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="card-icon">🔔</span>
-                            <div class="card-title">System Alerts</div>
-                        </div>
-                        <div id="systemAlerts">
-                            <div class="empty-state">No alerts</div>
-                        </div>
-                    </div>
+                    <button class="btn btn-success" onclick="submitWeekSchedule()">
+                        ✓ Submit Week Schedule
+                    </button>
                 </div>
             </div>
         </div>
@@ -572,19 +804,22 @@
     <script>
         // API Configuration
         const API_ENDPOINTS = {
-            OPERATIONS_DATA: 'https://n8n.newtonium.ca/webhook/rrts-operations-data', // TODO: Create this
-            UPDATE_STATUS: 'https://n8n.newtonium.ca/webhook/rrts-update-appointment-status', // TODO: Create this
-            EMERGENCY_BOOKING: 'https://n8n.newtonium.ca/webhook/rrts-emergency-booking' // TODO: Create this
+            APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments',
+            DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-availability',
+            UPDATE_APPOINTMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment',
+            UPDATE_DRIVER_ASSIGNMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver-assignment', // ✅ NEW: Driver assignment endpoint
+            QUEUE_NOTIFICATIONS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/queue-notifications' // TODO: Create this for notifications
         };
 
         // Global variables
-        let operationsData = null;
-        let refreshInterval = null;
-        let currentFilter = 'all';
+        let currentWeekStart = null;
+        let appointments = [];
+        let drivers = [];
+        let driverAssignments = new Map(); // appointmentId -> driverId
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('RRTS Operations Portal Loaded');
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('RRTS Weekly Driver Assignment Loaded');
             
             // Check authentication
             const savedUser = sessionStorage.getItem('rrts_user');
@@ -596,14 +831,34 @@
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
             
-            loadOperationsData();
+            // Initialize to current week (Sunday start)
+            currentWeekStart = getWeekStart(new Date());
             
-            // Set up auto-refresh
-            startAutoRefresh();
-            
-            // Set up filter buttons
-            setupFilters();
+            // Load data sequentially to ensure drivers are loaded before rendering
+            await loadDrivers();
+            await loadAppointments();
         });
+
+        // Utility functions
+        function getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day; // Sunday = 0
+            return new Date(d.setDate(diff));
+        }
+
+        function getWeekEnd(weekStart) {
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            return weekEnd;
+        }
+
+        function formatWeekDisplay(weekStart) {
+            const weekEnd = getWeekEnd(weekStart);
+            const startStr = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const endStr = weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            return `${startStr} - ${endStr}`;
+        }
 
         function updateDateTime() {
             const now = new Date();
@@ -619,522 +874,657 @@
             document.getElementById('currentDateTime').textContent = dateTimeString;
         }
 
-        function startAutoRefresh() {
-            // Refresh every 30 seconds
-            refreshInterval = setInterval(() => {
-                const indicator = document.getElementById('refreshIndicator');
-                indicator.classList.add('refreshing');
-                indicator.textContent = '🔄 Refreshing...';
-                
-                loadOperationsData().then(() => {
-                    indicator.classList.remove('refreshing');
-                    indicator.textContent = '🔄 Auto-refresh: 30s';
-                });
-            }, 30000);
-        }
-
-        async function loadOperationsData() {
+        // Data loading functions
+        async function loadDrivers() {
             try {
-                // TODO: Replace with actual API call when endpoint is ready
-                // const response = await fetch(API_ENDPOINTS.OPERATIONS_DATA);
-                // const data = await response.json();
-
-                // Mock data for now
-                const mockData = generateMockOperationsData();
-                
-                operationsData = mockData;
-                updateSummaryMetrics(mockData.summary);
-                renderAppointmentsList(mockData.appointments);
-                renderDriverStatus(mockData.drivers);
-                renderSystemAlerts(mockData.alerts);
-                renderEmergencyAlerts(mockData.emergencyAlerts);
-
+                const response = await fetch(API_ENDPOINTS.DRIVERS);
+                if (response.ok) {
+                    const data = await response.json();
+                    drivers = data.drivers || data || [];
+                    console.log(`Loaded ${drivers.length} drivers`);
+                    
+                    // If appointments are already loaded, refresh the dropdowns
+                    if (appointments.length > 0) {
+                        refreshDriverDropdowns();
+                    }
+                } else {
+                    console.error('Failed to load drivers');
+                    drivers = [];
+                }
             } catch (error) {
-                console.error('Failed to load operations data:', error);
-                showError('Failed to load operations data');
+                console.error('Error loading drivers:', error);
+                drivers = [];
             }
         }
 
-        function generateMockOperationsData() {
-            const now = new Date();
-            const appointments = [];
-            
-            // Generate appointments for today
-            const timeSlots = ['08:00', '09:30', '11:00', '13:30', '15:00', '16:30'];
-            const statuses = ['confirmed', 'pending', 'flagged', 'in-progress', 'completed'];
-            const clients = [
-                'John Smith (K1234567)',
-                'Mary Johnson (K2345678)', 
-                'Bob Wilson (K3456789)',
-                'Sarah Davis (K4567890)',
-                'Mike Brown (K5678901)',
-                'Lisa Anderson (K6789012)'
-            ];
-            const locations = ['New Minas Clinic', 'Greenwood Clinic', 'Middleton Clinic'];
+        async function loadAppointments() {
+            try {
+                const response = await fetch(API_ENDPOINTS.APPOINTMENTS);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    let appointmentsData = [];
+                    
+                    if (Array.isArray(data) && data.length > 0 && data[0].appointments) {
+                        appointmentsData = data[0].appointments;
+                    } else if (data.appointments && Array.isArray(data.appointments)) {
+                        appointmentsData = data.appointments;
+                    }
+                    
+                    appointments = appointmentsData.map(apt => {
+                        const mappedApt = {
+                            ...apt,
+                            id: apt.id || apt.appointment_id || apt.appointmentid,
+                            appointmentDateTime: apt.appointmenttime || apt.appointmentDateTime,
+                            pickupTime: apt.pickuptime || apt.pickupTime,
+                            dropOffTime: apt.dropOffTime || apt.dropofftime,
+                            location: apt.locationname || apt.location,
+                            status: apt.appointmentstatus || apt.status,
+                            clientFirstName: apt.firstname || apt.clientFirstName,
+                            clientLastName: apt.lastname || apt.clientLastName,
+                            knumber: apt.knumber,
+                            driverAssigned: apt.driverAssigned || apt.driver_assigned,
+                            appointmentLength: apt.appointmentlength || apt.appointmentLength || 60
+                        };
+                        
+                        // ✅ POPULATE EXISTING DRIVER ASSIGNMENTS
+                        if (mappedApt.driverAssigned && mappedApt.driverAssigned !== null && mappedApt.driverAssigned !== 'null' && mappedApt.driverAssigned !== '') {
+                            driverAssignments.set(mappedApt.id, mappedApt.driverAssigned);
+                            console.log(`Found existing driver assignment for appointment ${mappedApt.id}: ${mappedApt.driverAssigned}`);
+                        }
+                        
+                        return mappedApt;
+                    });
+                    
+                    console.log(`Loaded ${appointments.length} appointments`);
+                    console.log(`Found ${driverAssignments.size} existing driver assignments`);
+                    renderWeeklySchedule();
+                } else {
+                    console.error('Failed to load appointments');
+                    appointments = [];
+                    renderWeeklySchedule();
+                }
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                appointments = [];
+                renderWeeklySchedule();
+            }
+        }
 
-            timeSlots.forEach((time, index) => {
-                const appointmentTime = new Date();
-                const [hours, minutes] = time.split(':');
-                appointmentTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        // Driver availability calculation
+        function calculateDriverAvailability(driver, appointmentDateTime, pickupTime, dropOffTime, appointmentLength = 120) {
+            const appointmentDate = new Date(appointmentDateTime);
+            const pickupDate = new Date(pickupTime);
+            
+            // ✅ FIX: Calculate dropOffTime if not provided
+            let dropOffDate;
+            if (dropOffTime && dropOffTime !== 'undefined' && dropOffTime !== 'null') {
+                dropOffDate = new Date(dropOffTime);
+            } else {
+                // Fallback: Calculate dropOffTime from appointment time + appointment length
+                dropOffDate = new Date(appointmentDate.getTime() + (appointmentLength * 60000));
+                console.log(`⚠️ dropOffTime not provided, calculated fallback: ${dropOffDate.toISOString()} (${appointmentLength} min)`);
+            }
+            
+            // ✅ FIX: Convert UTC times to Halifax time (AST/ADT) for comparison with driver work hours
+            const halifaxTimeZone = 'America/Halifax';
+            const dayOfWeek = appointmentDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                timeZone: halifaxTimeZone 
+            }).toLowerCase();
+            
+            // Check if driver is on leave or offline
+            if (driver.status === 'on-leave' || driver.status === 'offline') {
+                return {
+                    status: 'unavailable',
+                    reason: driver.status === 'on-leave' ? 'On Leave' : 'Off Duty',
+                    canAssign: false
+                };
+            }
+            
+            // ✅ NEW: Check time off data first
+            const timeOff = driver.time_off || [];
+            const appointmentDateOnly = appointmentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            for (const timeOffRecord of timeOff) {
+                const startDate = timeOffRecord.start_date;
+                const endDate = timeOffRecord.end_date;
                 
-                const status = index < 2 ? 'completed' : 
-                              index === 2 ? 'in-progress' :
-                              index === 4 ? 'flagged' : 
-                              statuses[Math.floor(Math.random() * 3)]; // confirmed, pending, flagged
+                // Check if appointment date falls within time off period
+                if (appointmentDateOnly >= startDate && appointmentDateOnly <= endDate) {
+                    // If it's an all-day time off, driver is unavailable
+                    if (timeOffRecord.all_day) {
+                        return {
+                            status: 'unavailable',
+                            reason: `Time off: ${timeOffRecord.reason}`,
+                            canAssign: false
+                        };
+                    }
+                    
+                    // If it's partial day time off, check if appointment times conflict
+                    if (timeOffRecord.start_time && timeOffRecord.end_time) {
+                        const pickupTimeString = pickupDate.toLocaleTimeString('en-CA', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            timeZone: halifaxTimeZone,
+                            hour12: false 
+                        });
+                        const dropOffTimeString = dropOffDate.toLocaleTimeString('en-CA', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            timeZone: halifaxTimeZone,
+                            hour12: false 
+                        });
+                        
+                        // Check if appointment times overlap with time off
+                        const timeOffStart = timeOffRecord.start_time;
+                        const timeOffEnd = timeOffRecord.end_time;
+                        
+                        if ((pickupTimeString < timeOffEnd && dropOffTimeString > timeOffStart)) {
+                            return {
+                                status: 'unavailable',
+                                reason: `Time off: ${timeOffRecord.reason} (${timeOffStart}-${timeOffEnd})`,
+                                canAssign: false
+                            };
+                        }
+                    }
+                }
+            }
+            
+            // Get driver's weekly schedule
+            const weeklyHours = driver.weekly_hours || {};
+            const daySchedule = weeklyHours[dayOfWeek];
+            
+            // Check if driver is available on this day
+            if (!daySchedule || !daySchedule.available) {
+                return {
+                    status: 'unavailable',
+                    reason: 'Not available this day',
+                    canAssign: false
+                };
+            }
+            
+            // Get driver's work hours for this day
+            const workStart = daySchedule.start;
+            const workEnd = daySchedule.end;
+            
+            if (!workStart || !workEnd) {
+                return {
+                    status: 'unavailable',
+                    reason: 'No scheduled hours for this day',
+                    canAssign: false
+                };
+            }
+            
+            // ✅ FIX: Convert UTC times to Halifax time (AST/ADT) for comparison
+            const pickupTimeString = pickupDate.toLocaleTimeString('en-CA', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                timeZone: halifaxTimeZone,
+                hour12: false 
+            });
+            const dropOffTimeString = dropOffDate.toLocaleTimeString('en-CA', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                timeZone: halifaxTimeZone,
+                hour12: false 
+            });
+            
+            // Check if entire appointment duration (pickup to dropoff) is within work hours
+            const isWithinWorkHours = pickupTimeString >= workStart && dropOffTimeString <= workEnd;
+            
+            if (isWithinWorkHours) {
+                return {
+                    status: 'available',
+                    reason: 'Within scheduled hours',
+                    canAssign: true
+                };
+            } else {
+                return {
+                    status: 'outside-hours',
+                    reason: `Outside work hours (${workStart}-${workEnd})`,
+                    canAssign: true,
+                    warning: `Appointment runs ${pickupTimeString}-${dropOffTimeString} Halifax time, driver scheduled ${workStart}-${workEnd}`
+                };
+            }
+        }
+
+        function addMinutes(timeString, minutes) {
+            const [hours, mins] = timeString.split(':').map(Number);
+            const totalMinutes = hours * 60 + mins + minutes;
+            const newHours = Math.floor(totalMinutes / 60);
+            const newMins = totalMinutes % 60;
+            return `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
+        }
+
+        // Weekly schedule rendering
+        function renderWeeklySchedule() {
+            updateWeekDisplay();
+            renderWeeklyGrid();
+            updateAssignmentSummary();
+        }
+
+        function updateWeekDisplay() {
+            const weekDisplay = formatWeekDisplay(currentWeekStart);
+            document.getElementById('currentWeekDisplay').textContent = weekDisplay;
+            
+            const weekAppointments = getWeekAppointments();
+            const assignedCount = weekAppointments.filter(apt => driverAssignments.has(apt.id)).length;
+            document.getElementById('weekSummary').textContent = 
+                `${weekAppointments.length} appointments, ${assignedCount} assigned`;
+        }
+
+        function renderWeeklyGrid() {
+            const grid = document.getElementById('weeklyGrid');
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(currentWeekStart);
+                dayDate.setDate(dayDate.getDate() + i);
                 
-                appointments.push({
-                    id: `apt-${index + 1}`,
-                    time: time,
-                    client: clients[index],
-                    location: locations[Math.floor(Math.random() * locations.length)],
-                    status: status,
-                    driver: status === 'pending' ? 'TBD' : 'Andrew Newton',
-                    pickupTime: calculatePickupTime(time),
-                    pickupAddress: '123 Main St, Windsor, NS',
-                    notes: index === 4 ? 'Urgent - client needs wheelchair accessible vehicle' : 
-                           index === 1 ? 'Client prefers early pickup' : '',
-                    flaggedReason: status === 'flagged' ? 'Less than 48 hours notice' : null,
-                    travelTime: 25,
-                    estimatedDuration: 45
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'day-column';
+                if (i === 0 || i === 6) { // Sunday or Saturday
+                    dayColumn.classList.add('weekend-day');
+                }
+                dayColumn.setAttribute('data-day', days[i].toLowerCase());
+                
+                const dayAppointments = getDayAppointments(dayDate);
+                
+                dayColumn.innerHTML = `
+                    <div class="day-header">
+                        <h4>${days[i]}</h4>
+                        <span class="date">${dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span class="appointment-count">${dayAppointments.length} appointments</span>
+                    </div>
+                    <div class="appointments-list">
+                        ${renderDayAppointments(dayAppointments)}
+                    </div>
+                `;
+                
+                grid.appendChild(dayColumn);
+            }
+        }
+
+        function getWeekAppointments() {
+            const weekEnd = getWeekEnd(currentWeekStart);
+            return appointments.filter(apt => {
+                const aptDate = new Date(apt.appointmentDateTime);
+                return aptDate >= currentWeekStart && aptDate <= weekEnd;
+            });
+        }
+
+        function getDayAppointments(date) {
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(date);
+            dayEnd.setHours(23, 59, 59, 999);
+            
+            return appointments.filter(apt => {
+                const aptDate = new Date(apt.appointmentDateTime);
+                return aptDate >= dayStart && aptDate <= dayEnd;
+            });
+        }
+
+        function renderDayAppointments(dayAppointments) {
+            if (dayAppointments.length === 0) {
+                return '<div class="no-appointments">No appointments</div>';
+            }
+            
+            return dayAppointments.map(apt => {
+                const appointmentTime = new Date(apt.appointmentDateTime);
+                const timeString = appointmentTime.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true,
+                    timeZone: 'America/Halifax'
                 });
-            });
-
-            return {
-                summary: {
-                    total: appointments.length,
-                    completed: appointments.filter(a => a.status === 'completed').length,
-                    pending: appointments.filter(a => a.status === 'pending').length,
-                    flagged: appointments.filter(a => a.status === 'flagged').length
-                },
-                appointments: appointments,
-                drivers: [
-                    { name: 'Andrew Newton', status: 'available', currentLocation: 'New Minas', nextAppointment: '13:30' },
-                    { name: 'Driver 2', status: 'busy', currentLocation: 'Middleton', nextAppointment: '15:00' },
-                    { name: 'Driver 3', status: 'offline', currentLocation: 'Base', nextAppointment: null }
-                ],
-                alerts: [
-                    { type: 'warning', message: 'K4567890 appointment flagged for manual review', time: '10 minutes ago' },
-                    { type: 'info', message: 'Google Maps API usage: 12/1000 requests today', time: '1 hour ago' }
-                ],
-                emergencyAlerts: []
-            };
-        }
-
-        function calculatePickupTime(appointmentTime) {
-            const [hours, minutes] = appointmentTime.split(':');
-            const pickupDate = new Date();
-            pickupDate.setHours(parseInt(hours), parseInt(minutes) - 25, 0, 0); // 25 minutes earlier
-            return pickupDate.toTimeString().slice(0, 5);
-        }
-
-        function updateSummaryMetrics(summary) {
-            document.getElementById('totalAppointments').textContent = summary.total;
-            document.getElementById('completedAppointments').textContent = summary.completed;
-            document.getElementById('pendingAppointments').textContent = summary.pending;
-            document.getElementById('flaggedAppointments').textContent = summary.flagged;
-        }
-
-        function renderAppointmentsList(appointments) {
-            const container = document.getElementById('appointmentsList');
-            const filteredAppointments = filterAppointments(appointments);
-            
-            if (filteredAppointments.length === 0) {
-                container.innerHTML = '<div class="empty-state">No appointments match the current filter</div>';
-                return;
-            }
-
-            container.innerHTML = '';
-            filteredAppointments.forEach(appointment => {
-                const appointmentDiv = document.createElement('div');
-                appointmentDiv.className = `appointment-item ${appointment.status}`;
                 
-                appointmentDiv.innerHTML = `
-                    <div class="appointment-header">
-                        <div class="appointment-time">${appointment.time}</div>
-                        <div class="appointment-status status-${appointment.status}">
-                            ${appointment.status.replace('-', ' ')}
-                        </div>
-                    </div>
-                    
-                    <div class="appointment-client">${appointment.client}</div>
-                    
-                    <div class="appointment-details">
-                        <div class="detail-item">
-                            <span class="detail-icon">📍</span>
-                            ${appointment.location}
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-icon">🚗</span>
-                            Driver: ${appointment.driver}
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-icon">⏰</span>
-                            Pickup: ${appointment.pickupTime}
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-icon">🕐</span>
-                            Duration: ${appointment.estimatedDuration}min
-                        </div>
-                    </div>
-                    
-                    ${appointment.flaggedReason ? `
-                        <div class="flagged-reason">
-                            ⚠️ ${appointment.flaggedReason}
-                        </div>
-                    ` : ''}
-                    
-                    ${appointment.notes ? `
-                        <div class="appointment-notes">
-                            📝 ${appointment.notes}
-                        </div>
-                    ` : ''}
-                    
-                    <div class="appointment-actions">
-                        ${getActionButtons(appointment)}
+                const clientName = `${apt.clientFirstName || ''} ${apt.clientLastName || ''}`.trim() || 'Unknown Client';
+                const kNumber = apt.knumber ? ` (${apt.knumber})` : '';
+                
+                return `
+                    <div class="appointment-slot" data-appointment-id="${apt.id}">
+                        <div class="appointment-time">${timeString}</div>
+                        <div class="appointment-client">${clientName}${kNumber}</div>
+                        <div class="appointment-location">${apt.location || 'No location'}</div>
+                        ${renderDriverDropdown(apt.id, apt.appointmentDateTime, apt.pickupTime, apt.dropOffTime, apt.appointmentLength, apt.driverAssigned)}
                     </div>
                 `;
-                
-                container.appendChild(appointmentDiv);
-            });
+            }).join('');
         }
 
-        function getActionButtons(appointment) {
-            switch (appointment.status) {
-                case 'pending':
-                    return `
-                        <button class="action-btn success" onclick="confirmAppointment('${appointment.id}')">
-                            ✅ Confirm
-                        </button>
-                        <button class="action-btn warning" onclick="assignDriver('${appointment.id}')">
-                            🚗 Assign Driver
-                        </button>
-                        <button class="action-btn primary" onclick="editAppointment('${appointment.id}')">
-                            ✏️ Edit
-                        </button>
-                    `;
-                case 'confirmed':
-                    return `
-                        <button class="action-btn primary" onclick="startTrip('${appointment.id}')">
-                            🚀 Start Trip
-                        </button>
-                        <button class="action-btn secondary" onclick="contactClient('${appointment.id}')">
-                            📞 Contact Client
-                        </button>
-                        <button class="action-btn warning" onclick="editAppointment('${appointment.id}')">
-                            ✏️ Edit
-                        </button>
-                    `;
-                case 'flagged':
-                    return `
-                        <button class="action-btn success" onclick="approveAppointment('${appointment.id}')">
-                            ✅ Approve
-                        </button>
-                        <button class="action-btn danger" onclick="rejectAppointment('${appointment.id}')">
-                            ❌ Reject
-                        </button>
-                        <button class="action-btn primary" onclick="editAppointment('${appointment.id}')">
-                            ✏️ Edit
-                        </button>
-                    `;
-                case 'in-progress':
-                    return `
-                        <button class="action-btn success" onclick="completeTrip('${appointment.id}')">
-                            🏁 Complete
-                        </button>
-                        <button class="action-btn secondary" onclick="trackLocation('${appointment.id}')">
-                            📍 Track
-                        </button>
-                        <button class="action-btn warning" onclick="reportIssue('${appointment.id}')">
-                            ⚠️ Issue
-                        </button>
-                    `;
-                case 'completed':
-                    return `
-                        <button class="action-btn secondary" onclick="viewDetails('${appointment.id}')">
-                            👁️ Details
-                        </button>
-                        <button class="action-btn primary" onclick="generateInvoice('${appointment.id}')">
-                            🧾 Invoice
-                        </button>
-                    `;
-                default:
-                    return '';
+        function renderDriverDropdown(appointmentId, appointmentDateTime, pickupTime, dropOffTime, appointmentLength, currentDriverId = null) {
+            if (drivers.length === 0) {
+                return '<select class="driver-assignment-dropdown" disabled><option>Loading drivers...</option></select>';
             }
-        }
-
-        function renderDriverStatus(drivers) {
-            const container = document.getElementById('driverStatusList');
             
-            container.innerHTML = '';
+            // Get the current driver assignment from the Map (this reflects the most current state)
+            const assignedDriverId = driverAssignments.get(appointmentId) || currentDriverId;
+            
+            let html = '<select class="driver-assignment-dropdown" onchange="updateDriverAssignment(this, \'' + appointmentId + '\')">';
+            html += '<option value="">-- Select Driver --</option>';
+            
+            // Group drivers by availability
+            const availableDrivers = [];
+            const outsideHoursDrivers = [];
+            const unavailableDrivers = [];
+            
             drivers.forEach(driver => {
-                const driverDiv = document.createElement('div');
-                driverDiv.className = `driver-status ${driver.status}`;
+                const availability = calculateDriverAvailability(driver, appointmentDateTime, pickupTime, dropOffTime, appointmentLength);
                 
-                const statusIcon = driver.status === 'available' ? '✅' :
-                                 driver.status === 'busy' ? '🔄' : '⭕';
+                const driverOption = {
+                    id: driver.id || driver.driver_id,
+                    name: driver.name || driver.driver_name,
+                    availability: availability
+                };
                 
-                driverDiv.innerHTML = `
-                    <div>
-                        <strong>${statusIcon} ${driver.name}</strong><br>
-                        <small>${driver.currentLocation}${driver.nextAppointment ? ` • Next: ${driver.nextAppointment}` : ''}</small>
-                    </div>
-                    <button class="action-btn secondary" onclick="contactDriver('${driver.name}')">📞</button>
-                `;
-                
-                container.appendChild(driverDiv);
+                switch (availability.status) {
+                    case 'available':
+                        availableDrivers.push(driverOption);
+                        break;
+                    case 'outside-hours':
+                        outsideHoursDrivers.push(driverOption);
+                        break;
+                    case 'unavailable':
+                        unavailableDrivers.push(driverOption);
+                        break;
+                }
             });
-        }
-
-        function renderSystemAlerts(alerts) {
-            const container = document.getElementById('systemAlerts');
             
-            if (!alerts || alerts.length === 0) {
-                container.innerHTML = '<div class="empty-state">No system alerts</div>';
-                return;
+            // Render available drivers
+            if (availableDrivers.length > 0) {
+                html += '<optgroup label="Available (Scheduled Hours)">';
+                availableDrivers.forEach(driver => {
+                    const selected = driver.id === assignedDriverId ? 'selected' : '';
+                    html += `<option value="${driver.id}" class="available-driver" ${selected}>
+                        ✅ ${driver.name}
+                    </option>`;
+                });
+                html += '</optgroup>';
             }
+            
+            // Render outside hours drivers
+            if (outsideHoursDrivers.length > 0) {
+                html += '<optgroup label="Outside Scheduled Hours">';
+                outsideHoursDrivers.forEach(driver => {
+                    const selected = driver.id === assignedDriverId ? 'selected' : '';
+                    html += `<option value="${driver.id}" class="outside-hours-driver" ${selected}>
+                        ⚠️ ${driver.name}
+                    </option>`;
+                });
+                html += '</optgroup>';
+            }
+            
+            // Render unavailable drivers
+            if (unavailableDrivers.length > 0) {
+                html += '<optgroup label="Unavailable">';
+                unavailableDrivers.forEach(driver => {
+                    const selected = driver.id === assignedDriverId ? 'selected' : '';
+                    // If it's the assigned driver but unavailable, show as selected but with warning
+                    const optionText = driver.id === assignedDriverId ? 
+                        `⚠️ ${driver.name} (${driver.availability.reason}) - ASSIGNED` :
+                        `❌ ${driver.name} (${driver.availability.reason})`;
+                    html += `<option value="${driver.id}" class="unavailable-driver" ${selected}>
+                        ${optionText}
+                    </option>`;
+                });
+                html += '</optgroup>';
+            }
+            
+            html += '</select>';
+            return html;
+        }
 
-            container.innerHTML = '';
-            alerts.forEach(alert => {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = `alert-item ${alert.type}`;
-                alertDiv.style.cssText = `
-                    padding: 10px;
-                    margin-bottom: 10px;
-                    border-radius: 6px;
-                    font-size: 0.9em;
-                    background: ${alert.type === 'warning' ? '#fff3cd' : '#d1ecf1'};
-                    color: ${alert.type === 'warning' ? '#856404' : '#0c5460'};
-                    border-left: 3px solid ${alert.type === 'warning' ? '#ffc107' : '#17a2b8'};
-                `;
-                
-                const alertIcon = alert.type === 'warning' ? '⚠️' : 'ℹ️';
-                
-                alertDiv.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div>
-                            <strong>${alertIcon} ${alert.message}</strong><br>
-                            <small style="opacity: 0.7;">${alert.time}</small>
-                        </div>
-                        <button onclick="dismissAlert(this)" style="background: none; border: none; font-size: 1.2em; cursor: pointer; opacity: 0.7;">×</button>
-                    </div>
-                `;
-                
-                container.appendChild(alertDiv);
+        // Refresh driver dropdowns when drivers become available
+        function refreshDriverDropdowns() {
+            const weekAppointments = getWeekAppointments();
+            
+            weekAppointments.forEach(appointment => {
+                const appointmentElement = document.querySelector(`[data-appointment-id="${appointment.id}"]`);
+                if (appointmentElement) {
+                    const dropdownElement = appointmentElement.querySelector('.driver-assignment-dropdown');
+                    if (dropdownElement) {
+                        const newDropdown = renderDriverDropdown(
+                            appointment.id,
+                            appointment.appointmentDateTime,
+                            appointment.pickupTime,
+                            appointment.dropOffTime,
+                            appointment.appointmentLength,
+                            appointment.driverAssigned
+                        );
+                        dropdownElement.outerHTML = newDropdown;
+                    }
+                }
             });
         }
 
-        function renderEmergencyAlerts(emergencyAlerts) {
-            const container = document.getElementById('emergencyAlerts');
+        // Assignment management
+        function updateDriverAssignment(selectElement, appointmentId) {
+            const driverId = selectElement.value;
             
-            if (!emergencyAlerts || emergencyAlerts.length === 0) {
+            if (driverId) {
+                driverAssignments.set(appointmentId, driverId);
+            } else {
+                driverAssignments.delete(appointmentId);
+            }
+            
+            updateAssignmentSummary();
+        }
+
+        function updateAssignmentSummary() {
+            const weekAppointments = getWeekAppointments();
+            const assignedCount = weekAppointments.filter(apt => driverAssignments.has(apt.id)).length;
+            const totalCount = weekAppointments.length;
+            
+            document.getElementById('assignmentStats').textContent = 
+                `${assignedCount} of ${totalCount} appointments assigned`;
+            
+            // Update warnings
+            const warnings = validateDriverAssignments();
+            renderAssignmentWarnings(warnings);
+        }
+
+        function validateDriverAssignments() {
+            const warnings = [];
+            const weekAppointments = getWeekAppointments();
+            
+            weekAppointments.forEach(appointment => {
+                // Check if appointment has a driver assigned (either in the Map or in the appointment data)
+                const assignedDriverId = driverAssignments.get(appointment.id) || appointment.driverAssigned;
+                
+                if (assignedDriverId) {
+                    const driver = drivers.find(d => (d.id || d.driver_id) === assignedDriverId);
+                    if (driver) {
+                        const availability = calculateDriverAvailability(driver, appointment.appointmentDateTime, appointment.pickupTime, appointment.dropOffTime, appointment.appointmentLength);
+                        
+                        if (availability.status === 'outside-hours') {
+                            warnings.push({
+                                type: 'warning',
+                                message: `${driver.name} assigned outside scheduled hours (${availability.warning})`
+                            });
+                        }
+                    }
+                } else {
+                    // Format date and time for better tracing
+                    const appointmentDate = new Date(appointment.appointmentDateTime);
+                    const dateString = appointmentDate.toLocaleDateString('en-US', { 
+                        timeZone: 'America/Halifax',
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                    const timeString = appointmentDate.toLocaleTimeString('en-US', { 
+                        timeZone: 'America/Halifax',
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    warnings.push({
+                        type: 'info',
+                        message: `Appointment on ${dateString} at ${timeString} Halifax time has no driver assigned`
+                    });
+                }
+            });
+            
+            return warnings;
+        }
+
+        function renderAssignmentWarnings(warnings) {
+            const container = document.getElementById('assignmentWarnings');
+            
+            if (warnings.length === 0) {
                 container.innerHTML = '';
                 return;
             }
-
-            container.innerHTML = '';
-            emergencyAlerts.forEach(alert => {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'emergency-alert';
-                
-                alertDiv.innerHTML = `
-                    <span style="font-size: 1.5em;">🚨</span>
-                    <div style="flex: 1;">
-                        <strong>${alert.title}</strong><br>
-                        ${alert.message}
-                    </div>
-                    <button class="action-btn danger" onclick="handleEmergencyAlert('${alert.id}')">
-                        Action Required
-                    </button>
-                `;
-                
-                container.appendChild(alertDiv);
-            });
+            
+            container.innerHTML = warnings.map(warning => `
+                <div class="warning-item ${warning.type}">
+                    ${warning.message}
+                </div>
+            `).join('');
         }
 
-        function setupFilters() {
-            const filterButtons = document.querySelectorAll('.filter-btn');
-            
-            filterButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove active class from all buttons
-                    filterButtons.forEach(btn => btn.classList.remove('active'));
-                    
-                    // Add active class to clicked button
-                    this.classList.add('active');
-                    
-                    // Update current filter
-                    currentFilter = this.getAttribute('data-filter');
-                    
-                    // Re-render appointments with new filter
-                    if (operationsData) {
-                        renderAppointmentsList(operationsData.appointments);
-                    }
-                });
-            });
+        // Week navigation
+        function previousWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+            renderWeeklySchedule();
         }
 
-        function filterAppointments(appointments) {
-            const now = new Date();
-            const currentHour = now.getHours();
+        function nextWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            renderWeeklySchedule();
+        }
+
+        function goToThisWeek() {
+            currentWeekStart = getWeekStart(new Date());
+            renderWeeklySchedule();
+        }
+
+        // Submit workflow
+        async function submitWeekSchedule() {
+            const weekAppointments = getWeekAppointments();
+            const assignedAppointments = weekAppointments.filter(apt => driverAssignments.has(apt.id));
             
-            switch (currentFilter) {
-                case 'current':
-                    return appointments.filter(apt => {
-                        const [hours] = apt.time.split(':');
-                        return parseInt(hours) === currentHour;
-                    });
-                
-                case 'next2':
-                    return appointments.filter(apt => {
-                        const [hours] = apt.time.split(':');
-                        const aptHour = parseInt(hours);
-                        return aptHour >= currentHour && aptHour <= currentHour + 2;
-                    });
-                
-                case 'morning':
-                    return appointments.filter(apt => {
-                        const [hours] = apt.time.split(':');
-                        return parseInt(hours) < 12;
-                    });
-                
-                case 'afternoon':
-                    return appointments.filter(apt => {
-                        const [hours] = apt.time.split(':');
-                        return parseInt(hours) >= 12;
-                    });
-                
-                case 'flagged':
-                    return appointments.filter(apt => apt.status === 'flagged');
-                
-                case 'all':
-                default:
-                    return appointments;
+            if (assignedAppointments.length === 0) {
+                if (!confirm('No drivers have been assigned to any appointments. Are you sure you want to submit?')) {
+                    return;
+                }
             }
-        }
-
-        // Action functions
-        async function updateAppointmentStatus(appointmentId, newStatus) {
+            
             try {
-                // TODO: Implement actual API call
-                console.log(`Updating appointment ${appointmentId} to status: ${newStatus}`);
+                // Show loading state
+                const submitBtn = document.querySelector('.btn-success');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '⏳ Submitting...';
+                submitBtn.disabled = true;
                 
-                // Show success message
-                showToast(`Appointment ${appointmentId} updated to ${newStatus}`, 'success');
+                // Track successful and failed updates
+                let successCount = 0;
+                let failCount = 0;
+                const notifications = [];
                 
-                // Refresh data
-                await loadOperationsData();
+                // Update each assigned appointment using the selective workflow (only updates provided fields)
+                for (const appointment of assignedAppointments) {
+                    try {
+                        const driverId = driverAssignments.get(appointment.id);
+                        const driver = drivers.find(d => (d.id || d.driver_id) === driverId);
+                        
+                        // Prepare update data - only send fields that are actually changing
+                        const updateData = {
+                            id: appointment.id,
+                            status: 'confirmed',
+                            driver_assigned: driverId,
+                            driver_first_name: driver ? driver.first_name : null
+                        };
+                        
+                        // Call the driver assignment endpoint
+                        const response = await fetch(API_ENDPOINTS.UPDATE_DRIVER_ASSIGNMENT, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(updateData)
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (result.success) {
+                                successCount++;
+                                console.log(`Successfully updated appointment ${appointment.id}`);
+                                
+                                // Queue notification for 1 hour before pickup
+                                if (appointment.pickupTime) {
+                                    const pickupTime = new Date(appointment.pickupTime);
+                                    const reminderTime = new Date(pickupTime.getTime() - (60 * 60 * 1000)); // 1 hour before
+                                    
+                                    notifications.push({
+                                        appointmentId: appointment.id,
+                                        clientPhone: appointment.clientPhone,
+                                        driverPhone: driver ? driver.phone : null,
+                                        appointmentDateTime: appointment.appointmentDateTime,
+                                        pickupDateTime: appointment.pickupTime,
+                                        reminderTime: reminderTime.toISOString(),
+                                        message: `Reminder: You have an appointment pickup at ${pickupTime.toLocaleTimeString('en-US', { timeZone: 'America/Halifax' })} Halifax time`
+                                    });
+                                }
+                            } else {
+                                failCount++;
+                                console.error(`Failed to update appointment ${appointment.id}:`, result.error);
+                            }
+                        } else {
+                            failCount++;
+                            console.error(`HTTP error updating appointment ${appointment.id}:`, response.status);
+                        }
+                    } catch (error) {
+                        failCount++;
+                        console.error(`Error updating appointment ${appointment.id}:`, error);
+                    }
+                }
+                
+                // Queue notifications (if notification endpoint exists)
+                if (notifications.length > 0) {
+                    try {
+                        // TODO: Implement notification queueing when endpoint is ready
+                        console.log('Would queue notifications:', notifications);
+                    } catch (error) {
+                        console.warn('Failed to queue notifications:', error);
+                    }
+                }
+                
+                // Show results
+                if (successCount > 0) {
+                    showToast(`Successfully updated ${successCount} appointments${failCount > 0 ? ` (${failCount} failed)` : ''}`, 'success');
+                } else {
+                    showToast('Failed to update any appointments. Please try again.', 'error');
+                }
+                
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                
+                // Refresh the schedule to show updated data
+                if (successCount > 0) {
+                    setTimeout(() => {
+                        loadAppointments();
+                    }, 1000);
+                }
                 
             } catch (error) {
-                console.error('Failed to update appointment status:', error);
-                showToast('Failed to update appointment status', 'error');
+                console.error('Error submitting week schedule:', error);
+                showToast('Failed to submit week schedule. Please try again.', 'error');
+                
+                // Reset button
+                const submitBtn = document.querySelector('.btn-success');
+                submitBtn.innerHTML = '✓ Submit Week Schedule';
+                submitBtn.disabled = false;
             }
         }
 
-        function confirmAppointment(appointmentId) {
-            updateAppointmentStatus(appointmentId, 'confirmed');
-        }
-
-        function startTrip(appointmentId) {
-            updateAppointmentStatus(appointmentId, 'in-progress');
-        }
-
-        function completeTrip(appointmentId) {
-            updateAppointmentStatus(appointmentId, 'completed');
-        }
-
-        function approveAppointment(appointmentId) {
-            updateAppointmentStatus(appointmentId, 'confirmed');
-        }
-
-        function rejectAppointment(appointmentId) {
-            if (confirm('Are you sure you want to reject this appointment? This action cannot be undone.')) {
-                // TODO: Implement rejection logic
-                console.log(`Rejecting appointment ${appointmentId}`);
-                showToast('Appointment rejected', 'warning');
-            }
-        }
-
-        function assignDriver(appointmentId) {
-            // TODO: Show driver selection modal
-            const driverName = prompt('Enter driver name:');
-            if (driverName) {
-                console.log(`Assigning ${driverName} to appointment ${appointmentId}`);
-                showToast(`Driver ${driverName} assigned`, 'success');
-                loadOperationsData();
-            }
-        }
-
-        function editAppointment(appointmentId) {
-            // TODO: Open appointment edit modal or redirect to client management
-            console.log(`Editing appointment ${appointmentId}`);
-            showToast('Opening appointment editor...', 'info');
-        }
-
-        function contactClient(appointmentId) {
-            // TODO: Show contact options (call/SMS/email)
-            console.log(`Contacting client for appointment ${appointmentId}`);
-            showToast('Opening contact options...', 'info');
-        }
-
-        function contactDriver(driverName) {
-            // TODO: Show driver contact options
-            console.log(`Contacting driver ${driverName}`);
-            showToast(`Contacting ${driverName}...`, 'info');
-        }
-
-        function trackLocation(appointmentId) {
-            // TODO: Open real-time tracking
-            console.log(`Tracking appointment ${appointmentId}`);
-            showToast('Opening location tracker...', 'info');
-        }
-
-        function reportIssue(appointmentId) {
-            // TODO: Open issue reporting form
-            console.log(`Reporting issue for appointment ${appointmentId}`);
-            showToast('Opening issue report form...', 'info');
-        }
-
-        function viewDetails(appointmentId) {
-            // TODO: Show appointment details modal
-            console.log(`Viewing details for appointment ${appointmentId}`);
-            showToast('Loading appointment details...', 'info');
-        }
-
-        function generateInvoice(appointmentId) {
-            // TODO: Generate and download invoice
-            console.log(`Generating invoice for appointment ${appointmentId}`);
-            showToast('Generating invoice...', 'info');
-        }
-
-        function addEmergencyAppointment() {
-            // TODO: Open emergency booking form
-            window.location.href = 'client-management.html?emergency=true';
-        }
-
-        function viewPendingApprovals() {
-            // Filter to show only flagged appointments
-            document.querySelector('[data-filter="flagged"]').click();
-            showToast('Showing flagged appointments requiring approval', 'info');
-        }
-
-        function exportDailyReport() {
-            // TODO: Generate and download daily operations report
-            console.log('Exporting daily report...');
-            showToast('Generating daily report...', 'info');
-        }
-
-        function dismissAlert(alertElement) {
-            alertElement.closest('.alert-item').remove();
-        }
-
-        function handleEmergencyAlert(alertId) {
-            // TODO: Handle emergency alert action
-            console.log(`Handling emergency alert ${alertId}`);
-            showToast('Processing emergency alert...', 'warning');
-        }
-
+        // Utility functions
         function showToast(message, type = 'info') {
-            // Create toast notification
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed;
@@ -1162,16 +1552,10 @@
 
             document.body.appendChild(toast);
 
-            // Auto-remove after 3 seconds
             setTimeout(() => {
                 toast.style.animation = 'slideOut 0.3s ease-in';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
-        }
-
-        function showError(message) {
-            const appointmentsList = document.getElementById('appointmentsList');
-            appointmentsList.innerHTML = `<div class="error" style="background: #f8d7da; color: #721c24; padding: 20px; border-radius: 8px; text-align: center;">${message}</div>`;
         }
 
         function logout() {
@@ -1198,17 +1582,15 @@
 </body>
 </html>
 <!-- 
-Version: v1.0.0 - RRTS Operations Portal
-- v1.0.0: Initial daily operations interface with real-time appointment management
-- Features: Today's schedule with time-based filtering, appointment status management
-- Real-time auto-refresh every 30 seconds with visual indicators
-- Driver status monitoring and quick contact options
-- Appointment actions: confirm, start trip, complete, approve/reject flagged items
-- Operations summary metrics with live counts
-- Quick actions: emergency booking, approval reviews, daily reports
-- System alerts and emergency notifications
+Version: v2.1.0 - RRTS Weekly Driver Assignment
+- v2.1.0: Integrated with existing APPT - Update Appointment workflow for efficient updates
+- v2.0.0: Weekly driver assignment interface with visual availability indicators
+- Features: Sunday-start weekly schedule view with driver assignment dropdowns
+- Driver availability calculation with visual indicators (available/outside-hours/unavailable)
+- Assignment validation with warnings for outside-hours assignments
+- Submit workflow using existing update-appointment endpoint for reliable updates
+- Notification queue system for 1-hour prior to pickup time reminders
 - Responsive design optimized for desktop and mobile operations
 - Toast notifications for user feedback on all actions
-- Ready for integration with operations data API endpoints
-- Mock data structure demonstrates full operational workflow
+- Integrated with proven production workflow for appointment updates
 -->

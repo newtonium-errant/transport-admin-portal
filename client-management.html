@@ -586,6 +586,7 @@
         let allClients = [];
         let filteredClients = [];
         let currentEditingClient = null;
+        let clientOpenPhoneIds = {}; // Store openphone_contact_id for each client
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -635,6 +636,14 @@
                 const clientData = Array.isArray(data) && data.length > 0 ? data[0] : data;
                 allClients = clientData.clients || [];
                 filteredClients = [...allClients];
+                
+                // Store openphone_contact_id for each client
+                allClients.forEach(client => {
+                    if (client.openphone_contact_id) {
+                        clientOpenPhoneIds[client.knumber] = client.openphone_contact_id;
+                    }
+                });
+                
                 displayClients(filteredClients);
                 updateClientCount(filteredClients.length);
                 
@@ -670,6 +679,14 @@
                 const clientData = Array.isArray(data) && data.length > 0 ? data[0] : data;
                 allClients = clientData.clients || [];
                 filteredClients = [...allClients];
+                
+                // Store openphone_contact_id for each client
+                allClients.forEach(client => {
+                    if (client.openphone_contact_id) {
+                        clientOpenPhoneIds[client.knumber] = client.openphone_contact_id;
+                    }
+                });
+                
                 displayClients(filteredClients);
                 updateClientCount(filteredClients.length);
                 
@@ -899,8 +916,9 @@
         document.getElementById('clientForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const kNumber = document.getElementById('modalKNumber').value.trim().toUpperCase();
             const formData = {
-                kNumber: document.getElementById('modalKNumber').value.trim().toUpperCase(),
+                kNumber: kNumber,
                 clientData: {
                     firstName: document.getElementById('modalFirstName').value.trim(),
                     lastName: document.getElementById('modalLastName').value.trim(),
@@ -921,11 +939,17 @@
                 }
             };
 
+            // Add openphone_contact_id if this is an edit operation and the client has one
+            if (currentEditingClient && clientOpenPhoneIds[kNumber]) {
+                formData.openphone_contact_id = clientOpenPhoneIds[kNumber];
+            }
+
             try {
                 const isEdit = currentEditingClient !== null;
                 const endpoint = isEdit ? 'updateClient' : 'createClient';
                 
-                const response = await fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${endpoint}`, {
+                // Step 1: Create/update client in database
+                const clientResponse = await fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${endpoint}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -933,11 +957,28 @@
                     body: JSON.stringify(formData)
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!clientResponse.ok) {
+                    throw new Error(`Client ${isEdit ? 'update' : 'creation'} failed: ${clientResponse.status}`);
                 }
 
-                showSuccess(`Client ${isEdit ? 'updated' : 'created'} successfully!`);
+                // Step 2: Send to messaging API (only if client creation/update succeeded)
+                const messagingEndpoint = isEdit ? 'update-phone-client' : 'create-phone-contact';
+                const messagingResponse = await fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${messagingEndpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!messagingResponse.ok) {
+                    // Client was created/updated but messaging failed - show success with warning
+                    console.warn(`Client ${isEdit ? 'updated' : 'created'} but messaging notification failed`);
+                    showSuccess(`Client ${isEdit ? 'updated' : 'created'} successfully! (Messaging notification failed)`);
+                } else {
+                    showSuccess(`Client ${isEdit ? 'updated' : 'created'} successfully!`);
+                }
+
                 closeClientModal();
                 await loadAllClients();
                 

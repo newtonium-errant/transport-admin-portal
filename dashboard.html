@@ -321,6 +321,219 @@
             color: #721c24;
         }
 
+        /* Time Filter Styles */
+        .time-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .filter-btn:hover:not(.active) {
+            background: #bdc3c7;
+        }
+
+        /* Appointment Item Styles */
+        .appointment-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+            border-left: 5px solid #3498db;
+        }
+
+        .appointment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .appointment-item.confirmed {
+            border-left-color: #27ae60;
+        }
+
+        .appointment-item.pending {
+            border-left-color: #f39c12;
+        }
+
+        .appointment-item.flagged {
+            border-left-color: #e74c3c;
+            background-color: #fef9e7;
+        }
+
+        .appointment-item.in-progress {
+            border-left-color: #9b59b6;
+            background-color: #f8f5ff;
+        }
+
+        .appointment-item.completed {
+            border-left-color: #95a5a6;
+            background-color: #f8f9fa;
+            opacity: 0.8;
+        }
+
+        .appointment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .appointment-time {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .appointment-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-flagged {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-in-progress {
+            background: #e7e3ff;
+            color: #6f42c1;
+        }
+
+        .status-completed {
+            background: #e2e6ea;
+            color: #6c757d;
+        }
+
+        .appointment-client {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .appointment-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .detail-icon {
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+
+        .appointment-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-btn.primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .action-btn.success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .action-btn.warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .action-btn.danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .action-btn.secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        .appointment-notes {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+            border-left: 3px solid #3498db;
+        }
+
+        .flagged-reason {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -480,9 +693,21 @@
                     </button>
                 </div>
 
-                <!-- Today's Appointments -->
+                <!-- Today's Schedule -->
                 <div class="appointments-section">
-                    <h3 class="section-title">📅 Today's Appointments</h3>
+                    <h3 class="section-title">📅 Today's Schedule</h3>
+                    
+                    <!-- Time Filter -->
+                    <div class="time-filter">
+                        <button class="filter-btn active" data-filter="all">All Day</button>
+                        <button class="filter-btn" data-filter="current">Current Hour</button>
+                        <button class="filter-btn" data-filter="next2">Next 2 Hours</button>
+                        <button class="filter-btn" data-filter="morning">Morning</button>
+                        <button class="filter-btn" data-filter="afternoon">Afternoon</button>
+                        <button class="filter-btn" data-filter="flagged">Flagged Only</button>
+                    </div>
+
+                    <!-- Appointments List -->
                     <div id="todaysAppointmentsList">
                         <div class="loading">Loading today's appointments...</div>
                     </div>
@@ -672,76 +897,90 @@
 
 	async function loadDashboardData() {
 	    try {
-	        // Call the real driver management endpoint
-	        const response = await fetch(API_ENDPOINTS.DASHBOARD_DATA, {
-	            method: 'GET',
-        	    headers: {
-                	'Content-Type': 'application/json',
-	            }
-	        });
-
-        	if (!response.ok) {
-	            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	        // Load appointments from the appointments API
+	        const appointmentsResponse = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments');
+	        
+	        if (!appointmentsResponse.ok) {
+	            throw new Error(`HTTP ${appointmentsResponse.status}: ${appointmentsResponse.statusText}`);
 	        }
 
-        	const driverData = await response.json();
-	        console.log('Dashboard data loaded:', driverData);
+        	const appointmentsData = await appointmentsResponse.json();
+	        console.log('Appointments data loaded:', appointmentsData);
+	        
+	        // Extract appointments from the response
+	        let appointments = [];
+	        if (Array.isArray(appointmentsData) && appointmentsData.length > 0 && appointmentsData[0].appointments) {
+	            appointments = appointmentsData[0].appointments;
+	        } else if (appointmentsData.appointments && Array.isArray(appointmentsData.appointments)) {
+	            appointments = appointmentsData.appointments;
+	        }
+	        
+	        // Filter for today's appointments
+	        const today = new Date();
+	        today.setHours(0, 0, 0, 0);
+	        const tomorrow = new Date(today);
+	        tomorrow.setDate(tomorrow.getDate() + 1);
+	        
+	        const todaysAppointments = appointments.filter(apt => {
+	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
+	            return aptDate >= today && aptDate < tomorrow;
+	        });
 
-        	// Transform the real driver management data into dashboard metrics
+        	// Transform the appointments data into dashboard metrics
 	        const dashboardMetrics = {
-        	    todaysAppointments: driverData.todaysAssignments?.length || 0,
-	            pendingApprovals: driverData.todaysAssignments?.filter(apt => 
-	                apt.status === 'needs_review' || apt.status === 'pending' || apt.driverId === null
-        	    ).length || 0,
-	            activeClients: driverData.drivers?.length || 0, // Rough estimate
-        	    availableDrivers: driverData.stats?.available || 0
+        	    todaysAppointments: todaysAppointments.length,
+	            pendingApprovals: todaysAppointments.filter(apt => 
+	                (apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
+        	    ).length,
+	            activeClients: appointments.length, // Total appointments as proxy for activity
+        	    availableDrivers: 3 // This would come from a drivers API
 	        };
 
         	// Update the metrics display
 	        updateDashboardMetrics(dashboardMetrics);
 
-        	// Render today's appointments from real data
-   	     const todaysSchedule = driverData.todaysAssignments?.map(apt => ({
-     	       id: apt.driverId || 'unassigned',
-    	        client: `${apt.client} (${apt.client})`,
-     	       time: apt.time,
-     	       location: apt.location,
-    	        status: apt.status,
-      	      driver: apt.driverName || 'Unassigned',
-   	         flagReason: apt.status === 'needs_review' ? 'Requires approval' : null
- 	       })) || [];
-
- 	       renderTodaysAppointments(todaysSchedule);
+        	// Store appointments globally for filtering
+	        window.todaysAppointments = todaysAppointments;
+	        
+	        // Render today's appointments
+	        renderTodaysAppointments(todaysAppointments);
+	        
+	        // Set up time filters
+	        setupTimeFilters();
 
 	        // Render flagged appointments (those needing review)
-  	      const flaggedAppointments = driverData.todaysAssignments?.filter(apt => 
-  	          apt.status === 'needs_review' || apt.driverId === null
+  	      const flaggedAppointments = todaysAppointments.filter(apt => 
+  	          (apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
   	      ).map(apt => ({
-   	         id: apt.driverId || 'unassigned',
-   	         client: `${apt.client}`,
+   	         id: apt.id || apt.appointment_id,
+   	         client: `${apt.firstname || apt.clientFirstName || ''} ${apt.lastname || apt.clientLastName || ''}`.trim(),
             	date: 'Today',
-         	   time: apt.time,
-        	    location: apt.location,
-         	   reason: apt.status === 'needs_review' ? 'Requires approval' : 'No driver assigned',
+         	   time: new Date(apt.appointmenttime || apt.appointmentDateTime).toLocaleTimeString('en-US', { 
+         	       hour: 'numeric', 
+         	       minute: '2-digit',
+         	       hour12: true 
+         	   }),
+        	    location: apt.locationname || apt.location || 'No location',
+         	   reason: !apt.driverAssigned ? 'No driver assigned' : 'Requires approval',
         	    hoursNotice: 24 // Default value
-      	  })) || [];
+      	  }));
 
      	   renderFlaggedAppointments(flaggedAppointments);
 
        	 // Create recent activity from today's appointments
-     	   const recentActivity = driverData.todaysAssignments?.slice(0, 5).map((apt, index) => ({
-     	       type: apt.status === 'confirmed' ? 'appointment_confirmed' : 'appointment_created',
-       	     message: `${apt.status === 'confirmed' ? 'Confirmed' : 'Created'} appointment for ${apt.client}`,
+     	   const recentActivity = todaysAppointments.slice(0, 5).map((apt, index) => ({
+     	       type: (apt.appointmentstatus || apt.status) === 'confirmed' ? 'appointment_confirmed' : 'appointment_created',
+       	     message: `${(apt.appointmentstatus || apt.status) === 'confirmed' ? 'Confirmed' : 'Created'} appointment for ${(apt.firstname || apt.clientFirstName || '')} ${(apt.lastname || apt.clientLastName || '')}`.trim(),
       	      time: `${index + 1} hour${index + 1 > 1 ? 's' : ''} ago`,
       	      user: 'admin'
-      	  })) || [
+      	  })).concat([
          	   {
-          	      type: 'system_start',
+         	       type: 'system_start',
          	       message: 'Dashboard loaded successfully',
          	       time: 'Just now',
-          	      user: 'system'
+         	       user: 'system'
          	   }
-      	  ];
+      	  ]);
 
       	  renderRecentActivity(recentActivity);
 
@@ -789,26 +1028,62 @@
                 return;
             }
 
-            container.innerHTML = '';
-            appointments.forEach(appointment => {
-                const appointmentDiv = document.createElement('div');
-                appointmentDiv.className = `appointment-item ${appointment.status}`;
+            container.innerHTML = appointments.map(apt => {
+                const appointmentTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                const timeString = appointmentTime.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
                 
-                appointmentDiv.innerHTML = `
-                    <div class="appointment-info">
-                        <div class="appointment-client">${appointment.client}</div>
-                        <div class="appointment-details">
-                            ${appointment.time} • ${appointment.location} • Driver: ${appointment.driver}
-                            ${appointment.flagReason ? `<br><strong>⚠️ ${appointment.flagReason}</strong>` : ''}
+                const clientName = `${apt.firstname || apt.clientFirstName || ''} ${apt.lastname || apt.clientLastName || ''}`.trim() || 'Unknown Client';
+                const kNumber = apt.knumber ? ` (${apt.knumber})` : '';
+                const status = apt.appointmentstatus || apt.status || 'pending';
+                const driver = apt.driverAssigned || apt.driver_assigned || 'Unassigned';
+                const location = apt.locationname || apt.location || 'No location';
+                
+                return `
+                    <div class="appointment-item ${status}">
+                        <div class="appointment-header">
+                            <div class="appointment-time">${timeString}</div>
+                            <div class="appointment-status status-${status}">${status.replace('-', ' ')}</div>
                         </div>
-                    </div>
-                    <div class="appointment-status status-${appointment.status}">
-                        ${appointment.status}
+                        <div class="appointment-client">${clientName}${kNumber}</div>
+                        <div class="appointment-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                ${location}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🚗</span>
+                                Driver: ${driver}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">⏰</span>
+                                Pickup: ${new Date(apt.pickuptime || apt.pickupTime).toLocaleTimeString('en-US', { 
+                                    hour: 'numeric', 
+                                    minute: '2-digit',
+                                    hour12: true 
+                                })}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                Duration: ${apt.appointmentlength || apt.appointmentLength || 60}min
+                            </div>
+                        </div>
+                        ${!apt.driverAssigned ? `
+                            <div class="flagged-reason">
+                                ⚠️ No driver assigned
+                            </div>
+                        ` : ''}
+                        ${apt.notes ? `
+                            <div class="appointment-notes">
+                                📝 ${apt.notes}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
-                
-                container.appendChild(appointmentDiv);
-            });
+            }).join('');
         }
 
         function renderFlaggedAppointments(flaggedAppointments) {
@@ -915,20 +1190,90 @@
             showLogin();
         }
 
+        // Time filter functionality
+        function setupTimeFilters() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Update current filter
+                    const currentFilter = this.getAttribute('data-filter');
+                    
+                    // Filter and re-render appointments
+                    filterAndRenderAppointments(currentFilter);
+                });
+            });
+        }
+
+        function filterAndRenderAppointments(filter) {
+            if (!window.todaysAppointments) return;
+            
+            const filteredAppointments = filterAppointments(window.todaysAppointments, filter);
+            renderTodaysAppointments(filteredAppointments);
+        }
+
+        function filterAppointments(appointments, filter) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            switch (filter) {
+                case 'current':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        return aptTime.getHours() === currentHour;
+                    });
+                    
+                case 'next2':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        const aptHour = aptTime.getHours();
+                        return aptHour >= currentHour && aptHour <= currentHour + 2;
+                    });
+                    
+                case 'morning':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        return aptTime.getHours() < 12;
+                    });
+                    
+                case 'afternoon':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        return aptTime.getHours() >= 12;
+                    });
+                    
+                case 'flagged':
+                    return appointments.filter(apt => 
+                        (apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
+                    );
+                    
+                case 'all':
+                default:
+                    return appointments;
+            }
+        }
+
     </script>
 </body>
 </html>
 <!-- 
-Version: v1.1.2 - RRTS Dashboard
+Version: v2.0.0 - RRTS Dashboard with Daily Schedule
+- v2.0.0: Added daily schedule view with time filtering from operations page
 - v1.1.2: fixes missing functions
 - v1.1.1: Uses actual data, updated endpoints
 - v1.0.0: Initial dashboard with login, metrics overview, today's appointments
-- Features: System status indicators, appointment metrics, quick actions navigation
-- Real-time dashboard data loading with mock data structure
-- Today's schedule view with status indicators (confirmed/pending/flagged)
+- Features: System status indicators, daily schedule with time filtering, appointment management
+- Real-time dashboard data loading with appointments API integration
+- Today's schedule view with enhanced appointment display and time-based filtering
 - Flagged appointments requiring attention with approval workflow hooks
 - Recent activity feed for system monitoring
-- Responsive design with mobile support
+- Responsive design with mobile support and enhanced appointment styling
 - Session-based authentication with automatic login state persistence
-- Ready for integration with dashboard data API endpoint
+- Ready for integration with appointments and driver management API endpoints
 -->
