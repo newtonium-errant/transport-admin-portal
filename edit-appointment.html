@@ -842,6 +842,7 @@
             if (drivers.length > 0 && data.driver_assigned) {
                 document.getElementById('driverAssigned').value = data.driver_assigned;
             }
+            
 
             // Set up event listeners for automatic pickup time calculation
             setupPickupTimeCalculation();
@@ -991,6 +992,7 @@
             document.getElementById('errorState').style.display = 'block';
         }
 
+
         // Handle form submission
         document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1031,7 +1033,7 @@
 
                 console.log('Sending update data:', formData);
 
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment', {
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-with-calendar', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1073,7 +1075,10 @@
 </body>
 </html>
 
-<!-- Version: v4.4.0 - Enhanced notes auto-generation with debugging and simplified logic -->
+<!-- Version: v4.6.0 - Enhanced driver calendar management with event deletion -->
+<!-- - v4.6.0: Added 3-step workflow: delete existing calendar events, save appointment, sync new driver calendar -->
+<!-- - v4.5.0: Added automatic calendar sync when drivers are assigned, unassigned, or changed -->
+<!-- - v4.4.0: Enhanced notes auto-generation with debugging and simplified logic -->
 <!-- - v3.7.0: Fixed timezone conversion for UTC timestamps -->
 <!-- - v3.8.0: Enhanced error handling for API responses -->
 <!-- - v3.9.0: Improved form validation and user feedback -->

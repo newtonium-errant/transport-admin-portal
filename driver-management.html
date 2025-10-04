@@ -1250,6 +1250,7 @@
 
                 console.log('Saving driver:', formData);
 
+                // First webhook: Create driver in database
                 const response = await fetch(API_ENDPOINTS.ADD_DRIVER, {
                     method: 'POST',
                     headers: {
@@ -1262,7 +1263,25 @@
                 console.log('Save response:', result);
 
                 if (result.success) {
-                    alert('Driver added successfully!');
+                    // Extract driverID from response
+                    const driverID = result.driverID || result.driver_id || result.id;
+                    
+                    if (driverID) {
+                        console.log('Driver created with ID:', driverID);
+                        
+                        // Second webhook: Create Google Calendar for the driver
+                        try {
+                            await createDriverCalendar(driverID);
+                            alert('Driver added successfully and calendar created!');
+                        } catch (calendarError) {
+                            console.error('Calendar creation failed:', calendarError);
+                            alert(`Driver added successfully, but calendar creation failed: ${calendarError.message}`);
+                        }
+                    } else {
+                        console.warn('Driver created but no driverID returned');
+                        alert('Driver added successfully, but calendar creation skipped (no driver ID)');
+                    }
+                    
                     clearForm();
                     
                     // Collapse form after successful save
@@ -1278,6 +1297,35 @@
             } catch (error) {
                 console.error('Error saving driver:', error);
                 alert(`Error saving driver: ${error.message}`);
+            }
+        }
+
+        // Create Google Calendar for driver
+        async function createDriverCalendar(driverID) {
+            try {
+                console.log('Creating calendar for driver ID:', driverID);
+
+                const calendarResponse = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/create-driver-calendar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        driverID: driverID
+                    })
+                });
+
+                const calendarResult = await calendarResponse.json();
+                console.log('Calendar creation response:', calendarResult);
+
+                if (!calendarResult.success) {
+                    throw new Error(calendarResult.message || 'Failed to create calendar');
+                }
+
+                return calendarResult;
+            } catch (error) {
+                console.error('Error creating calendar:', error);
+                throw error;
             }
         }
 
