@@ -171,6 +171,12 @@
             text-decoration: line-through;
         }
 
+        .deassign-driver {
+            color: #e74c3c;
+            font-weight: 600;
+            background-color: #f8d7da;
+        }
+
         optgroup {
             font-weight: 600;
             color: #2c3e50;
@@ -1208,6 +1214,11 @@
             let html = '<select class="driver-assignment-dropdown" onchange="updateDriverAssignment(this, \'' + appointmentId + '\')">';
             html += '<option value="">-- Select Driver --</option>';
             
+            // Add deassign option if there's a current driver assigned
+            if (assignedDriverId) {
+                html += '<option value="DEASSIGN" class="deassign-driver">🚫 Deassign Driver</option>';
+            }
+            
             // Group drivers by availability
             const availableDrivers = [];
             const outsideHoursDrivers = [];
@@ -1306,7 +1317,13 @@
         function updateDriverAssignment(selectElement, appointmentId) {
             const driverId = selectElement.value;
             
-            if (driverId) {
+            if (driverId === 'DEASSIGN') {
+                // Handle deassign action
+                driverAssignments.delete(appointmentId);
+                // Reset dropdown to show "No driver assigned"
+                selectElement.value = '';
+                showToast('Driver deassigned successfully', 'success');
+            } else if (driverId) {
                 driverAssignments.set(appointmentId, driverId);
             } else {
                 driverAssignments.delete(appointmentId);
@@ -1408,10 +1425,23 @@
         // Submit workflow - batch multiple appointments with calendar management
         async function submitWeekSchedule() {
             const weekAppointments = getWeekAppointments();
-            const assignedAppointments = weekAppointments.filter(apt => driverAssignments.has(apt.id));
             
-            if (assignedAppointments.length === 0) {
-                if (!confirm('No drivers have been assigned to any appointments. Are you sure you want to submit?')) {
+            // Include all appointments that have been modified (assigned, reassigned, or deassigned)
+            const modifiedAppointments = weekAppointments.filter(apt => {
+                const currentDriverId = driverAssignments.get(apt.id);
+                const originalDriverId = apt.driverAssigned;
+                
+                // Include if:
+                // 1. Driver was assigned (currentDriverId exists)
+                // 2. Driver was deassigned (originalDriverId exists but currentDriverId is undefined)
+                // 3. Driver was changed (currentDriverId !== originalDriverId)
+                return currentDriverId !== undefined || 
+                       (originalDriverId && currentDriverId === undefined) ||
+                       (currentDriverId !== originalDriverId);
+            });
+            
+            if (modifiedAppointments.length === 0) {
+                if (!confirm('No driver assignments have been modified. Are you sure you want to submit?')) {
                     return;
                 }
             }
@@ -1423,10 +1453,10 @@
                 submitBtn.innerHTML = '⏳ Submitting...';
                 submitBtn.disabled = true;
                 
-                console.log(`Preparing to submit ${assignedAppointments.length} appointments with calendar management...`);
+                console.log(`Preparing to submit ${modifiedAppointments.length} appointments with calendar management...`);
                 
                 // Prepare batch data for the new workflow
-                const appointmentsData = assignedAppointments.map(appointment => {
+                const appointmentsData = modifiedAppointments.map(appointment => {
                     const currentDriverId = driverAssignments.get(appointment.id);
                     const driver = drivers.find(d => (d.id || d.driver_id) === currentDriverId);
                     
@@ -1438,7 +1468,7 @@
                         location: appointment.location,
                         locationAddress: appointment.locationAddress,
                         status: 'confirmed',
-                        driver_assigned: currentDriverId,
+                        driver_assigned: currentDriverId || null, // null for deassigned appointments
                         appointmentLength: appointment.appointmentLength || 120,
                         transitTime: appointment.transitTime || 0,
                         notes: appointment.notes,
