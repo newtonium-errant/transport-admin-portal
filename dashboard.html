@@ -595,7 +595,50 @@
                         <span class="icon">🔐</span> Login
                     </button>
                 </div>
+                <div class="form-group" style="text-align: center; margin-top: 15px;">
+                    <button type="button" class="action-btn secondary" onclick="showPasswordReset()" style="width: 100%; font-size: 14px; padding: 10px;">
+                        <span class="icon">🔑</span> Forgot Password?
+                    </button>
+                </div>
                 <div id="loginError" class="hidden"></div>
+            </div>
+        </div>
+
+        <!-- Password Reset Section -->
+        <div id="passwordResetSection" class="hidden">
+            <div class="header">
+                <h1>Rural Route Transportation Services</h1>
+                <div class="header-info">
+                    <span id="resetCurrentDate"></span>
+                </div>
+            </div>
+            <div class="login-section">
+                <h3 style="text-align: center; margin-bottom: 30px; color: #2c3e50;">Reset Password</h3>
+                <div class="form-group">
+                    <label for="resetUsername">Username:</label>
+                    <input type="text" id="resetUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password:</label>
+                    <input type="password" id="newPassword" required minlength="8">
+                    <small style="color: #666; font-size: 0.8em;">Password must be at least 8 characters long</small>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password:</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="form-group" style="text-align: center; margin-top: 30px;">
+                    <button type="button" class="action-btn success" onclick="resetPassword()" style="width: 100%; font-size: 18px; padding: 15px;">
+                        <span class="icon">🔑</span> Reset Password
+                    </button>
+                </div>
+                <div class="form-group" style="text-align: center; margin-top: 15px;">
+                    <button type="button" class="action-btn secondary" onclick="showLogin()" style="width: 100%; font-size: 14px; padding: 10px;">
+                        <span class="icon">←</span> Back to Login
+                    </button>
+                </div>
+                <div id="resetError" class="hidden"></div>
+                <div id="resetSuccess" class="hidden"></div>
             </div>
         </div>
 
@@ -736,6 +779,7 @@
 	// API Configuration for RRTS Dashboard
 	const API_ENDPOINTS = {
     	LOGIN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login',
+    	PASSWORD_RESET: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset',
    	 DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management'
 	};
 
@@ -748,21 +792,33 @@
     	console.log('RRTS Dashboard loaded');
    	 console.log('API Endpoints configured:', API_ENDPOINTS);
     
-   	 // Check for existing session
-   	 const savedUser = sessionStorage.getItem('rrts_user');
-  	  if (savedUser) {
-  	      try {
-    	        currentUser = JSON.parse(savedUser);
-     	       isLoggedIn = true;
-     	       showDashboard();
-     	       loadDashboardData();
-      	  } catch (error) {
-     	       console.log('Invalid saved session, showing login');
-      	      sessionStorage.removeItem('rrts_user');
-     	       showLogin();
-    	    }
-    	} else {
-    	    showLogin();
+   	 // Check for password reset parameter
+   	 const urlParams = new URLSearchParams(window.location.search);
+   	 const resetUsername = urlParams.get('reset');
+   	 
+   	 if (resetUsername) {
+   	     // Pre-fill username in password reset form
+   	     showPasswordReset();
+   	     setTimeout(() => {
+   	         document.getElementById('resetUsername').value = resetUsername;
+   	     }, 100);
+   	 } else {
+   	     // Check for existing session
+   	     const savedUser = sessionStorage.getItem('rrts_user');
+   	     if (savedUser) {
+   	         try {
+   	             currentUser = JSON.parse(savedUser);
+   	             isLoggedIn = true;
+   	             showDashboard();
+   	             loadDashboardData();
+   	         } catch (error) {
+   	             console.log('Invalid saved session, showing login');
+   	             sessionStorage.removeItem('rrts_user');
+   	             showLogin();
+   	         }
+   	     } else {
+   	         showLogin();
+   	     }
    	 }
     
    	 // Update current time
@@ -790,6 +846,36 @@
   	          if (event.key === 'Enter') {
   	              event.preventDefault();
   	              login();
+  	          }
+  	      });
+  	  }
+	  
+  	  // Add Enter key support for password reset form
+  	  const resetUsernameField = document.getElementById('resetUsername');
+  	  const newPasswordField = document.getElementById('newPassword');
+  	  const confirmPasswordField = document.getElementById('confirmPassword');
+  	  
+  	  if (resetUsernameField) {
+  	      resetUsernameField.addEventListener('keydown', function(event) {
+  	          if (event.key === 'Enter') {
+  	              event.preventDefault();
+  	              resetPassword();
+  	          }
+  	      });
+  	  }
+  	  if (newPasswordField) {
+  	      newPasswordField.addEventListener('keydown', function(event) {
+  	          if (event.key === 'Enter') {
+  	              event.preventDefault();
+  	              resetPassword();
+  	          }
+  	      });
+  	  }
+  	  if (confirmPasswordField) {
+  	      confirmPasswordField.addEventListener('keydown', function(event) {
+  	          if (event.key === 'Enter') {
+  	              event.preventDefault();
+  	              resetPassword();
   	          }
   	      });
   	  }
@@ -855,6 +941,61 @@
             }
         }
 
+        async function resetPassword() {
+            const username = document.getElementById('resetUsername').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            
+            if (!username || !newPassword || !confirmPassword) {
+                showResetError('Please fill in all fields');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showResetError('Password must be at least 8 characters long');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showResetError('Passwords do not match');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_ENDPOINTS.PASSWORD_RESET, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        username, 
+                        newPassword,
+                        confirmPassword 
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Password reset result:', result);
+
+                if (result.success) {
+                    showResetSuccess('Password reset successfully! You can now login with your new password.');
+                    // Clear form
+                    document.getElementById('resetUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    // Auto-redirect to login after 3 seconds
+                    setTimeout(() => {
+                        showLogin();
+                    }, 3000);
+                } else {
+                    showResetError(result.message || 'Password reset failed');
+                }
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showResetError('Password reset failed - please try again');
+            }
+        }
+
 	function updateCurrentTime() {
   	  const now = new Date();
   	  const options = {
@@ -881,11 +1022,35 @@
 	function showLogin() {
     	document.getElementById('loginSection').classList.remove('hidden');
     	document.getElementById('dashboardSection').classList.add('hidden');
+    	document.getElementById('passwordResetSection').classList.add('hidden');
+    	
+    	// Clear password reset form
+    	document.getElementById('resetUsername').value = '';
+    	document.getElementById('newPassword').value = '';
+    	document.getElementById('confirmPassword').value = '';
+    	document.getElementById('resetError').classList.add('hidden');
+    	document.getElementById('resetSuccess').classList.add('hidden');
+	}
+
+	function showPasswordReset() {
+    	document.getElementById('loginSection').classList.add('hidden');
+    	document.getElementById('dashboardSection').classList.add('hidden');
+    	document.getElementById('passwordResetSection').classList.remove('hidden');
+    	
+    	// Clear login form errors
+    	document.getElementById('loginError').classList.add('hidden');
+    	
+    	// Focus on username field
+    	const resetUsernameField = document.getElementById('resetUsername');
+    	if (resetUsernameField) {
+    	    resetUsernameField.focus();
+    	}
 	}
 
 	function showDashboard() {
    	 document.getElementById('loginSection').classList.add('hidden');
    	 document.getElementById('dashboardSection').classList.remove('hidden');
+   	 document.getElementById('passwordResetSection').classList.add('hidden');
     
    	 if (currentUser) {
     	    const welcomeElement = document.getElementById('welcomeUser');
@@ -1175,6 +1340,20 @@
             const errorDiv = document.getElementById('loginError');
             errorDiv.innerHTML = `<div class="error">${message}</div>`;
             errorDiv.classList.remove('hidden');
+        }
+
+        function showResetError(message) {
+            const errorDiv = document.getElementById('resetError');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            errorDiv.classList.remove('hidden');
+            document.getElementById('resetSuccess').classList.add('hidden');
+        }
+
+        function showResetSuccess(message) {
+            const successDiv = document.getElementById('resetSuccess');
+            successDiv.innerHTML = `<div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; border-radius: 8px; margin: 15px 0;">✅ ${message}</div>`;
+            successDiv.classList.remove('hidden');
+            document.getElementById('resetError').classList.add('hidden');
         }
 
         function logout() {

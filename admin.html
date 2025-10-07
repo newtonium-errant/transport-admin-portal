@@ -350,6 +350,10 @@
             z-index: 10000;
         }
 
+        .modal.hidden {
+            display: none;
+        }
+
         .modal-content {
             background: white;
             border-radius: 12px;
@@ -629,26 +633,30 @@
             </div>
             
             <form id="addUserForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="newUsername">Username *</label>
-                        <input type="text" id="newUsername" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="newEmail">Email Address *</label>
-                        <input type="email" id="newEmail" required>
-                    </div>
+                <div class="form-group">
+                    <label for="newUsername">Username/Email *</label>
+                    <input type="email" id="newUsername" placeholder="Enter username (will be used as email too)" required>
+                    <small style="color: #666; font-size: 0.85em; margin-top: 5px; display: block;">
+                        This will be used as both username and email address
+                    </small>
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="newPassword">Password *</label>
-                        <input type="password" id="newPassword" required>
+                <div class="form-group">
+                    <label for="newFullName">Full Name</label>
+                    <input type="text" id="newFullName" placeholder="Enter full name (optional)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="tempPassword">Temporary Password</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="tempPassword" readonly style="background-color: #f8f9fa; color: #666;">
+                        <button type="button" class="action-btn secondary" onclick="generateTempPassword()" style="margin: 0; padding: 8px 12px;">
+                            🔄 Generate New
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password *</label>
-                        <input type="password" id="confirmPassword" required>
-                    </div>
+                    <small style="color: #e74c3c; font-size: 0.85em; margin-top: 5px; display: block;">
+                        ⚠️ User must change this password on first login
+                    </small>
                 </div>
                 
                 <div class="form-row">
@@ -657,8 +665,9 @@
                         <select id="userRole">
                             <option value="admin">Administrator</option>
                             <option value="supervisor">Supervisor</option>
-                            <option value="operator">Operator</option>
-                            <option value="readonly">Read Only</option>
+                            <option value="driver">Driver</option>
+                            <option value="booking_agent">Booking Agent</option>
+                            <option value="client">Client</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -685,10 +694,11 @@
     <script>
         // API Configuration
         const API_ENDPOINTS = {
-            ADMIN_DATA: 'https://n8n.newtonium.ca/webhook/rrts-admin-data', // TODO: Create this
-            USER_MANAGEMENT: 'https://n8n.newtonium.ca/webhook/rrts-user-management', // TODO: Create this
-            SYSTEM_CONFIG: 'https://n8n.newtonium.ca/webhook/rrts-system-config', // TODO: Create this
-            SYSTEM_LOGS: 'https://n8n.newtonium.ca/webhook/rrts-system-logs' // TODO: Create this
+            GET_USERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-users',
+            CREATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-user',
+            UPDATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-user',
+            DELETE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-user',
+            RESET_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset'
         };
 
         // Global variables
@@ -717,6 +727,9 @@
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
             
+            // Ensure modal is hidden on page load
+            document.getElementById('addUserModal').classList.add('hidden');
+            
             loadAdminData();
             setupUserSearch();
             setupAddUserForm();
@@ -738,24 +751,68 @@
 
         async function loadAdminData() {
             try {
-                // TODO: Replace with actual API call when endpoint is ready
-                // const response = await fetch(API_ENDPOINTS.ADMIN_DATA);
-                // const data = await response.json();
-
-                // Mock data for demonstration
-                const mockData = generateMockAdminData();
+                // Load users from the database
+                const response = await fetch(API_ENDPOINTS.GET_USERS);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 
-                adminData = mockData;
-                updateSystemInfo(mockData.systemInfo);
-                renderUsers(mockData.users);
-                renderSystemConfig(mockData.systemConfig);
-                renderSystemLogs(mockData.logs);
-                renderDatabaseStats(mockData.databaseStats);
-                renderSecurityAlerts(mockData.securityAlerts);
+                const usersData = await response.json();
+                console.log('Users data loaded:', usersData);
+                console.log('Is array?', Array.isArray(usersData));
+                console.log('Users count:', Array.isArray(usersData) ? usersData.length : 'Not an array');
+                console.log('First user sample:', usersData[0]);
+                
+                // The webhook returns a direct array, so use it directly
+                const users = Array.isArray(usersData) ? usersData : [];
+                console.log('Processed users:', users);
+                console.log('First processed user:', users[0]);
+                console.log('First user is_active:', users[0]?.is_active);
+                console.log('First user last_login:', users[0]?.last_login);
+                
+                // Update the UI with real data
+                currentUsers = users;
+                updateSystemInfo({
+                    totalUsers: users.length,
+                    activeUsers: users.filter(u => u.is_active).length,
+                    failedLogins: users.reduce((sum, u) => sum + (u.failed_login_attempts || 0), 0),
+                    uptime: 99.9
+                });
+                
+                renderUsers(users);
+                
+                // Keep mock data for other sections for now
+                try {
+                    const mockData = generateMockAdminData();
+                    renderSystemConfig(mockData.systemConfig);
+                    renderSystemLogs(mockData.logs);
+                    renderDatabaseStats(mockData.databaseStats);
+                    renderSecurityAlerts(mockData.securityAlerts);
+                } catch (error) {
+                    console.error('Error rendering mock data:', error);
+                }
 
             } catch (error) {
                 console.error('Failed to load admin data:', error);
-                showError('Failed to load admin data');
+                
+                // Only show error if it's not a JSON parsing error from empty response
+                if (!error.message.includes('Unexpected end of JSON input')) {
+                    showError('Failed to load admin data: ' + error.message);
+                }
+                
+                // Fallback to mock data if API fails
+                try {
+                    const mockData = generateMockAdminData();
+                    currentUsers = mockData.users;
+                    updateSystemInfo(mockData.systemInfo);
+                    renderUsers(mockData.users);
+                    renderSystemConfig(mockData.systemConfig);
+                    renderSystemLogs(mockData.logs);
+                    renderDatabaseStats(mockData.databaseStats);
+                    renderSecurityAlerts(mockData.securityAlerts);
+                } catch (fallbackError) {
+                    console.error('Failed to load fallback data:', fallbackError);
+                }
             }
         }
 
@@ -875,28 +932,46 @@
             users.forEach(user => {
                 const row = document.createElement('tr');
                 
-                const lastLogin = user.lastLogin ? 
-                    new Date(user.lastLogin).toLocaleDateString('en-CA', { 
+                const lastLogin = user.last_login ? 
+                    new Date(user.last_login).toLocaleDateString('en-CA', { 
                         month: 'short', 
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                     }) : 'Never';
                 
+                const failedAttempts = user.failed_login_attempts || 0;
+                const isActive = user.is_active;
+                const isLocked = user.locked_until && new Date(user.locked_until) > new Date();
+                
+                // Determine status display
+                let statusClass = 'inactive';
+                let statusText = 'inactive';
+                
+                if (isActive && !isLocked) {
+                    statusClass = 'active';
+                    statusText = 'active';
+                } else if (isLocked) {
+                    statusClass = 'locked';
+                    statusText = 'locked';
+                }
+                
                 row.innerHTML = `
                     <td>
                         <strong>${user.username}</strong>
-                        ${user.failedAttempts > 0 ? `<br><small style="color: #e74c3c;">Failed attempts: ${user.failedAttempts}</small>` : ''}
+                        ${user.full_name && user.full_name !== user.username ? `<br><small style="color: #666;">${user.full_name}</small>` : ''}
+                        ${failedAttempts > 0 ? `<br><small style="color: #e74c3c;">Failed attempts: ${failedAttempts}</small>` : ''}
+                        ${isLocked ? `<br><small style="color: #f39c12;">Account locked until ${new Date(user.locked_until).toLocaleDateString('en-CA')}</small>` : ''}
                     </td>
                     <td>${user.email}</td>
                     <td>
                         <span style="text-transform: capitalize; font-weight: 600; color: #2c3e50;">
-                            ${user.role}
+                            ${user.role || 'user'}
                         </span>
                     </td>
                     <td>
-                        <span class="user-status status-${user.status}">
-                            ${user.status}
+                        <span class="user-status status-${statusClass}">
+                            ${statusText}
                         </span>
                     </td>
                     <td>${lastLogin}</td>
@@ -904,14 +979,14 @@
                         <button class="action-btn primary" onclick="editUser(${user.id})" title="Edit User">
                             ✏️
                         </button>
-                        <button class="action-btn warning" onclick="resetPassword(${user.id})" title="Reset Password">
+                        <button class="action-btn warning" onclick="resetUserPassword(${user.id})" title="Reset Password">
                             🔑
                         </button>
-                        ${user.status === 'active' ? 
+                        ${isActive ? 
                             `<button class="action-btn secondary" onclick="deactivateUser(${user.id})" title="Deactivate">❌</button>` :
                             `<button class="action-btn success" onclick="activateUser(${user.id})" title="Activate">✅</button>`
                         }
-                        ${user.failedAttempts > 0 ? 
+                        ${isLocked ? 
                             `<button class="action-btn warning" onclick="unlockUser(${user.id})" title="Unlock Account">🔓</button>` : ''
                         }
                         <button class="action-btn danger" onclick="deleteUser(${user.id})" title="Delete User">🗑️</button>
@@ -1034,11 +1109,37 @@
                 e.preventDefault();
                 addNewUser();
             });
+            
+            // Generate initial temporary password when modal opens
+            generateTempPassword();
         }
 
         // User Management Functions
         function openAddUserModal() {
             document.getElementById('addUserModal').classList.remove('hidden');
+            generateTempPassword(); // Generate password when modal opens
+        }
+
+        function generateTempPassword() {
+            // Generate a secure temporary password
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            
+            // Ensure at least one of each type
+            password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Uppercase
+            password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Lowercase
+            password += '0123456789'[Math.floor(Math.random() * 10)]; // Number
+            password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // Special char
+            
+            // Fill the rest randomly
+            for (let i = 4; i < 12; i++) {
+                password += chars[Math.floor(Math.random() * chars.length)];
+            }
+            
+            // Shuffle the password
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+            
+            document.getElementById('tempPassword').value = password;
         }
 
         function closeAddUserModal() {
@@ -1048,25 +1149,21 @@
 
         async function addNewUser() {
             const username = document.getElementById('newUsername').value.trim();
-            const email = document.getElementById('newEmail').value.trim();
-            const password = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const fullName = document.getElementById('newFullName').value.trim();
+            const password = document.getElementById('tempPassword').value;
             const role = document.getElementById('userRole').value;
             const status = document.getElementById('userStatus').value;
 
             // Validation
-            if (!username || !email || !password) {
-                showToast('Please fill in all required fields', 'error');
+            if (!username) {
+                showToast('Please enter a username/email', 'error');
                 return;
             }
 
-            if (password !== confirmPassword) {
-                showToast('Passwords do not match', 'error');
-                return;
-            }
-
-            if (password.length < 8) {
-                showToast('Password must be at least 8 characters long', 'error');
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(username)) {
+                showToast('Please enter a valid email address', 'error');
                 return;
             }
 
@@ -1079,29 +1176,34 @@
             try {
                 const userData = {
                     username,
-                    email,
-                    password, // In real implementation, this should be hashed
+                    email: username, // Use username as email
+                    password,
+                    full_name: fullName || username, // Use full name or fallback to username
                     role,
-                    status,
-                    created: new Date().toISOString()
+                    is_active: status === 'active'
                 };
 
                 console.log('Adding new user:', { ...userData, password: '••••••••' });
 
-                // TODO: Implement actual API call
-                // const response = await fetch(API_ENDPOINTS.USER_MANAGEMENT, {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify({ action: 'create', userData })
-                // });
+                const response = await fetch(API_ENDPOINTS.CREATE_USER, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
 
-                showToast('User created successfully!', 'success');
-                closeAddUserModal();
-                loadAdminData(); // Refresh user list
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`User created successfully! Temporary password: ${password}`, 'success');
+                    closeAddUserModal();
+                    loadAdminData(); // Refresh user list
+                } else {
+                    showToast(result.message || 'Failed to create user', 'error');
+                }
 
             } catch (error) {
                 console.error('Failed to create user:', error);
-                showToast('Failed to create user', 'error');
+                showToast('Failed to create user: ' + error.message, 'error');
             }
         }
 
@@ -1111,11 +1213,12 @@
             // TODO: Implement edit user modal
         }
 
-        function resetPassword(userId) {
+        function resetUserPassword(userId) {
             const user = currentUsers.find(u => u.id === userId);
-            if (confirm(`Reset password for ${user.username}?`)) {
-                showToast(`Password reset email sent to ${user.email}`, 'success');
-                // TODO: Implement password reset
+            if (confirm(`Reset password for ${user.username}? This will redirect them to the password reset page.`)) {
+                // Redirect to password reset page with username pre-filled
+                window.open(`dashboard.html?reset=${encodeURIComponent(user.username)}`, '_blank');
+                showToast(`Password reset page opened for ${user.username}`, 'info');
             }
         }
 
