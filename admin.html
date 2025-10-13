@@ -698,7 +698,8 @@
             CREATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-user',
             UPDATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-user',
             DELETE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-user',
-            RESET_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset'
+            RESET_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset',
+            GET_DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/admin-dashboard'
         };
 
         // Global variables
@@ -752,26 +753,29 @@
         async function loadAdminData() {
             try {
                 // Load users from the database
-                const response = await fetch(API_ENDPOINTS.GET_USERS);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const usersResponse = await fetch(API_ENDPOINTS.GET_USERS);
+                if (!usersResponse.ok) {
+                    throw new Error(`HTTP ${usersResponse.status}: ${usersResponse.statusText}`);
                 }
                 
-                const usersData = await response.json();
+                const usersData = await usersResponse.json();
                 console.log('Users data loaded:', usersData);
-                console.log('Is array?', Array.isArray(usersData));
-                console.log('Users count:', Array.isArray(usersData) ? usersData.length : 'Not an array');
-                console.log('First user sample:', usersData[0]);
                 
                 // The webhook returns a direct array, so use it directly
                 const users = Array.isArray(usersData) ? usersData : [];
-                console.log('Processed users:', users);
-                console.log('First processed user:', users[0]);
-                console.log('First user is_active:', users[0]?.is_active);
-                console.log('First user last_login:', users[0]?.last_login);
-                
-                // Update the UI with real data
                 currentUsers = users;
+                
+                // Load dashboard data (config, logs, stats, alerts)
+                const dashboardResponse = await fetch(API_ENDPOINTS.GET_DASHBOARD_DATA);
+                let dashboardData = null;
+                
+                if (dashboardResponse.ok) {
+                    const dashboardResult = await dashboardResponse.json();
+                    dashboardData = dashboardResult.success ? dashboardResult.data : null;
+                    console.log('Dashboard data loaded:', dashboardData);
+                }
+                
+                // Update system info with real user data
                 updateSystemInfo({
                     totalUsers: users.length,
                     activeUsers: users.filter(u => u.is_active).length,
@@ -779,26 +783,26 @@
                     uptime: 99.9
                 });
                 
+                // Render users
                 renderUsers(users);
                 
-                // Keep mock data for other sections for now
-                try {
+                // Render dashboard data if available, otherwise use mock data
+                if (dashboardData) {
+                    renderSystemConfig(dashboardData.systemConfig || {});
+                    renderSystemLogs(dashboardData.systemLogs || []);
+                    renderDatabaseStats(dashboardData.databaseStats || {});
+                    renderSecurityAlerts(dashboardData.securityAlerts || []);
+                } else {
+                    // Fallback to mock data if dashboard API fails
                     const mockData = generateMockAdminData();
                     renderSystemConfig(mockData.systemConfig);
                     renderSystemLogs(mockData.logs);
                     renderDatabaseStats(mockData.databaseStats);
                     renderSecurityAlerts(mockData.securityAlerts);
-                } catch (error) {
-                    console.error('Error rendering mock data:', error);
                 }
 
             } catch (error) {
                 console.error('Failed to load admin data:', error);
-                
-                // Only show error if it's not a JSON parsing error from empty response
-                if (!error.message.includes('Unexpected end of JSON input')) {
-                    showError('Failed to load admin data: ' + error.message);
-                }
                 
                 // Fallback to mock data if API fails
                 try {
@@ -812,6 +816,7 @@
                     renderSecurityAlerts(mockData.securityAlerts);
                 } catch (fallbackError) {
                     console.error('Failed to load fallback data:', fallbackError);
+                    showToast('Failed to load admin data', 'error');
                 }
             }
         }
@@ -1196,7 +1201,11 @@
                 if (result.success) {
                     showToast(`User created successfully! Temporary password: ${password}`, 'success');
                     closeAddUserModal();
-                    loadAdminData(); // Refresh user list
+                    
+                    // Wait a moment for the database to update, then refresh user list
+                    setTimeout(() => {
+                        loadAdminData();
+                    }, 500);
                 } else {
                     showToast(result.message || 'Failed to create user', 'error');
                 }
@@ -1213,14 +1222,37 @@
             // TODO: Implement edit user modal
         }
 
-        function resetUserPassword(userId) {
+        async function resetUserPassword(userId) {
             const user = currentUsers.find(u => u.id === userId);
-            if (confirm(`Reset password for ${user.username}? This will redirect them to the password reset page.`)) {
-                // Redirect to password reset page with username pre-filled
-                window.open(`dashboard.html?reset=${encodeURIComponent(user.username)}`, '_blank');
-                showToast(`Password reset page opened for ${user.username}`, 'info');
+            if (confirm(`Reset password for ${user.username}? A temporary password will be emailed directly to them.`)) {
+                try {
+                    const resetData = {
+                        username: user.username
+                    };
+
+                    console.log('Resetting password for user:', user.username);
+
+                    const response = await fetch(API_ENDPOINTS.RESET_PASSWORD, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(resetData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`Password reset successfully! A temporary password has been emailed to ${user.username}.`, 'success');
+                    } else {
+                        showToast(result.message || 'Failed to reset password', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to reset password:', error);
+                    showToast('Failed to reset password: ' + error.message, 'error');
+                }
             }
         }
+
 
         function activateUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
@@ -1249,7 +1281,7 @@
             }
         }
 
-        function deleteUser(userId) {
+        async function deleteUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
             if (user.username === 'transport_admin') {
                 showToast('Cannot delete the main administrator account', 'error');
@@ -1257,9 +1289,33 @@
             }
             
             if (confirm(`DELETE user ${user.username}? This action cannot be undone.`)) {
-                showToast(`User ${user.username} deleted`, 'warning');
-                // TODO: Implement user deletion
-                loadAdminData();
+                try {
+                    const userData = {
+                        userId: userId,
+                        username: user.username
+                    };
+
+                    console.log('Deleting user:', userData);
+
+                    const response = await fetch(API_ENDPOINTS.DELETE_USER, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`User ${user.username} deleted successfully`, 'success');
+                        loadAdminData(); // Refresh user list
+                    } else {
+                        showToast(result.message || 'Failed to delete user', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to delete user:', error);
+                    showToast('Failed to delete user: ' + error.message, 'error');
+                }
             }
         }
 
