@@ -699,7 +699,8 @@
             UPDATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-user',
             DELETE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-user',
             RESET_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset',
-            GET_DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/admin-dashboard'
+            GET_DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/admin-dashboard',
+            CREATE_BACKUP: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-backup'
         };
 
         // Global variables
@@ -862,12 +863,14 @@
                     }
                 ],
                 systemConfig: {
-                    'System Name': 'Rural Route Transportation Services',
-                    'Database Host': 'supabase.co',
-                    'Backup Frequency': 'Daily at 2:00 AM',
-                    'Session Timeout': '30 minutes',
-                    'Max Login Attempts': '3',
-                    'Password Policy': 'Minimum 8 characters'
+                    'rrts_business_name': 'Rural Route Transportation Services',
+                    'rrts_phone_id': 'PNtqAn8pCC',
+                    'sms_signature': 'Andrew @ RRTS',
+                    'support_phone': '+17828226886',
+                    'reminder_buffer_minutes': '5',
+                    'reminder_hours_before': '1',
+                    'reminder_window_start': '07:00',
+                    'reminder_window_end': '20:00'
                 },
                 logs: [
                     {
@@ -1005,16 +1008,88 @@
         function renderSystemConfig(config) {
             const container = document.getElementById('systemConfig');
             
+            // Map app_config keys to user-friendly labels and format values
+            const keyLabels = {
+                'rrts_phone_id': 'Phone ID',
+                'rrts_business_name': 'Business Name',
+                'sms_signature': 'SMS Signature',
+                'support_phone': 'Support Phone',
+                'reminder_buffer_minutes': 'Reminder Buffer',
+                'reminder_hours_before': 'Reminder Hours Before',
+                'reminder_window_start': 'Reminder Window Start',
+                'reminder_window_end': 'Reminder Window End',
+                'system_name': 'System Name',
+                'backup_frequency': 'Backup Frequency',
+                'session_timeout': 'Session Timeout',
+                'max_login_attempts': 'Max Login Attempts',
+                'password_policy': 'Password Policy',
+                'google_maps_api_status': 'Google Maps API',
+                'email_service_status': 'Email Service',
+                'sms_service_status': 'SMS Service',
+                'calendar_integration_status': 'Calendar Integration'
+            };
+
+            // Fields that should be editable in the future
+            const editableFields = ['rrts_business_name', 'sms_signature', 'support_phone', 'reminder_buffer_minutes', 'reminder_hours_before', 'reminder_window_start', 'reminder_window_end'];
+            
             container.innerHTML = '';
+            
+            // Process config data to handle special formatting
+            const processedConfig = {};
+            let reminderWindow = '';
+            
             Object.entries(config).forEach(([key, value]) => {
+                if (key === 'reminder_window_start') {
+                    const endTime = config['reminder_window_end'] || '';
+                    reminderWindow = `${value} - ${endTime}`;
+                    processedConfig['Reminder Window'] = reminderWindow;
+                } else if (key === 'reminder_window_end') {
+                    // Skip this as it's handled by start time
+                    return;
+                } else if (key === 'reminder_buffer_minutes') {
+                    processedConfig[key] = `${value} minutes`;
+                } else if (key === 'reminder_hours_before') {
+                    processedConfig[key] = `${value} hour${value > 1 ? 's' : ''}`;
+                } else {
+                    processedConfig[key] = value;
+                }
+            });
+            
+            // Add static system info
+            processedConfig['Database Host'] = 'supabase.co';
+            processedConfig['Backup Frequency'] = 'Manual backups via Supabase Dashboard';
+            
+            Object.entries(processedConfig).forEach(([key, value]) => {
+                const label = keyLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const isEditable = editableFields.includes(key);
+                
                 const configItem = document.createElement('div');
                 configItem.className = 'config-item';
                 configItem.innerHTML = `
-                    <div class="config-label">${key}</div>
-                    <div class="config-value">${value}</div>
+                    <div class="config-label">${label}</div>
+                    <div class="config-value" ${isEditable ? 'contenteditable="true" data-key="' + key + '" style="border: 1px dashed #ccc; padding: 4px; min-height: 20px;"' : ''}>${value || 'Not configured'}</div>
+                    ${isEditable ? '<button class="action-btn secondary" onclick="saveConfigValue(\'' + key + '\')" style="margin-left: 10px; padding: 4px 8px; font-size: 0.8em;" title="Save changes">💾</button>' : ''}
                 `;
                 container.appendChild(configItem);
             });
+        }
+
+        function saveConfigValue(key) {
+            // Future implementation for saving config changes
+            // This will:
+            // 1. Update the app_config table in Supabase
+            // 2. For reminder settings, update the RMDR workflow cron trigger
+            // 3. For business settings, update SMS signature and phone settings
+            // 4. Refresh the display with new values
+            
+            const valueElement = document.querySelector(`[data-key="${key}"]`);
+            const newValue = valueElement.textContent.trim();
+            
+            showToast(`Saving ${key} = ${newValue}... (Feature coming soon)`, 'info');
+            
+            // TODO: Implement API call to update app_config
+            // TODO: For cron-related settings, update workflow trigger
+            // TODO: Validate input values (e.g., time format, numeric ranges)
         }
 
         function renderSystemLogs(logs) {
@@ -1331,14 +1406,39 @@
         }
 
         // Database Functions
-        function createBackup() {
+        async function createBackup() {
             if (confirm('Create a new database backup? This may take a few minutes.')) {
                 showToast('Creating database backup...', 'info');
-                // TODO: Implement backup creation
-                setTimeout(() => {
-                    showToast('Database backup created successfully!', 'success');
-                    loadAdminData(); // Refresh to show new backup time
-                }, 3000);
+                
+                try {
+                    const backupData = {
+                        backupType: 'full',
+                        requestedBy: JSON.parse(sessionStorage.getItem('rrts_user')).username || 'admin'
+                    };
+
+                    console.log('Creating backup with data:', backupData);
+
+                    const response = await fetch(API_ENDPOINTS.CREATE_BACKUP, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(backupData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`Database backup created successfully: ${result.data.filename}`, 'success');
+                        console.log('Backup details:', result.data);
+                        loadAdminData(); // Refresh to show new backup time and logs
+                    } else {
+                        showToast(result.message || 'Failed to create backup', 'error');
+                        console.error('Backup failed:', result);
+                    }
+
+                } catch (error) {
+                    console.error('Failed to create backup:', error);
+                    showToast('Failed to create backup: ' + error.message, 'error');
+                }
             }
         }
 

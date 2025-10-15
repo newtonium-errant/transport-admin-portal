@@ -365,6 +365,11 @@
                 document.getElementById('appointmentsContainer').style.display = 'none';
                 document.getElementById('noAppointments').style.display = 'none';
 
+                // Ensure drivers are loaded before displaying appointments
+                if (!driversData || driversData.length === 0) {
+                    await loadDrivers();
+                }
+
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments');
                 
                 if (!response.ok) {
@@ -421,6 +426,11 @@
                 document.getElementById('loadingSpinner').style.display = 'block';
                 document.getElementById('appointmentsContainer').style.display = 'none';
                 document.getElementById('noAppointments').style.display = 'none';
+
+                // Ensure drivers are loaded before displaying appointments
+                if (!driversData || driversData.length === 0) {
+                    await loadDrivers();
+                }
 
                 const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments');
                 
