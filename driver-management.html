@@ -1263,19 +1263,24 @@
                 console.log('Save response:', result);
 
                 if (result.success) {
-                    // Extract driverID from response
-                    const driverID = result.driverID || result.driver_id || result.id;
+                    // Extract driverID from response (handle both old and new response formats)
+                    const driverID = result.driverId || result.driverID || result.driver_id || result.id;
                     
                     if (driverID) {
                         console.log('Driver created with ID:', driverID);
                         
-                        // Second webhook: Create Google Calendar for the driver
-                        try {
-                            await createDriverCalendar(driverID);
-                            alert('Driver added successfully and calendar created!');
-                        } catch (calendarError) {
-                            console.error('Calendar creation failed:', calendarError);
-                            alert(`Driver added successfully, but calendar creation failed: ${calendarError.message}`);
+                        // Check if calendar was already created by the workflow
+                        if (result.calendarCreated) {
+                            alert(`Driver added successfully with calendar! Calendar ID: ${result.calendarId}`);
+                        } else {
+                            // Fallback: Create calendar separately (for old workflows)
+                            try {
+                                await createDriverCalendar(driverID);
+                                alert('Driver added successfully and calendar created!');
+                            } catch (calendarError) {
+                                console.error('Calendar creation failed:', calendarError);
+                                alert(`Driver added successfully, but calendar creation failed: ${calendarError.message}`);
+                            }
                         }
                     } else {
                         console.warn('Driver created but no driverID returned');
