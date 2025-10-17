@@ -1,9 +1,32 @@
 /* RRTS Shared Styles - Header and Navigation */
 
+/* CSS Variables for RRTS Brand Colors */
+:root {
+  /* Primary Colors */
+  --color-primary: #1B4332;
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+  
+  /* Secondary/Accent Colors */
+  --color-accent: #2D6A4F;
+  --color-gray-light: #E5E5E5;
+  --color-gray-dark: #333333;
+  
+  /* Semantic Color Mappings */
+  --color-background-primary: var(--color-primary);
+  --color-background-secondary: var(--color-white);
+  --color-text-primary: var(--color-black);
+  --color-text-secondary: var(--color-gray-dark);
+  --color-text-inverse: var(--color-white);
+  --color-border: var(--color-gray-light);
+  --color-button-primary: var(--color-accent);
+  --color-button-hover: var(--color-primary);
+}
+
 /* Header Styles */
 .header {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    color: white;
+    background: var(--color-primary);
+    color: var(--color-white);
     padding: 20px 30px;
     display: flex;
     justify-content: space-between;
@@ -14,7 +37,7 @@
 .header h1 {
     font-size: 1.8em;
     font-weight: 300;
-    color: white;
+    color: var(--color-white);
     margin: 0;
 }
 
@@ -31,7 +54,7 @@
 }
 
 .nav-links a {
-    color: white;
+    color: var(--color-white);
     text-decoration: none;
     padding: 8px 16px;
     border-radius: 6px;
@@ -39,11 +62,12 @@
 }
 
 .nav-links a:hover {
-    background-color: rgba(255,255,255,0.1);
+    background-color: var(--color-accent);
 }
 
 .nav-links a.active {
-    background-color: rgba(255,255,255,0.2);
+    background-color: var(--color-accent);
+    font-weight: 600;
 }
 
 /* Mobile Responsive Styles */

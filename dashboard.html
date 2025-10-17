@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #FFFFFF;
             min-height: 100vh;
             padding: 20px;
         }
@@ -22,7 +22,7 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
+            background: #FFFFFF;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             overflow: hidden;
@@ -40,11 +40,11 @@
         }
 
         .card {
-            background: white;
+            background: #FFFFFF;
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 1px solid #e0e0e0;
+            border: 1px solid #E5E5E5;
             transition: all 0.3s ease;
         }
 
@@ -67,24 +67,24 @@
         .card-title {
             font-size: 1.3em;
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
         }
 
         .metric {
             font-size: 2.5em;
             font-weight: 700;
-            color: #3498db;
+            color: #2D6A4F;
             margin-bottom: 10px;
         }
 
         .metric-label {
-            color: #666;
+            color: #333333;
             font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .metric.success { color: #27ae60; }
+        .metric.success { color: #2D6A4F; }
         .metric.warning { color: #f39c12; }
         .metric.danger { color: #e74c3c; }
 
@@ -100,8 +100,8 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
+            background: #2D6A4F;
+            color: #FFFFFF;
             text-decoration: none;
             border-radius: 12px;
             font-weight: 600;
@@ -113,19 +113,32 @@
 
         .action-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(52, 152, 219, 0.3);
+            background: #1B4332;
+            box-shadow: 0 8px 24px rgba(27, 67, 50, 0.3);
         }
 
         .action-btn.secondary {
-            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            background: #E5E5E5;
+            color: #000000;
+        }
+
+        .action-btn.secondary:hover {
+            background: #333333;
+            color: #FFFFFF;
         }
 
         .action-btn.success {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .action-btn.success:hover {
+            background: #1B4332;
         }
 
         .action-btn.warning {
-            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            background: #f39c12;
+            color: #FFFFFF;
         }
 
         .action-btn .icon {
@@ -143,18 +156,18 @@
         .section-title {
             font-size: 1.4em;
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
             margin-bottom: 20px;
-            border-bottom: 2px solid #3498db;
+            border-bottom: 2px solid #2D6A4F;
             padding-bottom: 10px;
         }
 
         .appointment-item {
-            background: white;
+            background: #FFFFFF;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
-            border-left: 4px solid #3498db;
+            border-left: 4px solid #2D6A4F;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -171,7 +184,7 @@
         }
 
         .appointment-item.confirmed {
-            border-left-color: #27ae60;
+            border-left-color: #2D6A4F;
         }
 
         .appointment-item.flagged {
@@ -185,13 +198,13 @@
 
         .appointment-client {
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
             margin-bottom: 5px;
         }
 
         .appointment-details {
             font-size: 0.9em;
-            color: #666;
+            color: #333333;
         }
 
         .appointment-status {
@@ -220,14 +233,14 @@
         .empty-state {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: #333333;
             font-style: italic;
         }
 
         .loading {
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: #333333;
         }
 
         .loading::after {
@@ -235,7 +248,7 @@
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 2px solid #3498db;
+            border: 2px solid #2D6A4F;
             border-radius: 50%;
             border-top-color: transparent;
             animation: spin 1s ease-in-out infinite;
@@ -260,13 +273,13 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #333;
+            color: #000000;
         }
 
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #E5E5E5;
             border-radius: 8px;
             font-size: 16px;
             transition: all 0.3s ease;
@@ -274,8 +287,8 @@
 
         .form-group input:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            border-color: #2D6A4F;
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
         }
 
         .error {
@@ -331,34 +344,36 @@
 
         .filter-btn {
             padding: 8px 16px;
-            background: #ecf0f1;
+            background: #E5E5E5;
             border: none;
             border-radius: 20px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 600;
             transition: all 0.3s ease;
+            color: #000000;
         }
 
         .filter-btn.active {
-            background: #3498db;
-            color: white;
+            background: #2D6A4F;
+            color: #FFFFFF;
         }
 
         .filter-btn:hover:not(.active) {
-            background: #bdc3c7;
+            background: #333333;
+            color: #FFFFFF;
         }
 
         /* Appointment Item Styles */
         .appointment-item {
-            background: white;
-            border: 1px solid #ddd;
+            background: #FFFFFF;
+            border: 1px solid #E5E5E5;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 15px;
             position: relative;
             transition: all 0.3s ease;
-            border-left: 5px solid #3498db;
+            border-left: 5px solid #2D6A4F;
         }
 
         .appointment-item:hover {
@@ -367,7 +382,7 @@
         }
 
         .appointment-item.confirmed {
-            border-left-color: #27ae60;
+            border-left-color: #2D6A4F;
         }
 
         .appointment-item.pending {
@@ -400,7 +415,7 @@
         .appointment-time {
             font-size: 1.3em;
             font-weight: 700;
-            color: #2c3e50;
+            color: #000000;
         }
 
         .appointment-status {
@@ -440,7 +455,7 @@
         .appointment-client {
             font-size: 1.1em;
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
             margin-bottom: 8px;
         }
 
@@ -455,7 +470,7 @@
             display: flex;
             align-items: center;
             font-size: 0.9em;
-            color: #666;
+            color: #333333;
         }
 
         .detail-icon {
@@ -484,28 +499,41 @@
         }
 
         .action-btn.primary {
-            background: #3498db;
-            color: white;
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .action-btn.primary:hover {
+            background: #1B4332;
         }
 
         .action-btn.success {
-            background: #27ae60;
-            color: white;
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .action-btn.success:hover {
+            background: #1B4332;
         }
 
         .action-btn.warning {
             background: #f39c12;
-            color: white;
+            color: #FFFFFF;
         }
 
         .action-btn.danger {
             background: #e74c3c;
-            color: white;
+            color: #FFFFFF;
         }
 
         .action-btn.secondary {
-            background: #95a5a6;
-            color: white;
+            background: #E5E5E5;
+            color: #000000;
+        }
+
+        .action-btn.secondary:hover {
+            background: #333333;
+            color: #FFFFFF;
         }
 
         .action-btn:hover {
@@ -519,8 +547,8 @@
             padding: 10px;
             margin-top: 10px;
             font-size: 0.9em;
-            color: #666;
-            border-left: 3px solid #3498db;
+            color: #333333;
+            border-left: 3px solid #2D6A4F;
         }
 
         .flagged-reason {
@@ -581,7 +609,7 @@
                 </div>
             </div>
             <div class="login-section">
-                <h3 style="text-align: center; margin-bottom: 30px; color: #2c3e50;">Administrator Login</h3>
+                <h3 style="text-align: center; margin-bottom: 30px; color: #000000;">Administrator Login</h3>
                 <div class="form-group">
                     <label for="username">Username:</label>
                     <input type="text" id="username" required>
