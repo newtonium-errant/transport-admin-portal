@@ -493,6 +493,13 @@
                                     <input type="tel" id="driverPhone">
                                 </div>
                                 <div class="form-group">
+                                    <label for="driverWorkPhone">Work Phone (for SMS)</label>
+                                    <input type="tel" id="driverWorkPhone" placeholder="Driver's work phone number for SMS">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
                                     <label for="driverGender">Gender *</label>
                                     <select id="driverGender" required>
                                         <option value="">Select gender...</option>
@@ -501,6 +508,9 @@
                                         <option value="non-binary">Non-binary</option>
                                         <option value="other">Other</option>
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <!-- Empty group for layout balance -->
                                 </div>
                             </div>
 
@@ -703,6 +713,13 @@
                                 <input type="tel" class="form-control" id="editDriverPhone">
                             </div>
                             <div class="col-md-6">
+                                <label for="editDriverWorkPhone" class="form-label">Work Phone (for SMS)</label>
+                                <input type="tel" class="form-control" id="editDriverWorkPhone" placeholder="Driver's work phone number for SMS">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
                                 <label for="editDriverGender" class="form-label">Gender *</label>
                                 <select class="form-select" id="editDriverGender" required>
                                     <option value="">Select gender...</option>
@@ -711,6 +728,9 @@
                                     <option value="non-binary">Non-binary</option>
                                     <option value="other">Other</option>
                                 </select>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Empty column for layout balance -->
                             </div>
                         </div>
 
@@ -1234,6 +1254,7 @@
                           `${document.getElementById('driverFirstName').value} ${document.getElementById('driverLastName').value}`.trim(),
                     email: document.getElementById('driverEmail').value,
                     phone: document.getElementById('driverPhone').value,
+                    work_phone: document.getElementById('driverWorkPhone').value,
                     gender: document.getElementById('driverGender').value,
                     workload_preference: document.getElementById('driverWorkload').value,
                     workload_percentage: parseInt(document.getElementById('driverWorkloadPct').value) || 100,
@@ -1350,6 +1371,7 @@
             document.getElementById('editDriverLegalName').value = driver.name !== `${driver.first_name} ${driver.last_name}`.trim() ? driver.name || '' : '';
             document.getElementById('editDriverEmail').value = driver.email || '';
             document.getElementById('editDriverPhone').value = driver.phone || '';
+            document.getElementById('editDriverWorkPhone').value = driver.work_phone || '';
             document.getElementById('editDriverGender').value = driver.gender || '';
             document.getElementById('editDriverWorkload').value = driver.workload_preference || 'normal';
             document.getElementById('editDriverWorkloadPct').value = driver.workload_percentage || 100;
@@ -1400,6 +1422,7 @@
                           `${document.getElementById('editDriverFirstName').value} ${document.getElementById('editDriverLastName').value}`.trim(),
                     email: document.getElementById('editDriverEmail').value,
                     phone: document.getElementById('editDriverPhone').value,
+                    work_phone: document.getElementById('editDriverWorkPhone').value,
                     gender: document.getElementById('editDriverGender').value,
                     workload_preference: document.getElementById('editDriverWorkload').value,
                     workload_percentage: parseInt(document.getElementById('editDriverWorkloadPct').value) || 100,

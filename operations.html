@@ -811,7 +811,7 @@
     <script>
         // API Configuration
         const API_ENDPOINTS = {
-            APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments',
+            APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-operations-appointments',
             DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-availability',
             UPDATE_APPOINTMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment',
             UPDATE_DRIVER_ASSIGNMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver-assignment',
@@ -1325,7 +1325,7 @@
                 selectElement.value = '';
                 showToast('Driver deassigned successfully', 'success');
             } else if (driverId) {
-                driverAssignments.set(appointmentId, driverId);
+                driverAssignments.set(appointmentId, parseInt(driverId));
             } else {
                 driverAssignments.delete(appointmentId);
             }
@@ -1456,10 +1456,17 @@
                 
                 console.log(`Preparing to submit ${modifiedAppointments.length} appointments with calendar management...`);
                 
-                // Prepare batch data for the new workflow
+                // Debug: Check for duplicates in modifiedAppointments
+                console.log('Modified appointments:', modifiedAppointments);
+                console.log('All drivers array:', drivers);
+                console.log('Driver assignments:', driverAssignments);
+                
                 const appointmentsData = modifiedAppointments.map(appointment => {
                     const currentDriverId = driverAssignments.get(appointment.id);
                     const driver = drivers.find(d => (d.id || d.driver_id) === currentDriverId);
+                    
+                    // Debug: Log driver object to see what fields are available
+                    console.log('Driver object for ID', currentDriverId, ':', driver);
                     
                     return {
                         id: appointment.id,
@@ -1470,6 +1477,7 @@
                         locationAddress: appointment.locationAddress,
                         status: 'confirmed',
                         driver_assigned: currentDriverId || null, // null for deassigned appointments
+                        driver_first_name: driver?.first_name || null, // Add driver's first name
                         appointmentLength: appointment.appointmentLength || 120,
                         transitTime: appointment.transitTime || 0,
                         notes: appointment.notes,
