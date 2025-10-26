@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RRTS - Client Management</title>
     <link href="shared-styles.css" rel="stylesheet">
+    <script src="permissions.js"></script>
     <style>
         * {
             margin: 0;
@@ -592,13 +593,23 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Check authentication
+            // Check authentication and permissions
             const savedUser = sessionStorage.getItem('rrts_user');
             if (!savedUser) {
                 window.location.href = 'dashboard.html';
                 return;
             }
 
+            const user = JSON.parse(savedUser);
+            
+            // Enforce page access based on role
+            if (!enforcePageAccess()) {
+                return;
+            }
+            
+            // Filter navigation based on role
+            filterNavigationByRole(user.role);
+            
             updateDateTime();
             setInterval(updateDateTime, 1000);
             loadActiveClients();
