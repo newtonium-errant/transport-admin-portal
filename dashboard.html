@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RRTS - Dashboard</title>
     <link href="shared-styles.css" rel="stylesheet">
+    <script src="permissions.js"></script>
     <style>
         * {
             margin: 0;
@@ -743,29 +744,47 @@
 	let isLoggedIn = false;
 	let currentUser = null;
 
-	// Initialize the dashboard
+		// Initialize the dashboard
 	document.addEventListener('DOMContentLoaded', function() {
     	console.log('RRTS Dashboard loaded');
-   	 console.log('API Endpoints configured:', API_ENDPOINTS);
+    	console.log('API Endpoints configured:', API_ENDPOINTS);
     
-   	 // Check for existing session
-   	 const savedUser = sessionStorage.getItem('rrts_user');
-  	  if (savedUser) {
-  	      try {
-    	        currentUser = JSON.parse(savedUser);
-     	       isLoggedIn = true;
-     	       showDashboard();
-     	       loadDashboardData();
-      	  } catch (error) {
-     	       console.log('Invalid saved session, showing login');
-      	      sessionStorage.removeItem('rrts_user');
-     	       showLogin();
-    	    }
+    	// Check for password reset parameter
+    	const urlParams = new URLSearchParams(window.location.search);
+    	const resetUsername = urlParams.get('reset');
+   	 
+    	if (resetUsername) {
+    	    // Pre-fill username in password reset form
+    	    showPasswordReset();
+    	    setTimeout(() => {
+    	        document.getElementById('resetUsername').value = resetUsername;
+    	    }, 100);
     	} else {
-    	    showLogin();
-   	 }
+    	    // Check for existing session
+    	    const savedUser = sessionStorage.getItem('rrts_user');
+    	    if (savedUser) {
+    	        try {
+    	            currentUser = JSON.parse(savedUser);
+    	            isLoggedIn = true;
+    	            
+    	            // Enforce page access and filter navigation
+    	            if (typeof enforcePageAccess !== 'undefined' && enforcePageAccess) {
+    	                enforcePageAccess();
+    	            }
+    	            
+    	            showDashboard();
+    	            loadDashboardData();
+    	        } catch (error) {
+    	            console.log('Invalid saved session, showing login');
+    	            sessionStorage.removeItem('rrts_user');
+    	            showLogin();
+    	        }
+    	    } else {
+    	        showLogin();
+    	    }
+    	}
     
-   	 // Update current time
+    	// Update current time
   	  updateCurrentTime();
     	setInterval(updateCurrentTime, 1000);
     
