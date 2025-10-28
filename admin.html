@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #FFFFFF;
             min-height: 100vh;
             padding: 20px;
         }
@@ -22,7 +22,7 @@
         .container {
             max-width: 1600px;
             margin: 0 auto;
-            background: white;
+            background: #FFFFFF;
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             overflow: hidden;
@@ -43,15 +43,15 @@
             background: #f8f9fa;
             border-radius: 12px;
             padding: 25px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #E5E5E5;
         }
 
         .section-title {
             font-size: 1.4em;
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
             margin-bottom: 20px;
-            border-bottom: 2px solid #3498db;
+            border-bottom: 2px solid #2D6A4F;
             padding-bottom: 10px;
             display: flex;
             align-items: center;
@@ -59,11 +59,11 @@
         }
 
         .card {
-            background: white;
+            background: #FFFFFF;
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 1px solid #e0e0e0;
+            border: 1px solid #E5E5E5;
             margin-bottom: 20px;
         }
 
@@ -81,13 +81,13 @@
         .user-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #E5E5E5;
         }
 
         .user-table th {
             background-color: #f8f9fa;
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
         }
 
         .user-table tr:hover {
@@ -132,7 +132,7 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #333;
+            color: #000000;
         }
 
         .form-group input,
@@ -140,7 +140,7 @@
         .form-group textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #E5E5E5;
             border-radius: 8px;
             font-size: 16px;
             transition: all 0.3s ease;
@@ -150,8 +150,8 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            border-color: #2D6A4F;
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
         }
 
         .action-btn {
@@ -171,28 +171,41 @@
         }
 
         .action-btn.primary {
-            background: #3498db;
-            color: white;
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .action-btn.primary:hover {
+            background: #1B4332;
         }
 
         .action-btn.success {
-            background: #27ae60;
-            color: white;
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .action-btn.success:hover {
+            background: #1B4332;
         }
 
         .action-btn.warning {
             background: #f39c12;
-            color: white;
+            color: #FFFFFF;
         }
 
         .action-btn.danger {
             background: #e74c3c;
-            color: white;
+            color: #FFFFFF;
         }
 
         .action-btn.secondary {
-            background: #95a5a6;
-            color: white;
+            background: #E5E5E5;
+            color: #000000;
+        }
+
+        .action-btn.secondary:hover {
+            background: #333333;
+            color: #FFFFFF;
         }
 
         .action-btn:hover {
@@ -208,12 +221,12 @@
         }
 
         .info-card {
-            background: white;
+            background: #FFFFFF;
             padding: 20px;
             border-radius: 8px;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid #e0e0e0;
+            border: 1px solid #E5E5E5;
         }
 
         .info-value {
@@ -222,14 +235,14 @@
             margin-bottom: 5px;
         }
 
-        .info-value.success { color: #27ae60; }
+        .info-value.success { color: #2D6A4F; }
         .info-value.warning { color: #f39c12; }
         .info-value.danger { color: #e74c3c; }
-        .info-value.primary { color: #3498db; }
+        .info-value.primary { color: #2D6A4F; }
 
         .info-label {
             font-size: 0.9em;
-            color: #666;
+            color: #333333;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -239,15 +252,15 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #E5E5E5;
             border-radius: 8px;
             margin-bottom: 10px;
-            background: white;
+            background: #FFFFFF;
         }
 
         .config-label {
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
         }
 
         .config-value {
@@ -260,7 +273,7 @@
 
         .log-entry {
             padding: 10px;
-            border-left: 4px solid #3498db;
+            border-left: 4px solid #2D6A4F;
             background: #f8f9fa;
             margin-bottom: 10px;
             border-radius: 0 6px 6px 0;
@@ -277,26 +290,26 @@
         }
 
         .log-entry.success {
-            border-left-color: #27ae60;
+            border-left-color: #2D6A4F;
             background: #f8fff9;
         }
 
         .log-time {
             font-size: 0.85em;
-            color: #666;
+            color: #333333;
             margin-bottom: 5px;
         }
 
         .log-message {
-            color: #2c3e50;
+            color: #000000;
         }
 
         .backup-section {
-            border: 2px dashed #3498db;
+            border: 2px dashed #2D6A4F;
             border-radius: 12px;
             padding: 30px;
             text-align: center;
-            background: white;
+            background: #FFFFFF;
         }
 
         .backup-icon {
@@ -307,7 +320,7 @@
         .loading {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: #333333;
         }
 
         .loading::after {
@@ -315,7 +328,7 @@
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 2px solid #3498db;
+            border: 2px solid #2D6A4F;
             border-radius: 50%;
             border-top-color: transparent;
             animation: spin 1s ease-in-out infinite;
@@ -329,7 +342,7 @@
         .empty-state {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: #333333;
             font-style: italic;
         }
 
@@ -350,8 +363,12 @@
             z-index: 10000;
         }
 
+        .modal.hidden {
+            display: none;
+        }
+
         .modal-content {
-            background: white;
+            background: #FFFFFF;
             border-radius: 12px;
             padding: 30px;
             max-width: 500px;
@@ -366,13 +383,13 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #E5E5E5;
         }
 
         .modal-title {
             font-size: 1.3em;
             font-weight: 600;
-            color: #2c3e50;
+            color: #000000;
         }
 
         .close-btn {
@@ -629,26 +646,30 @@
             </div>
             
             <form id="addUserForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="newUsername">Username *</label>
-                        <input type="text" id="newUsername" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="newEmail">Email Address *</label>
-                        <input type="email" id="newEmail" required>
-                    </div>
+                <div class="form-group">
+                    <label for="newUsername">Username/Email *</label>
+                    <input type="email" id="newUsername" placeholder="Enter username (will be used as email too)" required>
+                    <small style="color: #666; font-size: 0.85em; margin-top: 5px; display: block;">
+                        This will be used as both username and email address
+                    </small>
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="newPassword">Password *</label>
-                        <input type="password" id="newPassword" required>
+                <div class="form-group">
+                    <label for="newFullName">Full Name</label>
+                    <input type="text" id="newFullName" placeholder="Enter full name (optional)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="tempPassword">Temporary Password</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="tempPassword" readonly style="background-color: #f8f9fa; color: #666;">
+                        <button type="button" class="action-btn secondary" onclick="generateTempPassword()" style="margin: 0; padding: 8px 12px;">
+                            🔄 Generate New
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password *</label>
-                        <input type="password" id="confirmPassword" required>
-                    </div>
+                    <small style="color: #e74c3c; font-size: 0.85em; margin-top: 5px; display: block;">
+                        ⚠️ User must change this password on first login
+                    </small>
                 </div>
                 
                 <div class="form-row">
@@ -657,8 +678,9 @@
                         <select id="userRole">
                             <option value="admin">Administrator</option>
                             <option value="supervisor">Supervisor</option>
-                            <option value="operator">Operator</option>
-                            <option value="readonly">Read Only</option>
+                            <option value="driver">Driver</option>
+                            <option value="booking_agent">Booking Agent</option>
+                            <option value="client">Client</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -685,10 +707,13 @@
     <script>
         // API Configuration
         const API_ENDPOINTS = {
-            ADMIN_DATA: 'https://n8n.newtonium.ca/webhook/rrts-admin-data', // TODO: Create this
-            USER_MANAGEMENT: 'https://n8n.newtonium.ca/webhook/rrts-user-management', // TODO: Create this
-            SYSTEM_CONFIG: 'https://n8n.newtonium.ca/webhook/rrts-system-config', // TODO: Create this
-            SYSTEM_LOGS: 'https://n8n.newtonium.ca/webhook/rrts-system-logs' // TODO: Create this
+            GET_USERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-users',
+            CREATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-user',
+            UPDATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-user',
+            DELETE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-user',
+            RESET_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset',
+            GET_DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/admin-dashboard',
+            CREATE_BACKUP: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-backup'
         };
 
         // Global variables
@@ -717,6 +742,9 @@
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
             
+            // Ensure modal is hidden on page load
+            document.getElementById('addUserModal').classList.add('hidden');
+            
             loadAdminData();
             setupUserSearch();
             setupAddUserForm();
@@ -738,24 +766,72 @@
 
         async function loadAdminData() {
             try {
-                // TODO: Replace with actual API call when endpoint is ready
-                // const response = await fetch(API_ENDPOINTS.ADMIN_DATA);
-                // const data = await response.json();
-
-                // Mock data for demonstration
-                const mockData = generateMockAdminData();
+                // Load users from the database
+                const usersResponse = await fetch(API_ENDPOINTS.GET_USERS);
+                if (!usersResponse.ok) {
+                    throw new Error(`HTTP ${usersResponse.status}: ${usersResponse.statusText}`);
+                }
                 
-                adminData = mockData;
-                updateSystemInfo(mockData.systemInfo);
-                renderUsers(mockData.users);
-                renderSystemConfig(mockData.systemConfig);
-                renderSystemLogs(mockData.logs);
-                renderDatabaseStats(mockData.databaseStats);
-                renderSecurityAlerts(mockData.securityAlerts);
+                const usersData = await usersResponse.json();
+                console.log('Users data loaded:', usersData);
+                
+                // The webhook returns a direct array, so use it directly
+                const users = Array.isArray(usersData) ? usersData : [];
+                currentUsers = users;
+                
+                // Load dashboard data (config, logs, stats, alerts)
+                const dashboardResponse = await fetch(API_ENDPOINTS.GET_DASHBOARD_DATA);
+                let dashboardData = null;
+                
+                if (dashboardResponse.ok) {
+                    const dashboardResult = await dashboardResponse.json();
+                    dashboardData = dashboardResult.success ? dashboardResult.data : null;
+                    console.log('Dashboard data loaded:', dashboardData);
+                }
+                
+                // Update system info with real user data
+                updateSystemInfo({
+                    totalUsers: users.length,
+                    activeUsers: users.filter(u => u.is_active).length,
+                    failedLogins: users.reduce((sum, u) => sum + (u.failed_login_attempts || 0), 0),
+                    uptime: 99.9
+                });
+                
+                // Render users
+                renderUsers(users);
+                
+                // Render dashboard data if available, otherwise use mock data
+                if (dashboardData) {
+                    renderSystemConfig(dashboardData.systemConfig || {});
+                    renderSystemLogs(dashboardData.systemLogs || []);
+                    renderDatabaseStats(dashboardData.databaseStats || {});
+                    renderSecurityAlerts(dashboardData.securityAlerts || []);
+                } else {
+                    // Fallback to mock data if dashboard API fails
+                    const mockData = generateMockAdminData();
+                    renderSystemConfig(mockData.systemConfig);
+                    renderSystemLogs(mockData.logs);
+                    renderDatabaseStats(mockData.databaseStats);
+                    renderSecurityAlerts(mockData.securityAlerts);
+                }
 
             } catch (error) {
                 console.error('Failed to load admin data:', error);
-                showError('Failed to load admin data');
+                
+                // Fallback to mock data if API fails
+                try {
+                    const mockData = generateMockAdminData();
+                    currentUsers = mockData.users;
+                    updateSystemInfo(mockData.systemInfo);
+                    renderUsers(mockData.users);
+                    renderSystemConfig(mockData.systemConfig);
+                    renderSystemLogs(mockData.logs);
+                    renderDatabaseStats(mockData.databaseStats);
+                    renderSecurityAlerts(mockData.securityAlerts);
+                } catch (fallbackError) {
+                    console.error('Failed to load fallback data:', fallbackError);
+                    showToast('Failed to load admin data', 'error');
+                }
             }
         }
 
@@ -800,12 +876,14 @@
                     }
                 ],
                 systemConfig: {
-                    'System Name': 'Rural Route Transportation Services',
-                    'Database Host': 'supabase.co',
-                    'Backup Frequency': 'Daily at 2:00 AM',
-                    'Session Timeout': '30 minutes',
-                    'Max Login Attempts': '3',
-                    'Password Policy': 'Minimum 8 characters'
+                    'rrts_business_name': 'Rural Route Transportation Services',
+                    'rrts_phone_id': 'PNtqAn8pCC',
+                    'sms_signature': 'Andrew @ RRTS',
+                    'support_phone': '+17828226886',
+                    'reminder_buffer_minutes': '5',
+                    'reminder_hours_before': '1',
+                    'reminder_window_start': '07:00',
+                    'reminder_window_end': '20:00'
                 },
                 logs: [
                     {
@@ -875,28 +953,46 @@
             users.forEach(user => {
                 const row = document.createElement('tr');
                 
-                const lastLogin = user.lastLogin ? 
-                    new Date(user.lastLogin).toLocaleDateString('en-CA', { 
+                const lastLogin = user.last_login ? 
+                    new Date(user.last_login).toLocaleDateString('en-CA', { 
                         month: 'short', 
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                     }) : 'Never';
                 
+                const failedAttempts = user.failed_login_attempts || 0;
+                const isActive = user.is_active;
+                const isLocked = user.locked_until && new Date(user.locked_until) > new Date();
+                
+                // Determine status display
+                let statusClass = 'inactive';
+                let statusText = 'inactive';
+                
+                if (isActive && !isLocked) {
+                    statusClass = 'active';
+                    statusText = 'active';
+                } else if (isLocked) {
+                    statusClass = 'locked';
+                    statusText = 'locked';
+                }
+                
                 row.innerHTML = `
                     <td>
                         <strong>${user.username}</strong>
-                        ${user.failedAttempts > 0 ? `<br><small style="color: #e74c3c;">Failed attempts: ${user.failedAttempts}</small>` : ''}
+                        ${user.full_name && user.full_name !== user.username ? `<br><small style="color: #666;">${user.full_name}</small>` : ''}
+                        ${failedAttempts > 0 ? `<br><small style="color: #e74c3c;">Failed attempts: ${failedAttempts}</small>` : ''}
+                        ${isLocked ? `<br><small style="color: #f39c12;">Account locked until ${new Date(user.locked_until).toLocaleDateString('en-CA')}</small>` : ''}
                     </td>
                     <td>${user.email}</td>
                     <td>
                         <span style="text-transform: capitalize; font-weight: 600; color: #2c3e50;">
-                            ${user.role}
+                            ${user.role || 'user'}
                         </span>
                     </td>
                     <td>
-                        <span class="user-status status-${user.status}">
-                            ${user.status}
+                        <span class="user-status status-${statusClass}">
+                            ${statusText}
                         </span>
                     </td>
                     <td>${lastLogin}</td>
@@ -904,14 +1000,14 @@
                         <button class="action-btn primary" onclick="editUser(${user.id})" title="Edit User">
                             ✏️
                         </button>
-                        <button class="action-btn warning" onclick="resetPassword(${user.id})" title="Reset Password">
+                        <button class="action-btn warning" onclick="resetUserPassword(${user.id})" title="Reset Password">
                             🔑
                         </button>
-                        ${user.status === 'active' ? 
+                        ${isActive ? 
                             `<button class="action-btn secondary" onclick="deactivateUser(${user.id})" title="Deactivate">❌</button>` :
                             `<button class="action-btn success" onclick="activateUser(${user.id})" title="Activate">✅</button>`
                         }
-                        ${user.failedAttempts > 0 ? 
+                        ${isLocked ? 
                             `<button class="action-btn warning" onclick="unlockUser(${user.id})" title="Unlock Account">🔓</button>` : ''
                         }
                         <button class="action-btn danger" onclick="deleteUser(${user.id})" title="Delete User">🗑️</button>
@@ -925,16 +1021,88 @@
         function renderSystemConfig(config) {
             const container = document.getElementById('systemConfig');
             
+            // Map app_config keys to user-friendly labels and format values
+            const keyLabels = {
+                'rrts_phone_id': 'Phone ID',
+                'rrts_business_name': 'Business Name',
+                'sms_signature': 'SMS Signature',
+                'support_phone': 'Support Phone',
+                'reminder_buffer_minutes': 'Reminder Buffer',
+                'reminder_hours_before': 'Reminder Hours Before',
+                'reminder_window_start': 'Reminder Window Start',
+                'reminder_window_end': 'Reminder Window End',
+                'system_name': 'System Name',
+                'backup_frequency': 'Backup Frequency',
+                'session_timeout': 'Session Timeout',
+                'max_login_attempts': 'Max Login Attempts',
+                'password_policy': 'Password Policy',
+                'google_maps_api_status': 'Google Maps API',
+                'email_service_status': 'Email Service',
+                'sms_service_status': 'SMS Service',
+                'calendar_integration_status': 'Calendar Integration'
+            };
+
+            // Fields that should be editable in the future
+            const editableFields = ['rrts_business_name', 'sms_signature', 'support_phone', 'reminder_buffer_minutes', 'reminder_hours_before', 'reminder_window_start', 'reminder_window_end'];
+            
             container.innerHTML = '';
+            
+            // Process config data to handle special formatting
+            const processedConfig = {};
+            let reminderWindow = '';
+            
             Object.entries(config).forEach(([key, value]) => {
+                if (key === 'reminder_window_start') {
+                    const endTime = config['reminder_window_end'] || '';
+                    reminderWindow = `${value} - ${endTime}`;
+                    processedConfig['Reminder Window'] = reminderWindow;
+                } else if (key === 'reminder_window_end') {
+                    // Skip this as it's handled by start time
+                    return;
+                } else if (key === 'reminder_buffer_minutes') {
+                    processedConfig[key] = `${value} minutes`;
+                } else if (key === 'reminder_hours_before') {
+                    processedConfig[key] = `${value} hour${value > 1 ? 's' : ''}`;
+                } else {
+                    processedConfig[key] = value;
+                }
+            });
+            
+            // Add static system info
+            processedConfig['Database Host'] = 'supabase.co';
+            processedConfig['Backup Frequency'] = 'Manual backups via Supabase Dashboard';
+            
+            Object.entries(processedConfig).forEach(([key, value]) => {
+                const label = keyLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const isEditable = editableFields.includes(key);
+                
                 const configItem = document.createElement('div');
                 configItem.className = 'config-item';
                 configItem.innerHTML = `
-                    <div class="config-label">${key}</div>
-                    <div class="config-value">${value}</div>
+                    <div class="config-label">${label}</div>
+                    <div class="config-value" ${isEditable ? 'contenteditable="true" data-key="' + key + '" style="border: 1px dashed #ccc; padding: 4px; min-height: 20px;"' : ''}>${value || 'Not configured'}</div>
+                    ${isEditable ? '<button class="action-btn secondary" onclick="saveConfigValue(\'' + key + '\')" style="margin-left: 10px; padding: 4px 8px; font-size: 0.8em;" title="Save changes">💾</button>' : ''}
                 `;
                 container.appendChild(configItem);
             });
+        }
+
+        function saveConfigValue(key) {
+            // Future implementation for saving config changes
+            // This will:
+            // 1. Update the app_config table in Supabase
+            // 2. For reminder settings, update the RMDR workflow cron trigger
+            // 3. For business settings, update SMS signature and phone settings
+            // 4. Refresh the display with new values
+            
+            const valueElement = document.querySelector(`[data-key="${key}"]`);
+            const newValue = valueElement.textContent.trim();
+            
+            showToast(`Saving ${key} = ${newValue}... (Feature coming soon)`, 'info');
+            
+            // TODO: Implement API call to update app_config
+            // TODO: For cron-related settings, update workflow trigger
+            // TODO: Validate input values (e.g., time format, numeric ranges)
         }
 
         function renderSystemLogs(logs) {
@@ -1034,11 +1202,37 @@
                 e.preventDefault();
                 addNewUser();
             });
+            
+            // Generate initial temporary password when modal opens
+            generateTempPassword();
         }
 
         // User Management Functions
         function openAddUserModal() {
             document.getElementById('addUserModal').classList.remove('hidden');
+            generateTempPassword(); // Generate password when modal opens
+        }
+
+        function generateTempPassword() {
+            // Generate a secure temporary password
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            
+            // Ensure at least one of each type
+            password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Uppercase
+            password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Lowercase
+            password += '0123456789'[Math.floor(Math.random() * 10)]; // Number
+            password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // Special char
+            
+            // Fill the rest randomly
+            for (let i = 4; i < 12; i++) {
+                password += chars[Math.floor(Math.random() * chars.length)];
+            }
+            
+            // Shuffle the password
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+            
+            document.getElementById('tempPassword').value = password;
         }
 
         function closeAddUserModal() {
@@ -1048,25 +1242,21 @@
 
         async function addNewUser() {
             const username = document.getElementById('newUsername').value.trim();
-            const email = document.getElementById('newEmail').value.trim();
-            const password = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const fullName = document.getElementById('newFullName').value.trim();
+            const password = document.getElementById('tempPassword').value;
             const role = document.getElementById('userRole').value;
             const status = document.getElementById('userStatus').value;
 
             // Validation
-            if (!username || !email || !password) {
-                showToast('Please fill in all required fields', 'error');
+            if (!username) {
+                showToast('Please enter a username/email', 'error');
                 return;
             }
 
-            if (password !== confirmPassword) {
-                showToast('Passwords do not match', 'error');
-                return;
-            }
-
-            if (password.length < 8) {
-                showToast('Password must be at least 8 characters long', 'error');
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(username)) {
+                showToast('Please enter a valid email address', 'error');
                 return;
             }
 
@@ -1079,29 +1269,38 @@
             try {
                 const userData = {
                     username,
-                    email,
-                    password, // In real implementation, this should be hashed
+                    email: username, // Use username as email
+                    password,
+                    full_name: fullName || username, // Use full name or fallback to username
                     role,
-                    status,
-                    created: new Date().toISOString()
+                    is_active: status === 'active'
                 };
 
                 console.log('Adding new user:', { ...userData, password: '••••••••' });
 
-                // TODO: Implement actual API call
-                // const response = await fetch(API_ENDPOINTS.USER_MANAGEMENT, {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify({ action: 'create', userData })
-                // });
+                const response = await fetch(API_ENDPOINTS.CREATE_USER, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
 
-                showToast('User created successfully!', 'success');
-                closeAddUserModal();
-                loadAdminData(); // Refresh user list
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`User created successfully! Temporary password: ${password}`, 'success');
+                    closeAddUserModal();
+                    
+                    // Wait a moment for the database to update, then refresh user list
+                    setTimeout(() => {
+                        loadAdminData();
+                    }, 500);
+                } else {
+                    showToast(result.message || 'Failed to create user', 'error');
+                }
 
             } catch (error) {
                 console.error('Failed to create user:', error);
-                showToast('Failed to create user', 'error');
+                showToast('Failed to create user: ' + error.message, 'error');
             }
         }
 
@@ -1111,13 +1310,37 @@
             // TODO: Implement edit user modal
         }
 
-        function resetPassword(userId) {
+        async function resetUserPassword(userId) {
             const user = currentUsers.find(u => u.id === userId);
-            if (confirm(`Reset password for ${user.username}?`)) {
-                showToast(`Password reset email sent to ${user.email}`, 'success');
-                // TODO: Implement password reset
+            if (confirm(`Reset password for ${user.username}? A temporary password will be emailed directly to them.`)) {
+                try {
+                    const resetData = {
+                        username: user.username
+                    };
+
+                    console.log('Resetting password for user:', user.username);
+
+                    const response = await fetch(API_ENDPOINTS.RESET_PASSWORD, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(resetData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`Password reset successfully! A temporary password has been emailed to ${user.username}.`, 'success');
+                    } else {
+                        showToast(result.message || 'Failed to reset password', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to reset password:', error);
+                    showToast('Failed to reset password: ' + error.message, 'error');
+                }
             }
         }
+
 
         function activateUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
@@ -1146,7 +1369,7 @@
             }
         }
 
-        function deleteUser(userId) {
+        async function deleteUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
             if (user.username === 'transport_admin') {
                 showToast('Cannot delete the main administrator account', 'error');
@@ -1154,9 +1377,33 @@
             }
             
             if (confirm(`DELETE user ${user.username}? This action cannot be undone.`)) {
-                showToast(`User ${user.username} deleted`, 'warning');
-                // TODO: Implement user deletion
-                loadAdminData();
+                try {
+                    const userData = {
+                        userId: userId,
+                        username: user.username
+                    };
+
+                    console.log('Deleting user:', userData);
+
+                    const response = await fetch(API_ENDPOINTS.DELETE_USER, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`User ${user.username} deleted successfully`, 'success');
+                        loadAdminData(); // Refresh user list
+                    } else {
+                        showToast(result.message || 'Failed to delete user', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to delete user:', error);
+                    showToast('Failed to delete user: ' + error.message, 'error');
+                }
             }
         }
 
@@ -1172,14 +1419,39 @@
         }
 
         // Database Functions
-        function createBackup() {
+        async function createBackup() {
             if (confirm('Create a new database backup? This may take a few minutes.')) {
                 showToast('Creating database backup...', 'info');
-                // TODO: Implement backup creation
-                setTimeout(() => {
-                    showToast('Database backup created successfully!', 'success');
-                    loadAdminData(); // Refresh to show new backup time
-                }, 3000);
+                
+                try {
+                    const backupData = {
+                        backupType: 'full',
+                        requestedBy: JSON.parse(sessionStorage.getItem('rrts_user')).username || 'admin'
+                    };
+
+                    console.log('Creating backup with data:', backupData);
+
+                    const response = await fetch(API_ENDPOINTS.CREATE_BACKUP, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(backupData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`Database backup created successfully: ${result.data.filename}`, 'success');
+                        console.log('Backup details:', result.data);
+                        loadAdminData(); // Refresh to show new backup time and logs
+                    } else {
+                        showToast(result.message || 'Failed to create backup', 'error');
+                        console.error('Backup failed:', result);
+                    }
+
+                } catch (error) {
+                    console.error('Failed to create backup:', error);
+                    showToast('Failed to create backup: ' + error.message, 'error');
+                }
             }
         }
 

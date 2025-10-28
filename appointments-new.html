@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRTS - Appointments</title>
+    <link href="shared-styles.css" rel="stylesheet">
+    <script src="permissions.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        /* Calendar Week View Styles */
+        .calendar-week-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .calendar-header {
+            display: grid;
+            grid-template-columns: 120px repeat(7, 1fr);
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .time-column-header {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .day-header.today {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .calendar-body {
+            display: grid;
+            grid-template-columns: 120px repeat(7, 1fr);
+            gap: 10px;
+            position: relative;
+        }
+
+        .time-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .time-slot {
+            height: 60px;
+            border-top: 1px solid #dee2e6;
+            padding: 5px 10px;
+            font-size: 0.85em;
+            color: #6c757d;
+            position: relative;
+        }
+
+        .time-slot.hour-mark {
+            border-top: 2px solid #adb5bd;
+            font-weight: 600;
+        }
+
+        .day-column {
+            border: 1px solid #dee2e6;
+            background: white;
+            min-height: 960px; /* 16 hours * 60px */
+            position: relative;
+        }
+
+        .appointment-block {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            cursor: pointer;
+            overflow: hidden;
+            border-left: 3px solid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .appointment-block:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .appointment-block.status-confirmed {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .appointment-block.status-pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .appointment-block.status-cancelled {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            opacity: 0.7;
+        }
+
+        .appointment-time {
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .appointment-client {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .list-view {
+            display: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn-group .btn.active {
+            background: #0d6efd;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+
+        /* Week navigation */
+        .week-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .week-navigation h4 {
+            margin: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Appointments</h1>
+            <div>
+                <a href="dashboard.html" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <!-- View Toggles -->
+                    <div class="d-flex align-items-center">
+                        <div class="btn-group me-3" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" data-view="calendar">
+                                <i class="bi bi-calendar3"></i> Calendar
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-view="list">
+                                <i class="bi bi-list"></i> List
+                            </button>
+                        </div>
+
+                        <!-- Calendar sub-toggle (only shown in calendar view) -->
+                        <div id="calendarSubToggle">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-calendar-view="week">
+                                    <i class="bi bi-calendar-week"></i> Week
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-view="month">
+                                    <i class="bi bi-calendar-month"></i> Month
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div>
+                        <button class="btn btn-primary" id="addAppointmentBtn">
+                            <i class="bi bi-plus-circle"></i> Add Appointment
+                        </button>
+                        <button class="btn btn-outline-secondary" id="refreshBtn">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingView" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Loading appointments...</p>
+        </div>
+
+        <!-- Calendar Week View -->
+        <div id="calendarWeekView" class="hidden">
+            <div class="week-navigation">
+                <button class="btn btn-outline-secondary" id="prevWeekBtn">
+                    <i class="bi bi-chevron-left"></i> Previous Week
+                </button>
+                <h4 id="weekRange"></h4>
+                <button class="btn btn-outline-secondary" id="nextWeekBtn">
+                    Next Week <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+
+            <div id="calendarWeekContent" class="calendar-week-container"></div>
+        </div>
+
+        <!-- Calendar Month View -->
+        <div id="calendarMonthView" class="hidden">
+            <div id="calendarMonthContent" class="text-center py-5">
+                <i class="bi bi-calendar-month" style="font-size: 4rem; color: #ccc;"></i>
+                <h4 class="mt-3 text-muted">Month View</h4>
+                <p class="text-muted">Calendar month view coming soon...</p>
+            </div>
+        </div>
+
+        <!-- List View -->
+        <div id="listView" class="list-view">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Filters</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Statuses</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="pending">Pending</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Driver</label>
+                            <select class="form-select" id="driverFilter">
+                                <option value="">All Drivers</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="dateFromFilter">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="dateToFilter">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div id="listViewContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="appointment-modal.js"></script>
+    <script src="client-quick-view.js"></script>
+    <script src="appointments.js"></script>
+</body>
+</html>
