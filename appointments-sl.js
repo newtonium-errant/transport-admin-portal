@@ -223,16 +223,15 @@ class AppointmentsPage {
             if (!savedUser) return;
 
             const user = JSON.parse(savedUser);
-            const firstName = user.firstName || user.firstname || '';
-            const lastName = user.lastName || user.lastname || '';
+            const fullName = user.fullName || user.full_name || user.username || 'User';
             const role = user.role || 'Guest';
 
             // Create initials for avatar
-            const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || 'U';
+            const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
             // Display user info
             document.getElementById('userAvatar').textContent = initials;
-            document.getElementById('userName').textContent = `${firstName} ${lastName}`.trim() || 'User';
+            document.getElementById('userName').textContent = fullName;
             document.getElementById('userRoleBadge').textContent = this.formatRoleName(role);
         } catch (error) {
             console.error('Error displaying user info:', error);
@@ -262,8 +261,9 @@ class AppointmentsPage {
         // Define navigation items with their display names and icons
         const navItems = [
             { page: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2' },
-            { page: 'appointments-new', label: 'Appointments', icon: 'bi-calendar-event' },
-            { page: 'client-management', label: 'Clients', icon: 'bi-people' },
+            { page: 'appointments-sl', label: 'Appointments', icon: 'bi-calendar-event' },
+            { page: 'appointments-bulk-add', label: 'Bulk Add', icon: 'bi-calendar-plus' },
+            { page: 'clients-sl', label: 'Clients', icon: 'bi-people' },
             { page: 'driver-management', label: 'Drivers', icon: 'bi-person-badge' },
             { page: 'operations', label: 'Operations', icon: 'bi-kanban' },
             { page: 'admin', label: 'Admin', icon: 'bi-gear' }
