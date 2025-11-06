@@ -1084,12 +1084,64 @@
 
             // Initialize appointment modal for adding appointments
             appointmentModalInstance = new AppointmentModal({
-                onSave: async (appointmentData) => {
-                    // Appointment saved successfully
-                    console.log('Appointment saved:', appointmentData);
+                onSave: async (appointmentData, mode) => {
+                    try {
+                        let endpoint;
+                        let payload;
+
+                        if (mode === 'edit') {
+                            // v7 Update endpoint with complete calendar management
+                            endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete';
+                            payload = appointmentData;
+                        } else {
+                            // v7 Add endpoint - uses pre-calculated travel times
+                            endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-v7';
+                            payload = appointmentData;
+                        }
+
+                        console.log('Sending to endpoint:', endpoint);
+                        console.log('Request payload:', JSON.stringify(payload, null, 2));
+
+                        const response = await authenticatedFetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload)
+                        }).catch(error => {
+                            console.error('Network error:', error);
+                            throw new Error('Network error: ' + error.message);
+                        });
+
+                        console.log('Response status:', response.status, response.statusText);
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('Error response:', errorText);
+                            throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('Save response:', result);
+
+                        if (result.success !== false) {
+                            // Show success message
+                            showToast('Appointment saved successfully!', 'success');
+
+                            // Optional: Reload client data if needed
+                            // await loadClients();
+                        } else {
+                            throw new Error(result.message || 'Failed to save appointment');
+                        }
+                    } catch (error) {
+                        console.error('Error saving appointment:', error);
+                        showToast('Failed to save appointment: ' + error.message, 'error');
+                        throw error;
+                    }
                 },
                 onDelete: async (appointmentId) => {
                     console.log('Appointment deleted:', appointmentId);
+                    // TODO: Implement delete functionality if needed on clients page
                 }
             });
 
