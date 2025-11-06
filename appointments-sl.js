@@ -1809,16 +1809,30 @@ class AppointmentsPage {
             // Open modal
             if (typeof appointmentModalInstance !== 'undefined') {
                 appointmentModalInstance.open('edit', appointment);
-            }
 
-            // Hide loading state after modal has time to render and animate in
-            setTimeout(() => {
-                if (editBtn) {
-                    this.setButtonLoading(editBtn, false);
+                // Hide loading overlay when modal finishes opening
+                if (!editBtn) {
+                    const modalElement = document.getElementById('appointmentModal');
+                    if (modalElement) {
+                        // Listen for Bootstrap modal shown event (fires when animation completes)
+                        const hideOverlayOnShow = () => {
+                            this.hideLoadingOverlay();
+                            modalElement.removeEventListener('shown.bs.modal', hideOverlayOnShow);
+                        };
+                        modalElement.addEventListener('shown.bs.modal', hideOverlayOnShow);
+
+                        // Fallback timeout in case event doesn't fire
+                        setTimeout(() => {
+                            this.hideLoadingOverlay();
+                        }, 1000);
+                    }
                 } else {
-                    this.hideLoadingOverlay();
+                    // For edit button clicks, hide after short delay
+                    setTimeout(() => {
+                        this.setButtonLoading(editBtn, false);
+                    }, 400);
                 }
-            }, 800);
+            }
 
         } catch (error) {
             console.error('Error opening appointment:', error);
