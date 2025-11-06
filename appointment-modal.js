@@ -656,6 +656,26 @@ class AppointmentModal {
                 el.style.display = 'none';
             });
         }
+
+        // Transit time: Read-only for booking agents in edit mode, editable for supervisors/admins
+        const transitTimeField = document.getElementById('transitTime');
+        if (transitTimeField && userRole === 'booking_agent' && this.mode === 'edit') {
+            transitTimeField.disabled = true;
+            transitTimeField.style.backgroundColor = '#e9ecef';
+        } else if (transitTimeField && this.mode === 'edit') {
+            transitTimeField.disabled = false;
+            transitTimeField.style.backgroundColor = '';
+        }
+
+        // Status field: Read-only for booking agents and supervisors, editable ONLY for admins
+        const statusField = document.getElementById('appointmentStatus');
+        if (statusField && userRole !== 'admin') {
+            statusField.disabled = true;
+            statusField.style.backgroundColor = '#e9ecef';
+        } else if (statusField) {
+            statusField.disabled = false;
+            statusField.style.backgroundColor = '';
+        }
     }
 
     async open(mode = 'add', appointment = null) {
@@ -763,8 +783,7 @@ class AppointmentModal {
             cancelBtn.style.display = 'none';
             saveBtn.textContent = 'Save Appointment';
             saveBtn.onclick = () => this.saveAppointment();
-            transitTimeRow.style.display = 'block'; // Show in add mode (auto-populated from client travel times)
-            transitTimeField.disabled = false; // Allow manual adjustment
+            transitTimeRow.style.display = 'none'; // Hide in add mode
             if (driverFieldContainer) driverFieldContainer.style.display = 'none'; // Hide driver in add mode
         }
 
