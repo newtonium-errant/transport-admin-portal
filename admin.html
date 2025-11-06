@@ -704,6 +704,9 @@
         </div>
     </div>
 
+    <!-- JWT Authentication Helper -->
+    <script src="jwt-auth.js"></script>
+
     <script>
         // API Configuration
         const API_ENDPOINTS = {
@@ -722,18 +725,17 @@
         let systemLogs = [];
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('RRTS Admin Module Loaded');
-            
-            // Check authentication and permissions
-            const savedUser = sessionStorage.getItem('rrts_user');
-            if (!savedUser) {
-                window.location.href = 'dashboard.html';
+
+            // Check JWT authentication (redirects if not authenticated)
+            if (!(await requireAuth())) {
                 return;
             }
 
-            const user = JSON.parse(savedUser);
-            if (user.role !== 'admin') {
+            // Check admin permissions
+            const user = getCurrentUser();
+            if (!user || user.role !== 'admin') {
                 showToast('Access denied. Administrator privileges required.', 'error');
                 setTimeout(() => window.location.href = 'dashboard.html', 2000);
                 return;
@@ -766,27 +768,31 @@
 
         async function loadAdminData() {
             try {
-                // Load users from the database
-                const usersResponse = await fetch(API_ENDPOINTS.GET_USERS);
+                // Load users from the database (with JWT authentication)
+                const usersResponse = await authenticatedFetch(API_ENDPOINTS.GET_USERS);
                 if (!usersResponse.ok) {
                     throw new Error(`HTTP ${usersResponse.status}: ${usersResponse.statusText}`);
                 }
-                
+
                 const usersData = await usersResponse.json();
                 console.log('Users data loaded:', usersData);
-                
+
                 // The webhook returns a direct array, so use it directly
                 const users = Array.isArray(usersData) ? usersData : [];
                 currentUsers = users;
-                
+
                 // Load dashboard data (config, logs, stats, alerts)
-                const dashboardResponse = await fetch(API_ENDPOINTS.GET_DASHBOARD_DATA);
                 let dashboardData = null;
-                
-                if (dashboardResponse.ok) {
-                    const dashboardResult = await dashboardResponse.json();
-                    dashboardData = dashboardResult.success ? dashboardResult.data : null;
-                    console.log('Dashboard data loaded:', dashboardData);
+
+                try {
+                    const dashboardResponse = await authenticatedFetch(API_ENDPOINTS.GET_DASHBOARD_DATA);
+                    if (dashboardResponse.ok) {
+                        const dashboardResult = await dashboardResponse.json();
+                        dashboardData = dashboardResult.success ? dashboardResult.data : null;
+                        console.log('Dashboard data loaded:', dashboardData);
+                    }
+                } catch (dashboardError) {
+                    console.log('Dashboard API not available, using mock data for dashboard sections');
                 }
                 
                 // Update system info with real user data
@@ -1278,9 +1284,8 @@
 
                 console.log('Adding new user:', { ...userData, password: '••••••••' });
 
-                const response = await fetch(API_ENDPOINTS.CREATE_USER, {
+                const response = await authenticatedFetch(API_ENDPOINTS.CREATE_USER, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(userData)
                 });
 
@@ -1320,9 +1325,8 @@
 
                     console.log('Resetting password for user:', user.username);
 
-                    const response = await fetch(API_ENDPOINTS.RESET_PASSWORD, {
+                    const response = await authenticatedFetch(API_ENDPOINTS.RESET_PASSWORD, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(resetData)
                     });
 
@@ -1385,9 +1389,8 @@
 
                     console.log('Deleting user:', userData);
 
-                    const response = await fetch(API_ENDPOINTS.DELETE_USER, {
+                    const response = await authenticatedFetch(API_ENDPOINTS.DELETE_USER, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(userData)
                     });
 
@@ -1431,9 +1434,8 @@
 
                     console.log('Creating backup with data:', backupData);
 
-                    const response = await fetch(API_ENDPOINTS.CREATE_BACKUP, {
+                    const response = await authenticatedFetch(API_ENDPOINTS.CREATE_BACKUP, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(backupData)
                     });
 

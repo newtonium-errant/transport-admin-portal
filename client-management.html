@@ -585,6 +585,8 @@
         </div>
     </div>
 
+    <!-- JWT Authentication Helper -->
+    <script src="jwt-auth.js"></script>
     <script>
         let allClients = [];
         let filteredClients = [];
@@ -592,21 +594,19 @@
         let clientOpenPhoneIds = {}; // Store openphone_contact_id for each client
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check authentication and permissions
-            const savedUser = sessionStorage.getItem('rrts_user');
-            if (!savedUser) {
-                window.location.href = 'dashboard.html';
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check JWT authentication (redirects if not authenticated)
+            if (!(await requireAuth())) {
                 return;
             }
 
-            const user = JSON.parse(savedUser);
-            
+            const user = getCurrentUser();
+
             // Enforce page access based on role
             if (!enforcePageAccess()) {
                 return;
             }
-            
+
             // Filter navigation based on role
             filterNavigationByRole(user.role);
             
@@ -633,12 +633,7 @@
                 showLoading(true);
                 hideError();
                 
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getActiveClients', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
+                const response = await authenticatedFetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getActiveClients');
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -676,12 +671,7 @@
                 showLoading(true);
                 hideError();
                 
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
+                const response = await authenticatedFetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/getAllClients');
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -904,11 +894,8 @@
                     }
                 };
 
-                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient', {
+                const response = await authenticatedFetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/updateClient', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(updatedClient)
                 });
 
@@ -962,11 +949,8 @@
                 const endpoint = isEdit ? 'updateClient' : 'createClient';
                 
                 // Step 1: Create/update client in database
-                const clientResponse = await fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${endpoint}`, {
+                const clientResponse = await authenticatedFetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${endpoint}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(formData)
                 });
 
@@ -976,11 +960,8 @@
 
                 // Step 2: Send to messaging API (only if client creation/update succeeded)
                 const messagingEndpoint = isEdit ? 'update-phone-client' : 'create-phone-contact';
-                const messagingResponse = await fetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${messagingEndpoint}`, {
+                const messagingResponse = await authenticatedFetch(`https://webhook-processor-production-3bb8.up.railway.app/webhook/${messagingEndpoint}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(formData)
                 });
 
