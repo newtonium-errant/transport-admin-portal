@@ -1796,17 +1796,19 @@ class AppointmentsPage {
                 throw new Error('Appointment not found');
             }
 
-            // Hide loading state (modal opening is fast)
-            if (editBtn) {
-                this.setButtonLoading(editBtn, false);
-            } else {
-                this.hideLoadingOverlay();
-            }
-
             // Open modal
             if (typeof appointmentModalInstance !== 'undefined') {
                 appointmentModalInstance.open('edit', appointment);
             }
+
+            // Hide loading state after modal has time to render
+            setTimeout(() => {
+                if (editBtn) {
+                    this.setButtonLoading(editBtn, false);
+                } else {
+                    this.hideLoadingOverlay();
+                }
+            }, 400);
 
         } catch (error) {
             console.error('Error opening appointment:', error);
