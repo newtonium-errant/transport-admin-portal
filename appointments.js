@@ -216,8 +216,8 @@ class AppointmentsPage {
         // Define navigation items with their display names and icons
         const navItems = [
             { page: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2' },
-            { page: 'appointments-new', label: 'Appointments', icon: 'bi-calendar-event' },
-            { page: 'client-management', label: 'Clients', icon: 'bi-people' },
+            { page: 'appointments-sl', label: 'Appointments', icon: 'bi-calendar-event' },
+            { page: 'clients-sl', label: 'Clients', icon: 'bi-people' },
             { page: 'driver-management', label: 'Drivers', icon: 'bi-person-badge' },
             { page: 'operations', label: 'Operations', icon: 'bi-kanban' },
             { page: 'admin', label: 'Admin', icon: 'bi-gear' }
