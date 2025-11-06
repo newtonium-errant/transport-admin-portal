@@ -1,2 +1,48 @@
+# Documentation and instruction files
 *.md
-/Instructions
+!README.md
+Instructions/
+Implementation-Guide/
+n8n-updates/
+cloudflare-setup/
+frontend-updates/
+google-oauth/
+testing/
+
+# Workflow files
+Workflows/
+*.json
+!package.json
+!package-lock.json
+
+# SQL files
+sql/
+*.sql
+
+# Deprecated code
+deprecated/
+
+# Claude AI settings
+.claude/
+
+# Environment files
+.env
+.env.local
+*.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
