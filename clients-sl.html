@@ -1584,6 +1584,9 @@
                     </div>
                 `).join('');
 
+                // Check the "Select All Clinics" checkbox since all clinics are checked by default
+                document.getElementById('selectAllClinics').checked = true;
+
                 console.log(`Loaded ${availableClinics.length} clinics for selection`);
             } catch (error) {
                 console.error('Error loading clinics:', error);
