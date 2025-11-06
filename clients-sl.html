@@ -1451,7 +1451,7 @@
                 ].filter(Boolean).join(', ') : null;
 
                 return `
-                    <div class="client-row ${client.active === false ? 'inactive' : ''}" onclick="viewClientProfile('${client.knumber}')">
+                    <div class="client-row ${client.active === false ? 'inactive' : ''}" onclick="quickEditClient('${client.knumber}')" style="cursor: pointer;">
                         <div class="client-main-info">
                             <div class="client-name-section">
                                 <h4 class="client-name">${client.lastname || ''}, ${client.firstname || ''}</h4>
@@ -1501,10 +1501,6 @@
                         </div>
 
                         <div class="client-actions" onclick="event.stopPropagation();">
-                            <a href="client-profile.html?knumber=${client.knumber}" class="btn-sm btn-primary-sm">
-                                <i class="bi bi-person-circle"></i>
-                                View Profile
-                            </a>
                             <button class="btn-sm btn-secondary-sm" id="quick-edit-${client.knumber}" onclick="quickEditClient('${client.knumber}')">
                                 <i class="bi bi-pencil-square"></i>
                                 <span class="btn-text">Quick Edit</span>
