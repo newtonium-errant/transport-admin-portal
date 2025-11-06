@@ -1,119 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>RRTS | Rural Route Transportation Services</title>
-	<link rel="stylesheet" href="shared-styles.css">
-	<style>
-		/* Landing page specific styles */
-		:root { --primary:#2c3e50; --secondary:#34495e; --accent:#1abc9c; }
-		body {
-			margin: 0;
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-			color: #2c3e50;
-			background: #f6f8fb;
-		}
-		.main {
-			padding: 40px 20px;
-			display: grid;
-			place-items: center;
-		}
-		.hero {
-			max-width: 1080px;
-			width: 100%;
-			display: grid;
-			grid-template-columns: 1fr;
-			gap: 28px;
-			text-align: center;
-			background: white;
-			padding: 32px 24px;
-			border-radius: 16px;
-			box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-		}
-		.logo {
-			width: 140px;
-			height: 140px;
-			border-radius: 16px;
-			object-fit: cover;
-			box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-			justify-self: center;
-		}
-		.hero h2 { margin: 0; font-weight: 600; font-size: 1.8rem; color: var(--primary); }
-		.tagline { color: #5f6b7a; font-size: 1.05rem; line-height: 1.6; margin: 0; }
-		.actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
-		.header .btn { margin-left: 16px; }
-		.btn {
-			appearance: none;
-			border: none;
-			padding: 12px 18px;
-			border-radius: 10px;
-			font-size: 1rem;
-			cursor: pointer;
-			transition: transform .05s ease, box-shadow .2s ease, background-color .2s ease;
-		}
-		.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 6px 12px rgba(26,188,156,0.25); }
-		.btn-primary:hover { filter: brightness(0.95); }
-		.btn-primary:active { transform: translateY(1px); }
-		.contact {
-			display: grid;
-			gap: 6px;
-			justify-items: center;
-			color: #415265;
-			font-size: 0.98rem;
-		}
-		.contact a { color: var(--secondary); text-decoration: none; border-bottom: 1px dashed rgba(52,73,94,0.35); }
-		.contact a:hover { border-bottom-style: solid; }
-		.meta { color: #7b8a9a; font-size: 0.9rem; }
-		.footer { text-align: center; color: #7b8a9a; font-size: 0.9rem; padding: 24px 16px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRTS - Rural Route Transportation Services</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        /* RRTS Brand Colors */
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+        }
 
-		/* Layout on larger screens */
-		@media (min-width: 840px) {
-			.hero {
-				grid-template-columns: 180px 1fr;
-				text-align: left;
-				align-items: center;
-				gap: 32px;
-				padding: 36px 40px;
-			}
-			.logo { width: 180px; height: 180px; }
-			.content { display: grid; gap: 14px; }
-			.actions { justify-content: start; }
-		.header .btn { margin-left: 20px; }
-			.contact { justify-items: start; }
-		}
-	</style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            padding-top: 70px;
+        }
+
+        /* Header Styles */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+        }
+
+        .brand-icon {
+            font-size: 1.8em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .hero-section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 50px;
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 40px;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 200px;
+            height: 200px;
+            border-radius: 16px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .hero-content h1 {
+            color: var(--color-primary);
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .hero-content p {
+            color: #555;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .contact-info {
+            background: #f8f9fa;
+            border-left: 4px solid var(--color-accent);
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .contact-info h3 {
+            color: var(--color-primary);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .contact-item i {
+            color: var(--color-accent);
+            font-size: 1.2em;
+        }
+
+        .contact-item a {
+            color: var(--color-primary);
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(27, 67, 50, 0.3);
+            transition: border-bottom 0.2s;
+        }
+
+        .contact-item a:hover {
+            border-bottom-style: solid;
+        }
+
+        .btn-login {
+            background-color: var(--color-accent);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-login:hover {
+            background-color: #256145;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .footer {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+            padding: 30px 20px;
+            margin-top: 60px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-section {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 30px 20px;
+                gap: 25px;
+            }
+
+            .logo {
+                width: 150px;
+                height: 150px;
+                justify-self: center;
+            }
+
+            .hero-content h1 {
+                font-size: 1.8rem;
+            }
+
+            .hero-content p {
+                font-size: 1rem;
+            }
+
+            .header-container {
+                padding: 0 15px;
+            }
+
+            .header-brand {
+                font-size: 1.1em;
+            }
+        }
+    </style>
 </head>
 <body>
-	<header class="header">
-		<h1>RRTS</h1>
-		<div class="header-info">
-			<span>Rural Route Transportation Services</span>
-			<a class="btn btn-primary" href="dashboard.html">Login</a>
-		</div>
-	</header>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-brand">
+                <i class="bi bi-geo-alt-fill brand-icon"></i>
+                <span>RRTS</span>
+            </div>
+            <div class="header-actions">
+                <a href="dashboard.html" class="btn-login">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Staff Login
+                </a>
+            </div>
+        </div>
+    </header>
 
-	<main class="main">
-		<section class="hero">
-			<img src="RRTS Square Logo.png" alt="RRTS logo" class="logo">
-			<div class="content">
-				<h2>Veteran-Owned Transportation Service</h2>
-				<p class="tagline">Rural Route Transportation Services provides reliable transportation for medical appointments to veterans in the Annapolis Valley, Nova Scotia.</p>
-                <p class="tagline">Don't want the hassle of booking your ride? Let us coordinate your transportation directly with the clinic.</p>
-				<div class="contact">
-					<div><strong>Call or Text:</strong> <a href="tel:+17828226886">(782) 822-6886</a></div>
-					<div><strong>Email:</strong> <a href="mailto:ruralroutetransportation@gmail.com">ruralroutetransportation@gmail.com</a></div>
-				</div>
-			</div>
-		</section>
-	</main>
+    <!-- Main Content -->
+    <main class="main-content">
+        <section class="hero-section">
+            <img src="RRTS Square Logo.png" alt="RRTS Logo" class="logo">
+            <div class="hero-content">
+                <h1>Veteran-Owned Transportation Service</h1>
+                <p>Rural Route Transportation Services provides reliable transportation for medical appointments to veterans in the Annapolis Valley, Nova Scotia.</p>
+                <p>Don't want the hassle of booking your ride? Let us coordinate your transportation directly with the clinic.</p>
 
-	<footer class="footer">
-		© <span id="year"></span> RRTS. All rights reserved.
-	</footer>
+                <div class="contact-info">
+                    <h3>
+                        <i class="bi bi-telephone-fill"></i>
+                        Get In Touch
+                    </h3>
+                    <div class="contact-item">
+                        <i class="bi bi-phone"></i>
+                        <span><strong>Call or Text:</strong> <a href="tel:+17828226886">(782) 822-6886</a></span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="bi bi-envelope"></i>
+                        <span><strong>Email:</strong> <a href="mailto:ruralroutetransportation@gmail.com">ruralroutetransportation@gmail.com</a></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
-	<script>
-		document.getElementById('year').textContent = new Date().getFullYear();
-	</script>
+    <!-- Footer -->
+    <footer class="footer">
+        © <span id="year"></span> Rural Route Transportation Services. All rights reserved.
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
