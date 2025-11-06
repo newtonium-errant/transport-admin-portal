@@ -137,16 +137,16 @@ class AppointmentModal {
                                 <div class="mb-3" id="managingAgentContainer" style="display: none;">
                                     <label for="managingAgent" class="form-label">
                                         Managing Agent
-                                        <i class="bi bi-info-circle" title="The booking agent responsible for managing this appointment"></i>
+                                        <i class="bi bi-info-circle" title="The staff member responsible for managing this appointment"></i>
                                     </label>
                                     <!-- For booking agents: read-only text -->
-                                    <input type="text" class="form-control bg-light" id="managingAgentText" readonly style="display: none;">
+                                    <input type="text" class="form-control" id="managingAgentText" readonly style="display: none; background-color: #e9ecef;">
                                     <!-- For supervisors/admins: dropdown -->
                                     <select class="form-select" id="managingAgent" style="display: none;">
                                         <option value="">Loading agents...</option>
                                     </select>
                                     <input type="hidden" id="managingAgentId">
-                                    <small class="text-muted">Booking agent responsible for this appointment</small>
+                                    <small class="text-muted">Staff member responsible for this appointment</small>
                                 </div>
 
                                 <!-- Notes -->
@@ -187,6 +187,9 @@ class AppointmentModal {
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-warning" id="restoreAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.restoreAppointment()">
                                 <i class="bi bi-arrow-counterclockwise"></i> Restore
+                            </button>
+                            <button type="button" class="btn btn-warning" id="reactivateAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.reactivateAppointment()">
+                                <i class="bi bi-arrow-clockwise"></i> Reactivate
                             </button>
                             <button type="button" class="btn btn-danger" id="archiveAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.archiveAppointment()">
                                 <i class="bi bi-trash"></i> Delete
@@ -642,8 +645,8 @@ class AppointmentModal {
                 if (permissions?.canViewDrivers) {
                     el.disabled = true;
                     el.title = 'You do not have permission to assign drivers';
-                    // Add visual indicator that field is read-only
-                    el.classList.add('bg-light');
+                    // Add visual indicator that field is read-only (consistent with other disabled fields)
+                    el.style.backgroundColor = '#e9ecef';
                 } else {
                     // Hide completely if can't view drivers
                     el.style.display = 'none';
@@ -700,6 +703,7 @@ class AppointmentModal {
         const title = document.getElementById('appointmentModalTitle');
         const hardDeleteBtn = document.getElementById('hardDeleteAppointmentBtn');
         const restoreBtn = document.getElementById('restoreAppointmentBtn');
+        const reactivateBtn = document.getElementById('reactivateAppointmentBtn');
         const archiveBtn = document.getElementById('archiveAppointmentBtn');
         const cancelBtn = document.getElementById('cancelAppointmentBtn');
         const saveBtn = document.getElementById('saveAppointmentBtn');
@@ -715,6 +719,7 @@ class AppointmentModal {
             title.textContent = 'View Appointment';
             hardDeleteBtn.style.display = 'none';
             restoreBtn.style.display = 'none';
+            reactivateBtn.style.display = 'none';
             archiveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
             saveBtn.textContent = 'Close';
@@ -733,19 +738,34 @@ class AppointmentModal {
             // Archived appointments have deleted_at field set (not null)
             const isArchived = appointment && appointment.deleted_at !== null && appointment.deleted_at !== undefined;
 
-            // Show restore button for archived appointments, or archive/cancel for active ones
+            // Check if appointment is cancelled
+            const isCancelled = appointment && appointment.operation_status === 'cancelled';
+
+            // Show appropriate buttons based on appointment state
             if (isArchived) {
                 // Archived appointment: show restore button only, make all fields read-only
                 restoreBtn.style.display = 'inline-block';
+                reactivateBtn.style.display = 'none';
                 archiveBtn.style.display = 'none';
                 cancelBtn.style.display = 'none';
                 saveBtn.style.display = 'none'; // Hide Update button for archived appointments
 
                 // Make all form fields read-only
                 this.setFormFieldsDisabled(true);
+            } else if (isCancelled) {
+                // Cancelled appointment: show reactivate button only, make all fields read-only
+                restoreBtn.style.display = 'none';
+                reactivateBtn.style.display = 'inline-block';
+                archiveBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
+                saveBtn.style.display = 'none'; // Hide Update button for cancelled appointments
+
+                // Make all form fields read-only
+                this.setFormFieldsDisabled(true);
             } else {
                 // Active appointment: show archive/cancel based on driver assignment
                 restoreBtn.style.display = 'none';
+                reactivateBtn.style.display = 'none';
                 const hasDriver = appointment && appointment.driverAssigned;
                 const canDelete = permissions?.canDeleteAppointments;
 
@@ -771,6 +791,13 @@ class AppointmentModal {
 
                 // Make form fields editable
                 this.setFormFieldsDisabled(false);
+
+                // Re-apply status field RBAC after enabling fields
+                const statusField = document.getElementById('appointmentStatus');
+                if (statusField && userRole !== 'admin') {
+                    statusField.disabled = true;
+                    statusField.style.backgroundColor = '#e9ecef';
+                }
             }
 
             transitTimeRow.style.display = 'block'; // Show in edit mode
@@ -779,12 +806,20 @@ class AppointmentModal {
             title.textContent = 'Add Appointment';
             hardDeleteBtn.style.display = 'none';
             restoreBtn.style.display = 'none';
+            reactivateBtn.style.display = 'none';
             archiveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
             saveBtn.textContent = 'Save Appointment';
             saveBtn.onclick = () => this.saveAppointment();
             transitTimeRow.style.display = 'none'; // Hide in add mode
             if (driverFieldContainer) driverFieldContainer.style.display = 'none'; // Hide driver in add mode
+
+            // Ensure scheduling notes is read-only with gray background in add mode
+            const schedulingNotesField = document.getElementById('schedulingNotes');
+            if (schedulingNotesField) {
+                schedulingNotesField.readOnly = true;
+                schedulingNotesField.style.backgroundColor = '#e9ecef';
+            }
         }
 
         // Re-enable buttons (they may have been disabled from previous operations)
@@ -867,7 +902,7 @@ class AppointmentModal {
             // Lock client field in edit mode - cannot change appointment's client
             const clientField = document.getElementById('appointmentClient');
             clientField.disabled = true;
-            clientField.classList.add('bg-light');
+            clientField.style.backgroundColor = '#e9ecef';
             clientField.title = 'Cannot change client for existing appointment. Archive this appointment and create a new one if needed.';
         } else {
             document.getElementById('appointmentForm').reset();
@@ -888,7 +923,7 @@ class AppointmentModal {
             // Ensure client field is enabled in add mode
             const clientField = document.getElementById('appointmentClient');
             clientField.disabled = false;
-            clientField.classList.remove('bg-light');
+            clientField.style.backgroundColor = '';
             clientField.title = '';
         }
 
@@ -900,7 +935,7 @@ class AppointmentModal {
             const clientField = document.getElementById('appointmentClient');
             if (mode === 'add') {
                 clientField.disabled = false;
-                clientField.classList.remove('bg-light');
+                clientField.style.backgroundColor = '';
                 clientField.title = '';
                 clientField.focus(); // Also focus it for convenience
             }
@@ -1221,7 +1256,7 @@ class AppointmentModal {
         if (this.mode === 'add') {
             // Add mode: Auto-set to current user
             appointmentData.managed_by = currentUser.id || null;
-            appointmentData.managed_by_name = currentUser.full_name || null;
+            appointmentData.managed_by_name = currentUser.fullName || currentUser.full_name || currentUser.username || null;
         } else if (this.mode === 'edit') {
             // Edit mode: Include managing agent data
             appointmentData.id = document.getElementById('appointmentId').value;
@@ -1330,7 +1365,6 @@ class AppointmentModal {
             'appointmentStatus',
             'appointmentNotes',
             'driverInstructions',
-            'schedulingNotes',
             'appointmentCost',
             'driverAssigned',
             'managingAgent'
@@ -1340,13 +1374,26 @@ class AppointmentModal {
             const field = document.getElementById(fieldId);
             if (field) {
                 field.disabled = disabled;
+                // Add gray background for disabled fields
+                if (disabled) {
+                    field.style.backgroundColor = '#e9ecef';
+                } else {
+                    field.style.backgroundColor = '';
+                }
             }
         });
 
-        // Also disable the pickup time field
+        // Always disable calculated/auto-generated fields
         const pickupTimeField = document.getElementById('pickupTime');
         if (pickupTimeField) {
-            pickupTimeField.disabled = true; // Always disabled (calculated field)
+            pickupTimeField.disabled = true;
+            pickupTimeField.style.backgroundColor = '#e9ecef';
+        }
+
+        const schedulingNotesField = document.getElementById('schedulingNotes');
+        if (schedulingNotesField) {
+            schedulingNotesField.readOnly = true;
+            schedulingNotesField.style.backgroundColor = '#e9ecef';
         }
     }
 
@@ -1376,10 +1423,6 @@ class AppointmentModal {
 
     async restoreAppointment() {
         const id = document.getElementById('appointmentId').value;
-
-        if (!confirm('Are you sure you want to restore this appointment?')) {
-            return;
-        }
 
         const restoreBtn = document.getElementById('restoreAppointmentBtn');
         if (restoreBtn) {
@@ -1420,11 +1463,9 @@ class AppointmentModal {
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
 
-            // Show success message
-            if (typeof showToast === 'function') {
-                showToast('Appointment restored successfully', 'success');
-            } else {
-                alert('Appointment restored successfully');
+            // Show success message with toast
+            if (window.appointmentsPage && window.appointmentsPage.showToast) {
+                window.appointmentsPage.showToast('Appointment restored successfully', 'success');
             }
 
             // Refresh appointments list if the method exists
@@ -1456,16 +1497,138 @@ class AppointmentModal {
                 });
             }
 
-            if (typeof showToast === 'function') {
-                showToast(error.message || 'Failed to restore appointment', 'error');
-            } else {
-                alert(error.message || 'Failed to restore appointment');
+            if (window.appointmentsPage && window.appointmentsPage.showToast) {
+                window.appointmentsPage.showToast(error.message || 'Failed to restore appointment', 'error');
             }
 
             // Re-enable button on error
             if (restoreBtn) {
                 restoreBtn.disabled = false;
                 restoreBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> Restore';
+            }
+        }
+    }
+
+    async reactivateAppointment() {
+        const id = document.getElementById('appointmentId').value;
+
+        const reactivateBtn = document.getElementById('reactivateAppointmentBtn');
+        if (reactivateBtn) {
+            reactivateBtn.disabled = true;
+            reactivateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reactivating...';
+        }
+
+        try {
+            const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
+            const token = sessionStorage.getItem('rrts_access_token');
+
+            // Build complete appointment data (same structure as normal update)
+            const appointmentDateValue = document.getElementById('appointmentDate').value;
+            const appointmentDateTime = appointmentDateValue ? new Date(appointmentDateValue).toISOString() : null;
+
+            const transitTimeValue = document.getElementById('transitTime').value;
+            const transitTime = parseInt(transitTimeValue) || null;
+
+            const pickupAddress = this.getPickupAddress();
+
+            const pickupTimeValue = document.getElementById('pickupTime').value;
+            const pickupTime = pickupTimeValue ? new Date(pickupTimeValue).toISOString() : null;
+
+            // Build appointment data with all required fields
+            const appointmentData = {
+                id: id,
+                knumber: document.getElementById('appointmentClientId').value,
+                appointmentDateTime: appointmentDateTime,
+                appointmentLength: parseInt(document.getElementById('appointmentLength').value) || 120,
+                status: 'pending', // Set to pending when reactivating
+                notes: document.getElementById('appointmentNotes').value,
+                driver_instructions: document.getElementById('driverInstructions').value.trim() || null,
+                scheduling_notes: document.getElementById('schedulingNotes').value,
+                transitTime: transitTime,
+                pickup_address: pickupAddress,
+                customRate: null,
+                location: document.getElementById('appointmentClinic').value,
+                clinic_id: parseInt(document.getElementById('appointmentClinicId').value) || null,
+                locationAddress: document.getElementById('appointmentAddress').value,
+                driver_assigned: null, // Remove driver assignment
+                driver_first_name: null,
+                pickupTime: pickupTime,
+                managed_by: null,
+                managed_by_name: null
+            };
+
+            // Use update appointment endpoint with complete data
+            const response = await fetch(`${apiBaseUrl}/update-appointment-complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(appointmentData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to reactivate appointment');
+            }
+
+            // Log audit trail
+            const currentUser = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
+            if (typeof logSecurityEvent === 'function') {
+                await logSecurityEvent('appointment_reactivated', {
+                    resource_type: 'appointment',
+                    resource_id: id,
+                    reactivated_by_user_id: currentUser.id,
+                    success: true
+                });
+            }
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
+
+            // Show success message with toast
+            if (window.appointmentsPage && window.appointmentsPage.showToast) {
+                window.appointmentsPage.showToast('Appointment reactivated successfully', 'success');
+            }
+
+            // Refresh appointments list
+            if (window.appointmentsPage && window.appointmentsPage.loadInitialData) {
+                await window.appointmentsPage.loadInitialData();
+            } else if (window.appointmentsPage && window.appointmentsPage.loadAppointments) {
+                await window.appointmentsPage.loadAppointments();
+            } else if (typeof loadInitialData === 'function') {
+                await loadInitialData();
+            } else if (typeof loadAppointments === 'function') {
+                await loadAppointments();
+            } else {
+                // Fallback: reload page
+                location.reload();
+            }
+
+        } catch (error) {
+            console.error('Error reactivating appointment:', error);
+
+            // Log failed reactivate attempt
+            const currentUser = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
+            if (typeof logSecurityEvent === 'function') {
+                await logSecurityEvent('appointment_reactivated', {
+                    resource_type: 'appointment',
+                    resource_id: id,
+                    reactivated_by_user_id: currentUser.id,
+                    success: false,
+                    error_message: error.message
+                });
+            }
+
+            if (window.appointmentsPage && window.appointmentsPage.showToast) {
+                window.appointmentsPage.showToast(error.message || 'Failed to reactivate appointment', 'error');
+            }
+
+            // Re-enable button on error
+            if (reactivateBtn) {
+                reactivateBtn.disabled = false;
+                reactivateBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Reactivate';
             }
         }
     }

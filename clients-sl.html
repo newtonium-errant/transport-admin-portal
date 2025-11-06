@@ -927,39 +927,46 @@
                             </div>
                         </div>
 
-                        <!-- Secondary Address (Optional) -->
+                        <!-- Secondary Address (Optional) - Collapsible -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <h6 class="text-primary fw-bold mb-3">
-                                    <i class="bi bi-house-fill me-2"></i>Secondary Address (Optional)
+                                    <button class="btn btn-link p-0 text-decoration-none text-primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#secondaryAddressSection" aria-expanded="false" aria-controls="secondaryAddressSection">
+                                        <i class="bi bi-house-fill me-2"></i>Secondary Address (Optional)
+                                        <i class="bi bi-chevron-down ms-1"></i>
+                                    </button>
                                     <small class="text-muted fw-normal">- Travel times will be calculated for both addresses</small>
                                 </h6>
                             </div>
-                            <div class="col-md-12 mb-3">
-                                <label for="newSecondaryCivicAddress" class="form-label">Street Address</label>
-                                <input type="text" class="form-control" id="newSecondaryCivicAddress" placeholder="e.g., Winter residence">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="newSecondaryCity" class="form-label">City</label>
-                                <input type="text" class="form-control" id="newSecondaryCity">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="newSecondaryProvince" class="form-label">Province</label>
-                                <select class="form-control" id="newSecondaryProvince">
-                                    <option value="">Select Province</option>
-                                    <option value="NS">Nova Scotia</option>
-                                    <option value="NB">New Brunswick</option>
-                                    <option value="PE">Prince Edward Island</option>
-                                    <option value="NL">Newfoundland and Labrador</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="newSecondaryPostalCode" class="form-label">Postal Code</label>
-                                <input type="text" class="form-control" id="newSecondaryPostalCode" placeholder="B3H 1A1" pattern="[A-Z][0-9][A-Z] [0-9][A-Z][0-9]" title="Canadian postal code format: A1A 1A1">
-                            </div>
-                            <div class="col-md-12 mb-3">
-                                <label for="newSecondaryAddressNotes" class="form-label">Notes</label>
-                                <input type="text" class="form-control" id="newSecondaryAddressNotes" placeholder="e.g., Use from Nov-Apr">
+                        </div>
+                        <div class="collapse" id="secondaryAddressSection">
+                            <div class="row mb-4">
+                                <div class="col-md-12 mb-3">
+                                    <label for="newSecondaryCivicAddress" class="form-label">Street Address</label>
+                                    <input type="text" class="form-control" id="newSecondaryCivicAddress" placeholder="e.g., Winter residence">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="newSecondaryCity" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="newSecondaryCity">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="newSecondaryProvince" class="form-label">Province</label>
+                                    <select class="form-control" id="newSecondaryProvince">
+                                        <option value="">Select Province</option>
+                                        <option value="NS" selected>Nova Scotia</option>
+                                        <option value="NB">New Brunswick</option>
+                                        <option value="PE">Prince Edward Island</option>
+                                        <option value="NL">Newfoundland and Labrador</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="newSecondaryPostalCode" class="form-label">Postal Code</label>
+                                    <input type="text" class="form-control" id="newSecondaryPostalCode" placeholder="B3H 1A1" pattern="[A-Z][0-9][A-Z] [0-9][A-Z][0-9]" title="Canadian postal code format: A1A 1A1">
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="newSecondaryAddressNotes" class="form-label">Notes</label>
+                                    <input type="text" class="form-control" id="newSecondaryAddressNotes" placeholder="e.g., Use from Nov-Apr">
+                                </div>
                             </div>
                         </div>
 
@@ -1611,9 +1618,9 @@
 
             try {
                 // Show loading state
-                const saveBtn = event.target;
+                const saveBtn = document.querySelector('#addClientModal .btn-success');
                 saveBtn.disabled = true;
-                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating...';
 
                 // Call the new v5 endpoint
                 const response = await authenticatedFetch(`${apiBaseUrl}/create-client-destinations`, {
@@ -1638,7 +1645,7 @@
                 showToast(`Error creating client: ${error.message}`, 'error');
 
                 // Reset button
-                const saveBtn = event.target;
+                const saveBtn = document.querySelector('#addClientModal .btn-success');
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Create Client';
             }

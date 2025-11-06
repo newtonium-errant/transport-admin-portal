@@ -1837,6 +1837,9 @@ class AppointmentsPage {
 
             const user = JSON.parse(sessionStorage.getItem('rrts_user'));
 
+            // Get appointment details to include client name
+            const appointment = this.appointments.find(apt => apt.id === appointmentId);
+
             const response = await authenticatedFetch(
                 'https://webhook-processor-production-3bb8.up.railway.app/webhook/cancel-appointment',
                 {
@@ -1845,7 +1848,9 @@ class AppointmentsPage {
                     body: JSON.stringify({
                         id: appointmentId,
                         cancelled_by: user.id,
-                        cancellation_reason: reason
+                        cancellation_reason: reason,
+                        client_firstname: appointment?.clientFirstName || appointment?.firstname || '',
+                        client_lastname: appointment?.clientLastName || appointment?.lastname || ''
                     })
                 }
             );
