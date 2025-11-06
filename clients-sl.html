@@ -1878,7 +1878,8 @@
 
                 // Pre-select the client after a short delay to ensure modal is rendered
                 setTimeout(() => {
-                    appointmentModalInstance.selectClient(client);
+                    const fullName = `${client.firstname || client.first_name || ''} ${client.lastname || client.last_name || ''}`.trim();
+                    appointmentModalInstance.selectClient(client.knumber, fullName);
                 }, 100);
 
             } catch (error) {
