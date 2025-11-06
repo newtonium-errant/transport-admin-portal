@@ -1571,12 +1571,12 @@
 
                 availableClinics = data.destinations || data || [];
 
-                // Populate clinic checkboxes
+                // Populate clinic checkboxes (all checked by default)
                 const container = document.getElementById('clinicCheckboxes');
                 container.innerHTML = availableClinics.map(clinic => `
                     <div class="col-md-6 col-lg-4 mb-2">
                         <div class="form-check">
-                            <input class="form-check-input clinic-checkbox" type="checkbox" value="${clinic.id}" id="clinic_${clinic.id}">
+                            <input class="form-check-input clinic-checkbox" type="checkbox" value="${clinic.id}" id="clinic_${clinic.id}" checked>
                             <label class="form-check-label" for="clinic_${clinic.id}">
                                 ${clinic.name}
                             </label>
@@ -1655,8 +1655,9 @@
             try {
                 // Show loading state
                 const saveBtn = document.querySelector('#addClientModal .btn-success');
+                const originalContent = saveBtn.innerHTML;
                 saveBtn.disabled = true;
-                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating...';
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem; margin-right: 0.25rem;"></span>Creating...';
 
                 // Call the new v5 endpoint
                 const response = await authenticatedFetch(`${apiBaseUrl}/create-client-destinations`, {
