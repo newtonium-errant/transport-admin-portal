@@ -950,6 +950,53 @@ class AppointmentsPage {
         buttons.forEach(btn => this.setButtonLoading(btn, loading));
     }
 
+    /**
+     * Show loading overlay (for calendar clicks where no button exists)
+     */
+    showLoadingOverlay() {
+        // Check if overlay already exists
+        let overlay = document.getElementById('appointment-loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+            return;
+        }
+
+        // Create overlay
+        overlay = document.createElement('div');
+        overlay.id = 'appointment-loading-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(2px);
+        `;
+
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner-border text-light';
+        spinner.style.cssText = 'width: 3rem; height: 3rem;';
+        spinner.innerHTML = '<span class="visually-hidden">Loading...</span>';
+
+        overlay.appendChild(spinner);
+        document.body.appendChild(overlay);
+    }
+
+    /**
+     * Hide loading overlay
+     */
+    hideLoadingOverlay() {
+        const overlay = document.getElementById('appointment-loading-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
     // Remove standalone loadClients() and loadDrivers() methods - no longer needed
     // All data now comes from loadInitialData()
 
@@ -1735,8 +1782,13 @@ class AppointmentsPage {
         const editBtn = document.getElementById(`edit-btn-${appointmentId}`);
 
         try {
-            // Show loading state (Phase 6)
-            this.setButtonLoading(editBtn, true, 'Loading...');
+            // Show loading state - use button if available, otherwise show overlay
+            if (editBtn) {
+                this.setButtonLoading(editBtn, true, 'Loading...');
+            } else {
+                // Show loading overlay for calendar clicks (no button available)
+                this.showLoadingOverlay();
+            }
 
             const appointment = this.appointments.find(a => a.id === appointmentId);
 
@@ -1745,7 +1797,11 @@ class AppointmentsPage {
             }
 
             // Hide loading state (modal opening is fast)
-            this.setButtonLoading(editBtn, false);
+            if (editBtn) {
+                this.setButtonLoading(editBtn, false);
+            } else {
+                this.hideLoadingOverlay();
+            }
 
             // Open modal
             if (typeof appointmentModalInstance !== 'undefined') {
@@ -1754,7 +1810,11 @@ class AppointmentsPage {
 
         } catch (error) {
             console.error('Error opening appointment:', error);
-            this.setButtonLoading(editBtn, false);
+            if (editBtn) {
+                this.setButtonLoading(editBtn, false);
+            } else {
+                this.hideLoadingOverlay();
+            }
             this.showToast('Failed to open appointment', 'error');
         }
     }

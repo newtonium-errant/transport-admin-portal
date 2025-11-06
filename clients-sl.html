@@ -1453,13 +1453,13 @@
                                 <i class="bi bi-person-circle"></i>
                                 View Profile
                             </a>
-                            <button class="btn-sm btn-secondary-sm" onclick="quickEditClient('${client.knumber}')">
+                            <button class="btn-sm btn-secondary-sm" id="quick-edit-${client.knumber}" onclick="quickEditClient('${client.knumber}')">
                                 <i class="bi bi-pencil-square"></i>
-                                Quick Edit
+                                <span class="btn-text">Quick Edit</span>
                             </button>
-                            <button class="btn-sm btn-success-sm" onclick="openAddAppointmentModal('${client.knumber}')">
+                            <button class="btn-sm btn-success-sm" id="add-appt-${client.knumber}" onclick="openAddAppointmentModal('${client.knumber}')">
                                 <i class="bi bi-calendar-plus"></i>
-                                Add Appointment
+                                <span class="btn-text">Add Appointment</span>
                             </button>
                         </div>
                     </div>
@@ -1482,11 +1482,47 @@
 
         // Quick edit client
         function quickEditClient(knumber) {
-            const client = allClients.find(c => c.knumber === knumber);
-            if (client && clientModalInstance) {
-                clientModalInstance.open(client);
-            } else {
-                showToast('Client data not found', 'error');
+            const quickEditBtn = document.getElementById(`quick-edit-${knumber}`);
+
+            try {
+                // Show loading state
+                if (quickEditBtn) {
+                    const originalContent = quickEditBtn.innerHTML;
+                    quickEditBtn.disabled = true;
+                    quickEditBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+
+                    // Store original content for restoration
+                    quickEditBtn.dataset.originalContent = originalContent;
+                }
+
+                const client = allClients.find(c => c.knumber === knumber);
+
+                if (client && clientModalInstance) {
+                    clientModalInstance.open(client);
+
+                    // Restore button state after modal opens
+                    setTimeout(() => {
+                        if (quickEditBtn && quickEditBtn.dataset.originalContent) {
+                            quickEditBtn.disabled = false;
+                            quickEditBtn.innerHTML = quickEditBtn.dataset.originalContent;
+                        }
+                    }, 300);
+                } else {
+                    // Restore button state on error
+                    if (quickEditBtn && quickEditBtn.dataset.originalContent) {
+                        quickEditBtn.disabled = false;
+                        quickEditBtn.innerHTML = quickEditBtn.dataset.originalContent;
+                    }
+                    showToast('Client data not found', 'error');
+                }
+            } catch (error) {
+                // Restore button state on error
+                if (quickEditBtn && quickEditBtn.dataset.originalContent) {
+                    quickEditBtn.disabled = false;
+                    quickEditBtn.innerHTML = quickEditBtn.dataset.originalContent;
+                }
+                console.error('Error opening client modal:', error);
+                showToast('Failed to open client editor', 'error');
             }
         }
 
@@ -1784,34 +1820,75 @@
 
         // Open appointment modal with pre-selected client
         async function openAddAppointmentModal(knumber) {
-            // Find the client by K number
-            const client = allClients.find(c => c.knumber === knumber);
+            const addApptBtn = document.getElementById(`add-appt-${knumber}`);
 
-            if (!client) {
-                console.error('Client not found:', knumber);
-                return;
+            try {
+                // Show loading state
+                if (addApptBtn) {
+                    const originalContent = addApptBtn.innerHTML;
+                    addApptBtn.disabled = true;
+                    addApptBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+                    addApptBtn.dataset.originalContent = originalContent;
+                }
+
+                // Find the client by K number
+                const client = allClients.find(c => c.knumber === knumber);
+
+                if (!client) {
+                    console.error('Client not found:', knumber);
+                    if (addApptBtn && addApptBtn.dataset.originalContent) {
+                        addApptBtn.disabled = false;
+                        addApptBtn.innerHTML = addApptBtn.dataset.originalContent;
+                    }
+                    showToast('Client not found', 'error');
+                    return;
+                }
+
+                if (!appointmentModalInstance) {
+                    console.error('Appointment modal not initialized');
+                    if (addApptBtn && addApptBtn.dataset.originalContent) {
+                        addApptBtn.disabled = false;
+                        addApptBtn.innerHTML = addApptBtn.dataset.originalContent;
+                    }
+                    showToast('Appointment form not ready', 'error');
+                    return;
+                }
+
+                // Check if modal data is ready, wait if needed
+                const dataReady = await waitForModalData();
+
+                if (!dataReady) {
+                    if (addApptBtn && addApptBtn.dataset.originalContent) {
+                        addApptBtn.disabled = false;
+                        addApptBtn.innerHTML = addApptBtn.dataset.originalContent;
+                    }
+                    showToast('Failed to load appointment form data. Please try again.', 'error');
+                    return;
+                }
+
+                // Open modal in add mode
+                appointmentModalInstance.open('add');
+
+                // Restore button state
+                if (addApptBtn && addApptBtn.dataset.originalContent) {
+                    addApptBtn.disabled = false;
+                    addApptBtn.innerHTML = addApptBtn.dataset.originalContent;
+                }
+
+                // Pre-select the client after a short delay to ensure modal is rendered
+                setTimeout(() => {
+                    appointmentModalInstance.selectClient(client);
+                }, 100);
+
+            } catch (error) {
+                // Restore button state on error
+                if (addApptBtn && addApptBtn.dataset.originalContent) {
+                    addApptBtn.disabled = false;
+                    addApptBtn.innerHTML = addApptBtn.dataset.originalContent;
+                }
+                console.error('Error opening appointment modal:', error);
+                showToast('Failed to open appointment form', 'error');
             }
-
-            if (!appointmentModalInstance) {
-                console.error('Appointment modal not initialized');
-                return;
-            }
-
-            // Check if modal data is ready, wait if needed
-            const dataReady = await waitForModalData();
-
-            if (!dataReady) {
-                showToast('Failed to load appointment form data. Please try again.', 'error');
-                return;
-            }
-
-            // Open modal in add mode
-            appointmentModalInstance.open('add');
-
-            // Pre-select the client after a short delay to ensure modal is rendered
-            setTimeout(() => {
-                appointmentModalInstance.selectClient(client);
-            }, 100);
         }
     </script>
 
