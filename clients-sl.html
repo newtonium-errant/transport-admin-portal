@@ -1590,6 +1590,12 @@
             document.getElementById('newProvince').value = 'NS'; // Default to NS
             document.getElementById('newAppointmentLength').value = '120'; // Default 2 hours
 
+            // Re-check all clinic checkboxes and Select All after form reset
+            document.querySelectorAll('.clinic-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            document.getElementById('selectAllClinics').checked = true;
+
             // Show modal
             const modal = document.getElementById('addClientModal');
             modal.style.display = 'block';
