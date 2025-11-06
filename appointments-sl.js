@@ -1814,17 +1814,23 @@ class AppointmentsPage {
                 if (!editBtn) {
                     const modalElement = document.getElementById('appointmentModal');
                     if (modalElement) {
+                        let timeoutId;
+
                         // Listen for Bootstrap modal shown event (fires when animation completes)
                         const hideOverlayOnShow = () => {
+                            console.log('[Loading Overlay] Modal shown event fired');
+                            clearTimeout(timeoutId); // Cancel fallback timeout
                             this.hideLoadingOverlay();
                             modalElement.removeEventListener('shown.bs.modal', hideOverlayOnShow);
                         };
                         modalElement.addEventListener('shown.bs.modal', hideOverlayOnShow);
 
-                        // Fallback timeout in case event doesn't fire
-                        setTimeout(() => {
+                        // Fallback timeout in case event doesn't fire (increased to 3 seconds)
+                        timeoutId = setTimeout(() => {
+                            console.log('[Loading Overlay] Fallback timeout fired');
                             this.hideLoadingOverlay();
-                        }, 1000);
+                            modalElement.removeEventListener('shown.bs.modal', hideOverlayOnShow);
+                        }, 3000);
                     }
                 } else {
                     // For edit button clicks, hide after short delay
