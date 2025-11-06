@@ -954,13 +954,17 @@ class AppointmentsPage {
      * Show loading overlay (for calendar clicks where no button exists)
      */
     showLoadingOverlay() {
+        console.log('[Loading Overlay] Showing overlay...');
+
         // Check if overlay already exists
         let overlay = document.getElementById('appointment-loading-overlay');
         if (overlay) {
+            console.log('[Loading Overlay] Overlay exists, making visible');
             overlay.style.display = 'flex';
             return;
         }
 
+        console.log('[Loading Overlay] Creating new overlay');
         // Create overlay
         overlay = document.createElement('div');
         overlay.id = 'appointment-loading-overlay';
@@ -970,30 +974,36 @@ class AppointmentsPage {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
-            backdrop-filter: blur(2px);
+            z-index: 10000;
+            backdrop-filter: blur(3px);
         `;
 
         const spinner = document.createElement('div');
         spinner.className = 'spinner-border text-light';
-        spinner.style.cssText = 'width: 3rem; height: 3rem;';
+        spinner.style.cssText = 'width: 4rem; height: 4rem; border-width: 0.4em;';
+        spinner.setAttribute('role', 'status');
         spinner.innerHTML = '<span class="visually-hidden">Loading...</span>';
 
         overlay.appendChild(spinner);
         document.body.appendChild(overlay);
+        console.log('[Loading Overlay] Overlay added to DOM');
     }
 
     /**
      * Hide loading overlay
      */
     hideLoadingOverlay() {
+        console.log('[Loading Overlay] Hiding overlay...');
         const overlay = document.getElementById('appointment-loading-overlay');
         if (overlay) {
             overlay.style.display = 'none';
+            console.log('[Loading Overlay] Overlay hidden');
+        } else {
+            console.log('[Loading Overlay] No overlay found to hide');
         }
     }
 
@@ -1801,14 +1811,14 @@ class AppointmentsPage {
                 appointmentModalInstance.open('edit', appointment);
             }
 
-            // Hide loading state after modal has time to render
+            // Hide loading state after modal has time to render and animate in
             setTimeout(() => {
                 if (editBtn) {
                     this.setButtonLoading(editBtn, false);
                 } else {
                     this.hideLoadingOverlay();
                 }
-            }, 400);
+            }, 800);
 
         } catch (error) {
             console.error('Error opening appointment:', error);
