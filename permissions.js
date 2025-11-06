@@ -37,7 +37,7 @@ const ROLE_PERMISSIONS = {
         pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments'],
         features: ['view_clients', 'edit_clients', 'view_appointments', 'edit_appointments', 'create_appointments', 'view_drivers'],
         canDeleteClients: false,
-        canDeleteAppointments: false,
+        canDeleteAppointments: true,
         canManageDrivers: false,
         canManageUsers: false,
         canManageSystemConfig: false,
