@@ -147,28 +147,60 @@ function createSecureAppointmentUpdate(appointmentData) {
 }
 
 /**
- * Validate and log security events
- * 
+ * Validate and log security events to audit_logs table
+ *
  * @param {string} eventType - Type of security event
  * @param {object} details - Event details
  */
-function logSecurityEvent(eventType, details) {
-    // Log to console in development, would send to backend in production
-    const logEntry = {
-        timestamp: new Date().toISOString(),
-        eventType,
-        ...details
+async function logSecurityEvent(eventType, details) {
+    // Get current user context
+    const user = getCurrentUser();
+    if (!user) {
+        console.warn('[SECURITY] Cannot log event: no user context');
+        return;
+    }
+
+    // Prepare audit log entry
+    const auditLogData = {
+        user_id: user.id || null,
+        username: user.username,
+        role: user.role,
+        action: eventType,
+        resource_type: details.resource_type || null,
+        resource_id: details.resource_id || null,
+        details: {
+            ...details,
+            timestamp: new Date().toISOString()
+        },
+        ip_address: null, // Could be captured if needed
+        user_agent: navigator.userAgent,
+        success: details.success !== undefined ? details.success : true,
+        error_message: details.error || null
     };
-    
-    console.log('[SECURITY]', logEntry);
-    
-    // In production, this would send to backend audit log
-    // Example:
-    // fetch('/api/audit-log', {
-    //     method: 'POST',
-    //     body: JSON.stringify(logEntry),
-    //     headers: { 'Content-Type': 'application/json' }
-    // }).catch(console.error);
+
+    // Log to console in development
+    console.log('[AUDIT]', eventType, details);
+
+    // Send to backend audit log workflow
+    try {
+        const response = await authenticatedFetch(
+            'https://webhook-processor-production-3bb8.up.railway.app/webhook/store-audit-log',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(auditLogData)
+            }
+        );
+
+        if (!response.ok) {
+            console.error('[AUDIT] Failed to store audit log:', response.status);
+        }
+    } catch (error) {
+        // Fail silently - don't block user actions if logging fails
+        console.error('[AUDIT] Error storing audit log:', error);
+    }
 }
 
 /**
@@ -193,9 +225,9 @@ async function secureSaveAppointment(appointmentData) {
  */
 async function secureUpdateAppointment(appointmentData) {
     const safeData = createSecureAppointmentUpdate(appointmentData);
-    
+
     return await secureApiRequest(
-        'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-with-calendar',
+        'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete',
         { method: 'POST' },
         safeData
     );

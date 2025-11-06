@@ -4,6 +4,25 @@
  */
 
 /**
+ * Debounce function - delays function execution until after wait time
+ * Phase 5 Optimization
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Milliseconds to wait
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait = 300) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+/**
  * Simple LocalStorage cache utility for RRTS data
  * Automatically expires cached data after TTL (time to live)
  * Phase 3 Optimization
@@ -118,6 +137,7 @@ class AppointmentsPage {
         this.clients = [];
         this.drivers = [];
         this.filters = {
+            search: '',      // Phase 5: search filter
             status: '',
             driver: '',
             dateFrom: '',
@@ -126,6 +146,7 @@ class AppointmentsPage {
         this.currentWeekStart = this.getCurrentWeekStart();
         this.currentMonthStart = this.getCurrentMonthStart(); // For month view
         this.showingHistoricData = false;
+        this.showArchived = false; // Phase 5: show archived appointments
 
         // Initialize data cache (Phase 3)
         this.cache = new DataCache('rrts_appointments_');
@@ -136,6 +157,12 @@ class AppointmentsPage {
             drivers: 5 * 60 * 1000,    // 5 minutes
             appointments: 2 * 60 * 1000 // 2 minutes (more frequently updated)
         };
+
+        // Create debounced render for filter changes (Phase 5)
+        this.debouncedRender = debounce(() => {
+            console.log('[Phase 5] Debounced render triggered');
+            this.render();
+        }, 300); // Wait 300ms after user stops typing
     }
 
     async init() {
@@ -148,7 +175,26 @@ class AppointmentsPage {
         this.setupButtons();
         this.enforcePageAccess();
         this.initHeader();
+        this.setupRoleBasedUI();
+
+        // Show skeleton loader immediately (Phase 4)
+        this.showSkeletonLoader();
+
+        // Load data
         this.loadInitialData();
+    }
+
+    // Setup role-based UI elements
+    setupRoleBasedUI() {
+        const userRole = getUserRole();
+
+        // Show invoice status filter for admin and supervisor roles only
+        if (userRole === 'admin' || userRole === 'supervisor') {
+            const invoiceStatusContainer = document.getElementById('invoiceStatusFilterContainer');
+            if (invoiceStatusContainer) {
+                invoiceStatusContainer.style.display = 'block';
+            }
+        }
     }
 
     // Page Access Control
@@ -307,25 +353,41 @@ class AppointmentsPage {
             }
         });
 
-        // Refresh button
+        // Refresh button - Phase 6: with loading state
         document.getElementById('refreshBtn').addEventListener('click', async () => {
-            await this.loadAppointments(false);
-            this.render();
+            await this.refreshData();
         });
 
-        // Load all historical data button
+        // Load all historical data button - Phase 6: with loading state
         document.getElementById('loadAllHistoricalBtn').addEventListener('click', async () => {
-            if (confirm('Load all historical appointments? This may take a moment and load a large amount of data.')) {
+            if (!confirm('Load all historical appointments? This may take a moment and load a large amount of data.')) {
+                return;
+            }
+
+            const loadBtn = document.getElementById('loadAllHistoricalBtn');
+
+            try {
+                // Show loading state
+                this.setButtonLoading(loadBtn, true, 'Loading...');
+
+                // Load historical data
                 await this.loadAppointments(true);
                 this.showingHistoricData = true;
                 this.render();
 
-                // Update button to show it's loaded
-                const btn = document.getElementById('loadAllHistoricalBtn');
-                btn.innerHTML = '<i class="bi bi-check-circle"></i> All Data Loaded';
-                btn.classList.remove('btn-outline-info');
-                btn.classList.add('btn-success');
-                btn.disabled = true;
+                // Update button to show success state
+                loadBtn.innerHTML = '<i class="bi bi-check-circle"></i> All Data Loaded';
+                loadBtn.classList.remove('btn-outline-info');
+                loadBtn.classList.add('btn-success');
+                loadBtn.disabled = true;
+
+                // Show feedback
+                this.showToast(`Loaded ${this.appointments.length} appointments (including historical)`, 'info', 3000);
+
+            } catch (error) {
+                console.error('Error loading historical data:', error);
+                this.setButtonLoading(loadBtn, false);
+                this.showToast('Failed to load historical data', 'error');
             }
         });
 
@@ -352,29 +414,100 @@ class AppointmentsPage {
             this.render();
         });
 
-        // Filter listeners
+        // Filter listeners - Phase 5
+        // Search filter - DEBOUNCED (typing involved)
+        const searchFilter = document.getElementById('searchFilter');
+        if (searchFilter) {
+            searchFilter.addEventListener('input', (e) => {
+                this.filters.search = e.target.value.toLowerCase().trim();
+                if (this.currentView === 'list') {
+                    this.debouncedRender(); // Debounced for text input
+                }
+            });
+        }
+
+        // Status filter - INSTANT (dropdown, no typing)
         document.getElementById('statusFilter').addEventListener('change', (e) => {
             this.filters.status = e.target.value;
-            if (this.currentView === 'list') this.render();
+            this.render(); // Refresh current view
         });
 
+        // Invoice status filter - INSTANT (dropdown, no typing) - Admin/Supervisor only
+        const invoiceStatusFilter = document.getElementById('invoiceStatusFilter');
+        if (invoiceStatusFilter) {
+            invoiceStatusFilter.addEventListener('change', (e) => {
+                this.filters.invoiceStatus = e.target.value;
+                this.render(); // Refresh current view
+            });
+        }
+
+        // Driver filter - INSTANT (dropdown, no typing)
         document.getElementById('driverFilter').addEventListener('change', (e) => {
             this.filters.driver = e.target.value;
-            if (this.currentView === 'list') this.render();
+            this.render(); // Refresh current view
         });
 
+        // Date filters - DEBOUNCED (in case of manual typing)
         document.getElementById('dateFromFilter').addEventListener('change', (e) => {
             this.filters.dateFrom = e.target.value;
-            if (this.currentView === 'list') this.render();
+            if (this.currentView === 'list') {
+                this.debouncedRender(); // Debounced for dates
+            }
         });
 
         document.getElementById('dateToFilter').addEventListener('change', (e) => {
             this.filters.dateTo = e.target.value;
-            if (this.currentView === 'list') this.render();
+            if (this.currentView === 'list') {
+                this.debouncedRender(); // Debounced for dates
+            }
         });
+
+        // Show archived checkbox - INSTANT (checkbox, not typing)
+        const showArchivedCheckbox = document.getElementById('showArchivedCheckbox');
+        if (showArchivedCheckbox) {
+            showArchivedCheckbox.addEventListener('change', (e) => {
+                this.showArchived = e.target.checked;
+                this.render(); // Refresh current view (list or calendar)
+            });
+        }
+
+        // Clear filters button
+        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', () => {
+                this.clearFilters();
+            });
+        }
     }
 
-    // Load initial data - Phase 3: With caching
+    // Refresh data with loading state - Phase 6
+    async refreshData() {
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        try {
+            // Show loading state
+            this.setButtonLoading(refreshBtn, true, 'Refreshing...');
+
+            // Clear cache to force fresh data
+            this.cache.clear();
+
+            // Reload data
+            await this.loadInitialData();
+
+            // Hide loading state
+            this.setButtonLoading(refreshBtn, false);
+
+            // Show success
+            this.showToast('Data refreshed successfully', 'success', 2000);
+
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+            this.setButtonLoading(refreshBtn, false);
+            this.showToast('Failed to refresh data', 'error');
+        }
+    }
+
+    // Load initial data - Phase 4: With caching + skeleton loader
     async loadInitialData() {
         const startTime = performance.now();
 
@@ -385,7 +518,7 @@ class AppointmentsPage {
 
             if (cachedClients && cachedDrivers) {
                 // Serve from cache for clients and drivers, fetch fresh appointments
-                console.log('[Phase 3] Using cached clients and drivers');
+                console.log('[Phase 4] Using cached clients and drivers');
 
                 this.clients = cachedClients;
                 this.drivers = cachedDrivers;
@@ -402,15 +535,28 @@ class AppointmentsPage {
                 this.populateDriverFilter();
                 this.populateClientDropdown();
                 this.updateWeekRange();
+
+                // Hide skeleton and render with fade-in effect
+                this.hideSkeletonLoader();
                 this.render();
 
+                // Add fade-in animation to content
+                const contentArea = this.currentView === 'calendar'
+                    ? document.getElementById('calendarWeekView')
+                    : document.getElementById('listView');
+                if (contentArea) {
+                    contentArea.classList.add('fade-in');
+                    // Remove animation class after animation completes
+                    setTimeout(() => contentArea.classList.remove('fade-in'), 300);
+                }
+
                 const endTime = performance.now();
-                console.log(`Page data loaded in ${(endTime - startTime).toFixed(0)}ms (Phase 3 - Cached)`);
+                console.log(`Page data loaded in ${(endTime - startTime).toFixed(0)}ms (Phase 4 - Cached)`);
                 return;
             }
 
             // Cache miss - fetch all data from API
-            console.log('[Phase 3] Cache miss - fetching from API');
+            console.log('[Phase 4] Cache miss - fetching from API');
 
             const response = await authenticatedFetch(
                 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-appointments-page-data'
@@ -431,6 +577,20 @@ class AppointmentsPage {
             this.clients = result.data.clients || [];
             this.drivers = result.data.drivers || [];
 
+            // Debug: Check if clients have clinic_travel_times
+            const clientsWithTravelTimes = this.clients.filter(c => c.clinic_travel_times);
+            console.log(`[Page Load] Received ${this.clients.length} clients, ${clientsWithTravelTimes.length} with travel times`);
+
+            // Debug: Check K7807878 specifically
+            const andrewNewton = this.clients.find(c => c.knumber === 'K7807878');
+            if (andrewNewton) {
+                console.log('[Page Load] Andrew Newton (K7807878) data:', {
+                    knumber: andrewNewton.knumber,
+                    hasClinicTravelTimes: !!andrewNewton.clinic_travel_times,
+                    clinic_travel_times: andrewNewton.clinic_travel_times
+                });
+            }
+
             // Expose page instance globally for modal access
             window.appointmentsPage = this;
 
@@ -441,20 +601,34 @@ class AppointmentsPage {
             this.cache.set('clients', this.clients, this.cacheTTL.clients);
             this.cache.set('drivers', this.drivers, this.cacheTTL.drivers);
 
-            console.log(`Page data loaded (Phase 3): ${result.counts.appointments} appointments, ${result.counts.clients} clients (${this.activeClients.length} active), ${result.counts.drivers} drivers`);
+            console.log(`Page data loaded (Phase 4): ${result.counts.appointments} appointments, ${result.counts.clients} clients (${this.activeClients.length} active), ${result.counts.drivers} drivers`);
 
             // Populate UI
             this.populateDriverFilter();
             this.populateClientDropdown();
             this.updateWeekRange();
+
+            // Hide skeleton and render with fade-in effect
+            this.hideSkeletonLoader();
             this.render();
 
+            // Add fade-in animation to content
+            const contentArea = this.currentView === 'calendar'
+                ? document.getElementById('calendarWeekView')
+                : document.getElementById('listView');
+            if (contentArea) {
+                contentArea.classList.add('fade-in');
+                // Remove animation class after animation completes
+                setTimeout(() => contentArea.classList.remove('fade-in'), 300);
+            }
+
             const endTime = performance.now();
-            console.log(`Page data loaded in ${(endTime - startTime).toFixed(0)}ms (Phase 3 - Fresh)`);
+            console.log(`Page data loaded in ${(endTime - startTime).toFixed(0)}ms (Phase 4 - Fresh)`);
 
         } catch (error) {
             console.error('Error loading page data:', error);
-            this.showError('Failed to load page data. Please try again.');
+            this.hideSkeletonLoader();
+            this.showToast('Failed to load page data. Please try again.', 'error');
         }
     }
 
@@ -615,6 +789,167 @@ class AppointmentsPage {
         alert('Cache cleared! Reload the page to fetch fresh data.');
     }
 
+    // Clear all filters - Phase 5
+    clearFilters() {
+        // Reset all filters
+        this.filters = {
+            search: '',
+            status: '',
+            driver: '',
+            dateFrom: '',
+            dateTo: ''
+        };
+
+        // Clear UI inputs
+        const searchInput = document.getElementById('searchFilter');
+        const statusSelect = document.getElementById('statusFilter');
+        const driverSelect = document.getElementById('driverFilter');
+        const dateFromInput = document.getElementById('dateFromFilter');
+        const dateToInput = document.getElementById('dateToFilter');
+
+        if (searchInput) searchInput.value = '';
+        if (statusSelect) statusSelect.value = '';
+        if (driverSelect) driverSelect.value = '';
+        if (dateFromInput) dateFromInput.value = '';
+        if (dateToInput) dateToInput.value = '';
+
+        // Re-render
+        if (this.currentView === 'list') {
+            this.render();
+        }
+
+        this.showToast('Filters cleared', 'info', 2000);
+    }
+
+    // Update filter count badge - Phase 5
+    updateFilterCount() {
+        const filtered = this.filterAppointments();
+        const total = this.appointments.length;
+        const countElement = document.getElementById('filterCountText');
+
+        if (!countElement) return;
+
+        if (filtered.length === total) {
+            countElement.textContent = `All appointments (${total})`;
+            countElement.parentElement.classList.remove('bg-primary');
+            countElement.parentElement.classList.add('bg-secondary');
+        } else {
+            countElement.textContent = `${filtered.length} of ${total}`;
+            countElement.parentElement.classList.remove('bg-secondary');
+            countElement.parentElement.classList.add('bg-primary');
+        }
+    }
+
+    // Show skeleton loader - Phase 4
+    showSkeletonLoader() {
+        document.getElementById('loadingView').classList.remove('hidden');
+        document.getElementById('calendarWeekView').classList.add('hidden');
+        document.getElementById('calendarMonthView').classList.add('hidden');
+        document.getElementById('listView').classList.add('hidden');
+        document.getElementById('calendarNavigation').classList.add('hidden');
+    }
+
+    // Hide skeleton loader - Phase 4
+    hideSkeletonLoader() {
+        document.getElementById('loadingView').classList.add('hidden');
+    }
+
+    /**
+     * Show toast notification - Phase 4
+     * @param {string} message - Notification message
+     * @param {string} type - success|error|warning|info
+     * @param {number} duration - How long to show (ms), 0 = manual close
+     */
+    showToast(message, type = 'info', duration = 4000) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const icons = {
+            success: '<i class="bi bi-check-circle-fill"></i>',
+            error: '<i class="bi bi-x-circle-fill"></i>',
+            warning: '<i class="bi bi-exclamation-triangle-fill"></i>',
+            info: '<i class="bi bi-info-circle-fill"></i>'
+        };
+
+        const titles = {
+            success: 'Success',
+            error: 'Error',
+            warning: 'Warning',
+            info: 'Info'
+        };
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon">${icons[type]}</div>
+            <div class="toast-content">
+                <div class="toast-title">${titles[type]}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast').classList.add('hiding'); setTimeout(() => this.closest('.toast').remove(), 300);">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+
+        container.appendChild(toast);
+
+        // Trigger show animation
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // Auto-remove after duration
+        if (duration > 0) {
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+    }
+
+    /**
+     * Set button loading state - Phase 6
+     * @param {HTMLElement|string} button - Button element or selector
+     * @param {boolean} loading - True to show loading, false to hide
+     * @param {string} loadingText - Optional text to show while loading
+     */
+    setButtonLoading(button, loading, loadingText = null) {
+        const btn = typeof button === 'string' ? document.querySelector(button) : button;
+        if (!btn) return;
+
+        if (loading) {
+            // Save original content
+            btn.dataset.originalHtml = btn.innerHTML;
+            btn.dataset.originalDisabled = btn.disabled;
+
+            // Set loading state
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+
+            if (loadingText) {
+                btn.innerHTML = `<span class="btn-spinner"></span>${loadingText}`;
+            }
+        } else {
+            // Restore original state
+            if (btn.dataset.originalHtml) {
+                btn.innerHTML = btn.dataset.originalHtml;
+            }
+            btn.disabled = btn.dataset.originalDisabled === 'true';
+            btn.classList.remove('btn-loading');
+
+            // Clean up
+            delete btn.dataset.originalHtml;
+            delete btn.dataset.originalDisabled;
+        }
+    }
+
+    /**
+     * Set loading state for multiple buttons - Phase 6
+     * @param {Array<HTMLElement|string>} buttons - Array of buttons
+     * @param {boolean} loading - True to show loading, false to hide
+     */
+    setButtonsLoading(buttons, loading) {
+        buttons.forEach(btn => this.setButtonLoading(btn, loading));
+    }
+
     // Remove standalone loadClients() and loadDrivers() methods - no longer needed
     // All data now comes from loadInitialData()
 
@@ -654,12 +989,16 @@ class AppointmentsPage {
 
     // Main render method
     render() {
+        // Update filter count badge (Phase 5)
+        this.updateFilterCount();
+
         // Hide loading view
         document.getElementById('loadingView').classList.add('hidden');
 
         // Hide all views
         document.getElementById('calendarWeekView').classList.add('hidden');
         document.getElementById('calendarMonthView').classList.add('hidden');
+        document.getElementById('listView').classList.add('hidden');
         document.getElementById('listView').classList.remove('list-view');
         document.getElementById('calendarNavigation').classList.add('hidden');
 
@@ -690,12 +1029,13 @@ class AppointmentsPage {
 
         const content = document.getElementById('calendarWeekContent');
         
-        // Get the week's appointments
+        // Get the week's appointments (filtered by Show Archived checkbox)
         const weekStart = new Date(this.currentWeekStart);
         const weekEnd = new Date(this.currentWeekStart);
         weekEnd.setDate(weekEnd.getDate() + 7);
 
-        const weekAppointments = this.appointments.filter(apt => {
+        const filteredAppointments = this.filterAppointments();
+        const weekAppointments = filteredAppointments.filter(apt => {
             const aptDate = new Date(apt.appointmentDateTime);
             return aptDate >= weekStart && aptDate < weekEnd;
         });
@@ -821,16 +1161,24 @@ class AppointmentsPage {
         const driver = this.drivers.find(d => d.id === appointment.driverAssigned);
         const driverName = driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : (appointment.driverAssigned ? 'Unassigned' : 'No Driver');
 
-        const status = appointment.appointmentstatus || appointment.status || 'pending';
+        const status = appointment.operation_status || appointment.appointmentstatus || appointment.status || 'pending';
+        const isArchived = appointment.deleted_at;
+        const archivedStyle = isArchived ? 'opacity: 0.7; border: 2px solid #dc3545;' : '';
+        const archivedBadge = isArchived ? '<span class="badge bg-danger" style="font-size: 0.7em; margin-left: 4px;">ARCHIVED</span>' : '';
+
+        // Check if appointment is in the past
+        const appointmentTime = new Date(appointment.appointmentDateTime || appointment.appointmenttime);
+        const isPast = appointmentTime < new Date();
+        const pastClass = isPast ? 'past-appointment' : '';
 
         return `
-            <div class="appointment-block status-${status}" 
-                 style="top: ${topPosition}px; height: ${height}px; left: ${leftOffset}%; width: ${width}%;"
+            <div class="appointment-block status-${status} ${pastClass}"
+                 style="top: ${topPosition}px; height: ${height}px; left: ${leftOffset}%; width: ${width}%; ${archivedStyle}"
                  data-appointment-id="${appointment.id}"
                  data-knumber="${appointment.knumber}"
-                 title="${clientName} - ${locationName} - ${driverName}">
-                <div class="appointment-time">${timeStr}</div>
-                <div class="appointment-client client-link" style="cursor: pointer; text-decoration: underline;" 
+                 title="${clientName} - ${locationName} - ${driverName}${isArchived ? ' (ARCHIVED)' : ''}">
+                <div class="appointment-time">${timeStr} ${archivedBadge}</div>
+                <div class="appointment-client client-link" style="cursor: pointer; text-decoration: underline;"
                      onclick="event.stopPropagation(); appointmentsPage.viewClient('${appointment.knumber}');">
                     ${clientName}
                 </div>
@@ -937,7 +1285,8 @@ class AppointmentsPage {
     // Get appointments for a specific day
     getDayAppointments(date) {
         const dateStr = date.toDateString();
-        return this.appointments.filter(apt => {
+        const filteredAppointments = this.filterAppointments();
+        return filteredAppointments.filter(apt => {
             const aptDate = new Date(apt.appointmentDateTime);
             // Convert to Halifax timezone for comparison
             const aptDateHalifax = new Date(aptDate.toLocaleString('en-US', { timeZone: 'America/Halifax' }));
@@ -973,7 +1322,11 @@ class AppointmentsPage {
         // Show up to 3 appointments
         const visibleAppointments = appointments.slice(0, 3);
         visibleAppointments.forEach(apt => {
-            const status = apt.appointmentstatus || apt.status || 'pending';
+            const status = apt.operation_status || apt.appointmentstatus || apt.status || 'pending';
+            const isArchived = apt.deleted_at;
+            const archivedBadge = isArchived ? '<span class="badge bg-danger" style="font-size: 0.6em; margin-left: 2px;">ARC</span>' : '';
+            const archivedStyle = isArchived ? 'opacity: 0.7; border-left: 3px solid #dc3545;' : '';
+
             const aptTime = new Date(apt.appointmentDateTime);
             const timeStr = aptTime.toLocaleTimeString('en-US', {
                 timeZone: 'America/Halifax',
@@ -987,8 +1340,12 @@ class AppointmentsPage {
                     ? `${apt.clientFirstName} ${apt.clientLastName}`
                     : 'Unknown');
 
-            html += `<div class="month-appointment-mini status-${status}" data-appointment-id="${apt.id}">
-                <span class="month-appointment-time">${timeStr}</span> ${clientName}
+            // Check if appointment is in the past
+            const isPast = aptTime < new Date();
+            const pastClass = isPast ? 'past-appointment' : '';
+
+            html += `<div class="month-appointment-mini status-${status} ${pastClass}" data-appointment-id="${apt.id}" style="${archivedStyle}">
+                <span class="month-appointment-time">${timeStr}</span> ${clientName} ${archivedBadge}
             </div>`;
         });
 
@@ -1071,7 +1428,11 @@ class AppointmentsPage {
         `;
 
         appointments.forEach(apt => {
-            const status = apt.appointmentstatus || apt.status || 'pending';
+            const status = apt.operation_status || apt.appointmentstatus || apt.status || 'pending';
+            const isArchived = apt.deleted_at;
+            const archivedBadge = isArchived ? '<span class="badge bg-danger" style="font-size: 0.7em; margin-left: 4px;">ARCHIVED</span>' : '';
+            const archivedOpacity = isArchived ? 'opacity: 0.7;' : '';
+
             const aptTime = new Date(apt.appointmentDateTime);
             const timeStr = aptTime.toLocaleTimeString('en-US', {
                 timeZone: 'America/Halifax',
@@ -1090,8 +1451,8 @@ class AppointmentsPage {
             const driverName = driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : 'Unassigned';
 
             html += `<div class="day-popover-appointment status-${status}" data-appointment-id="${apt.id}"
-                style="border-color: ${status === 'confirmed' ? '#28a745' : status === 'cancelled' ? '#dc3545' : '#ffc107'}">
-                <strong>${timeStr}</strong> - ${clientName}<br>
+                style="border-color: ${status === 'confirmed' ? '#28a745' : status === 'cancelled' ? '#dc3545' : '#ffc107'}; ${archivedOpacity}">
+                <strong>${timeStr}</strong> - ${clientName} ${archivedBadge}<br>
                 <small>${location} • ${driverName}</small>
             </div>`;
         });
@@ -1128,7 +1489,8 @@ class AppointmentsPage {
     // Render List View
     renderListView() {
         const container = document.getElementById('listView');
-        container.classList.remove('list-view');
+        container.classList.remove('hidden');
+        container.classList.add('list-view');
 
         const filtered = this.filterAppointments();
         const content = document.getElementById('listViewContent');
@@ -1193,16 +1555,17 @@ class AppointmentsPage {
             </a>
         `;
 
-        const statusBadge = this.getStatusBadge(appointment.appointmentstatus || appointment.status);
+        const statusBadge = this.getStatusBadge(appointment.operation_status || appointment.appointmentstatus || appointment.status);
+        const archivedBadge = appointment.deleted_at ? '<span class="badge bg-danger ms-1">ARCHIVED</span>' : '';
         const actions = this.getAppointmentActions(appointment);
 
         return `
-            <tr>
+            <tr ${appointment.deleted_at ? 'style="opacity: 0.7; background-color: #fff3cd;"' : ''}>
                 <td>${formattedDate}</td>
                 <td>${clientName}</td>
                 <td>${appointment.locationName || appointment.location || 'TBD'}</td>
                 <td>${driverName}</td>
-                <td>${statusBadge}</td>
+                <td>${statusBadge}${archivedBadge}</td>
                 <td>${actions}</td>
             </tr>
         `;
@@ -1211,8 +1574,9 @@ class AppointmentsPage {
     getStatusBadge(status) {
         const badges = {
             'pending': '<span class="badge bg-warning text-dark">Pending</span>',
+            'assigned': '<span class="badge bg-success">Assigned</span>',
             'confirmed': '<span class="badge bg-success">Confirmed</span>',
-            'cancelled': '<span class="badge bg-secondary">Cancelled</span>',
+            'cancelled': '<span class="badge bg-danger">Cancelled</span>',
             'completed': '<span class="badge bg-primary">Completed</span>'
         };
         return badges[status] || `<span class="badge bg-light text-dark">${status}</span>`;
@@ -1221,26 +1585,110 @@ class AppointmentsPage {
     getAppointmentActions(appointment) {
         const userRole = getUserRole();
         const permissions = getRolePermissions(userRole);
+        const hasDriver = appointment.driverAssigned && appointment.driverAssigned !== null;
+        const isArchived = appointment.deleted_at;
 
-        let actions = `
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="appointmentsPage.editAppointment('${appointment.id}')">
-                <i class="bi bi-pencil"></i> Edit
-            </button>
-        `;
+        let actions = '';
 
-        if (permissions?.canDeleteAppointments) {
+        // If archived: show Unarchive button first
+        if (isArchived && permissions?.canDeleteAppointments) {
             actions += `
-                <button class="btn btn-sm btn-outline-danger" onclick="appointmentsPage.deleteAppointment('${appointment.id}')">
-                    <i class="bi bi-trash"></i> Delete
+                <button
+                    class="btn btn-sm btn-success me-1"
+                    id="unarchive-btn-${appointment.id}"
+                    onclick="appointmentsPage.unarchiveAppointment('${appointment.id}')"
+                    title="Restore archived appointment"
+                >
+                    <i class="bi bi-arrow-counterclockwise"></i> <span class="btn-text">Unarchive</span>
                 </button>
             `;
         }
+
+        // Hard delete button (far left, admins only)
+        if (permissions?.canHardDeleteAppointments) {
+            actions += `
+                <button
+                    class="btn btn-sm btn-dark me-1"
+                    id="hard-delete-btn-${appointment.id}"
+                    onclick="appointmentsPage.deleteAppointment('${appointment.id}', 'hard')"
+                    title="PERMANENTLY delete (cannot be undone)"
+                >
+                    <i class="bi bi-trash-fill"></i> <span class="btn-text">Hard Delete</span>
+                </button>
+            `;
+        }
+
+        // Context-sensitive delete/cancel button (only show if NOT archived)
+        if (!isArchived && permissions?.canDeleteAppointments) {
+            if (hasDriver) {
+                // Driver assigned: show Cancel button
+                actions += `
+                    <button
+                        class="btn btn-sm btn-outline-warning me-1"
+                        id="cancel-btn-${appointment.id}"
+                        onclick="appointmentsPage.showCancelModal('${appointment.id}')"
+                        title="Cancel appointment (notifies driver)"
+                    >
+                        <i class="bi bi-x-circle"></i> <span class="btn-text">Cancel</span>
+                    </button>
+                `;
+            } else {
+                // No driver: show Delete button (soft delete/archive)
+                actions += `
+                    <button
+                        class="btn btn-sm btn-danger me-1"
+                        id="soft-delete-btn-${appointment.id}"
+                        onclick="appointmentsPage.deleteAppointment('${appointment.id}', 'soft')"
+                        title="Delete (hides but keeps record)"
+                    >
+                        <i class="bi bi-trash"></i> <span class="btn-text">Delete</span>
+                    </button>
+                `;
+            }
+        }
+
+        // Edit button (right side)
+        actions += `
+            <button
+                class="btn btn-sm btn-outline-primary"
+                id="edit-btn-${appointment.id}"
+                onclick="appointmentsPage.editAppointment('${appointment.id}')"
+            >
+                <i class="bi bi-pencil"></i> <span class="btn-text">Edit</span>
+            </button>
+        `;
 
         return actions;
     }
 
     filterAppointments() {
         let filtered = [...this.appointments];
+
+        // Phase 5: Search filter (client name, location, K-number, notes)
+        if (this.filters.search) {
+            const searchTerm = this.filters.search;
+            filtered = filtered.filter(apt => {
+                const clientName = (apt.clientName || apt.clientname || '').toLowerCase();
+                const location = (apt.location || apt.locationName || '').toLowerCase();
+                const knumber = (apt.knumber || '').toLowerCase();
+                const notes = (apt.notes || '').toLowerCase();
+
+                return (
+                    clientName.includes(searchTerm) ||
+                    location.includes(searchTerm) ||
+                    knumber.includes(searchTerm) ||
+                    notes.includes(searchTerm)
+                );
+            });
+        }
+
+        // Phase 5: Show archived filter (hide archived unless checkbox is checked)
+        if (!this.showArchived) {
+            filtered = filtered.filter(apt => {
+                // Hide appointments marked as archived (deleted_at is set)
+                return apt.deleted_at === null || apt.deleted_at === undefined;
+            });
+        }
 
         // Default: Only show future/present appointments unless viewing list with historic toggle
         if (this.currentView === 'list' && !this.showingHistoricData) {
@@ -1249,7 +1697,18 @@ class AppointmentsPage {
         }
 
         if (this.filters.status) {
-            filtered = filtered.filter(apt => (apt.appointmentstatus || apt.status) === this.filters.status);
+            filtered = filtered.filter(apt => {
+                // Use operation_status (new field) with fallback to appointmentstatus (old field)
+                const operationStatus = apt.operation_status || apt.appointmentstatus || apt.status;
+                return operationStatus === this.filters.status;
+            });
+        }
+
+        if (this.filters.invoiceStatus) {
+            filtered = filtered.filter(apt => {
+                const invoiceStatus = apt.invoice_status || 'not_ready';
+                return invoiceStatus === this.filters.invoiceStatus;
+            });
         }
 
         if (this.filters.driver) {
@@ -1273,33 +1732,312 @@ class AppointmentsPage {
     }
 
     editAppointment(appointmentId) {
-        const appointment = this.appointments.find(a => a.id === appointmentId);
-        if (appointment && typeof appointmentModalInstance !== 'undefined') {
-            appointmentModalInstance.open('edit', appointment);
+        const editBtn = document.getElementById(`edit-btn-${appointmentId}`);
+
+        try {
+            // Show loading state (Phase 6)
+            this.setButtonLoading(editBtn, true, 'Loading...');
+
+            const appointment = this.appointments.find(a => a.id === appointmentId);
+
+            if (!appointment) {
+                throw new Error('Appointment not found');
+            }
+
+            // Hide loading state (modal opening is fast)
+            this.setButtonLoading(editBtn, false);
+
+            // Open modal
+            if (typeof appointmentModalInstance !== 'undefined') {
+                appointmentModalInstance.open('edit', appointment);
+            }
+
+        } catch (error) {
+            console.error('Error opening appointment:', error);
+            this.setButtonLoading(editBtn, false);
+            this.showToast('Failed to open appointment', 'error');
         }
     }
 
-    async deleteAppointment(appointmentId) {
-        if (!confirm('Are you sure you want to delete this appointment?')) {
+    showCancelModal(appointmentId) {
+        // Find the appointment to get details
+        const appointment = this.appointments.find(apt => apt.id === appointmentId);
+        if (!appointment) return;
+
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="cancelModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning">
+                            <h5 class="modal-title">Cancel Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>Client:</strong> ${appointment.clientName || appointment.knumber}</p>
+                            <p><strong>Time:</strong> ${new Date(appointment.appointmentDateTime).toLocaleString()}</p>
+                            <p><strong>Location:</strong> ${appointment.locationName || appointment.location || 'TBD'}</p>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Driver will be notified via SMS and calendar update.
+                            </div>
+                            <div class="mb-3">
+                                <label for="cancellation-reason" class="form-label">Cancellation Reason *</label>
+                                <textarea
+                                    class="form-control"
+                                    id="cancellation-reason"
+                                    rows="3"
+                                    required
+                                    placeholder="Why is this appointment being cancelled?"
+                                ></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button
+                                type="button"
+                                class="btn btn-warning"
+                                id="confirm-cancel-btn"
+                                onclick="appointmentsPage.confirmCancellation('${appointmentId}')"
+                            >
+                                <span class="btn-text">Confirm Cancellation</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('cancelModal');
+        if (existingModal) existingModal.remove();
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+        modal.show();
+    }
+
+    async confirmCancellation(appointmentId) {
+        const reasonInput = document.getElementById('cancellation-reason');
+        const reason = reasonInput.value.trim();
+
+        if (!reason) {
+            alert('Cancellation reason is required');
+            reasonInput.focus();
             return;
         }
 
+        const confirmBtn = document.getElementById('confirm-cancel-btn');
+
         try {
-            const response = await authenticatedFetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-appointment-with-calendar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: appointmentId })
+            this.setButtonLoading(confirmBtn, true, 'Cancelling...');
+
+            const user = JSON.parse(sessionStorage.getItem('rrts_user'));
+
+            const response = await authenticatedFetch(
+                'https://webhook-processor-production-3bb8.up.railway.app/webhook/cancel-appointment',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: appointmentId,
+                        cancelled_by: user.id,
+                        cancellation_reason: reason
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to cancel appointment');
+            }
+
+            const result = await response.json();
+
+            // Log audit trail
+            await logSecurityEvent('appointment_cancelled', {
+                resource_type: 'appointment',
+                resource_id: appointmentId,
+                cancelled_by_user_id: user.id,
+                cancellation_reason: reason,
+                success: true
             });
 
-            if (response.ok) {
-                await this.loadAppointments();
-                this.render();
-            } else {
-                throw new Error('Failed to delete appointment');
-            }
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('cancelModal')).hide();
+
+            // Show success
+            this.showToast('Appointment cancelled and driver notified', 'success');
+
+            // Reload data
+            await this.loadInitialData();
+
         } catch (error) {
-            console.error('Error deleting appointment:', error);
-            alert('Failed to delete appointment. Please try again.');
+            console.error('Error cancelling appointment:', error);
+
+            // Log failed cancellation attempt
+            const user = JSON.parse(sessionStorage.getItem('rrts_user'));
+            await logSecurityEvent('appointment_cancelled', {
+                resource_type: 'appointment',
+                resource_id: appointmentId,
+                cancelled_by_user_id: user.id,
+                cancellation_reason: reason,
+                success: false,
+                error_message: error.message
+            });
+
+            this.setButtonLoading(confirmBtn, false);
+            this.showToast(error.message || 'Failed to cancel appointment', 'error');
+        }
+    }
+
+    async deleteAppointment(appointmentId, deleteType = 'soft') {
+        // Different confirmations based on delete type
+        const confirmMessage = deleteType === 'hard'
+            ? 'PERMANENTLY DELETE this appointment? This cannot be undone and will remove it from Google Calendar.'
+            : 'Delete this appointment? It will be hidden but can be restored later.';
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        const deleteBtn = document.getElementById(`${deleteType}-delete-btn-${appointmentId}`);
+
+        try {
+            // Show loading state (Phase 6)
+            const loadingText = deleteType === 'hard' ? 'Deleting...' : 'Archiving...';
+            this.setButtonLoading(deleteBtn, true, loadingText);
+
+            // Get current user for soft delete
+            const user = JSON.parse(sessionStorage.getItem('rrts_user'));
+
+            // Different endpoints for soft vs hard delete
+            const endpoint = deleteType === 'hard'
+                ? 'https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-appointment-with-calendar'
+                : 'https://webhook-processor-production-3bb8.up.railway.app/webhook/soft-delete-appointment';
+
+            const requestBody = deleteType === 'hard'
+                ? { id: appointmentId }
+                : { id: appointmentId, deleted_by: user.id };
+
+            const response = await authenticatedFetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to ${deleteType} delete appointment`);
+            }
+
+            const result = await response.json();
+
+            // Check if operation actually succeeded
+            if (!result.success) {
+                throw new Error(result.message || `Failed to ${deleteType} delete appointment`);
+            }
+
+            // Log audit trail with different actions
+            const auditAction = deleteType === 'hard' ? 'appointment_hard_deleted' : 'appointment_soft_deleted';
+            await logSecurityEvent(auditAction, {
+                resource_type: 'appointment',
+                resource_id: appointmentId,
+                delete_type: deleteType,
+                deleted_by_user_id: user.id,
+                success: true
+            });
+
+            // Show success
+            const successMessage = deleteType === 'hard'
+                ? 'Appointment permanently deleted'
+                : 'Appointment archived successfully';
+            this.showToast(successMessage, 'success');
+
+            // Reload data (button will be removed with re-render, no need to clear loading state)
+            await this.loadInitialData();
+
+        } catch (error) {
+            console.error(`Error ${deleteType} deleting appointment:`, error);
+
+            // Log failed attempt to audit trail
+            const user = JSON.parse(sessionStorage.getItem('rrts_user'));
+            const auditAction = deleteType === 'hard' ? 'appointment_hard_deleted' : 'appointment_soft_deleted';
+            await logSecurityEvent(auditAction, {
+                resource_type: 'appointment',
+                resource_id: appointmentId,
+                delete_type: deleteType,
+                deleted_by_user_id: user.id,
+                success: false,
+                error_message: error.message
+            });
+
+            this.setButtonLoading(deleteBtn, false);
+            this.showToast(error.message || `Failed to ${deleteType} delete appointment`, 'error');
+        }
+    }
+
+    async unarchiveAppointment(appointmentId) {
+        if (!confirm('Restore this archived appointment?')) {
+            return;
+        }
+
+        const unarchiveBtn = document.getElementById(`unarchive-btn-${appointmentId}`);
+
+        try {
+            // Show loading state
+            this.setButtonLoading(unarchiveBtn, true, 'Restoring...');
+
+            const user = JSON.parse(sessionStorage.getItem('rrts_user'));
+
+            const response = await authenticatedFetch(
+                'https://webhook-processor-production-3bb8.up.railway.app/webhook/unarchive-appointment',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: appointmentId,
+                        restored_by: user.id
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to unarchive appointment');
+            }
+
+            const result = await response.json();
+
+            // Log audit trail
+            await logSecurityEvent('appointment_unarchived', {
+                resource_type: 'appointment',
+                resource_id: appointmentId,
+                restored_by_user_id: user.id,
+                success: true
+            });
+
+            // Show success
+            this.showToast('Appointment restored successfully', 'success');
+
+            // Reload data
+            await this.loadInitialData();
+
+        } catch (error) {
+            console.error('Error unarchiving appointment:', error);
+
+            // Log failed unarchive attempt
+            const user = JSON.parse(sessionStorage.getItem('rrts_user'));
+            await logSecurityEvent('appointment_unarchived', {
+                resource_type: 'appointment',
+                resource_id: appointmentId,
+                restored_by_user_id: user.id,
+                success: false,
+                error_message: error.message
+            });
+
+            this.setButtonLoading(unarchiveBtn, false);
+            this.showToast(error.message || 'Failed to unarchive appointment', 'error');
         }
     }
 
@@ -1358,56 +2096,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 let payload;
 
                 if (mode === 'edit') {
-                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-with-calendar';
-                    payload = appointmentData; // Edit uses existing format
+                    // v7 Update endpoint with complete calendar management
+                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete';
+                    payload = appointmentData;
                 } else {
-                    // ADD mode - needs to format for /save-appointment endpoint
-                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment';
-
-                    // Find the client from the loaded clients
-                    const client = appointmentsPage.clients.find(c => c.knumber === appointmentData.knumber);
-
-                    if (!client) {
-                        console.error('Client not found. Looking for knumber:', appointmentData.knumber);
-                        console.error('Available clients:', appointmentsPage.clients.length);
-                        console.error('Sample knumbers:', appointmentsPage.clients.slice(0, 5).map(c => c.knumber));
-                        throw new Error('Client not found. Please refresh and try again.');
-                    }
-
-                    console.log('Found client:', client.knumber, client.firstname, client.lastname);
-
-                    // Extract date and time from appointmentDateTime
-                    const apptDate = new Date(appointmentData.appointmentDateTime);
-                    const dateStr = apptDate.toISOString().split('T')[0]; // YYYY-MM-DD
-                    const hours = String(apptDate.getHours()).padStart(2, '0');
-                    const minutes = String(apptDate.getMinutes()).padStart(2, '0');
-                    const timeStr = `${hours}:${minutes}`; // HH:MM
-
-                    // Format payload to match /save-appointment expectations
-                    payload = {
-                        kNumber: client.knumber,
-                        clientData: {
-                            kNumber: client.knumber,
-                            firstName: client.firstname || '',
-                            lastName: client.lastname || '',
-                            civicAddress: client.civicaddress || '',
-                            city: client.city || '',
-                            province: client.prov || '',
-                            postalCode: client.postalcode || '',
-                            phone: client.phone || '',
-                            email: client.email || ''
-                        },
-                        appointments: [{
-                            date: dateStr,
-                            time: timeStr,
-                            appointmenttime: appointmentData.appointmentDateTime,
-                            location: appointmentData.location,
-                            locationId: appointmentData.locationId,
-                            locationAddress: appointmentData.locationAddress,
-                            notes: appointmentData.notes || '',
-                            appointmentLength: appointmentData.appointmentLength || 120
-                        }]
-                    };
+                    // v7 Add endpoint - uses pre-calculated travel times (simplified payload)
+                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-v7';
+                    payload = appointmentData; // v7 uses same format as edit
                 }
 
                 console.log('Sending to endpoint:', endpoint);
@@ -1436,15 +2131,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Save response:', result);
 
                 if (result.success !== false) {
+                    // Log audit trail
+                    const action = mode === 'add' ? 'appointment_created' : 'appointment_updated';
+                    const appointmentId = mode === 'edit'
+                        ? appointmentData.id
+                        : (result.appointmentIds?.[0] || result.appointmentId || result.data?.appointmentId);
+
+                    await logSecurityEvent(action, {
+                        resource_type: 'appointment',
+                        resource_id: appointmentId,
+                        client_knumber: appointmentData.knumber || payload.kNumber,
+                        appointment_time: appointmentData.appointmentDateTime,
+                        driver_assigned: appointmentData.driver_assigned,
+                        success: true
+                    });
+
                     // Reload appointments to show the new/updated one
                     await appointmentsPage.loadInitialData();
-                    alert('Appointment saved successfully!');
+
+                    // Show success toast (Phase 4)
+                    appointmentsPage.showToast('Appointment saved successfully!', 'success');
                 } else {
                     throw new Error(result.message || 'Failed to save appointment');
                 }
             } catch (error) {
                 console.error('Error saving appointment:', error);
-                alert('Failed to save appointment: ' + error.message);
+                appointmentsPage.showToast('Failed to save appointment: ' + error.message, 'error');
                 throw error;
             }
         };
@@ -1468,5 +2180,4 @@ function logout() {
         sessionStorage.removeItem('rrts_user');
         window.location.href = 'index.html';
     }
-} 
 } 

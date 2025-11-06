@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Appointments - RRTS</title>
+    <title>Bulk Add Appointments - RRTS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="shared-styles.css" rel="stylesheet">
@@ -157,6 +157,31 @@
             padding-top: 1.5rem;
             border-top: 2px solid #E5E5E5;
         }
+
+        .address-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-primary {
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .badge-secondary {
+            background: #6c757d;
+            color: #FFFFFF;
+        }
+
+        .pickup-address-help {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
 <body>
@@ -171,8 +196,8 @@
         <div class="nav-links">
             <a href="dashboard.html">Dashboard</a>
             <a href="client-management.html">Clients</a>
-            <a href="appointment-management.html">Appointments</a>
-            <a href="add-appointments.html" class="active">Add Appointments</a>
+            <a href="appointments-new.html">Appointments</a>
+            <a href="appointments-bulk-add.html" class="active">Bulk Add</a>
             <a href="operations.html">Operations</a>
             <a href="driver-management.html">Drivers</a>
             <a href="admin.html">Admin</a>
@@ -186,9 +211,20 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>
-                        <i class="bi bi-calendar-plus me-2"></i>
-                        Add New Appointments
+                        <i class="bi bi-calendar-plus-fill me-2"></i>
+                        Bulk Add Appointments
                     </h2>
+                    <div>
+                        <a href="appointments-new.html" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Back to Appointments
+                        </a>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Bulk Add Mode:</strong> Create multiple appointments for the same client at once. Great for scheduling recurring appointments or multiple visits.
                 </div>
 
                 <!-- Client Selection -->
@@ -196,7 +232,7 @@
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-person-search me-2"></i>
-                            Select Client
+                            Step 1: Select Client
                         </h5>
                     </div>
                     <div class="card-body">
@@ -222,7 +258,7 @@
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-calendar-event me-2"></i>
-                            Appointments
+                            Step 2: Add Appointments
                         </h5>
                     </div>
                     <div class="card-body">
@@ -232,11 +268,11 @@
                                 No appointments added yet. Click "Add Appointment" to begin.
                             </div>
                         </div>
-                        
+
                         <div class="appointments-bottom-controls">
                             <button class="btn btn-primary btn-lg" onclick="addAppointment()">
                                 <i class="bi bi-plus-circle me-2"></i>
-                                Add Appointment
+                                Add Another Appointment
                             </button>
                         </div>
                     </div>
@@ -247,7 +283,7 @@
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-check-circle me-2"></i>
-                            Save Appointments
+                            Step 3: Review & Save
                         </h5>
                     </div>
                     <div class="card-body">
@@ -279,10 +315,10 @@
         let selectedClient = null;
         let appointments = [];
         let appointmentCounter = 0;
+        let availableAddresses = [];
 
         // API Configuration
         const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
-        const supabaseApiKey = '***REMOVED***';
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', async function() {
@@ -306,18 +342,18 @@
         });
 
         // Update current date/time
-	function updateDateTime() {
-	    const now = new Date();
-	    const options = { 
-	        timeZone: 'America/Halifax',
-	        year: 'numeric', 
-	        month: 'short', 
-	        day: 'numeric',
-      		hour: '2-digit', 
-        	minute: '2-digit'
-   	     };
-	     document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
-	}
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                timeZone: 'America/Halifax',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
+        }
 
         // Load clients from API
         function loadClients() {
@@ -350,9 +386,9 @@
         function populateClientDropdown() {
             const clientSelect = document.getElementById('clientSelect');
             clientSelect.innerHTML = '<option value="">Choose a client...</option>';
-            
+
             const activeClients = clients.filter(client => client.active === true);
-            
+
             activeClients.forEach(client => {
                 const option = document.createElement('option');
                 option.value = client.knumber;
@@ -361,13 +397,62 @@
             });
         }
 
+        // Build available addresses for client
+        function buildAvailableAddresses(client) {
+            availableAddresses = [];
+
+            // Primary address (always exists)
+            const primaryAddress = [
+                client.civicaddress,
+                client.city,
+                client.prov,
+                client.postalcode
+            ].filter(Boolean).join(', ');
+
+            const primaryShort = [
+                client.civicaddress,
+                client.city
+            ].filter(Boolean).join(', ');
+
+            availableAddresses.push({
+                type: 'primary',
+                full: primaryAddress,
+                short: primaryShort,
+                label: 'Primary Address'
+            });
+
+            // Secondary address (if exists)
+            if (client.secondary_civic_address && client.secondary_civic_address.trim()) {
+                const secondaryAddress = [
+                    client.secondary_civic_address,
+                    client.secondary_city,
+                    client.secondary_province,
+                    client.secondary_postal_code
+                ].filter(Boolean).join(', ');
+
+                const secondaryShort = [
+                    client.secondary_civic_address,
+                    client.secondary_city
+                ].filter(Boolean).join(', ');
+
+                availableAddresses.push({
+                    type: 'secondary',
+                    full: secondaryAddress,
+                    short: secondaryShort,
+                    label: 'Secondary Address',
+                    notes: client.secondary_address_notes
+                });
+            }
+        }
+
         // Handle client selection
         function selectClient() {
             const clientSelect = document.getElementById('clientSelect');
             const knumber = clientSelect.value;
-            
+
             if (!knumber) {
                 selectedClient = null;
+                availableAddresses = [];
                 document.getElementById('clientInfo').style.display = 'none';
                 document.getElementById('appointmentsCard').style.display = 'none';
                 document.getElementById('saveSection').style.display = 'none';
@@ -377,13 +462,14 @@
             }
 
             selectedClient = clients.find(client => client.knumber === knumber);
-            
+
             if (selectedClient) {
+                buildAvailableAddresses(selectedClient);
                 displayClientInfo();
                 document.getElementById('appointmentsCard').style.display = 'block';
                 appointments = [];
                 appointmentCounter = 0;
-                
+
                 // Automatically add the first appointment
                 addAppointment();
             }
@@ -392,36 +478,80 @@
         // Display selected client information
         function displayClientInfo() {
             const clientDetails = document.getElementById('clientDetails');
-            const fullAddress = [
-                selectedClient.civicaddress,
-                selectedClient.city,
-                selectedClient.prov,
-                selectedClient.postalcode
-            ].filter(Boolean).join(', ');
+            const primaryAddress = availableAddresses.find(addr => addr.type === 'primary');
+            const secondaryAddress = availableAddresses.find(addr => addr.type === 'secondary');
+
+            let addressDisplay = `<div><strong>Primary:</strong> ${primaryAddress.full}</div>`;
+            if (secondaryAddress) {
+                addressDisplay += `<div><strong>Secondary:</strong> ${secondaryAddress.full}</div>`;
+                if (secondaryAddress.notes) {
+                    addressDisplay += `<div class="text-muted" style="font-size: 0.875rem;"><em>${secondaryAddress.notes}</em></div>`;
+                }
+            }
 
             clientDetails.innerHTML = `
                 <div><strong>${selectedClient.firstname || ''} ${selectedClient.lastname || ''}</strong></div>
-                <div>${fullAddress}</div>
+                ${addressDisplay}
                 <div>Phone: ${selectedClient.phone || 'Not provided'}</div>
                 <div>Email: ${selectedClient.email || 'Not provided'}</div>
             `;
-            
+
             document.getElementById('clientInfo').style.display = 'block';
+        }
+
+        // Get last appointment values for pre-filling
+        function getLastAppointmentValues() {
+            if (appointments.length === 0) {
+                return { clinic: '', pickupAddress: 'primary' };
+            }
+
+            const lastAppointment = appointments[appointments.length - 1];
+            return {
+                clinic: lastAppointment.location || '',
+                pickupAddress: lastAppointment.pickupAddressType || 'primary'
+            };
         }
 
         // Add new appointment
         function addAppointment() {
             appointmentCounter++;
+            const lastValues = getLastAppointmentValues();
+
             const appointment = {
                 id: `appointment-${appointmentCounter}`,
                 date: '',
                 time: '',
-                location: '',
-                locationId: '', // Add location ID field
+                location: lastValues.clinic, // Pre-fill from last appointment
+                locationId: '',
                 locationAddress: '',
+                pickupAddressType: lastValues.pickupAddress, // Pre-fill from last appointment
+                pickupAddress: '',
                 appointmentNotes: '',
                 appointmentLength: selectedClient ? (selectedClient.appointmentLength || selectedClient.appointment_length || 120) : 120
             };
+
+            // Set pickup address based on type
+            const selectedAddress = availableAddresses.find(addr => addr.type === appointment.pickupAddressType);
+            if (selectedAddress) {
+                appointment.pickupAddress = selectedAddress.full;
+            }
+
+            // Set location address if location is pre-filled
+            if (appointment.location) {
+                const destination = destinations.find(dest => dest.name === appointment.location);
+                if (destination) {
+                    appointment.locationId = destination.id;
+                    const addressParts = [
+                        destination.address,
+                        destination.city,
+                        destination.province
+                    ].filter(Boolean);
+                    appointment.locationAddress = addressParts.join(', ');
+                    if (destination.postalCode && destination.postalCode.trim()) {
+                        appointment.locationAddress += ` ${destination.postalCode}`;
+                    }
+                }
+            }
 
             appointments.push(appointment);
             displayAppointments();
@@ -446,23 +576,33 @@
             }
         }
 
-	function isPastDate(dateStr) {
-	    if (!dateStr) return false;
-	    const appointmentDate = new Date(dateStr + 'T00:00:00');
-	    const today = new Date();
-	    today.setHours(0, 0, 0, 0);
-	    return appointmentDate < today;
-	}
+        // Check if date is in the past
+        function isPastDate(dateStr) {
+            if (!dateStr) return false;
+            const appointmentDate = new Date(dateStr + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return appointmentDate < today;
+        }
+
+        // Build pickup address dropdown options
+        function buildPickupAddressOptions(selectedType) {
+            return availableAddresses.map(addr => {
+                const badgeClass = addr.type === 'primary' ? 'badge-primary' : 'badge-secondary';
+                const selected = addr.type === selectedType ? 'selected' : '';
+                return `<option value="${addr.type}" ${selected}>${addr.short}</option>`;
+            }).join('');
+        }
 
         // Display appointments
         function displayAppointments() {
             const appointmentsList = document.getElementById('appointmentsList');
-            
+
             if (appointments.length === 0) {
                 appointmentsList.innerHTML = `
                     <div class="empty-state">
                         <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
-                        No appointments added yet. Click "Add Appointment" to begin.
+                        No appointments added yet. Click "Add Another Appointment" to begin.
                     </div>
                 `;
                 return;
@@ -471,29 +611,31 @@
             appointmentsList.innerHTML = appointments.map((appointment, index) => {
                 const isPast = isPastDate(appointment.date);
                 const pastClass = isPast ? 'past-appointment' : '';
-                
+
                 return `
                     <div class="appointment-item ${pastClass}" id="appointment-${appointment.id}">
                         <div class="appointment-number">Appointment ${index + 1}</div>
-                        <button class="remove-appointment" onclick="removeAppointment('${appointment.id}')" title="Remove appointment">
-                            <i class="bi bi-x"></i>
-                        </button>
-                        
+                        ${appointments.length > 1 ? `
+                            <button class="remove-appointment" onclick="removeAppointment('${appointment.id}')" title="Remove appointment">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        ` : ''}
+
                         <div class="row">
                             <div class="col-md-3">
-                                <label for="date-${appointment.id}" class="form-label">Date</label>
-                                <input type="date" class="form-control" id="date-${appointment.id}" 
-                                       value="${appointment.date}" onchange="updateAppointment('${appointment.id}', 'date', this.value)">
+                                <label for="date-${appointment.id}" class="form-label">Date *</label>
+                                <input type="date" class="form-control" id="date-${appointment.id}"
+                                       value="${appointment.date}" onchange="updateAppointment('${appointment.id}', 'date', this.value)" required>
                             </div>
                             <div class="col-md-3">
-                                <label for="time-${appointment.id}" class="form-label">Time</label>
-                                <input type="time" class="form-control" id="time-${appointment.id}" 
-                                       value="${appointment.time}" onchange="updateAppointment('${appointment.id}', 'time', this.value)">
+                                <label for="time-${appointment.id}" class="form-label">Time *</label>
+                                <input type="time" class="form-control" id="time-${appointment.id}"
+                                       value="${appointment.time}" onchange="updateAppointment('${appointment.id}', 'time', this.value)" required>
                             </div>
                             <div class="col-md-3">
-                                <label for="location-${appointment.id}" class="form-label">Clinic Location</label>
-                                <select class="form-select" id="location-${appointment.id}" 
-                                        onchange="updateAppointmentLocation('${appointment.id}', this.value)">
+                                <label for="location-${appointment.id}" class="form-label">Clinic Location *</label>
+                                <select class="form-select" id="location-${appointment.id}"
+                                        onchange="updateAppointmentLocation('${appointment.id}', this.value)" required>
                                     <option value="">Choose a clinic...</option>
                                     ${destinations.map(dest => `
                                         <option value="${dest.name}" ${appointment.location === dest.name ? 'selected' : ''}>
@@ -504,16 +646,29 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="length-${appointment.id}" class="form-label">Length (minutes)</label>
-                                <input type="number" class="form-control" id="length-${appointment.id}" 
+                                <input type="number" class="form-control" id="length-${appointment.id}"
                                        value="${appointment.appointmentLength}" min="15" max="480" step="15"
                                        onchange="updateAppointment('${appointment.id}', 'appointmentLength', parseInt(this.value))">
                             </div>
                         </div>
-                        
+
                         <div class="row mt-3">
-                            <div class="col-12">
+                            <div class="col-md-6">
+                                <label for="pickup-${appointment.id}" class="form-label">
+                                    Pickup Address *
+                                    <i class="bi bi-info-circle" title="Select which address to pick up the client from"></i>
+                                </label>
+                                <select class="form-select" id="pickup-${appointment.id}"
+                                        onchange="updatePickupAddress('${appointment.id}', this.value)" required>
+                                    ${buildPickupAddressOptions(appointment.pickupAddressType)}
+                                </select>
+                                <div class="pickup-address-help">
+                                    ${availableAddresses.length > 1 ? 'Choose primary or secondary address for this appointment' : 'Using primary address'}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
                                 <label for="notes-${appointment.id}" class="form-label">Appointment Notes</label>
-                                <textarea class="form-control" id="notes-${appointment.id}" rows="2" 
+                                <textarea class="form-control" id="notes-${appointment.id}" rows="2"
                                           placeholder="Enter any notes for this appointment..."
                                           onchange="updateAppointment('${appointment.id}', 'appointmentNotes', this.value)">${appointment.appointmentNotes}</textarea>
                             </div>
@@ -529,51 +684,61 @@
             if (appointment) {
                 appointment[field] = value;
                 updateSaveSection();
-                
+
                 if (field === 'date') {
                     displayAppointments();
                 }
             }
         }
 
-	// Update appointment location and get address
-	function updateAppointmentLocation(appointmentId, locationName) {
-	    const appointment = appointments.find(apt => apt.id === appointmentId);
-	    const destination = destinations.find(dest => dest.name === locationName);
-    
-	    if (appointment) {
-	        appointment.location = locationName;
-	        appointment.locationId = destination ? destination.id : ''; // Store the ID
-        
-        	// Create complete address by combining address, city, and province
-	        if (destination) {
-	            const addressParts = [
-	                destination.address,
-        	        destination.city,
-                	destination.province
-	            ].filter(Boolean); // Remove empty parts
-            
-        	    appointment.locationAddress = addressParts.join(', ');
-            
-	            // Add postal code if available
-        	    if (destination.postalCode && destination.postalCode.trim()) {
-                	appointment.locationAddress += ` ${destination.postalCode}`;
-	            }
-        	} else {
-	            appointment.locationAddress = '';
-        	}
-        
-	        updateSaveSection();
-        
-        	console.log(`Updated appointment location: ${locationName}`);
-	        console.log(`Complete address: ${appointment.locationAddress}`);
-	    }
-	}
+        // Update appointment location and get address
+        function updateAppointmentLocation(appointmentId, locationName) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            const destination = destinations.find(dest => dest.name === locationName);
+
+            if (appointment) {
+                appointment.location = locationName;
+                appointment.locationId = destination ? destination.id : '';
+
+                if (destination) {
+                    const addressParts = [
+                        destination.address,
+                        destination.city,
+                        destination.province
+                    ].filter(Boolean);
+
+                    appointment.locationAddress = addressParts.join(', ');
+
+                    if (destination.postalCode && destination.postalCode.trim()) {
+                        appointment.locationAddress += ` ${destination.postalCode}`;
+                    }
+                } else {
+                    appointment.locationAddress = '';
+                }
+
+                updateSaveSection();
+            }
+        }
+
+        // Update pickup address
+        function updatePickupAddress(appointmentId, addressType) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (appointment) {
+                appointment.pickupAddressType = addressType;
+
+                const selectedAddress = availableAddresses.find(addr => addr.type === addressType);
+                if (selectedAddress) {
+                    appointment.pickupAddress = selectedAddress.full;
+                }
+
+                updateSaveSection();
+            }
+        }
 
         // Update save section
         function updateSaveSection() {
-            const validAppointments = appointments.filter(apt => 
-                apt.date && apt.time && apt.location
+            const validAppointments = appointments.filter(apt =>
+                apt.date && apt.time && apt.location && apt.pickupAddress
             );
 
             if (validAppointments.length > 0) {
@@ -588,26 +753,29 @@
         function updateAppointmentSummary(validAppointments) {
             const summaryDiv = document.getElementById('appointmentSummary');
             const pastAppointments = validAppointments.filter(apt => isPastDate(apt.date));
-            
+
             let summary = `<div><strong>Ready to save:</strong> ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}</div>`;
-            
+
             if (pastAppointments.length > 0) {
                 summary += `<div class="mt-2" style="color: #e74c3c;"><strong>⚠️ Warning:</strong> ${pastAppointments.length} appointment(s) scheduled in the past</div>`;
             }
-            
+
             summaryDiv.innerHTML = summary + `<div class="mt-2">
-                ${validAppointments.map((apt, index) => `
-                    <div class="text-muted">
-                        ${index + 1}. ${apt.date} at ${apt.time} - ${apt.location} (${apt.appointmentLength} min)
-                    </div>
-                `).join('')}
+                ${validAppointments.map((apt, index) => {
+                    const pickupType = apt.pickupAddressType === 'primary' ? 'Primary' : 'Secondary';
+                    return `
+                        <div class="text-muted">
+                            ${index + 1}. ${apt.date} at ${apt.time} - ${apt.location} - ${pickupType} Address (${apt.appointmentLength} min)
+                        </div>
+                    `;
+                }).join('')}
             </div>`;
         }
 
         // Save appointments
         function saveAppointments() {
-            const validAppointments = appointments.filter(apt => 
-                apt.date && apt.time && apt.location
+            const validAppointments = appointments.filter(apt =>
+                apt.date && apt.time && apt.location && apt.pickupAddress
             );
 
             if (validAppointments.length === 0) {
@@ -625,7 +793,10 @@
             saveButton.classList.add('is-loading');
             saveButton.disabled = true;
 
-            // Prepare data for backend - now includes ID, name, and address
+            // Get current user for managed_by field
+            const currentUser = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
+
+            // Prepare data for backend
             const appointmentData = {
                 kNumber: selectedClient.knumber,
                 clientData: {
@@ -639,21 +810,24 @@
                     phone: selectedClient.phone,
                     email: selectedClient.email
                 },
+                managed_by: currentUser.id || null,
+                managed_by_name: currentUser.full_name || null,
                 appointments: validAppointments.map(apt => {
-			// Convert local date/time to UTC for storage
-			const localDateTime = new Date(apt.date + 'T' + apt.time + ':00');
-    
-			return {
-		        date: apt.date,
-		        time: apt.time,
-		        appointmenttime: localDateTime.toISOString(), // Send UTC timestamp
-		        location: apt.location,
-		        locationId: apt.locationId,
-		        locationAddress: apt.locationAddress,
-		        notes: apt.appointmentNotes || '',
-		        appointmentLength: apt.appointmentLength || 120
-		    };
-		})
+                    // Convert local date/time to UTC for storage
+                    const localDateTime = new Date(apt.date + 'T' + apt.time + ':00');
+
+                    return {
+                        date: apt.date,
+                        time: apt.time,
+                        appointmenttime: localDateTime.toISOString(),
+                        location: apt.location,
+                        locationId: apt.locationId,
+                        locationAddress: apt.locationAddress,
+                        pickup_address: apt.pickupAddress,
+                        notes: apt.appointmentNotes || '',
+                        appointmentLength: apt.appointmentLength || 120
+                    };
+                })
             };
 
             // Send to backend
@@ -665,11 +839,11 @@
             .then(data => {
                 saveButton.classList.remove('is-loading');
                 saveButton.disabled = false;
-                
+
                 if (data.success) {
                     showSuccess('Appointments saved successfully! Pickup times calculated automatically.');
                     setTimeout(() => {
-                        window.location.href = 'dashboard.html';
+                        window.location.href = 'appointments-sl.html';
                     }, 2000);
                 } else {
                     showError(`Failed to save appointments: ${data.message || 'Unknown error'}`);
@@ -693,7 +867,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             `;
-            
+
             setTimeout(() => {
                 const alert = errorSection.querySelector('.alert');
                 if (alert) {
@@ -716,6 +890,7 @@
 
         // Logout function
         function logout() {
+            sessionStorage.clear();
             window.location.href = 'index.html';
         }
     </script>
@@ -724,10 +899,13 @@
 </body>
 </html>
 
-<!-- Version: v3.1.1 - fix date summary error -->
-<!-- - v3.0.0: Initial version with client selection, appointment creation, and backend integration -->
-<!-- - v3.0.1: Enhanced form validation and user experience improvements -->
-<!-- - v3.0.2: Fixed appointment display and save functionality with proper error handling -->
-<!-- - v3.0.3: Modified clinic dropdown to send id, name, and address to backend while displaying only name -->
-<!-- - v3.0.4: Fixed CORS issues by correcting API endpoint URLs and adding explicit HTTP methods -->
-<!-- - v3.0.5: Fixed address concatenation to create complete addresses for Google Maps API -->
+<!-- Version: v1.0.0 - Initial bulk add implementation with pickup address selection -->
+<!-- Features:
+  - Client selection with address display
+  - Multiple appointment forms
+  - Pickup address selection (primary/secondary)
+  - Smart pre-filling: clinic and pickup address from previous appointment
+  - Visual indicators for past appointments
+  - Auto-set managed_by to current user
+  - Save all appointments at once to existing workflow
+-->

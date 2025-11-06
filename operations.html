@@ -421,8 +421,12 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
 
+        .appointment-item.assigned {
+            border-left-color: #17a2b8;
+        }
+
         .appointment-item.confirmed {
-            border-left-color: #27ae60;
+            border-left-color: #17a2b8;
         }
 
         .appointment-item.pending {
@@ -467,9 +471,14 @@
             letter-spacing: 0.5px;
         }
 
+        .status-assigned {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
         .status-confirmed {
-            background: #d4edda;
-            color: #155724;
+            background: #d1ecf1;
+            color: #0c5460;
         }
 
         .status-pending {
@@ -801,6 +810,8 @@
         </div>
     </div>
 
+    <!-- JWT Authentication Helper -->
+    <script src="jwt-auth.js"></script>
     <script>
         // API Configuration
         const API_ENDPOINTS = {
@@ -820,20 +831,18 @@
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('RRTS Weekly Driver Assignment Loaded');
-            
-            // Check authentication
-            const savedUser = sessionStorage.getItem('rrts_user');
-            if (!savedUser) {
-                window.location.href = 'dashboard.html';
+
+            // Check JWT authentication (redirects if not authenticated)
+            if (!(await requireAuth())) {
                 return;
             }
 
             updateDateTime();
             setInterval(updateDateTime, 60000); // Update every minute
-            
+
             // Initialize to current week (Sunday start)
             currentWeekStart = getWeekStart(new Date());
-            
+
             // Load data sequentially to ensure drivers are loaded before rendering
             await loadDrivers();
             await loadAppointments();
@@ -877,7 +886,7 @@
         // Data loading functions
         async function loadDrivers() {
             try {
-                const response = await fetch(API_ENDPOINTS.DRIVERS);
+                const response = await authenticatedFetch(API_ENDPOINTS.DRIVERS);
                 if (response.ok) {
                     const data = await response.json();
                     drivers = data.drivers || data || [];
@@ -899,7 +908,7 @@
 
         async function loadAppointments() {
             try {
-                const response = await fetch(API_ENDPOINTS.APPOINTMENTS);
+                const response = await authenticatedFetch(API_ENDPOINTS.APPOINTMENTS);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -919,7 +928,7 @@
                             pickupTime: apt.pickuptime || apt.pickupTime,
                             dropOffTime: apt.dropOffTime || apt.dropofftime,
                             location: apt.locationname || apt.location,
-                            status: apt.appointmentstatus || apt.status,
+                            status: apt.operation_status || apt.appointmentstatus || apt.status,
                             clientFirstName: apt.firstname || apt.clientFirstName,
                             clientLastName: apt.lastname || apt.clientLastName,
                             knumber: apt.knumber,
@@ -1435,17 +1444,14 @@
                         // Prepare update data - only send fields that are actually changing
                         const updateData = {
                             id: appointment.id,
-                            status: 'confirmed',
+                            status: 'assigned',
                             driver_assigned: driverId,
                             driver_first_name: driver ? driver.first_name : null
                         };
                         
                         // Call the driver assignment endpoint
-                        const response = await fetch(API_ENDPOINTS.UPDATE_DRIVER_ASSIGNMENT, {
+                        const response = await authenticatedFetch(API_ENDPOINTS.UPDATE_DRIVER_ASSIGNMENT, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
                             body: JSON.stringify(updateData)
                         });
                         

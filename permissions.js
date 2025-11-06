@@ -6,10 +6,11 @@
 
 const ROLE_PERMISSIONS = {
     'admin': {
-        pages: ['dashboard', 'client-management', 'appointment-management', 'appointments-new', 'add-appointments', 'operations', 'driver-management', 'admin'],
+        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management', 'admin'],
         features: ['all'],
         canDeleteClients: true,
         canDeleteAppointments: true,
+        canHardDeleteAppointments: true,
         canManageDrivers: true,
         canManageUsers: true,
         canManageSystemConfig: true,
@@ -19,10 +20,11 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'supervisor': {
-        pages: ['dashboard', 'client-management', 'appointment-management', 'appointments-new', 'add-appointments', 'operations', 'driver-management'],
+        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management'],
         features: ['view_clients', 'edit_clients', 'delete_clients', 'view_appointments', 'edit_appointments', 'assign_drivers', 'view_drivers', 'view_reports'],
         canDeleteClients: true,
         canDeleteAppointments: true,
+        canHardDeleteAppointments: false,
         canManageDrivers: true,
         canManageUsers: false,
         canManageSystemConfig: false,
@@ -32,7 +34,7 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'booking_agent': {
-        pages: ['dashboard', 'client-management', 'appointment-management', 'appointments-new', 'add-appointments'],
+        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments'],
         features: ['view_clients', 'edit_clients', 'view_appointments', 'edit_appointments', 'create_appointments', 'view_drivers'],
         canDeleteClients: false,
         canDeleteAppointments: false,
