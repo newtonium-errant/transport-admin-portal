@@ -843,6 +843,40 @@
                     </button>
                 </div>
                 <div id="loginError" class="hidden"></div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="#" onclick="showForgotPasswordModal(); return false;" style="color: #2D6A4F; text-decoration: none; font-size: 0.9em;">
+                        Forgot Password?
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header" style="background-color: #1B4332; color: white;">
+                        <h5 class="modal-title" id="forgotPasswordModalLabel">Reset Password</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">
+                            Enter your email address and we'll send you a temporary password.
+                        </p>
+                        <div class="mb-3">
+                            <label for="forgotPasswordEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="forgotPasswordEmail" placeholder="your-email@example.com" required>
+                        </div>
+                        <div id="forgotPasswordMessage" class="hidden"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn" style="background-color: #1B4332; color: white;" onclick="submitForgotPassword()">
+                            <span id="forgotPasswordBtnText">Send Reset Email</span>
+                            <span id="forgotPasswordBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1037,7 +1071,8 @@
     	LOGIN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login',
    	 DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management',
    	 CHANGE_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/change-password',
-   	 REFRESH_TOKEN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/refresh-token'
+   	 REFRESH_TOKEN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/refresh-token',
+   	 FORGOT_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/forgot-password'
 	};
 
 	// Session and user management
@@ -1109,6 +1144,17 @@
   	          if (event.key === 'Enter') {
   	              event.preventDefault();
   	              login();
+  	          }
+  	      });
+  	  }
+
+  	  // Add Enter key support for forgot password modal
+  	  const forgotPasswordEmailField = document.getElementById('forgotPasswordEmail');
+  	  if (forgotPasswordEmailField) {
+  	      forgotPasswordEmailField.addEventListener('keydown', function(event) {
+  	          if (event.key === 'Enter') {
+  	              event.preventDefault();
+  	              submitForgotPassword();
   	          }
   	      });
   	  }
@@ -1668,6 +1714,93 @@
             const errorDiv = document.getElementById('passwordChangeError');
             errorDiv.innerHTML = `<div class="error">${message}</div>`;
             errorDiv.classList.remove('hidden');
+        }
+
+        // Forgot Password Functions
+        function showForgotPasswordModal() {
+            // Clear previous state
+            document.getElementById('forgotPasswordEmail').value = '';
+            document.getElementById('forgotPasswordMessage').classList.add('hidden');
+            document.getElementById('forgotPasswordMessage').innerHTML = '';
+
+            // Show modal using Bootstrap
+            const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+            modal.show();
+        }
+
+        async function submitForgotPassword() {
+            const email = document.getElementById('forgotPasswordEmail').value.trim().toLowerCase();
+
+            // Validation
+            if (!email) {
+                showForgotPasswordMessage('Please enter your email address', 'error');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showForgotPasswordMessage('Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Show loading state
+            const btnText = document.getElementById('forgotPasswordBtnText');
+            const btnSpinner = document.getElementById('forgotPasswordBtnSpinner');
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch(API_ENDPOINTS.FORGOT_PASSWORD, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: email })
+                });
+
+                const result = await response.json();
+                console.log('Forgot password result:', result);
+
+                // Reset button state
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+
+                if (result.success) {
+                    // Show success message (generic for security)
+                    showForgotPasswordMessage(
+                        result.message || 'If an account exists with that email, a password reset link has been sent.',
+                        'success'
+                    );
+
+                    // Close modal after 3 seconds
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+                    }, 3000);
+                } else {
+                    // Show error message
+                    if (result.statusCode === 429) {
+                        // Rate limited
+                        showForgotPasswordMessage(result.message || 'Too many attempts. Please try again later.', 'error');
+                    } else {
+                        showForgotPasswordMessage(result.message || 'An error occurred. Please try again.', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Forgot password error:', error);
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+                showForgotPasswordMessage('An error occurred. Please try again.', 'error');
+            }
+        }
+
+        function showForgotPasswordMessage(message, type) {
+            const messageDiv = document.getElementById('forgotPasswordMessage');
+            const className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
+            messageDiv.innerHTML = `<div class="${className}" role="alert">${message}</div>`;
+            messageDiv.classList.remove('hidden');
         }
 
         // Token refresh functions

@@ -113,6 +113,12 @@ async function refreshAccessToken() {
             sessionStorage.setItem('rrts_access_token', result.access_token);
             sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
 
+            // Store new refresh token (rotation security feature)
+            if (result.refresh_token) {
+                sessionStorage.setItem('rrts_refresh_token', result.refresh_token);
+                console.log('Refresh token rotated successfully');
+            }
+
             console.log('Access token refreshed successfully');
             return true;
         } else {
