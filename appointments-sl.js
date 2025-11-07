@@ -2199,7 +2199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // v7 Add endpoint - uses pre-calculated travel times (simplified payload)
                     endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-v7';
-                    payload = appointmentData; // v7 uses same format as edit
+                    payload = { appointments: [appointmentData] }; // Wrap in array for workflow
                 }
 
                 console.log('Sending to endpoint:', endpoint);

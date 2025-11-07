@@ -1096,7 +1096,7 @@
                         } else {
                             // v7 Add endpoint - uses pre-calculated travel times
                             endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-v7';
-                            payload = appointmentData;
+                            payload = { appointments: [appointmentData] }; // Wrap in array for workflow
                         }
 
                         console.log('Sending to endpoint:', endpoint);
@@ -1924,20 +1924,18 @@
                     return;
                 }
 
-                // Open modal in add mode
-                appointmentModalInstance.open('add');
+                // Open modal in add mode and wait for it to load
+                await appointmentModalInstance.open('add');
+
+                // Pre-select the client (modal data is now loaded)
+                const fullName = `${client.firstname || client.first_name || ''} ${client.lastname || client.last_name || ''}`.trim();
+                appointmentModalInstance.selectClient(client.knumber, fullName);
 
                 // Restore button state
                 if (addApptBtn && addApptBtn.dataset.originalContent) {
                     addApptBtn.disabled = false;
                     addApptBtn.innerHTML = addApptBtn.dataset.originalContent;
                 }
-
-                // Pre-select the client after a short delay to ensure modal is rendered
-                setTimeout(() => {
-                    const fullName = `${client.firstname || client.first_name || ''} ${client.lastname || client.last_name || ''}`.trim();
-                    appointmentModalInstance.selectClient(client.knumber, fullName);
-                }, 100);
 
             } catch (error) {
                 // Restore button state on error
