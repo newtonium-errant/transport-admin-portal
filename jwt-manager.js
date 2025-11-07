@@ -113,7 +113,7 @@ const JWTManager = (function() {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ refreshToken })
+                body: JSON.stringify({ refresh_token: refreshToken })
             });
 
             if (!response.ok) {
@@ -126,10 +126,16 @@ const JWTManager = (function() {
                 throw new Error(data.message || 'Token refresh failed');
             }
 
-            // Update access token and expiration
-            const newExpiresAt = Date.now() + (data.expiresIn * 1000);
-            sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
+            // Update access token, refresh token, and expiration (token rotation)
+            const newExpiresAt = Date.now() + (data.expires_in * 1000);
+            sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.access_token);
             sessionStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, newExpiresAt.toString());
+
+            // Store new refresh token (rotation security feature)
+            if (data.refresh_token) {
+                sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refresh_token);
+                console.log('[JWT] Refresh token rotated successfully');
+            }
 
             console.log('[JWT] Access token refreshed successfully');
             console.log('[JWT] New expiration:', new Date(newExpiresAt).toLocaleString());
