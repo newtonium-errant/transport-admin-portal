@@ -625,39 +625,54 @@
             saveButton.classList.add('is-loading');
             saveButton.disabled = true;
 
-            // Prepare data for backend - now includes ID, name, and address
+            // Prepare data for backend - v7 format
             const appointmentData = {
-                kNumber: selectedClient.knumber,
-                clientData: {
-                    kNumber: selectedClient.knumber,
-                    firstName: selectedClient.firstname,
-                    lastName: selectedClient.lastname,
-                    civicAddress: selectedClient.civicaddress,
-                    city: selectedClient.city,
-                    province: selectedClient.prov,
-                    postalCode: selectedClient.postalcode,
-                    phone: selectedClient.phone,
-                    email: selectedClient.email
-                },
                 appointments: validAppointments.map(apt => {
 			// Convert local date/time to UTC for storage
 			const localDateTime = new Date(apt.date + 'T' + apt.time + ':00');
-    
+
+			// Get transit time from client's travel times
+			let transitTime = 30; // Default
+			if (selectedClient.clinic_travel_times && apt.location) {
+				const travelTime = selectedClient.clinic_travel_times[apt.location];
+				if (travelTime && travelTime.minutes) {
+					transitTime = travelTime.minutes;
+				}
+			}
+
+			// Get current user
+			const currentUser = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
+
+			// Build primary address
+			const primaryAddress = [
+				selectedClient.civicaddress,
+				selectedClient.city,
+				selectedClient.prov,
+				selectedClient.postalcode
+			].filter(Boolean).join(', ');
+
 			return {
-		        date: apt.date,
-		        time: apt.time,
-		        appointmenttime: localDateTime.toISOString(), // Send UTC timestamp
-		        location: apt.location,
-		        locationId: apt.locationId,
-		        locationAddress: apt.locationAddress,
+				knumber: selectedClient.knumber,
+		        appointmentDateTime: localDateTime.toISOString(),
+		        appointmentLength: apt.appointmentLength || 120,
+		        status: 'pending',
 		        notes: apt.appointmentNotes || '',
-		        appointmentLength: apt.appointmentLength || 120
+		        driver_instructions: null,
+		        scheduling_notes: '',
+		        transitTime: transitTime,
+		        pickup_address: primaryAddress,
+		        customRate: null,
+		        location: apt.location,
+		        clinic_id: apt.locationId || null,
+		        locationAddress: apt.locationAddress,
+		        managed_by: currentUser.id || null,
+		        managed_by_name: currentUser.full_name || null
 		    };
 		})
             };
 
             // Send to backend
-            authenticatedFetch(`${apiBaseUrl}/save-appointment`, {
+            authenticatedFetch(`${apiBaseUrl}/save-appointment-v7`, {
                 method: 'POST',
                 body: JSON.stringify(appointmentData)
             })

@@ -2,8 +2,10 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v2.4.0
+ * Version: v2.5.0
  * Changes:
+ * - v2.5.0: Auto-populate appointment duration from client.default_appointment_length (client-specific)
+ * - v2.5.0: Initialize this.clients array in constructor to prevent filter() errors
  * - v2.4.0: Make all form fields read-only when viewing archived appointments
  * - v2.4.0: Hide "Update Appointment" button for archived appointments (only show Restore)
  * - v2.3.1: Fixed archived detection to check deleted_at field (not status fields)
@@ -31,6 +33,7 @@ class AppointmentModal {
         this.onDelete = options.onDelete || null;
         this.mode = 'add'; // 'add', 'edit', or 'view'
         this.currentAppointment = null;
+        this.clients = []; // Store client data
         this.clinics = []; // Store clinic locations
         this.selectedClient = null; // Store selected client data including clinic_travel_times
         // Store original values for edit mode to detect changes
@@ -558,6 +561,23 @@ class AppointmentModal {
         if (this.selectedClient && !this.selectedClient.clinic_travel_times) {
             console.warn(`[Client Selection] Client ${knumber} does not have clinic_travel_times calculated`);
         }
+
+        // Auto-populate appointment duration from client's default duration
+        if (this.selectedClient) {
+            const clientDuration = this.selectedClient.default_appointment_length ||
+                                 this.selectedClient.appointment_length ||
+                                 this.selectedClient.appointmentLength;
+
+            if (clientDuration) {
+                const durationField = document.getElementById('appointmentLength');
+                if (durationField) {
+                    durationField.value = clientDuration;
+                    console.log(`[Appointment Duration] ✅ Set duration to ${clientDuration} minutes for client ${knumber}`);
+                }
+            } else {
+                console.log(`[Appointment Duration] Client ${knumber} uses default duration (120 minutes)`);
+            }
+        }
     }
 
     /**
@@ -1003,7 +1023,7 @@ class AppointmentModal {
             if (pickupAddressRow) {
                 pickupAddressRow.style.display = 'block';
                 if (pickupAddressSelect) pickupAddressSelect.required = true; // Enable validation in edit mode
-                this.populatePickupAddressDropdown();
+                // Note: populatePickupAddressDropdown() will be called in populateForm() after client data is loaded
             }
         } else {
             title.textContent = 'Add Appointment';
@@ -1363,6 +1383,9 @@ class AppointmentModal {
             // Populate pickup address selector if addresses are available
             const pickupAddressDropdown = document.getElementById('appointmentPickupAddress');
             if (pickupAddressDropdown && this.selectedClient) {
+                // First populate the dropdown with available addresses
+                this.populatePickupAddressDropdown();
+
                 // Determine current pickup address type from appointment data
                 const currentPickupAddress = appointment.pickup_address;
 

@@ -997,7 +997,7 @@
         }
 
         // Save appointments
-        function saveAppointments() {
+        async function saveAppointments() {
             const validAppointments = appointments.filter(apt =>
                 apt.date && apt.time && apt.location && apt.pickupAddress
             );
@@ -1020,65 +1020,68 @@
             // Get current user for managed_by field
             const currentUser = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
 
-            // Prepare data for backend
-            const appointmentData = {
-                kNumber: selectedClient.knumber,
-                clientData: {
-                    kNumber: selectedClient.knumber,
-                    firstName: selectedClient.firstname,
-                    lastName: selectedClient.lastname,
-                    civicAddress: selectedClient.civicaddress,
-                    city: selectedClient.city,
-                    province: selectedClient.prov,
-                    postalCode: selectedClient.postalcode,
-                    phone: selectedClient.phone,
-                    email: selectedClient.email
-                },
-                managed_by: currentUser.id || null,
-                managed_by_name: currentUser.full_name || null,
-                appointments: validAppointments.map(apt => {
+            try {
+                // Build array of all appointments
+                const appointmentsArray = validAppointments.map(apt => {
                     // Convert local date/time to UTC for storage
                     const localDateTime = new Date(apt.date + 'T' + apt.time + ':00');
 
-                    return {
-                        date: apt.date,
-                        time: apt.time,
-                        appointmenttime: localDateTime.toISOString(),
-                        location: apt.location,
-                        locationId: apt.locationId,
-                        locationAddress: apt.locationAddress,
-                        pickup_address: apt.pickupAddress,
-                        notes: apt.appointmentNotes || '',
-                        appointmentLength: apt.appointmentLength || 120
-                    };
-                })
-            };
+                    // Get transit time from client's travel times for this clinic
+                    let transitTime = 30; // Default
+                    if (selectedClient.clinic_travel_times && apt.location) {
+                        const travelTime = selectedClient.clinic_travel_times[apt.location];
+                        if (travelTime && travelTime.minutes) {
+                            transitTime = travelTime.minutes;
+                        }
+                    }
 
-            // Send to backend
-            authenticatedFetch(`${apiBaseUrl}/save-appointment-v7`, {
-                method: 'POST',
-                body: JSON.stringify(appointmentData)
-            })
-            .then(response => response.json())
-            .then(data => {
+                    // Build appointment object (match workflow expected format)
+                    return {
+                        knumber: selectedClient.knumber,
+                        appointmentDateTime: localDateTime.toISOString(),
+                        appointmentLength: apt.appointmentLength || 120,
+                        status: 'pending',
+                        notes: apt.appointmentNotes || '',
+                        driver_instructions: null,
+                        scheduling_notes: '',
+                        transitTime: transitTime,
+                        pickup_address: apt.pickupAddress,
+                        customRate: null,
+                        location: apt.location,
+                        clinic_id: apt.locationId,
+                        locationAddress: apt.locationAddress,
+                        managed_by: currentUser.id || null,
+                        managed_by_name: currentUser.full_name || null
+                    };
+                });
+
+                // Send all appointments in single request
+                const response = await authenticatedFetch(`${apiBaseUrl}/save-appointment-v7`, {
+                    method: 'POST',
+                    body: JSON.stringify({ appointments: appointmentsArray })
+                });
+
+                const data = await response.json();
+
+                // Restore button state
                 saveButton.classList.remove('is-loading');
                 saveButton.disabled = false;
 
                 if (data.success) {
-                    showSuccess('Appointments saved successfully! Pickup times calculated automatically.');
+                    const savedCount = data.appointmentsSaved || data.totalAppointments || appointmentsArray.length;
+                    showSuccess(`All ${savedCount} appointment(s) saved successfully!`);
                     setTimeout(() => {
                         window.location.href = 'appointments-sl.html';
                     }, 2000);
                 } else {
                     showError(`Failed to save appointments: ${data.message || 'Unknown error'}`);
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error saving appointments:', error);
                 saveButton.classList.remove('is-loading');
                 saveButton.disabled = false;
-                showError('Failed to save appointments. Please try again.');
-            });
+                showError(`Network error: ${error.message}`);
+            }
         }
 
         // Show error message
