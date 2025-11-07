@@ -575,25 +575,9 @@
             // Filter navigation
             filterNavigationByRole(user.role);
 
-            updateDateTime();
-            setInterval(updateDateTime, 1000);
             loadClients();
             loadDestinations();
         });
-
-        // Update current date/time
-        function updateDateTime() {
-            const now = new Date();
-            const options = {
-                timeZone: 'America/Halifax',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
-        }
 
         // Load clients from API
         function loadClients() {
