@@ -105,7 +105,7 @@ class AppointmentModal {
                                         <label for="appointmentPickupAddress" class="form-label">
                                             Pickup Address <span class="text-danger">*</span>
                                         </label>
-                                        <select class="form-select" id="appointmentPickupAddress" required>
+                                        <select class="form-select" id="appointmentPickupAddress">
                                             <option value="">Select pickup address...</option>
                                         </select>
                                         <div class="pickup-address-help text-muted mt-1">
@@ -999,8 +999,10 @@ class AppointmentModal {
 
             // Show pickup address selection in edit mode
             const pickupAddressRow = document.getElementById('pickupAddressRow');
+            const pickupAddressSelect = document.getElementById('appointmentPickupAddress');
             if (pickupAddressRow) {
                 pickupAddressRow.style.display = 'block';
+                if (pickupAddressSelect) pickupAddressSelect.required = true; // Enable validation in edit mode
                 this.populatePickupAddressDropdown();
             }
         } else {
@@ -1017,8 +1019,10 @@ class AppointmentModal {
 
             // Hide pickup address selection in add mode (auto-determined)
             const pickupAddressRow = document.getElementById('pickupAddressRow');
+            const pickupAddressSelect = document.getElementById('appointmentPickupAddress');
             if (pickupAddressRow) {
                 pickupAddressRow.style.display = 'none';
+                if (pickupAddressSelect) pickupAddressSelect.required = false; // Disable validation when hidden
             }
 
             // Ensure scheduling notes is read-only with gray background in add mode
