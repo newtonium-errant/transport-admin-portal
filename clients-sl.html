@@ -1537,7 +1537,7 @@
                 if (quickEditBtn) {
                     const originalContent = quickEditBtn.innerHTML;
                     quickEditBtn.disabled = true;
-                    quickEditBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+                    quickEditBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem; margin-right: 0.25rem;"></span>Loading...';
 
                     // Store original content for restoration
                     quickEditBtn.dataset.originalContent = originalContent;
@@ -1885,7 +1885,7 @@
                 if (addApptBtn) {
                     const originalContent = addApptBtn.innerHTML;
                     addApptBtn.disabled = true;
-                    addApptBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+                    addApptBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem; margin-right: 0.25rem;"></span>Loading...';
                     addApptBtn.dataset.originalContent = originalContent;
                 }
 
