@@ -99,6 +99,21 @@ class AppointmentModal {
                                     </div>
                                 </div>
 
+                                <!-- Pickup Address Selection (Edit Mode Only) -->
+                                <div class="row" id="pickupAddressRow" style="display: none;">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="appointmentPickupAddress" class="form-label">
+                                            Pickup Address <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" id="appointmentPickupAddress" required>
+                                            <option value="">Select pickup address...</option>
+                                        </select>
+                                        <div class="pickup-address-help text-muted mt-1">
+                                            <small id="pickupAddressHelpText"></small>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Duration & Status -->
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
@@ -633,6 +648,185 @@ class AppointmentModal {
         return parts.join(', ');
     }
 
+    /**
+     * Builds array of available pickup addresses for the selected client
+     * @returns {Array} Array of address objects with type, full, and display properties
+     */
+    buildPickupAddressOptions() {
+        if (!this.selectedClient) return [];
+
+        const addresses = [];
+
+        // Primary address (always available)
+        const primaryFull = this.formatAddress(
+            this.selectedClient.civicaddress,
+            this.selectedClient.city,
+            this.selectedClient.prov,
+            this.selectedClient.postalcode
+        );
+
+        if (primaryFull) {
+            // Create shorter display version (no postal code)
+            const primaryDisplay = this.formatAddress(
+                this.selectedClient.civicaddress,
+                this.selectedClient.city,
+                this.selectedClient.prov
+            );
+
+            addresses.push({
+                type: 'primary',
+                full: primaryFull,
+                display: primaryDisplay || primaryFull
+            });
+        }
+
+        // Secondary address (if exists)
+        if (this.selectedClient.secondary_civic_address &&
+            this.selectedClient.secondary_civic_address.trim()) {
+            const secondaryFull = this.formatAddress(
+                this.selectedClient.secondary_civic_address,
+                this.selectedClient.secondary_city,
+                this.selectedClient.secondary_province,
+                this.selectedClient.secondary_postal_code
+            );
+
+            if (secondaryFull) {
+                // Create shorter display version (no postal code)
+                const secondaryDisplay = this.formatAddress(
+                    this.selectedClient.secondary_civic_address,
+                    this.selectedClient.secondary_city,
+                    this.selectedClient.secondary_province
+                );
+
+                addresses.push({
+                    type: 'secondary',
+                    full: secondaryFull,
+                    display: secondaryDisplay || secondaryFull
+                });
+            }
+        }
+
+        return addresses;
+    }
+
+    /**
+     * Populates the pickup address dropdown with available addresses
+     */
+    populatePickupAddressDropdown() {
+        const dropdown = document.getElementById('appointmentPickupAddress');
+        if (!dropdown) return;
+
+        const addresses = this.buildPickupAddressOptions();
+
+        dropdown.innerHTML = '<option value="">Select pickup address...</option>';
+
+        addresses.forEach(addr => {
+            const option = document.createElement('option');
+            option.value = addr.type;
+            option.textContent = addr.display;  // Shows actual address
+            option.dataset.fullAddress = addr.full;
+            dropdown.appendChild(option);
+        });
+
+        // Update help text
+        const helpText = document.getElementById('pickupAddressHelpText');
+        if (helpText) {
+            if (addresses.length > 1) {
+                helpText.textContent = 'Client has multiple addresses - choose which one to use for pickup';
+            } else if (addresses.length === 1) {
+                helpText.textContent = 'Using client address';
+            } else {
+                helpText.textContent = 'No address available for this client';
+            }
+        }
+    }
+
+    /**
+     * Auto-selects pickup address based on clinic travel times
+     */
+    autoSelectPickupAddress() {
+        const dropdown = document.getElementById('appointmentPickupAddress');
+        const clinicName = document.getElementById('appointmentClinic').value;
+
+        if (!dropdown || !this.selectedClient || !clinicName) return;
+
+        // Check if client has pre-calculated travel times
+        if (!this.selectedClient.clinic_travel_times) {
+            dropdown.value = 'primary'; // Default to primary
+            return;
+        }
+
+        // Parse travel times
+        let travelTimes = this.selectedClient.clinic_travel_times;
+        if (typeof travelTimes === 'string') {
+            try {
+                travelTimes = JSON.parse(travelTimes);
+            } catch (e) {
+                console.error('Error parsing travel times:', e);
+                dropdown.value = 'primary';
+                return;
+            }
+        }
+
+        const clinicTravelTime = travelTimes[clinicName];
+        if (!clinicTravelTime) {
+            dropdown.value = 'primary'; // Default to primary
+            return;
+        }
+
+        // Determine which address has travel time data
+        if (clinicTravelTime.primary && clinicTravelTime.primary.duration_minutes) {
+            dropdown.value = 'primary';
+        } else if (clinicTravelTime.secondary && clinicTravelTime.secondary.duration_minutes) {
+            dropdown.value = 'secondary';
+        } else {
+            dropdown.value = 'primary'; // Fallback
+        }
+    }
+
+    /**
+     * Sets up sync between pickup address selection and transit time
+     */
+    setupPickupAddressSync() {
+        const addressDropdown = document.getElementById('appointmentPickupAddress');
+        const transitTimeField = document.getElementById('transitTime');
+        const clinicDropdown = document.getElementById('appointmentClinic');
+
+        if (!addressDropdown || !transitTimeField || !clinicDropdown) return;
+
+        addressDropdown.addEventListener('change', () => {
+            const addressType = addressDropdown.value;
+            const clinicName = clinicDropdown.value;
+
+            if (!addressType || !clinicName || !this.selectedClient) return;
+
+            // Update transit time based on selected address
+            if (this.selectedClient.clinic_travel_times) {
+                let travelTimes = this.selectedClient.clinic_travel_times;
+                if (typeof travelTimes === 'string') {
+                    try {
+                        travelTimes = JSON.parse(travelTimes);
+                    } catch (e) {
+                        console.error('Error parsing travel times:', e);
+                        return;
+                    }
+                }
+
+                const clinicTravelTime = travelTimes[clinicName];
+                if (clinicTravelTime && clinicTravelTime[addressType]) {
+                    const transitMinutes = clinicTravelTime[addressType].duration_minutes;
+                    if (transitMinutes) {
+                        transitTimeField.value = transitMinutes;
+                        console.log(`[Address Change] Updated transit time to ${transitMinutes} minutes for ${addressType} address`);
+
+                        // Trigger pickup time recalculation
+                        transitTimeField.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            }
+        });
+    }
+
     applyRoleRestrictions() {
         const userRole = getUserRole();
         const permissions = getRolePermissions(userRole);
@@ -802,6 +996,13 @@ class AppointmentModal {
 
             transitTimeRow.style.display = 'block'; // Show in edit mode
             if (driverFieldContainer) driverFieldContainer.style.display = 'block'; // Show driver in edit mode
+
+            // Show pickup address selection in edit mode
+            const pickupAddressRow = document.getElementById('pickupAddressRow');
+            if (pickupAddressRow) {
+                pickupAddressRow.style.display = 'block';
+                this.populatePickupAddressDropdown();
+            }
         } else {
             title.textContent = 'Add Appointment';
             hardDeleteBtn.style.display = 'none';
@@ -813,6 +1014,12 @@ class AppointmentModal {
             saveBtn.onclick = () => this.saveAppointment();
             transitTimeRow.style.display = 'none'; // Hide in add mode
             if (driverFieldContainer) driverFieldContainer.style.display = 'none'; // Hide driver in add mode
+
+            // Hide pickup address selection in add mode (auto-determined)
+            const pickupAddressRow = document.getElementById('pickupAddressRow');
+            if (pickupAddressRow) {
+                pickupAddressRow.style.display = 'none';
+            }
 
             // Ensure scheduling notes is read-only with gray background in add mode
             const schedulingNotesField = document.getElementById('schedulingNotes');
@@ -846,6 +1053,9 @@ class AppointmentModal {
 
         // Setup clinic change to auto-populate transit time
         this.setupClinicTransitTimeSync();
+
+        // Setup pickup address sync to update transit time when address changes
+        this.setupPickupAddressSync();
 
         // Setup scheduling notes auto-generation (clones fields, removes existing listeners)
         this.setupSchedulingNotesGeneration();
@@ -1145,6 +1355,42 @@ class AppointmentModal {
                 document.getElementById('managingAgentText').value = managingAgentName;
                 document.getElementById('managingAgentId').value = appointment.managed_by || appointment.managedBy || '';
             }
+
+            // Populate pickup address selector if addresses are available
+            const pickupAddressDropdown = document.getElementById('appointmentPickupAddress');
+            if (pickupAddressDropdown && this.selectedClient) {
+                // Determine current pickup address type from appointment data
+                const currentPickupAddress = appointment.pickup_address;
+
+                if (currentPickupAddress) {
+                    const primaryAddress = this.formatAddress(
+                        this.selectedClient.civicaddress,
+                        this.selectedClient.city,
+                        this.selectedClient.prov,
+                        this.selectedClient.postalcode
+                    );
+
+                    const secondaryAddress = this.formatAddress(
+                        this.selectedClient.secondary_civic_address,
+                        this.selectedClient.secondary_city,
+                        this.selectedClient.secondary_province,
+                        this.selectedClient.secondary_postal_code
+                    );
+
+                    // Match current address to primary or secondary
+                    if (currentPickupAddress === primaryAddress) {
+                        pickupAddressDropdown.value = 'primary';
+                    } else if (currentPickupAddress === secondaryAddress) {
+                        pickupAddressDropdown.value = 'secondary';
+                    } else {
+                        // Fallback: auto-select based on travel times
+                        this.autoSelectPickupAddress();
+                    }
+                } else {
+                    // No pickup address in appointment, auto-select
+                    this.autoSelectPickupAddress();
+                }
+            }
         }
     }
 
@@ -1210,8 +1456,38 @@ class AppointmentModal {
         const transitTimeValue = document.getElementById('transitTime').value;
         const transitTime = parseInt(transitTimeValue) || null;
 
-        // Determine pickup address (primary or secondary based on clinic travel times)
-        const pickupAddress = this.getPickupAddress();
+        // Determine pickup address
+        let pickupAddress;
+        if (this.mode === 'edit') {
+            // In edit mode: use selected address from dropdown
+            const pickupAddressType = document.getElementById('appointmentPickupAddress')?.value;
+
+            if (pickupAddressType && this.selectedClient) {
+                if (pickupAddressType === 'primary') {
+                    pickupAddress = this.formatAddress(
+                        this.selectedClient.civicaddress,
+                        this.selectedClient.city,
+                        this.selectedClient.prov,
+                        this.selectedClient.postalcode
+                    );
+                } else if (pickupAddressType === 'secondary') {
+                    pickupAddress = this.formatAddress(
+                        this.selectedClient.secondary_civic_address,
+                        this.selectedClient.secondary_city,
+                        this.selectedClient.secondary_province,
+                        this.selectedClient.secondary_postal_code
+                    );
+                }
+            }
+
+            // Fallback to automatic selection if no address selected
+            if (!pickupAddress) {
+                pickupAddress = this.getPickupAddress();
+            }
+        } else {
+            // In add mode: use automatic selection based on clinic travel times
+            pickupAddress = this.getPickupAddress();
+        }
 
         // Base appointment data
         const appointmentData = {
