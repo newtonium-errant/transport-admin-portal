@@ -1030,8 +1030,11 @@
                     let transitTime = 30; // Default
                     if (selectedClient.clinic_travel_times && apt.location) {
                         const travelTime = selectedClient.clinic_travel_times[apt.location];
-                        if (travelTime && travelTime.minutes) {
-                            transitTime = travelTime.minutes;
+                        if (travelTime) {
+                            // Match appointment-modal.js pattern: try primary, then secondary
+                            transitTime = travelTime.primary?.duration_minutes ||
+                                        travelTime.secondary?.duration_minutes ||
+                                        30;
                         }
                     }
 
@@ -1051,7 +1054,7 @@
                         clinic_id: apt.locationId,
                         locationAddress: apt.locationAddress,
                         managed_by: currentUser.id || null,
-                        managed_by_name: currentUser.full_name || null
+                        managed_by_name: currentUser.fullName || currentUser.full_name || currentUser.username || null
                     };
                 });
 
