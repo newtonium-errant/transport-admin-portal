@@ -257,9 +257,8 @@ class ClientModal {
                                 <i class="bi bi-x-circle me-1"></i>
                                 Cancel
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="clientModalInstance.save()">
-                                <span class="spinner-border spinner-border-sm me-2" role="status" id="saveSpinner" style="display: none;"></span>
-                                <i class="bi bi-check-circle me-1" id="saveIcon"></i>
+                            <button type="button" class="btn btn-primary" id="saveClientBtn" onclick="clientModalInstance.save()">
+                                <i class="bi bi-check-circle me-1"></i>
                                 Save Changes
                             </button>
                         </div>
@@ -496,18 +495,23 @@ class ClientModal {
      * @param {boolean} loading - Whether in loading state
      */
     setLoading(loading) {
-        const saveBtn = document.querySelector('#clientQuickEditModal .btn-primary');
-        const saveIcon = document.getElementById('saveIcon');
-        const saveSpinner = document.getElementById('saveSpinner');
+        const saveBtn = document.getElementById('saveClientBtn');
 
         if (loading) {
+            // Store original content
+            if (!saveBtn.dataset.originalContent) {
+                saveBtn.dataset.originalContent = saveBtn.innerHTML;
+            }
             saveBtn.disabled = true;
-            saveIcon.style.display = 'none';
-            saveSpinner.style.display = 'inline-block';
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
         } else {
             saveBtn.disabled = false;
-            saveIcon.style.display = 'inline';
-            saveSpinner.style.display = 'none';
+            // Restore original content
+            if (saveBtn.dataset.originalContent) {
+                saveBtn.innerHTML = saveBtn.dataset.originalContent;
+            } else {
+                saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Save Changes';
+            }
         }
     }
 
