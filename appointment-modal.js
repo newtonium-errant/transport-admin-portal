@@ -2,8 +2,9 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v2.5.0
+ * Version: v2.5.1
  * Changes:
+ * - v2.5.1: Reload clients data in edit mode to show latest secondary addresses
  * - v2.5.0: Auto-populate appointment duration from client.default_appointment_length (client-specific)
  * - v2.5.0: Initialize this.clients array in constructor to prevent filter() errors
  * - v2.4.0: Make all form fields read-only when viewing archived appointments
@@ -904,7 +905,8 @@ class AppointmentModal {
             await this.loadDrivers();
             this.driversLoaded = true;
         }
-        if (!this.clientsLoaded) {
+        // Always reload clients in edit mode to ensure we have latest address data
+        if (!this.clientsLoaded || mode === 'edit') {
             await this.loadClients();
             this.clientsLoaded = true;
         }

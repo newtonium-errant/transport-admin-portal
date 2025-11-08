@@ -6,7 +6,7 @@
 
 const ROLE_PERMISSIONS = {
     'admin': {
-        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management', 'admin'],
+        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management', 'admin', 'finance'],
         features: ['all'],
         canDeleteClients: true,
         canDeleteAppointments: true,
@@ -20,7 +20,7 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'supervisor': {
-        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management'],
+        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management', 'finance'],
         features: ['view_clients', 'edit_clients', 'delete_clients', 'view_appointments', 'edit_appointments', 'assign_drivers', 'view_drivers', 'view_reports'],
         canDeleteClients: true,
         canDeleteAppointments: true,
