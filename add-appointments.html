@@ -666,7 +666,7 @@
 		        clinic_id: apt.locationId || null,
 		        locationAddress: apt.locationAddress,
 		        managed_by: currentUser.id || null,
-		        managed_by_name: currentUser.full_name || null
+		        managed_by_name: currentUser.fullName || currentUser.full_name || currentUser.username || null
 		    };
 		})
             };
