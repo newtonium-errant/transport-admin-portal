@@ -51,3 +51,6 @@ node_modules/
 database/scripts/Supabase Seed Data/*.js
 database/scripts/Supabase Seed Data/package*.json
 database/scripts/Supabase Seed Data/README.md
+
+# Supabase local development directory
+supabase/
