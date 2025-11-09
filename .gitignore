@@ -46,3 +46,8 @@ node_modules/
 
 # Logs
 *.log
+
+# Seed data scripts (contain Supabase credentials)
+database/scripts/Supabase Seed Data/*.js
+database/scripts/Supabase Seed Data/package*.json
+database/scripts/Supabase Seed Data/README.md
