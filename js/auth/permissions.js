@@ -184,19 +184,29 @@ function filterNavigationByRole(role) {
  * Should be called at the start of each page's DOMContentLoaded event
  */
 function enforcePageAccess() {
-    const currentPage = window.location.pathname.split('/').pop().replace('.html', '').replace('index.html', 'dashboard');
+    let currentPage = window.location.pathname.split('/').pop().replace('.html', '').replace('index.html', 'dashboard');
+
+    // Strip TEST- prefix if present (for TEST environment pages)
+    if (currentPage.startsWith('TEST-')) {
+        currentPage = currentPage.substring(5); // Remove 'TEST-' prefix
+    }
+
     const userRole = getUserRole();
-    
+
     if (!userRole) {
-        window.location.href = 'dashboard.html';
+        // Redirect to TEST-dashboard if currently on TEST page, otherwise dashboard
+        const redirectPage = window.location.pathname.includes('TEST-') ? 'TEST-dashboard.html' : 'dashboard.html';
+        window.location.href = redirectPage;
         return;
     }
-    
+
     if (!hasPageAccess(userRole, currentPage)) {
         alert('You do not have access to this page.');
-        window.location.href = 'dashboard.html';
+        // Redirect to TEST-dashboard if currently on TEST page, otherwise dashboard
+        const redirectPage = window.location.pathname.includes('TEST-') ? 'TEST-dashboard.html' : 'dashboard.html';
+        window.location.href = redirectPage;
         return;
     }
-    
+
     return true;
 }

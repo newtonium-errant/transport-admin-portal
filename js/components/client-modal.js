@@ -194,7 +194,6 @@ class ClientModal {
                                             <div class="mb-3">
                                                 <label for="appointmentLength" class="form-label">Default Appointment Length (minutes) *</label>
                                                 <input type="number" class="form-control" id="appointmentLength" min="15" max="480" step="15" value="120" required>
-                                                <small class="text-muted">Typical: 120 minutes for dialysis</small>
                                             </div>
                                         </div>
                                         <div class="col-md-6">

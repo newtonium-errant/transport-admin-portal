@@ -2,8 +2,9 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v2.5.1
+ * Version: v2.6.0
  * Changes:
+ * - v2.6.0: Auto-populate primary clinic when client selected (add mode only)
  * - v2.5.1: Reload clients data in edit mode to show latest secondary addresses
  * - v2.5.0: Auto-populate appointment duration from client.default_appointment_length (client-specific)
  * - v2.5.0: Initialize this.clients array in constructor to prevent filter() errors
@@ -317,6 +318,17 @@ class AppointmentModal {
 
     async loadClients() {
         try {
+            // If clients are already loaded (e.g., from finance page), use them
+            if (this.clients && this.clients.length > 0) {
+                console.log('[Modal] Using pre-loaded clients:', this.clients.length);
+
+                // Debug: Check if clients have clinic_travel_times
+                const clientsWithTravelTimes = this.clients.filter(c => c.clinic_travel_times);
+                const clientsWithoutTravelTimes = this.clients.filter(c => !c.clinic_travel_times);
+                console.log(`[Modal] Clients with travel times: ${clientsWithTravelTimes.length}, without: ${clientsWithoutTravelTimes.length}`);
+                return;
+            }
+
             // Try to get clients from parent page first
             if (window.appointmentsPage && window.appointmentsPage.clients) {
                 this.clients = window.appointmentsPage.clients;
@@ -329,9 +341,9 @@ class AppointmentModal {
 
                 // Debug: Log a sample client to see structure
                 if (this.clients.length > 0) {
-                    const sampleClient = this.clients.find(c => c.knumber === 'K7807878') || this.clients[0];
+                    const sampleClient = this.clients.find(c => (c.knumber || c.k_number) === 'K7807878') || this.clients[0];
                     console.log('[Modal] Sample client data:', {
-                        knumber: sampleClient.knumber,
+                        knumber: sampleClient.knumber || sampleClient.k_number,
                         hasClinicTravelTimes: !!sampleClient.clinic_travel_times,
                         clinic_travel_times: sampleClient.clinic_travel_times
                     });
@@ -550,7 +562,8 @@ class AppointmentModal {
         document.getElementById('clientSuggestions').style.display = 'none';
 
         // Store the full client object including clinic_travel_times
-        this.selectedClient = this.clients.find(c => c.knumber === knumber) || null;
+        // Check both knumber and k_number field names for compatibility
+        this.selectedClient = this.clients.find(c => (c.knumber || c.k_number) === knumber) || null;
 
         console.log(`[Client Selection] Selected client ${knumber}:`, {
             found: !!this.selectedClient,
@@ -577,6 +590,46 @@ class AppointmentModal {
                 }
             } else {
                 console.log(`[Appointment Duration] Client ${knumber} uses default duration (120 minutes)`);
+            }
+
+            // Auto-populate primary clinic if client has one (add mode only)
+            if (this.mode === 'add' && this.selectedClient.primary_clinic_id) {
+                console.log(`[Primary Clinic] Client has primary_clinic_id: ${this.selectedClient.primary_clinic_id}`);
+                console.log(`[Primary Clinic] Available clinics:`, this.clinics);
+                console.log(`[Primary Clinic] Clinics loaded:`, this.clinicsLoaded);
+
+                const primaryClinic = this.clinics.find(clinic => clinic.id === this.selectedClient.primary_clinic_id);
+                console.log(`[Primary Clinic] Found clinic:`, primaryClinic);
+
+                if (primaryClinic) {
+                    const clinicDropdown = document.getElementById('appointmentClinic');
+                    console.log(`[Primary Clinic] Clinic dropdown exists:`, !!clinicDropdown);
+
+                    if (clinicDropdown) {
+                        console.log(`[Primary Clinic] Dropdown current value:`, clinicDropdown.value);
+                        console.log(`[Primary Clinic] Setting value to:`, primaryClinic.name);
+
+                        clinicDropdown.value = primaryClinic.name;
+
+                        console.log(`[Primary Clinic] Dropdown value after set:`, clinicDropdown.value);
+                        console.log(`[Primary Clinic] ✅ Set clinic to "${primaryClinic.name}" (ID: ${this.selectedClient.primary_clinic_id}) for client ${knumber}`);
+
+                        // Trigger change event to populate address and transit time
+                        clinicDropdown.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else {
+                        console.error(`[Primary Clinic] Clinic dropdown not found!`);
+                    }
+                } else {
+                    console.warn(`[Primary Clinic] Clinic ID ${this.selectedClient.primary_clinic_id} not found in clinics list`);
+                    console.log(`[Primary Clinic] Available clinic IDs:`, this.clinics.map(c => c.id));
+                }
+            } else {
+                if (!this.selectedClient.primary_clinic_id) {
+                    console.log(`[Primary Clinic] Client has no primary_clinic_id set`);
+                }
+                if (this.mode !== 'add') {
+                    console.log(`[Primary Clinic] Mode is "${this.mode}", not "add" - skipping auto-populate`);
+                }
             }
         }
     }
@@ -1308,12 +1361,15 @@ class AppointmentModal {
     populateForm(appointment) {
         document.getElementById('appointmentId').value = appointment.id;
         document.getElementById('appointmentClient').value = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim();
-        document.getElementById('appointmentClientId').value = appointment.knumber;
+
+        // Check both knumber and k_number field names for compatibility
+        const aptKnumber = appointment.knumber || appointment.k_number;
+        document.getElementById('appointmentClientId').value = aptKnumber;
 
         // Store selected client for clinic travel times lookup
-        this.selectedClient = this.clients.find(c => c.knumber === appointment.knumber) || null;
+        this.selectedClient = this.clients.find(c => (c.knumber || c.k_number) === aptKnumber) || null;
 
-        console.log(`[Populate Form] Looking for client ${appointment.knumber}:`, {
+        console.log(`[Populate Form] Looking for client ${aptKnumber}:`, {
             found: !!this.selectedClient,
             totalClients: this.clients.length,
             hasClinicTravelTimes: this.selectedClient?.clinic_travel_times ? true : false,
