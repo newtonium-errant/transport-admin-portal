@@ -1,27 +1,14 @@
 /**
  * API Client - Authenticated Request Wrapper
  *
- * Simplifies making authenticated API calls to n8n webhooks
- * Automatically includes JWT token and CSRF headers
+ * Simplifies making authenticated API calls to n8n webhooks.
+ * Uses jwt-auth.js functions for token management (no JWTManager dependency).
  *
- * Dependencies: jwt-manager.js
+ * Dependencies: jwt-auth.js (provides isTokenExpired, refreshAccessToken, logout)
  *
  * Usage:
- *   <script src="jwt-manager.js"></script>
- *   <script src="api-client.js"></script>
- *   <script>
- *     // GET request
- *     const appointments = await APIClient.get('/get-operations-appointments');
- *
- *     // POST request
- *     const result = await APIClient.post('/save-appointment', appointmentData);
- *
- *     // PUT request
- *     const updated = await APIClient.put('/update-appointment-with-calendar', updateData);
- *
- *     // DELETE request
- *     const deleted = await APIClient.delete('/delete-appointment-with-calendar', { id: 123 });
- *   </script>
+ *   <script src="js/auth/jwt-auth.js"></script>
+ *   <script src="js/core/api-client.js"></script>
  */
 
 const APIClient = (function() {
@@ -39,8 +26,23 @@ const APIClient = (function() {
      */
     async function request(endpoint, options = {}) {
         try {
-            // Get access token (auto-refreshes if needed)
-            const token = await JWTManager.getAccessToken();
+            // Check if token is expired and refresh if needed
+            if (typeof isTokenExpired === 'function' && isTokenExpired()) {
+                console.log('[API] Token expired, refreshing...');
+                if (typeof refreshAccessToken === 'function') {
+                    const refreshed = await refreshAccessToken();
+                    if (!refreshed) {
+                        throw new Error('Token refresh failed');
+                    }
+                }
+            }
+
+            // Get access token from session storage
+            const token = sessionStorage.getItem('rrts_access_token');
+
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
 
             // Build full URL
             const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
@@ -100,9 +102,14 @@ const APIClient = (function() {
             // Handle authentication errors
             if (error.status === 401) {
                 console.error('[API] Authentication failed, logging out');
-                JWTManager.clearTokens();
-                alert('Your session has expired. Please log in again.');
-                window.location.href = 'dashboard.html';
+                // Clear tokens and redirect (uses logout function from jwt-auth.js)
+                if (typeof logout === 'function') {
+                    logout();
+                } else {
+                    alert('Your session has expired. Please log in again.');
+                    window.location.href = 'dashboard.html';
+                }
+                return; // Don't re-throw after redirect
             }
 
             // Re-throw error for caller to handle
@@ -182,7 +189,21 @@ const APIClient = (function() {
      */
     async function upload(endpoint, formData) {
         try {
-            const token = await JWTManager.getAccessToken();
+            // Check if token is expired and refresh if needed
+            if (typeof isTokenExpired === 'function' && isTokenExpired()) {
+                if (typeof refreshAccessToken === 'function') {
+                    const refreshed = await refreshAccessToken();
+                    if (!refreshed) {
+                        throw new Error('Token refresh failed');
+                    }
+                }
+            }
+
+            const token = sessionStorage.getItem('rrts_access_token');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
             const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
 
             // Don't set Content-Type for FormData (browser sets it with boundary)
@@ -211,9 +232,12 @@ const APIClient = (function() {
 
         } catch (error) {
             if (error.status === 401) {
-                JWTManager.clearTokens();
-                alert('Your session has expired. Please log in again.');
-                window.location.href = 'dashboard.html';
+                if (typeof logout === 'function') {
+                    logout();
+                } else {
+                    alert('Your session has expired. Please log in again.');
+                    window.location.href = 'dashboard.html';
+                }
             }
             throw error;
         }
@@ -268,14 +292,14 @@ const AppointmentsAPI = {
     getAll: () => APIClient.get('/get-all-appointments'),
     getActive: () => APIClient.get('/get-active-present-future-appointments'),
     getOperations: () => APIClient.get('/get-operations-appointments'),
-    save: (data) => APIClient.post('/save-appointment', data),
+    save: (data) => APIClient.post('/save-appointment-v7', data),
     update: (data) => APIClient.post('/update-appointment-complete', data),
     delete: (id) => APIClient.post('/delete-appointment-with-calendar', { id })
 };
 
 const ClientsAPI = {
     getAll: () => APIClient.get('/get-all-clients'),
-    getActive: () => APIClient.get('/getActiveClients'),
+    getActive: () => APIClient.get('/get-active-clients'),
     add: (data) => APIClient.post('/add-client', data),
     update: (data) => APIClient.post('/update-client', data)
 };
