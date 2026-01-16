@@ -681,6 +681,174 @@ const APP_CONFIG = (function() {
 
 ---
 
+## Security: XSS Prevention
+
+### Problem
+
+The codebase has ~21 uses of `innerHTML` which can allow Cross-Site Scripting (XSS) attacks. If user-provided data (names, addresses, etc.) is inserted via innerHTML, an attacker could inject malicious JavaScript.
+
+**Example vulnerability:**
+```javascript
+// If clientName contains: <script>stealCookies()</script>
+element.innerHTML = clientName;  // DANGEROUS - script executes!
+```
+
+### Solution: Create `js/utils/safe-html.js`
+
+```javascript
+/**
+ * SafeHTML - Utilities for preventing XSS attacks
+ * Always use these methods instead of raw innerHTML with user data
+ */
+const SafeHTML = (function() {
+    'use strict';
+
+    /**
+     * Escape HTML entities to prevent XSS
+     * @param {string} str - Untrusted string
+     * @returns {string} Safe string with HTML entities escaped
+     */
+    function escape(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * Safely set text content of an element
+     * @param {string|Element} target - CSS selector or element
+     * @param {string} text - Text to display
+     */
+    function setText(target, text) {
+        const el = typeof target === 'string'
+            ? document.querySelector(target)
+            : target;
+        if (el) el.textContent = text;
+    }
+
+    /**
+     * Tagged template literal for safe HTML building
+     * All interpolated values are automatically escaped
+     *
+     * Usage: SafeHTML.template`<div class="user">${userName}</div>`
+     */
+    function template(strings, ...values) {
+        return strings.reduce((result, str, i) => {
+            const value = values[i] != null ? escape(values[i]) : '';
+            return result + str + value;
+        }, '');
+    }
+
+    /**
+     * Create an element with safe text content
+     * @param {string} tag - Element tag name
+     * @param {string} text - Text content
+     * @param {string} className - Optional CSS class
+     * @returns {Element} The created element
+     */
+    function createElement(tag, text, className) {
+        const el = document.createElement(tag);
+        if (text) el.textContent = text;
+        if (className) el.className = className;
+        return el;
+    }
+
+    return {
+        escape,
+        setText,
+        template,
+        createElement
+    };
+})();
+```
+
+### Migration Guide
+
+**Step 1: Add safe-html.js to all pages**
+```html
+<script src="js/utils/safe-html.js"></script>
+```
+
+**Step 2: Find all innerHTML usage**
+```bash
+grep -rn "innerHTML" js/ --include="*.js"
+grep -rn "innerHTML" *.html
+```
+
+**Step 3: Replace based on use case**
+
+| Original Code | Safe Replacement |
+|---------------|------------------|
+| `el.innerHTML = userName` | `el.textContent = userName` |
+| `el.innerHTML = '<b>' + name + '</b>'` | `el.innerHTML = SafeHTML.template\`<b>${name}</b>\`` |
+| `el.innerHTML = '<div class="x">' + data + '</div>'` | Use DOM methods (see below) |
+
+**DOM method example:**
+```javascript
+// BEFORE (vulnerable):
+container.innerHTML = `<div class="client-card">
+    <h3>${client.name}</h3>
+    <p>${client.address}</p>
+</div>`;
+
+// AFTER (safe):
+const card = document.createElement('div');
+card.className = 'client-card';
+
+const title = document.createElement('h3');
+title.textContent = client.name;
+
+const addr = document.createElement('p');
+addr.textContent = client.address;
+
+card.appendChild(title);
+card.appendChild(addr);
+container.appendChild(card);
+
+// OR using SafeHTML.template (simpler):
+container.innerHTML = SafeHTML.template`<div class="client-card">
+    <h3>${client.name}</h3>
+    <p>${client.address}</p>
+</div>`;
+```
+
+### Priority Files to Fix
+
+Search and fix these patterns in order of risk:
+
+| Risk | Pattern | Files to Check |
+|------|---------|----------------|
+| High | `innerHTML = ` + user input | All files with form handling |
+| High | `innerHTML = ` + API response | Files that display client/driver data |
+| Medium | `innerHTML = ` + template literal | Dashboard, list views |
+| Low | `innerHTML = '<static>'` | Usually OK, but verify no variables |
+
+### Testing
+
+After fixing, test these scenarios:
+1. Create a client with name: `<script>alert('xss')</script>`
+2. The name should display as literal text, not execute
+3. Check browser console for errors
+
+### When HTML is Actually Needed
+
+If you need to render actual HTML (like rich text from a trusted source), use DOMPurify:
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+```
+
+```javascript
+// Only for trusted HTML that must render as HTML
+element.innerHTML = DOMPurify.sanitize(htmlContent);
+```
+
+---
+
 ## Notes
 
 - Only error notifications are shown to users (no success toasts)
