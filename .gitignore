@@ -1,6 +1,7 @@
 # Documentation and instruction files
 *.md
 !README.md
+!docs/*.md
 Instructions/
 Implementation-Guide/
 n8n-updates/
