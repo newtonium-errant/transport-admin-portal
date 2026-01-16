@@ -141,9 +141,17 @@
             font-size: 0.9em;
         }
 
-        .user-name {
+        .user-name-link {
+            color: var(--color-white);
+            text-decoration: none;
+            transition: opacity 0.2s;
             font-weight: 500;
             margin-right: 8px;
+        }
+
+        .user-name-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
         }
 
         .user-role-badge {
@@ -192,7 +200,10 @@
                 padding: 0 20px;
             }
 
-            .user-name {
+            .user-name-link {
+            color: var(--color-white);
+            text-decoration: none;
+            transition: opacity 0.2s;
                 display: none;
             }
 
@@ -396,6 +407,11 @@
             align-items: center;
             gap: 5px;
             margin-right: 8px;
+        }
+
+        .user-name-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
             margin-bottom: 8px;
         }
 
@@ -718,7 +734,7 @@
             <div class="header-user">
                 <div class="user-info">
                     <span class="user-avatar" id="userAvatar">--</span>
-                    <span class="user-name" id="userName">User</span>
+                    <a href="profile.html" class="user-name-link" id="userName">User</a>
                     <span class="user-role-badge" id="userRoleBadge">Guest</span>
                 </div>
                 <button class="logout-btn" onclick="logout()" title="Logout">
