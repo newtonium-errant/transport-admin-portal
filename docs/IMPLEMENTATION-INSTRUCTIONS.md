@@ -406,6 +406,89 @@ The password change functionality uses the existing `/change-password` endpoint.
 
 ---
 
+## Security: Inactivity Auto-Logout
+
+### Problem
+
+Users could leave the browser open overnight and return the next day without needing to re-authenticate. The browser would automatically renew the expired JWT token, bypassing inactivity timeout protections for sensitive data.
+
+### Solution Implemented
+
+The system now tracks last user activity and enforces logout on page load if the user has been inactive too long.
+
+**How it works:**
+
+1. **Session Manager** (`js/auth/session-manager.js`) stores a `rrts_last_activity` timestamp in sessionStorage every time the user interacts with the page (mouse, keyboard, scroll, click, touch)
+
+2. **JWT Auth** (`js/auth/jwt-auth.js`) checks this timestamp BEFORE attempting to refresh an expired token. If the user has been inactive longer than their role's timeout, they are forced to logout instead of getting a new token.
+
+3. **Role-based timeouts** (must match between both files):
+
+| Role | Timeout |
+|------|---------|
+| admin | 30 minutes |
+| supervisor | 60 minutes |
+| booking_agent | 120 minutes |
+| driver | 120 minutes |
+| client | 120 minutes |
+
+### Flow Diagram
+
+```
+USER RETURNS AFTER EXTENDED ABSENCE
+           │
+           ▼
+┌─────────────────────────────────────┐
+│  requireAuth() on page load         │
+├─────────────────────────────────────┤
+│ 1. Check rrts_last_activity         │
+│ 2. Compare to role timeout          │
+│    │                                │
+│    ├─► Inactive > timeout?          │
+│    │      YES → Force logout        │
+│    │      NO  → Continue below      │
+│    │                                │
+│ 3. Check if token expired           │
+│ 4. Refresh token if needed          │
+│ 5. Start session manager            │
+└─────────────────────────────────────┘
+```
+
+### Key Code Changes
+
+**`js/auth/jwt-auth.js`:**
+- Added `SESSION_TIMEOUTS` constant (role-based)
+- Added `LAST_ACTIVITY_KEY = 'rrts_last_activity'`
+- Added `checkInactivityTimeout()` function
+- Modified `requireAuth()` to call `checkInactivityTimeout()` before token refresh
+- Modified `logout()` to clear `LAST_ACTIVITY_KEY`
+
+**`js/auth/session-manager.js`:**
+- Added `LAST_ACTIVITY_KEY` constant
+- Modified `start()` to set initial activity timestamp
+- Modified `resetTimer()` to update activity timestamp on user interaction
+- Added `isInactiveForTooLong(userRole)` function (exported for external use)
+- Added `clearLastActivity()` function
+- Modified `handleTimeout()` and `logout()` to clear activity timestamp
+
+### Testing
+
+1. Log in as admin
+2. Wait 31 minutes without activity (or modify timeout to 1 minute for testing)
+3. Refresh the page
+4. **Expected:** User sees "Your session has expired due to inactivity. Please log in again." and is redirected to login
+
+### Future Enhancements (Optional)
+
+If server-side enforcement is needed, the backend could:
+1. Store `last_activity` timestamp in the database (not just sessionStorage)
+2. Check this timestamp during token refresh endpoint
+3. Reject refresh requests if user was inactive too long
+
+This would add an extra layer of security but requires backend changes.
+
+---
+
 ## Notes
 
 - Only error notifications are shown to users (no success toasts)
@@ -416,3 +499,4 @@ The password change functionality uses the existing `/change-password` endpoint.
 - Regular users only see their own failed tasks
 - Audit logs capture user intent immediately (sync phase)
 - Background task status + audit log = complete picture of what happened
+- Inactivity timeout prevents token renewal after extended absence

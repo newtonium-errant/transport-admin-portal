@@ -46,6 +46,9 @@ const SessionManager = (function() {
         'click'
     ];
 
+    // Storage key for last activity timestamp
+    const LAST_ACTIVITY_KEY = 'rrts_last_activity';
+
     // Internal state
     let inactivityTimer = null;
     let warningTimer = null;
@@ -74,6 +77,9 @@ const SessionManager = (function() {
         console.log(`[Session] Timeout: ${currentTimeout / 60000} minutes`);
 
         isRunning = true;
+
+        // Set initial last activity timestamp (user just loaded the page)
+        sessionStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
 
         // Set up activity listeners
         ACTIVITY_EVENTS.forEach(event => {
@@ -120,6 +126,9 @@ const SessionManager = (function() {
         if (!isRunning) {
             return;
         }
+
+        // Store last activity timestamp for cross-session inactivity checking
+        sessionStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
 
         // Clear existing timers
         if (inactivityTimer) {
@@ -171,6 +180,9 @@ const SessionManager = (function() {
 
         stop();
 
+        // Clear last activity timestamp
+        clearLastActivity();
+
         // Clear tokens
         JWTManager.clearTokens();
 
@@ -216,6 +228,7 @@ const SessionManager = (function() {
      */
     function logout() {
         stop();
+        clearLastActivity();
         JWTManager.clearTokens();
         window.location.href = 'dashboard.html';
     }
@@ -244,6 +257,48 @@ const SessionManager = (function() {
         }
     }
 
+    /**
+     * Check if user has been inactive too long (for page load checks)
+     * This is called BEFORE token refresh to enforce inactivity timeout
+     * @param {string} userRole - The user's role to determine timeout
+     * @returns {boolean} True if session should be invalidated due to inactivity
+     */
+    function isInactiveForTooLong(userRole) {
+        const lastActivity = sessionStorage.getItem(LAST_ACTIVITY_KEY);
+
+        // If no last activity recorded, allow (first time or cleared)
+        if (!lastActivity) {
+            return false;
+        }
+
+        const lastActivityTime = parseInt(lastActivity);
+        const now = Date.now();
+        const inactiveTime = now - lastActivityTime;
+
+        // Get timeout for this role
+        const timeout = SESSION_TIMEOUTS[userRole] || DEFAULT_TIMEOUT;
+
+        console.log(`[Session] Checking inactivity: ${Math.round(inactiveTime / 60000)} minutes inactive, timeout is ${timeout / 60000} minutes`);
+
+        return inactiveTime > timeout;
+    }
+
+    /**
+     * Get the timeout duration for a specific role
+     * @param {string} userRole - The user's role
+     * @returns {number} Timeout in milliseconds
+     */
+    function getTimeoutForRole(userRole) {
+        return SESSION_TIMEOUTS[userRole] || DEFAULT_TIMEOUT;
+    }
+
+    /**
+     * Clear the last activity timestamp (called on logout)
+     */
+    function clearLastActivity() {
+        sessionStorage.removeItem(LAST_ACTIVITY_KEY);
+    }
+
     // Public API
     return {
         start,
@@ -251,7 +306,10 @@ const SessionManager = (function() {
         getCurrentTimeout,
         getTimeRemaining,
         isActive,
-        logout
+        logout,
+        isInactiveForTooLong,
+        getTimeoutForRole,
+        clearLastActivity
     };
 
 })();
