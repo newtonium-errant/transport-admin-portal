@@ -489,6 +489,198 @@ This would add an extra layer of security but requires backend changes.
 
 ---
 
+## Centralized Configuration System
+
+### Problem
+
+API endpoints are hardcoded throughout the codebase:
+- `js/auth/jwt-auth.js` - JWT_API_ENDPOINTS
+- `js/core/api-client.js` - Various endpoint URLs
+- Individual page scripts - Direct URL references
+
+This causes:
+1. **Maintenance burden** - Changing an endpoint requires searching multiple files
+2. **Environment issues** - Can't easily switch between dev/staging/production
+3. **Risk of errors** - Easy to miss a URL when updating
+
+### Solution: Create `js/config.js`
+
+Create a centralized configuration file that all other scripts reference.
+
+**File location:** `js/config.js`
+
+**Implementation:**
+
+```javascript
+// js/config.js - Centralized Application Configuration
+const APP_CONFIG = (function() {
+    'use strict';
+
+    // Detect environment from hostname
+    const hostname = window.location.hostname;
+
+    // Environment-specific configurations
+    const ENVIRONMENTS = {
+        production: {
+            API_BASE: 'https://webhook-processor-production-3bb8.up.railway.app/webhook',
+            SUPABASE_URL: 'https://[PROJECT_ID].supabase.co',
+            SUPABASE_ANON_KEY: '[PRODUCTION_ANON_KEY]'
+        },
+        staging: {
+            API_BASE: 'https://webhook-processor-staging.up.railway.app/webhook',
+            SUPABASE_URL: 'https://[STAGING_PROJECT_ID].supabase.co',
+            SUPABASE_ANON_KEY: '[STAGING_ANON_KEY]'
+        },
+        development: {
+            API_BASE: 'http://localhost:3000/webhook',
+            SUPABASE_URL: 'http://localhost:54321',
+            SUPABASE_ANON_KEY: '[DEV_ANON_KEY]'
+        }
+    };
+
+    // Auto-detect environment based on hostname
+    function detectEnvironment() {
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'development';
+        }
+        if (hostname.includes('staging') || hostname.includes('test')) {
+            return 'staging';
+        }
+        return 'production';
+    }
+
+    const env = detectEnvironment();
+    const config = ENVIRONMENTS[env];
+
+    console.log(`[Config] Environment detected: ${env}`);
+
+    // Build all endpoint URLs from base
+    const endpoints = {
+        // Auth endpoints
+        LOGIN: `${config.API_BASE}/user-login`,
+        CHANGE_PASSWORD: `${config.API_BASE}/change-password`,
+        REFRESH_TOKEN: `${config.API_BASE}/refresh-token`,
+        UPDATE_USER_PROFILE: `${config.API_BASE}/update-user-profile`,
+
+        // Client endpoints
+        ADD_CLIENT: `${config.API_BASE}/add-client`,
+        UPDATE_CLIENT: `${config.API_BASE}/update-client`,
+        GET_CLIENTS: `${config.API_BASE}/get-clients`,
+
+        // Appointment endpoints
+        SAVE_APPOINTMENT: `${config.API_BASE}/save-appointment`,
+        GET_APPOINTMENTS: `${config.API_BASE}/get-appointments`,
+
+        // Driver endpoints
+        ADD_DRIVER: `${config.API_BASE}/add-driver`,
+        UPDATE_DRIVER: `${config.API_BASE}/update-driver`,
+
+        // Background task endpoints
+        GET_FAILED_TASKS: `${config.API_BASE}/get-failed-tasks`,
+        GET_ALL_FAILED_TASKS: `${config.API_BASE}/get-all-failed-tasks`,
+        DISMISS_TASK: `${config.API_BASE}/dismiss-task`,
+        DISMISS_ALL_TASKS: `${config.API_BASE}/dismiss-all-tasks`,
+
+        // Add other endpoints as needed...
+    };
+
+    return {
+        ENV: env,
+        API_BASE: config.API_BASE,
+        SUPABASE_URL: config.SUPABASE_URL,
+        SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
+        endpoints: endpoints,
+
+        // Helper to check environment
+        isProduction: () => env === 'production',
+        isDevelopment: () => env === 'development',
+        isStaging: () => env === 'staging'
+    };
+})();
+```
+
+### Migration Steps
+
+1. **Create `js/config.js`** with the code above (fill in actual values)
+
+2. **Update HTML files** to load config.js first:
+   ```html
+   <!-- Load configuration FIRST -->
+   <script src="js/config.js"></script>
+
+   <!-- Then other scripts -->
+   <script src="js/auth/jwt-auth.js"></script>
+   <script src="js/auth/session-manager.js"></script>
+   <script src="js/core/api-client.js"></script>
+   ```
+
+3. **Update `js/auth/jwt-auth.js`**:
+   ```javascript
+   // BEFORE (hardcoded):
+   const JWT_API_ENDPOINTS = {
+       LOGIN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login',
+       // ...
+   };
+
+   // AFTER (centralized):
+   const JWT_API_ENDPOINTS = {
+       LOGIN: APP_CONFIG.endpoints.LOGIN,
+       CHANGE_PASSWORD: APP_CONFIG.endpoints.CHANGE_PASSWORD,
+       REFRESH_TOKEN: APP_CONFIG.endpoints.REFRESH_TOKEN
+   };
+   ```
+
+4. **Update `js/core/api-client.js`** similarly
+
+5. **Search and replace** all other hardcoded URLs:
+   ```bash
+   grep -r "webhook-processor" js/
+   grep -r "supabase.co" js/
+   ```
+
+6. **Update Supabase initialization** (if used):
+   ```javascript
+   // BEFORE:
+   const supabase = supabase.createClient('https://xxx.supabase.co', 'key');
+
+   // AFTER:
+   const supabase = supabase.createClient(
+       APP_CONFIG.SUPABASE_URL,
+       APP_CONFIG.SUPABASE_ANON_KEY
+   );
+   ```
+
+### Files to Update
+
+| File | What to Change |
+|------|----------------|
+| `js/auth/jwt-auth.js` | Replace `JWT_API_ENDPOINTS` values |
+| `js/core/api-client.js` | Replace any hardcoded URLs |
+| `js/core/task-monitor.js` | Update Supabase config references |
+| `dashboard.html` | Add `<script src="js/config.js">` first |
+| `admin.html` | Add config.js script |
+| `clients-sl.html` | Add config.js script |
+| `appointments-sl.html` | Add config.js script |
+| `driver-management.html` | Add config.js script |
+| `operations.html` | Add config.js script |
+| `profile.html` | Add config.js script |
+| Any other HTML files | Add config.js script |
+
+### Testing
+
+1. **Development**: Access via `localhost` - should use dev endpoints
+2. **Staging**: Deploy to staging domain - should auto-detect staging config
+3. **Production**: Deploy to production - should use production config
+4. Check browser console for: `[Config] Environment detected: production`
+
+### Security Notes
+
+- The anon keys in config.js are safe to expose (they're public by design in Supabase)
+- Never put service role keys or secrets in frontend code
+- For sensitive configuration, use environment variables at build time
+
+---
+
 ## Notes
 
 - Only error notifications are shown to users (no success toasts)
