@@ -15,9 +15,9 @@ Workflows/
 !package.json
 !package-lock.json
 
-# SQL files
-sql/
-*.sql
+# SQL files (allow schema files for version control)
+# sql/
+# *.sql
 
 # Deprecated code
 deprecated/
