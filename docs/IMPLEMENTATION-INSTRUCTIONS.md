@@ -299,6 +299,113 @@ Every workflow that creates background tasks should:
 
 ---
 
+## User Profile Page
+
+A user profile page has been created at `profile.html` that allows users to:
+- View and edit their profile information (name, email, phone)
+- Change their password
+
+The username in the header of all pages now links to the profile page.
+
+### Frontend Already Built
+
+- `profile.html` - Complete profile page with forms
+- Header links updated in all pages (dashboard, admin, appointments, clients, drivers, operations)
+
+### n8n Endpoint Needed: `/update-user-profile`
+
+**Trigger:** HTTP Webhook (authenticated)
+
+**Input:**
+```json
+{
+  "fullName": "John Smith",
+  "email": "john@example.com",
+  "phone": "(555) 123-4567"
+}
+```
+
+**Workflow Steps:**
+
+1. **Extract user from JWT**
+   - Get `user_id` from the authentication token
+   - Verify the token is valid
+
+2. **Validate input**
+   - `fullName` is required, non-empty string
+   - `email` is required, valid email format
+   - `phone` is optional, validate format if provided
+
+3. **Check for email conflicts**
+   - If email is being changed, verify no other user has this email
+   - Query: `SELECT id FROM users WHERE email = :newEmail AND id != :userId`
+   - If conflict found, return error: `{ success: false, message: "Email already in use" }`
+
+4. **Update user record in Supabase**
+   ```sql
+   UPDATE users
+   SET
+       full_name = :fullName,
+       email = :email,
+       phone = :phone,
+       updated_at = NOW()
+   WHERE id = :userId;
+   ```
+
+5. **Create audit log entry**
+   ```sql
+   INSERT INTO audit_logs (action, entity_type, entity_id, user_id, user_name, details)
+   VALUES (
+       'update_profile',
+       'user',
+       :userId,
+       :userId,
+       :fullName,
+       '{"fields_updated": ["fullName", "email", "phone"]}'
+   );
+   ```
+
+6. **Return success response**
+   ```json
+   {
+     "success": true,
+     "message": "Profile updated successfully",
+     "user": {
+       "id": "...",
+       "fullName": "John Smith",
+       "email": "john@example.com",
+       "phone": "(555) 123-4567"
+     }
+   }
+   ```
+
+**Error Responses:**
+- `400` - Validation failed (missing required fields, invalid email format)
+- `401` - Not authenticated
+- `409` - Email already in use by another user
+- `500` - Database error
+
+### Existing Endpoint: `/change-password`
+
+The password change functionality uses the existing `/change-password` endpoint.
+
+**Input:**
+```json
+{
+  "username": "jsmith",
+  "currentPassword": "oldpass123",
+  "newPassword": "newpass456"
+}
+```
+
+**Expected behavior:**
+1. Verify current password is correct
+2. Validate new password meets requirements (min 8 chars)
+3. Update password hash in database
+4. Return `{ success: true }` or error message
+
+---
+
 ## Notes
 
 - Only error notifications are shown to users (no success toasts)
