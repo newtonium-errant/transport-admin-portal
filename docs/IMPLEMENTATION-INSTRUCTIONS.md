@@ -11,10 +11,10 @@ We've designed an async workflow system to improve user experience by reducing w
 ## What's Already Built
 
 ### 1. Database Schema (`sql/background_tasks_schema.sql`)
-- `background_tasks` table - tracks async tasks
+- `background_tasks` table - tracks async tasks (includes `audit_log_id` for linking to audit trail)
 - `background_tasks_archive` table - stores tasks older than 7 days
 - Helper functions: `create_background_task()`, `start_background_task()`, `complete_background_task()`, `fail_background_task()`, `dismiss_background_task()`, `dismiss_all_failed_tasks()`, `archive_old_tasks()`
-- Views: `user_failed_tasks`, `all_failed_tasks`, `task_status_summary`, `failed_tasks_summary`
+- Views: `user_failed_tasks`, `all_failed_tasks`, `task_status_summary`, `failed_tasks_summary`, `failed_tasks_with_audit`
 - RLS policies for user/admin access
 - Realtime enabled for the table
 
@@ -114,19 +114,27 @@ Create these new n8n webhooks:
 **New flow (fast):**
 1. Validate client data
 2. Insert client into Supabase → get `client_id`
-3. Create background tasks:
+3. **CREATE AUDIT LOG** (captures user intent immediately):
 ```sql
-SELECT create_background_task('client', client_id, 'Client Name', 'calculate_drive_times', user_id);
-SELECT create_background_task('client', client_id, 'Client Name', 'sync_quo', user_id);
+INSERT INTO audit_logs (action, entity_type, entity_id, user_id, user_name, details)
+VALUES ('create_client', 'client', client_id, user_id, user_name, '{"client_name": "John Smith", ...}')
+RETURNING id AS audit_log_id;
 ```
-4. Trigger background workflows (fire and forget):
+4. Create background tasks (linked to audit log):
+```sql
+SELECT create_background_task('client', client_id, 'Client Name', 'calculate_drive_times', user_id, audit_log_id);
+SELECT create_background_task('client', client_id, 'Client Name', 'sync_quo', user_id, audit_log_id);
+```
+5. Trigger background workflows (fire and forget):
 ```
 HTTP Request to /process-drive-times { task_id, client_id } - Don't wait for response
 HTTP Request to /process-quo-sync { task_id, entity_type: 'client', entity_id: client_id } - Don't wait
 ```
-5. Return immediately: `{ success: true, client_id, message: "Client saved. Drive times and Quo sync processing in background." }`
+6. Return immediately: `{ success: true, client_id, message: "Client saved. Drive times and Quo sync processing in background." }`
 
 **Key n8n setting:** When calling background webhooks, set "Continue On Fail" = true and don't wait for response.
+
+**Why audit in sync phase?** The audit log captures who did what and when - this must happen immediately so it's never lost. Background tasks track whether the side effects succeeded or failed.
 
 ---
 
@@ -223,6 +231,74 @@ Include:
 
 ---
 
+## Audit Trail Integration
+
+### Why Audit Happens in Sync Phase
+
+```
+USER ACTION
+    │
+    ▼
+┌─────────────────────────────────────────────────┐
+│ SYNC PHASE (immediate)                          │
+│                                                 │
+│ 1. Validate data                                │
+│ 2. Save to database                             │
+│ 3. CREATE AUDIT LOG  ◄── User intent captured  │
+│ 4. Create background tasks (linked to audit)   │
+│ 5. Return success                               │
+└─────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────┐
+│ ASYNC PHASE (background)                        │
+│                                                 │
+│ • Task success/fail tracked in background_tasks │
+│ • No separate audit needed                      │
+└─────────────────────────────────────────────────┘
+```
+
+### What Gets Logged Where
+
+| Question | Answer | Where to Look |
+|----------|--------|---------------|
+| Who created this client? | Sarah at 2:35 PM | `audit_logs` |
+| Did drive times calculate? | Yes/No + error details | `background_tasks` |
+| Why did Quo sync fail? | "API rate limited" | `background_tasks.error_message` |
+| Full picture of a failure? | User action + task status | `failed_tasks_with_audit` view |
+
+### Investigating Failures
+
+Use the `failed_tasks_with_audit` view to see the complete picture:
+
+```sql
+SELECT
+    task_type,
+    error_message,
+    entity_label,
+    action_user_name,      -- Who initiated
+    user_action_time,      -- When they clicked save
+    task_failed_at         -- When background task failed
+FROM failed_tasks_with_audit
+WHERE entity_type = 'client'
+ORDER BY task_failed_at DESC;
+```
+
+### Audit Log Pattern for Each Workflow
+
+Every workflow that creates background tasks should:
+
+1. **Insert/update the main entity** (client, appointment, etc.)
+2. **Create audit log immediately** with:
+   - `action`: 'create_client', 'update_appointment', etc.
+   - `entity_type`: 'client', 'appointment', 'driver'
+   - `entity_id`: The ID of the record
+   - `user_id` + `user_name`: From JWT/session
+   - `details`: JSON with relevant data (what changed)
+3. **Link background tasks** to the audit log via `audit_log_id`
+
+---
+
 ## Notes
 
 - Only error notifications are shown to users (no success toasts)
@@ -231,3 +307,5 @@ Include:
 - Tasks auto-archive after 7 days
 - Supervisors/admins see all users' failed tasks
 - Regular users only see their own failed tasks
+- Audit logs capture user intent immediately (sync phase)
+- Background task status + audit log = complete picture of what happened

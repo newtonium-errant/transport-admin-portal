@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS background_tasks (
     entity_id UUID NOT NULL,                -- The ID of the entity
     entity_label TEXT,                      -- Human-readable label, e.g. "John Smith"
 
+    -- Link to audit trail (captures who initiated the action)
+    audit_log_id UUID,                      -- Links to audit_logs table for full context
+
     -- Task details
     task_type TEXT NOT NULL,                -- 'calculate_drive_times', 'sync_quo', etc.
     status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed'
@@ -46,6 +49,7 @@ CREATE TABLE IF NOT EXISTS background_tasks_archive (
     entity_type TEXT NOT NULL,
     entity_id UUID NOT NULL,
     entity_label TEXT,
+    audit_log_id UUID,
     task_type TEXT NOT NULL,
     status TEXT NOT NULL,
     result JSONB,
@@ -82,12 +86,21 @@ CREATE INDEX IF NOT EXISTS idx_tasks_completed_at
     ON background_tasks(completed_at)
     WHERE status IN ('completed', 'failed');
 
+-- For linking back to audit logs (investigation of failures)
+CREATE INDEX IF NOT EXISTS idx_tasks_audit_log
+    ON background_tasks(audit_log_id)
+    WHERE audit_log_id IS NOT NULL;
+
 -- Archive indexes (for historical lookups)
 CREATE INDEX IF NOT EXISTS idx_archive_entity
     ON background_tasks_archive(entity_type, entity_id);
 
 CREATE INDEX IF NOT EXISTS idx_archive_created_by
     ON background_tasks_archive(created_by, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_archive_audit_log
+    ON background_tasks_archive(audit_log_id)
+    WHERE audit_log_id IS NOT NULL;
 
 -- ============================================================================
 -- TASK TYPE REFERENCE (for documentation, not enforced)
@@ -110,12 +123,14 @@ Status Flow:
 -- ============================================================================
 
 -- Function to create a background task (called from n8n)
+-- audit_log_id links this task to the user action that triggered it
 CREATE OR REPLACE FUNCTION create_background_task(
     p_entity_type TEXT,
     p_entity_id UUID,
     p_entity_label TEXT,
     p_task_type TEXT,
-    p_created_by UUID DEFAULT NULL
+    p_created_by UUID DEFAULT NULL,
+    p_audit_log_id UUID DEFAULT NULL
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -128,13 +143,15 @@ BEGIN
         entity_id,
         entity_label,
         task_type,
-        created_by
+        created_by,
+        audit_log_id
     ) VALUES (
         p_entity_type,
         p_entity_id,
         p_entity_label,
         p_task_type,
-        p_created_by
+        p_created_by,
+        p_audit_log_id
     )
     RETURNING id INTO v_task_id;
 
@@ -257,12 +274,12 @@ BEGIN
         RETURNING *
     )
     INSERT INTO background_tasks_archive (
-        id, entity_type, entity_id, entity_label, task_type,
+        id, entity_type, entity_id, entity_label, audit_log_id, task_type,
         status, result, error_message, created_at, started_at,
         completed_at, created_by, dismissed_at, dismissed_by
     )
     SELECT
-        id, entity_type, entity_id, entity_label, task_type,
+        id, entity_type, entity_id, entity_label, audit_log_id, task_type,
         status, result, error_message, created_at, started_at,
         completed_at, created_by, dismissed_at, dismissed_by
     FROM moved;
@@ -336,6 +353,38 @@ SELECT
 FROM background_tasks
 WHERE status = 'failed'
 AND dismissed_at IS NULL;
+
+-- ============================================================================
+-- AUDIT TRAIL INTEGRATION
+-- ============================================================================
+-- Note: This view assumes an audit_logs table exists with columns:
+--   id, action, entity_type, entity_id, user_id, user_name, details, created_at
+-- Adjust the JOIN and column names based on your actual audit_logs schema.
+
+-- View: Failed tasks with audit context (for investigating failures)
+-- Shows who initiated the action that led to the failure
+CREATE OR REPLACE VIEW failed_tasks_with_audit AS
+SELECT
+    bt.id AS task_id,
+    bt.entity_type,
+    bt.entity_id,
+    bt.entity_label,
+    bt.task_type,
+    bt.error_message,
+    bt.created_at AS task_created_at,
+    bt.completed_at AS task_failed_at,
+    bt.audit_log_id,
+    -- Audit log fields (will be NULL if no audit_logs table or no link)
+    al.action AS user_action,
+    al.user_id AS action_user_id,
+    al.user_name AS action_user_name,
+    al.created_at AS user_action_time,
+    al.details AS action_details
+FROM background_tasks bt
+LEFT JOIN audit_logs al ON bt.audit_log_id = al.id
+WHERE bt.status = 'failed'
+AND bt.dismissed_at IS NULL
+ORDER BY bt.completed_at DESC;
 
 -- ============================================================================
 -- ROW LEVEL SECURITY
