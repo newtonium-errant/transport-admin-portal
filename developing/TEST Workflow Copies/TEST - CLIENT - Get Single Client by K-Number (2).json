@@ -1,0 +1,659 @@
+{
+  "name": "TEST - CLIENT - Get Single Client by K-Number",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "TEST-get-client",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1760,
+        304
+      ],
+      "id": "e6e57aef-51d5-4857-b677-c8666e85383a",
+      "name": "Webhook - Get Client",
+      "webhookId": "a5380899-da63-466e-b790-58a0f15f9da2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation for Backend Workflows\n// Version: v1.0.0\n// Use this code node at the start of any protected workflow\n\n// Get webhook input data\nconst webhookData = $input.first().json;\n\n// Extract Authorization header\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check Bearer token format\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format. Expected \"Bearer {token}\"',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7); // Remove \"Bearer \" prefix\n\n// JWT validation functions (matching generation code)\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\n// Check token type (reject LIMITED tokens unless specifically allowed)\n// Note: Individual workflows can override this by setting allowLimitedToken in webhook body\nconst allowLimitedToken = webhookData.query?.allowLimitedToken || false;\n\nif (payload.type === 'limited' && !allowLimitedToken) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication. Please complete password change.',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check if refresh token is being used for non-refresh operations\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used for this operation',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Token is valid - return user info and query params\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type,\n      permissions: payload.permissions || []\n    },\n    query: webhookData.query,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1536,
+        304
+      ],
+      "id": "5f139e73-9040-4ef0-ae0f-a479c0d886f8",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "validation-success",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "validation-failed",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -1328,
+        304
+      ],
+      "id": "cfa86d31-4fec-4ecf-ac87-8a8a7014d489",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Unauthorized Error Response - v1.0.0\n\nconst errorData = $input.first().json;\n\n// Return standardized error format\nreturn [{\n  json: {\n    success: false,\n    error: {\n      message: errorData.message || 'Unauthorized access',\n      statusCode: errorData.statusCode || 401\n    },\n    timestamp: errorData.timestamp || new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        512
+      ],
+      "id": "7cf6b062-33e3-421e-bc51-c6b7ef6856d2",
+      "name": "Unauthorized Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate K-Number Parameter - v1.0.0\n\nconst query = $json.query || {};\nconst knumber = query.knumber;\n\nif (!knumber || knumber.trim() === '') {\n  console.error('❌ Missing K-number parameter');\n  return [{\n    json: {\n      _route: 'invalid',\n      success: false,\n      error: 'K-number parameter is required',\n      message: 'Please provide a K-number',\n      statusCode: 400\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'valid',\n    knumber: knumber.trim(),\n    success: true\n  }\n}];\n\n// v1.0.0 - Validate K-number from query param"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        208
+      ],
+      "id": "7ad61001-dbf8-4deb-8d96-9abc5b476042",
+      "name": "Validate K-Number - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "validation-success",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "valid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "validation-failed",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "invalid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -880,
+        208
+      ],
+      "id": "6994dd5b-4c0b-4b4b-b3ff-a2c72e9a934a",
+      "name": "Switch - Validation Result"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "clients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "knumber",
+              "keyValue": "={{ $json.knumber }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        112
+      ],
+      "id": "af1a67cb-2fd3-45e0-b3e2-9dce34a0134a",
+      "name": "Get Client - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get Primary Clinic if Exists - v1.0.0\n// Since Supabase node doesn't support SQL JOINs, we fetch clinic separately\n\nconst clientData = $input.first().json;\n\n// Check if client exists\nif (!clientData || !clientData.knumber) {\n  return [{\n    json: {\n      _route: 'not_found',\n      success: false,\n      message: 'Client not found',\n      statusCode: 404\n    }\n  }];\n}\n\n// Check if client has primary_clinic_id\nif (clientData.primary_clinic_id) {\n  return [{\n    json: {\n      _route: 'has_clinic',\n      client: clientData,\n      clinicId: clientData.primary_clinic_id\n    }\n  }];\n} else {\n  // No primary clinic - return client as is\n  return [{\n    json: {\n      _route: 'no_clinic',\n      client: clientData\n    }\n  }];\n}\n\n// v1.0.0 - Check for primary clinic ID"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        112
+      ],
+      "id": "747490b1-da9e-4ed2-aecb-a2c6f09bd212",
+      "name": "Check Primary Clinic - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "has-clinic",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "has_clinic",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Clinic"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "no-clinic",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "no_clinic",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Clinic"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "not-found",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "not_found",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not Found"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -224,
+        112
+      ],
+      "id": "4651bd15-795a-4562-b74d-c2abcdb9c479",
+      "name": "Switch - Clinic Check"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "destinations",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.clinicId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1105e236-df97-4016-bcba-cb2b6e93c785",
+      "name": "Get Clinic - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge Client and Clinic Data - v1.0.0\n\nconst checkClinicData = $('Check Primary Clinic - Code').first().json;\nconst clinicData = $input.first().json;\n\nconst client = checkClinicData.client;\n\n// Add clinic name fields to client\nif (clinicData && clinicData.name) {\n  client.primary_clinic_name = clinicData.name;\n  client.primary_clinic_address = clinicData.address || null;\n  client.primary_clinic_city = clinicData.city || null;\n} else {\n  // Clinic not found, set to null\n  client.primary_clinic_name = null;\n  client.primary_clinic_address = null;\n  client.primary_clinic_city = null;\n}\n\nreturn [{\n  json: {\n    _route: 'success',\n    client: client\n  }\n}];\n\n// v1.0.0 - Merge client and clinic data"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0bfc76c2-1ae8-4eb7-8517-80847809bb32",
+      "name": "Merge Clinic Data - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Success Response (No Clinic) - v1.0.0\n\nconst checkClinicData = $input.first().json;\nconst client = checkClinicData.client;\n\n// Set clinic fields to null\nclient.primary_clinic_name = null;\nclient.primary_clinic_address = null;\nclient.primary_clinic_city = null;\n\nreturn [{\n  json: {\n    _route: 'success',\n    client: client\n  }\n}];\n\n// v1.0.0 - Format response for clients without primary clinic"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        208
+      ],
+      "id": "6a5304c2-c8cc-4bf5-b256-450f461d3616",
+      "name": "Format No Clinic Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Final Success Response - v1.1.0\n\n  const client = $json.client;\n\n  // Map database fields to frontend-friendly names (camelCase)\n  const formattedClient = {\n    ...client,\n    active: client.active !== false,\n    mapaddress: client.mapaddress || '',\n    appointmentLength: client.appointment_length || null,\n    primaryClinicId: client.primary_clinic_id || null,\n    primaryClinicName: client.primary_clinic_name || null,\n    primaryClinicAddress: client.primary_clinic_address || null,\n    primaryClinicCity: client.primary_clinic_city || null,\n    openphoneContactId: client.openphone_contact_id || null\n  };\n\n  return [{\n    json: {\n      success: true,\n      client: formattedClient,\n      message: 'Client retrieved successfully',\n      timestamp: new Date().toISOString()\n    }\n  }];\n\n  // Version: v1.1.0 - Added field name mapping (camelCase) and openphoneContactId for consistency with other client workflows"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        112
+      ],
+      "id": "8abda308-67c6-40a7-b61c-4d1eab81b232",
+      "name": "Format Success Response - Code"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        208
+      ],
+      "id": "6b59dbf1-e077-4b23-bca3-14cd1a6ccedd",
+      "name": "Respond"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 404 }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        400
+      ],
+      "id": "af504154-a3f2-4a6b-9820-a6f47d6b4b48",
+      "name": "Respond - Not Found"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 400 }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -656,
+        400
+      ],
+      "id": "cd8bcdb2-7c20-4359-9cb6-286b2de4e48e",
+      "name": "Respond - Invalid"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.error.statusCode || 401 }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -880,
+        512
+      ],
+      "id": "31f4b396-17cb-4a3a-a80a-2a3d82307622",
+      "name": "Respond - Unauthorized"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Get Client": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate K-Number - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond - Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate K-Number - Code": {
+      "main": [
+        [
+          {
+            "node": "Switch - Validation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Validation Result": {
+      "main": [
+        [
+          {
+            "node": "Get Client - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Check Primary Clinic - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Primary Clinic - Code": {
+      "main": [
+        [
+          {
+            "node": "Switch - Clinic Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Clinic Check": {
+      "main": [
+        [
+          {
+            "node": "Get Clinic - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format No Clinic Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Clinic - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Clinic Data - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Clinic Data - Code": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format No Clinic Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "779b14c1-1367-4216-a876-f17d17a5a1c9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "VvSXWwiiGsfZI7WU",
+  "tags": [
+    {
+      "updatedAt": "2025-10-30T17:16:58.339Z",
+      "createdAt": "2025-10-30T17:16:58.339Z",
+      "id": "enR5cvAvdrM9M4km",
+      "name": "Client Management"
+    },
+    {
+      "updatedAt": "2025-11-02T20:39:22.246Z",
+      "createdAt": "2025-11-02T20:39:22.246Z",
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    }
+  ]
+}

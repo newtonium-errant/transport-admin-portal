@@ -1,0 +1,264 @@
+{
+  "name": "TEST - FIN - Void Invoice",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-void-invoice",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "v1v2v3v4-v5v6-v7v8-v9v0-w1w2w3w4w5w6",
+      "name": "POST Void Invoice - Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1200, 368],
+      "webhookId": "void-invoice"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Void Invoice - JWT Validation\n  // Version: v1.0.0\n\n  const input = $input.first().json;\n  const authHeader = input.headers.authorization || input.headers.Authorization || '';\n  const token = authHeader.replace('Bearer ', '').trim();\n\n  if (!token) return [{ json: { jwtValid: 'false', statusCode: 401, error: 'No authorization token provided' } }];\n\n  function simpleHash(input) {\n    let hash = 0;\n    for (let i = 0; i < input.length; i++) {\n      const char = input.charCodeAt(i);\n      hash = ((hash << 5) - hash) + char;\n      hash = hash & hash;\n    }\n    return hash.toString(36);\n  }\n\n  const JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\n  function verifyJWT(token) {\n    try {\n      const parts = token.split('.');\n      if (parts.length !== 3) return { valid: false, error: 'Invalid token format' };\n      const [encodedHeader, encodedPayload, receivedSignature] = parts;\n      const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n      const expectedSignature = simpleHash(dataToSign);\n      if (receivedSignature !== expectedSignature) return { valid: false, error: 'Invalid signature' };\n      const payload = JSON.parse(atob(encodedPayload));\n      const now = Math.floor(Date.now() / 1000);\n      if (payload.exp && payload.exp < now) return { valid: false, error: 'Token expired' };\n      return { valid: true, payload: payload };\n    } catch (error) {\n      return { valid: false, error: 'Token verification failed: ' + error.message };\n    }\n  }\n\n  const validation = verifyJWT(token);\n  if (!validation.valid) return [{ json: { jwtValid: 'false', statusCode: 401, error: validation.error || 'Invalid or expired token' } }];\n\n  const payload = validation.payload;\n  if (payload.type === 'limited') return [{ json: { jwtValid: 'false', statusCode: 403, error: 'Limited tokens not allowed for this endpoint' } }];\n\n  return [{ json: { jwtValid: 'true', user: { username: payload.sub, role: payload.role }, body: input.body, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "w2w3w4w5-w6w7-w8w9-w0x1-x2x3x4x5x6x7",
+      "name": "JWT Validation - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 368]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.jwtValid }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.jwtValid }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "x3x4x5x6-x7x8-x9x0-y1y2-y3y4y5y6y7y8",
+      "name": "JWT Check - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-720, 368]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Void Invoice - Validate Input\n  // Version: v1.0.0\n\n  const body = $input.first().json.body;\n  const invoiceId = body.invoiceId;\n  const reason = body.reason || 'Voided by user';\n\n  const errors = [];\n  if (!invoiceId) errors.push('invoiceId is required');\n\n  const validationPassed = errors.length === 0 ? 'true' : 'false';\n\n  return [{ json: { validationPassed, errors, invoiceId, reason, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "y4y5y6y7-y8y9-y0z1-z2z3-z4z5z6z7z8z9",
+      "name": "Validate Input - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-480, 256]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.validationPassed }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.validationPassed }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "z5z6z7z8-z9z0-a1a2-a3a4-a5a6a7a8a9a0",
+      "name": "Validation Check - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-240, 256]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "invoices",
+        "filters": {
+          "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $json.invoiceId }}" }]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "invoice_status", "fieldValue": "void" },
+            { "fieldId": "notes", "fieldValue": "={{ $json.notes }}" }
+          ]
+        }
+      },
+      "id": "a6a7a8a9-a0b1-b2b3-b4b5-b6b7b8b9b0b1",
+      "name": "Void Invoice - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [0, 144],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Void Invoice - Prepare Notes\n  // Version: v1.0.0\n\n  const input = $input.first().json;\n  const existingNotes = input.notes || '';\n  const reason = input.reason;\n  const timestamp = new Date().toISOString();\n\n  const voidNote = `[VOIDED ${timestamp}] ${reason}`;\n  const newNotes = existingNotes ? `${existingNotes}\\n\\n${voidNote}` : voidNote;\n\n  return [{ json: { invoiceId: input.invoiceId, notes: newNotes, invoice_id: input.invoiceId } }];"
+      },
+      "id": "b7b8b9b0-b1b2-b3b4-b5b6-b7b8b9b0b1b2",
+      "name": "Prepare Void Notes - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, 144]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [{ "keyName": "invoice_id", "condition": "eq", "keyValue": "={{ $json.invoice_id }}" }]
+        },
+        "returnAll": true
+      },
+      "id": "b2b3b4b5-b6b7-b8b9-b0b1-c2c3c4c5c6c7",
+      "name": "Get Linked Appointments - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [240, 144],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Void Invoice - Prepare Appointment Resets\n  // Version: v1.1.0 - Handle empty results\n\n  const items = $input.all();\n  \n  // Filter out empty items (from alwaysOutputData when no results)\n  const appointments = items\n    .map(item => item.json)\n    .filter(apt => apt && apt.id);\n  \n  // If no appointments found, pass through a flag to skip updates\n  if (appointments.length === 0) {\n    return [{ json: { noAppointments: 'true', appointmentCount: 0 } }];\n  }\n  \n  return appointments.map(apt => ({ json: { noAppointments: 'false', appointmentId: apt.id } }));"
+      },
+      "id": "c3c4c5c6-c7c8-c9c0-d1d2-d3d4d5d6d7d8",
+      "name": "Prepare Appointment Resets - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 144]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $json.appointmentId }}" }]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "invoice_id", "fieldValue": "={{ null }}" },
+            { "fieldId": "invoice_status", "fieldValue": "ready" }
+          ]
+        }
+      },
+      "id": "d4d5d6d7-d8d9-d0e1-e2e3-e4e5e6e7e8e9",
+      "name": "Reset Appointments - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [720, 144],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Void Invoice - Success Response\n  // Version: v1.0.0\n\n  const items = $input.all();\n  const appointmentCount = items.length;\n\n  return [{ json: { success: true, message: `Invoice voided successfully (${appointmentCount} appointments reset to ready)`, data: { appointmentCount }, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "e5e6e7e8-e9e0-f1f2-f3f4-f5f6f7f8f9f0",
+      "name": "Success Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 144]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Void Invoice - Error Response\n\n  const errorData = $input.first().json;\n  return [{ json: { success: false, message: 'Validation failed', errors: errorData.errors || [], statusCode: 400, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "f6f7f8f9-f0a1-a2a3-a4a5-a6a7a8a9a0b1",
+      "name": "Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 368]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Void Invoice - JWT Error\n\n  const errorData = $input.first().json;\n  return [{ json: { success: false, message: 'Authentication failed', error: errorData.error || 'Invalid or expired token', statusCode: errorData.statusCode || 401, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "b1b2b3b4-b5b6-b7b8-b9b0-c1c2c3c4c5c6",
+      "name": "JWT Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-480, 480]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c6c7c8c9-c0d1-d2d3-d4d5-d6d7d8d9d0e1",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1200, 320]
+    }
+  ],
+  "connections": {
+    "POST Void Invoice - Webhook": { "main": [[{ "node": "JWT Validation - Code", "type": "main", "index": 0 }]] },
+    "JWT Validation - Code": { "main": [[{ "node": "JWT Check - Switch", "type": "main", "index": 0 }]] },
+    "JWT Check - Switch": { "main": [[{ "node": "Validate Input - Code", "type": "main", "index": 0 }], [{ "node": "JWT Error Response - Code", "type": "main", "index": 0 }]] },
+    "Validate Input - Code": { "main": [[{ "node": "Validation Check - Switch", "type": "main", "index": 0 }]] },
+    "Validation Check - Switch": { "main": [[{ "node": "Prepare Void Notes - Code", "type": "main", "index": 0 }], [{ "node": "Error Response - Code", "type": "main", "index": 0 }]] },
+    "Prepare Void Notes - Code": { "main": [[{ "node": "Void Invoice - Supabase", "type": "main", "index": 0 }]] },
+    "Void Invoice - Supabase": { "main": [[{ "node": "Get Linked Appointments - Supabase", "type": "main", "index": 0 }]] },
+    "Get Linked Appointments - Supabase": { "main": [[{ "node": "Prepare Appointment Resets - Code", "type": "main", "index": 0 }]] },
+    "Prepare Appointment Resets - Code": { "main": [[{ "node": "Reset Appointments - Supabase", "type": "main", "index": 0 }]] },
+    "Reset Appointments - Supabase": { "main": [[{ "node": "Success Response - Code", "type": "main", "index": 0 }]] },
+    "Success Response - Code": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] },
+    "Error Response - Code": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] },
+    "JWT Error Response - Code": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "00000000-0000-0000-0000-000000000000",
+  "meta": { "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca" },
+  "id": "NEW_WORKFLOW",
+  "tags": [
+    { "id": "Q4i8xQtE7UtuEFhO", "name": "Finance" },
+    { "id": "oCkAyP5U0C49SJQC", "name": "Invoice" },
+    { "id": "tZpzEwpoeg8SrGGa", "name": "TEST" }
+  ]
+}

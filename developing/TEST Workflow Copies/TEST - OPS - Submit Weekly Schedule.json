@@ -1,0 +1,549 @@
+{
+  "name": "TEST - OPS - Submit Weekly Schedule",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-submit-weekly-schedule",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "id": "webhook-submit",
+      "name": "POST Submit Schedule - Webhook",
+      "webhookId": "ops-submit-schedule"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation - v1.0.0\n// Operations endpoints require admin/supervisor role\n\nconst webhookData = $input.first().json;\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    const payload = JSON.parse(atob(encodedPayload));\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\nif (payload.type === 'limited' || payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Role check\nconst allowedRoles = ['admin', 'supervisor'];\nif (!allowedRoles.includes(payload.role)) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Access denied. Requires admin or supervisor role.',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    user: {\n      id: payload.userId,\n      username: payload.sub,\n      role: payload.role,\n      fullName: payload.fullName\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "id": "jwt-validation",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [440, 300],
+      "id": "jwt-switch",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate Submit Request - v1.0.0\n\nconst authData = $input.first().json;\nconst body = authData.requestBody || {};\n\n// Validate weekStart\nconst weekStart = body.weekStart;\nif (!weekStart) {\n  return [{\n    json: {\n      _route: 'invalid',\n      success: false,\n      message: 'weekStart is required',\n      statusCode: 400,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst dateRegex = /^\\d{4}-\\d{2}-\\d{2}$/;\nif (!dateRegex.test(weekStart)) {\n  return [{\n    json: {\n      _route: 'invalid',\n      success: false,\n      message: 'weekStart must be in YYYY-MM-DD format',\n      statusCode: 400,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'valid',\n    weekStart: weekStart,\n    user: authData.user,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 200],
+      "id": "validate-request",
+      "name": "Validate Request - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "valid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "invalid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [880, 200],
+      "id": "validation-switch",
+      "name": "Validation - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "operations_draft_assignments",
+        "returnAll": true,
+        "filterType": "string",
+        "filterString": "week_start=eq.{{ $json.weekStart }}&draft_driver_id=not.is.null"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1100, 100],
+      "id": "get-drafts",
+      "name": "Get Week Drafts - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-credential-id",
+          "name": "Supabase Testing"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check if drafts exist and prepare data - v1.0.0\n\nconst drafts = $input.all().map(item => item.json);\nconst validatedData = $('Validate Request - Code').first().json;\n\n// Filter out items that don't look like drafts\nconst validDrafts = drafts.filter(d => \n  d.appointment_id !== undefined && \n  d.draft_driver_id !== undefined\n);\n\nif (validDrafts.length === 0) {\n  return [{\n    json: {\n      _route: 'no_drafts',\n      weekStart: validatedData.weekStart,\n      user: validatedData.user,\n      message: 'No draft assignments found for this week',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'has_drafts',\n    drafts: validDrafts,\n    totalDrafts: validDrafts.length,\n    weekStart: validatedData.weekStart,\n    user: validatedData.user,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 100],
+      "id": "check-drafts",
+      "name": "Check Drafts - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "has_drafts",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Drafts"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "no_drafts",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Drafts"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1540, 100],
+      "id": "drafts-switch",
+      "name": "Drafts Exist - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare batch items for processing - v1.0.0\n// Create one item per draft\n\nconst data = $input.first().json;\nconst drafts = data.drafts;\n\nreturn drafts.map(draft => ({\n  json: {\n    appointmentId: draft.appointment_id,\n    driverId: draft.draft_driver_id,\n    draftId: draft.id,\n    weekStart: data.weekStart,\n    user: data.user\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 0],
+      "id": "prepare-batch",
+      "name": "Prepare Batch - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filterType": "string",
+        "filterString": "id=eq.{{ $json.appointmentId }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "driver_assigned",
+              "fieldValue": "={{ $json.driverId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1980, 0],
+      "id": "update-appointment",
+      "name": "Update Appointment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-credential-id",
+          "name": "Supabase Testing"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect update results - v1.0.0\n\nconst results = $input.all().map(item => item.json);\nconst prepData = $('Check Drafts - Code').first().json;\n\nreturn [{\n  json: {\n    processedCount: results.length,\n    totalDrafts: prepData.totalDrafts,\n    weekStart: prepData.weekStart,\n    user: prepData.user,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2200, 0],
+      "id": "collect-results",
+      "name": "Collect Results - Code"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "operations_draft_assignments",
+        "filterType": "string",
+        "filterString": "week_start=eq.{{ $json.weekStart }}"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2420, 0],
+      "id": "delete-drafts",
+      "name": "Delete Drafts - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-credential-id",
+          "name": "Supabase Testing"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Success Response - v1.0.0\n\nconst resultData = $('Collect Results - Code').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    data: {\n      weekStart: resultData.weekStart,\n      processedCount: resultData.processedCount,\n      totalDrafts: resultData.totalDrafts,\n      draftsCleared: resultData.totalDrafts,\n      submittedBy: resultData.user.fullName\n    },\n    message: `Weekly schedule submitted: ${resultData.processedCount} assignments processed`,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2640, 0],
+      "id": "format-success",
+      "name": "Format Success Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// No Drafts Response - v1.0.0\n\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    success: true,\n    data: {\n      weekStart: data.weekStart,\n      processedCount: 0,\n      message: 'No draft assignments found for this week'\n    },\n    message: 'No draft assignments to submit',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 200],
+      "id": "no-drafts-response",
+      "name": "No Drafts Response - Code"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2860, 100],
+      "id": "respond-success",
+      "name": "Success Response - Respond"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 401 }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 500],
+      "id": "respond-error",
+      "name": "Error Response - Respond"
+    }
+  ],
+  "connections": {
+    "POST Submit Schedule - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate Request - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Week Drafts - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Week Drafts - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Check Drafts - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Drafts - Code": {
+      "main": [
+        [
+          {
+            "node": "Drafts Exist - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drafts Exist - Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Batch - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Drafts Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Batch - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Appointment - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Appointment - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Collect Results - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Results - Code": {
+      "main": [
+        [
+          {
+            "node": "Delete Drafts - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Drafts - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Drafts Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-17T00:00:00.000Z",
+  "versionId": "1"
+}

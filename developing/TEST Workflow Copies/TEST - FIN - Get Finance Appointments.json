@@ -1,0 +1,188 @@
+{
+  "name": "TEST - FIN - Get Finance Appointments",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "TEST-get-finance-appointments",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "fin-appt-0001",
+      "name": "GET Finance Appointments - Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1440, 240],
+      "webhookId": "test-get-finance-appointments"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Finance Appointments - JWT Validation\n// Version: v1.0.0\n\nconst input = $input.first().json;\nconst authHeader = input.headers.authorization || input.headers.Authorization || '';\nconst token = authHeader.replace('Bearer ', '').trim();\n\nif (!token) {\n  return [{ json: { jwtValid: 'false', statusCode: 401, error: 'No authorization token provided' } }];\n}\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) return { valid: false, error: 'Invalid token format' };\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) return { valid: false, error: 'Invalid signature' };\n\n    const payload = JSON.parse(atob(encodedPayload));\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) return { valid: false, error: 'Token expired' };\n\n    return { valid: true, payload: payload };\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\nconst validation = verifyJWT(token);\nif (!validation.valid) {\n  return [{ json: { jwtValid: 'false', statusCode: 401, error: validation.error || 'Invalid or expired token' } }];\n}\n\nconst payload = validation.payload;\nif (payload.type === 'limited') {\n  return [{ json: { jwtValid: 'false', statusCode: 403, error: 'Limited tokens not allowed' } }];\n}\n\nreturn [{ json: { jwtValid: 'true', user: { username: payload.sub, role: payload.role }, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "fin-appt-0002",
+      "name": "JWT Validation - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1200, 240]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.jwtValid }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.jwtValid }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fin-appt-0003",
+      "name": "JWT Check - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-960, 240]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "appointments",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "operation_status",
+              "condition": "eq",
+              "keyValue": "completed"
+            },
+            {
+              "keyName": "deleted_at",
+              "condition": "is",
+              "keyValue": "null"
+            }
+          ]
+        }
+      },
+      "id": "fin-appt-0004",
+      "name": "Get Finance Appointments - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-720, 128],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "clients",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "id": "fin-appt-0005",
+      "name": "Get Clients - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-720, 336],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Finance Appointments - Rename Client ID\n// Version: v1.0.0\n\nconst clients = $input.all().map(item => {\n  const c = item.json;\n  return {\n    clientId: c.id,\n    knumber: c.knumber,\n    firstname: c.firstname,\n    lastname: c.lastname,\n    phone: c.phone,\n    email: c.email,\n    civicaddress: c.civicaddress,\n    city: c.city,\n    prov: c.prov,\n    postalcode: c.postalcode\n  };\n});\n\nreturn clients.map(c => ({ json: c }));"
+      },
+      "id": "fin-appt-0006",
+      "name": "Rename Client ID - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-480, 336]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "knumber",
+        "joinMode": "enrichInput2",
+        "options": {}
+      },
+      "id": "fin-appt-0007",
+      "name": "Merge Appointments + Clients",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [-240, 128]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Finance Appointments - Format Response\n// Version: v1.1.0 - Added filter to exclude today and future appointments\n// Returns appointments with all fields needed for finance page\n// Filters for invoice_status in ('not_ready', 'ready') AND past appointments only\n\ntry {\n  const items = $input.all().map(item => item.json);\n\n  // Get start of today (midnight) for comparison\n  const today = new Date();\n  today.setHours(0, 0, 0, 0);\n\n  // Filter for finance-relevant invoice statuses AND past appointments only\n  const validStatuses = ['not_ready', 'ready'];\n  const filtered = items.filter(apt => {\n    const aptDate = new Date(apt.appointmenttime);\n    return validStatuses.includes(apt.invoice_status) && aptDate < today;\n  });\n\n  if (filtered.length === 0) {\n    return [{\n      json: {\n        success: true,\n        appointments: [],\n        totalAppointments: 0,\n        message: 'No appointments pending review or ready for invoicing'\n      }\n    }];\n  }\n\n  const appointments = filtered.map(apt => {\n    const aptDate = new Date(apt.appointmenttime);\n    const dateStr = aptDate.toISOString().split('T')[0];\n    const timeStr = aptDate.toTimeString().slice(0, 5);\n\n    return {\n      id: apt.id,\n      appointmentDate: dateStr,\n      appointmentTime: timeStr,\n      appointmentDateTime: apt.appointmenttime,\n      pickupTime: apt.pickuptime,\n      dropOffTime: apt.dropofftime,\n      location: apt.locationname,\n      locationAddress: apt.locationaddress,\n      notes: apt.scheduling_notes || apt.notes || '',\n      status: apt.appointmentstatus,\n      operationStatus: apt.operation_status,\n      invoiceStatus: apt.invoice_status,\n      invoiceId: apt.invoice_id,\n      deletedAt: apt.deleted_at,\n      transitTime: apt.transittime,\n      customRate: apt.custom_rate,\n      appointmentLength: apt.this_appointment_length,\n      driverAssigned: apt.driver_assigned,\n      driverMileage: apt.driver_mileage,\n      managedBy: apt.managed_by,\n      knumber: apt.knumber,\n      clientName: (apt.firstname && apt.lastname) ? `${apt.firstname} ${apt.lastname}` : 'Unknown',\n      clientFirstName: apt.firstname || '',\n      clientLastName: apt.lastname || '',\n      clientPhone: apt.phone || '',\n      clientEmail: apt.email || '',\n      clientAddress: apt.civicaddress || '',\n      clientCity: apt.city || '',\n      clientProvince: apt.prov || '',\n      clientPostalCode: apt.postalcode || '',\n      createdAt: apt.created_at\n    };\n  });\n\n  appointments.sort((a, b) => new Date(a.appointmentDateTime) - new Date(b.appointmentDateTime));\n\n  return [{\n    json: {\n      success: true,\n      appointments: appointments,\n      totalAppointments: appointments.length,\n      message: `Found ${appointments.length} appointments for finance review`\n    }\n  }];\n\n} catch (error) {\n  return [{\n    json: {\n      success: false,\n      error: error.message,\n      appointments: [],\n      totalAppointments: 0\n    }\n  }];\n}"
+      },
+      "id": "fin-appt-0008",
+      "name": "Format Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 128]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Finance Appointments - JWT Error Response\n// Version: v1.0.0\n\nconst errorData = $input.first().json;\nreturn [{\n  json: {\n    success: false,\n    message: 'Authentication failed',\n    error: errorData.error || 'Invalid or expired token',\n    statusCode: errorData.statusCode || 401,\n    appointments: [],\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "fin-appt-0009",
+      "name": "JWT Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 464]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "fin-appt-0010",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [240, 240]
+    }
+  ],
+  "connections": {
+    "GET Finance Appointments - Webhook": { "main": [[{ "node": "JWT Validation - Code", "type": "main", "index": 0 }]] },
+    "JWT Validation - Code": { "main": [[{ "node": "JWT Check - Switch", "type": "main", "index": 0 }]] },
+    "JWT Check - Switch": { "main": [[{ "node": "Get Finance Appointments - Supabase", "type": "main", "index": 0 }, { "node": "Get Clients - Supabase", "type": "main", "index": 0 }], [{ "node": "JWT Error Response - Code", "type": "main", "index": 0 }]] },
+    "Get Finance Appointments - Supabase": { "main": [[{ "node": "Merge Appointments + Clients", "type": "main", "index": 1 }]] },
+    "Get Clients - Supabase": { "main": [[{ "node": "Rename Client ID - Code", "type": "main", "index": 0 }]] },
+    "Rename Client ID - Code": { "main": [[{ "node": "Merge Appointments + Clients", "type": "main", "index": 0 }]] },
+    "Merge Appointments + Clients": { "main": [[{ "node": "Format Response - Code", "type": "main", "index": 0 }]] },
+    "Format Response - Code": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] },
+    "JWT Error Response - Code": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "00000000-0000-0000-0000-000000000000",
+  "meta": { "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca" },
+  "id": "NEW_WORKFLOW",
+  "tags": [
+    { "id": "Q4i8xQtE7UtuEFhO", "name": "Finance" },
+    { "id": "tZpzEwpoeg8SrGGa", "name": "TEST" }
+  ]
+}
