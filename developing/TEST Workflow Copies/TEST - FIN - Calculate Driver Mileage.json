@@ -1,0 +1,515 @@
+{
+  "name": "TEST - FIN - Calculate Driver Mileage",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "TEST-calculate-driver-mileage",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -656,
+        128
+      ],
+      "id": "webhook-calc-mileage",
+      "name": "POST Calculate Mileage - Webhook",
+      "webhookId": "test-calc-driver-mileage"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Calculate Driver Mileage - Validate JWT & Input\n// Version: v1.0.0\n// Validates Bearer token, role permissions, and request body\n\nconst webhookData = $input.first().json;\nconst authHeader = webhookData.headers?.authorization || '';\nconst body = webhookData.body || {};\n\n// Extract token from Bearer header\nconst token = authHeader.replace('Bearer ', '').trim();\n\nif (!token) {\n  return [{\n    json: {\n      validationPassed: 'false',\n      errorMessage: 'No authorization token provided',\n      statusCode: 401\n    }\n  }];\n}\n\n// JWT validation functions\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    // Check token type (reject limited tokens)\n    if (payload.type === 'limited') {\n      return { valid: false, error: 'Limited token not allowed' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      validationPassed: 'false',\n      errorMessage: validation.error || 'Invalid token',\n      statusCode: 401\n    }\n  }];\n}\n\n// Check role (admin or supervisor only for finance)\nconst userRole = validation.payload.role;\nif (userRole !== 'admin' && userRole !== 'supervisor') {\n  return [{\n    json: {\n      validationPassed: 'false',\n      errorMessage: 'Access denied. Admin or Supervisor role required.',\n      statusCode: 403\n    }\n  }];\n}\n\n// Validate appointment ID\nif (!body.appointmentId) {\n  return [{\n    json: {\n      validationPassed: 'false',\n      errorMessage: 'Appointment ID is required',\n      statusCode: 400\n    }\n  }];\n}\n\n// Token valid - proceed\nreturn [{\n  json: {\n    validationPassed: 'true',\n    user: {\n      username: validation.payload.sub,\n      role: validation.payload.role\n    },\n    appointmentId: body.appointmentId,\n    driverToClientKm: body.driverToClientKm || null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        128
+      ],
+      "id": "code-validate-jwt",
+      "name": "Validate JWT & Input - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -224,
+        128
+      ],
+      "id": "switch-validation",
+      "name": "Validation - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "supabase-get-appointment",
+      "name": "Get Appointment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "drivers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get Appointment - Supabase').item.json.driver_assigned }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -100
+      ],
+      "id": "supabase-get-driver",
+      "name": "Get Driver - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "clients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "knumber",
+              "condition": "eq",
+              "keyValue": "={{ $('Get Appointment - Supabase').item.json.knumber }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        100
+      ],
+      "id": "supabase-get-client",
+      "name": "Get Client - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "merge-driver-client",
+      "name": "Merge Driver & Client - Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Calculate Driver Mileage - Code\n// Version: v1.1.0 - Updated to handle merged input\n// driver_mileage = tripdistance (km) + driver home to client round trip\n\n// Get data from merged inputs - driver and client come from merge\nconst allItems = $input.all();\n\n// Find driver and client from merged data\nlet driver = null;\nlet client = null;\n\nfor (const item of allItems) {\n  const data = item.json;\n  if (data.driver_name || data.home_address !== undefined) {\n    driver = data;\n  }\n  if (data.knumber || data.civicaddress !== undefined) {\n    client = data;\n  }\n}\n\n// Get appointment from earlier node\nconst appointment = $('Get Appointment - Supabase').first().json;\nconst validatedData = $('Validate JWT & Input - Code').first().json;\n\n// Validate required data\nif (!appointment || !appointment.id) {\n  return [{\n    json: {\n      success: false,\n      message: 'Appointment not found',\n      appointmentId: validatedData.appointmentId\n    }\n  }];\n}\n\nif (!driver || !driver.id) {\n  return [{\n    json: {\n      success: false,\n      message: 'Driver not found or not assigned',\n      appointmentId: appointment.id\n    }\n  }];\n}\n\n// Get trip distance (stored in metres, convert to km)\nconst tripdistanceMetres = parseFloat(appointment.tripdistance) || 0;\nconst tripdistanceKm = tripdistanceMetres / 1000;\n\n// Calculate driver home to client round trip\nlet driverToClientRoundTrip = 0;\n\nif (driver.home_address && client && client.civicaddress) {\n  driverToClientRoundTrip = parseFloat(validatedData.driverToClientKm) || 20;\n}\n\n// Calculate total driver mileage\nconst driverMileage = tripdistanceKm + driverToClientRoundTrip;\n\n// Prepare update for appointment\nconst appointmentUpdate = {\n  id: appointment.id,\n  driver_mileage: driverMileage\n};\n\n// Prepare update for driver's YTD mileage\nconst appointmentDate = new Date(appointment.appointmenttime);\nconst year = appointmentDate.getFullYear().toString();\nconst monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',\n  'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];\nconst month = monthNames[appointmentDate.getMonth()];\n\n// Get existing mileage_ytd or initialize\nlet mileageYtd = driver.mileage_ytd || {};\nif (!mileageYtd[year]) {\n  mileageYtd[year] = { total: 0 };\n}\nif (!mileageYtd[year][month]) {\n  mileageYtd[year][month] = 0;\n}\n\n// Add this trip's mileage\nmileageYtd[year][month] += driverMileage;\nmileageYtd[year].total = Object.keys(mileageYtd[year])\n  .filter(k => k !== 'total')\n  .reduce((sum, k) => sum + (mileageYtd[year][k] || 0), 0);\n\nconst driverUpdate = {\n  id: driver.id,\n  mileage_ytd: mileageYtd\n};\n\nreturn [{\n  json: {\n    success: true,\n    appointmentUpdate,\n    driverUpdate,\n    calculation: {\n      tripdistanceKm,\n      driverToClientRoundTrip,\n      totalDriverMileage: driverMileage,\n      year,\n      month,\n      newYtdTotal: mileageYtd[year].total\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "code-calculate-mileage",
+      "name": "Calculate Mileage - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentUpdate.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "driver_mileage",
+              "fieldValue": "={{ $json.appointmentUpdate.driver_mileage }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -100
+      ],
+      "id": "supabase-update-appointment",
+      "name": "Update Appointment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "drivers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Calculate Mileage - Code').item.json.driverUpdate.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "mileage_ytd",
+              "fieldValue": "={{ JSON.stringify($('Calculate Mileage - Code').item.json.driverUpdate.mileage_ytd) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        100
+      ],
+      "id": "supabase-update-driver",
+      "name": "Update Driver YTD - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "merge-updates",
+      "name": "Merge Updates - Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Calculate Driver Mileage - Aggregate Results\n// Version: v1.1.0 - Updated to handle merged input\n\n// Get calculation result from earlier node\nconst calcResult = $('Calculate Mileage - Code').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Driver mileage calculated and stored successfully',\n    data: {\n      appointmentId: calcResult.appointmentUpdate.id,\n      driverId: calcResult.driverUpdate.id,\n      driverMileage: calcResult.calculation.totalDriverMileage,\n      ytdTotal: calcResult.calculation.newYtdTotal\n    },\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "code-aggregate-results",
+      "name": "Aggregate Results - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Calculate Driver Mileage - Error Response\n// Version: v1.0.0\n\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.errorMessage || 'Validation failed',\n    statusCode: errorData.statusCode || 400,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        240
+      ],
+      "id": "code-error-response",
+      "name": "Error Response - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        128
+      ],
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "POST Calculate Mileage - Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate JWT & Input - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate JWT & Input - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Appointment - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Appointment - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Get Driver - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Client - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Driver - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Driver & Client - Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Driver & Client - Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Driver & Client - Merge": {
+      "main": [
+        [
+          {
+            "node": "Calculate Mileage - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Mileage - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Appointment - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Driver YTD - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Appointment - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Updates - Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Driver YTD - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Updates - Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Updates - Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

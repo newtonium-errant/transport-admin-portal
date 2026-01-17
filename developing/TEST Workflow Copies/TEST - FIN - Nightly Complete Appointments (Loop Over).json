@@ -1,0 +1,927 @@
+{
+  "name": "TEST - FIN - Nightly Complete Appointments (Loop Over)",
+  "nodes": [
+    {
+      "parameters": {
+        "tableId": "audit_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "action",
+              "fieldValue": "nightly_batch_complete"
+            },
+            {
+              "fieldId": "username",
+              "fieldValue": "system"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "system"
+            },
+            {
+              "fieldId": "resource_type",
+              "fieldValue": "appointments"
+            },
+            {
+              "fieldId": "details",
+              "fieldValue": "={{ JSON.stringify({ description: 'Nightly appointment completion batch: ' + $json.summary.processed + ' appointments processed, ' + $json.summary.totalMileage.toFixed(2) + ' km total mileage calculated', summary: $json.summary }) }}"
+            },
+            {
+              "fieldId": "success",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        -512
+      ],
+      "id": "e6b55428-d3e6-4206-b76d-8fca2961f96f",
+      "name": "Log Batch Summary - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "audit_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "action",
+              "fieldValue": "appointment_auto_completed"
+            },
+            {
+              "fieldId": "username",
+              "fieldValue": "system"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "system"
+            },
+            {
+              "fieldId": "resource_type",
+              "fieldValue": "appointment"
+            },
+            {
+              "fieldId": "resource_id",
+              "fieldValue": "={{ String($json.appointmentId) }}"
+            },
+            {
+              "fieldId": "details",
+              "fieldValue": "={{ JSON.stringify({ description: 'Appointment auto-completed by nightly batch', old_status: 'assigned', new_status: 'completed', driver_mileage_km: $json.driverMileage, driver_id: $json.driverId, knumber: $json.knumber }) }}"
+            },
+            {
+              "fieldId": "success",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3920,
+        -176
+      ],
+      "id": "0ff7b1ad-316d-444c-a462-5bf02a224828",
+      "name": "Log Appointment Change - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        16
+      ],
+      "id": "30e986e9-c8c6-4ad7-b6f3-b21e9c7ea928",
+      "name": "Nightly 2AM Atlantic - Schedule"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "appointments",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "operation_status",
+              "condition": "eq",
+              "keyValue": "assigned"
+            },
+            {
+              "keyName": "appointmenttime",
+              "condition": "lt",
+              "keyValue": "={{ $now.toISO() }}"
+            },
+            {
+              "keyName": "deleted_at",
+              "condition": "is",
+              "keyValue": "null"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        16
+      ],
+      "id": "60bf86dd-6358-42ad-8336-735da9ccc93d",
+      "name": "Get Past Assigned Appointments - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Nightly Complete Appointments - Check for Appointments\n// Version: v2.0.0 (Loop Over version)\n// Checks if there are any appointments to process\n\nconst appointments = $input.all().map(item => item.json);\n\n// Filter out any empty results\nconst validAppointments = appointments.filter(apt => apt && apt.id);\n\nif (validAppointments.length === 0) {\n  return [{\n    json: {\n      hasAppointments: 'false',\n      message: 'No past assigned appointments found',\n      count: 0,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Return each appointment as separate item for Loop Over\nreturn validAppointments.map(apt => ({\n  json: {\n    hasAppointments: 'true',\n    appointment: apt,\n    appointmentId: apt.id,\n    knumber: apt.knumber,\n    driverId: apt.driver_assigned,\n    totalCount: validAppointments.length\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        16
+      ],
+      "id": "2642f110-3450-42ac-9097-e0d823c11673",
+      "name": "Check for Appointments - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.hasAppointments }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Appointments"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.hasAppointments }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Appointments"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        800,
+        128
+      ],
+      "id": "91983a10-1729-411d-9439-7bcf7be82d8f",
+      "name": "Has Appointments - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "operation_status",
+              "fieldValue": "completed"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        -80
+      ],
+      "id": "ed17920a-74d5-42f3-88f7-856a77cdcf14",
+      "name": "Update Status to Completed - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "drivers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Loop Over Appointments').item.json.driverId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        -192
+      ],
+      "id": "aa2aa74f-2609-41b3-aa38-e2cca47fbfa6",
+      "name": "Get Driver - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "clients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "knumber",
+              "keyValue": "={{ $('Loop Over Appointments').item.json.knumber }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        32
+      ],
+      "id": "6ce5969d-2dfc-49a0-85df-93ceea0f6688",
+      "name": "Get Client - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1552,
+        -80
+      ],
+      "id": "d795634f-dc99-4db4-bfec-4ecfda854441",
+      "name": "Merge Driver & Client - Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Nightly Complete - Track Result\n// Version: v2.0.0 (Loop Over version)\n// Tracks the result for this appointment\n\nconst loopData = $('Loop Over Appointments').first().json;\nconst updatedAppointment = $input.first().json;\n\nreturn [{\n  json: {\n    processed: true,\n    appointmentId: updatedAppointment.id || loopData.appointmentId,\n    driverMileage: updatedAppointment.driver_mileage || 0,\n    driverId: loopData.driverId,\n    knumber: loopData.knumber,\n    status: 'completed',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        224
+      ],
+      "id": "ba2932d3-2b0e-4237-9f91-c1dfd107eeb0",
+      "name": "Track Result - Code"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        -720
+      ],
+      "id": "21a95b92-2f78-4708-bac8-72815d3c97ad",
+      "name": "Aggregate All Results"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Nightly Complete - Aggregate Batch Results\n// Version: v2.0.0 (Loop Over version)\n// Aggregates all processed appointments into summary\n\nconst allResults = $input.first().json.data || [];\n\nconst processed = allResults.filter(r => r.processed).length;\nconst totalMileage = allResults.reduce((sum, r) => sum + (r.driverMileage || 0), 0);\nconst appointmentIds = allResults.filter(r => r.processed).map(r => r.appointmentId);\n\nreturn [{\n  json: {\n    summary: {\n      processed,\n      totalMileage,\n      appointmentIds,\n      timestamp: new Date().toISOString()\n    },\n    details: allResults\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -640
+      ],
+      "id": "55ed179c-2c12-4370-a0de-99c1e8c13bf6",
+      "name": "Aggregate Batch Results - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Nightly Complete - No Appointments Log\n// Version: v1.0.0\n\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    processed: false,\n    message: data.message,\n    timestamp: data.timestamp\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        160
+      ],
+      "id": "18e3c08c-3816-4dc6-bcb7-e4e46dbd4291",
+      "name": "No Appointments - Code"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        -256
+      ],
+      "id": "44af1b1b-51d5-4116-aceb-966444c95cf0",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.hasCache }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "915973eb-2ebe-41d9-a5ef-50659fa109e7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Needs API Call"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "716c686e-9902-4d0a-a1a5-db682010c340",
+                    "leftValue": "={{ $json.hasCache }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Cache"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1984,
+        -80
+      ],
+      "id": "7e8a9494-f55f-49d8-9c99-2f9b309d84b9",
+      "name": "Need API Call - Switch"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "= {\n    \"origins\": \"{{ $json.apiCallData.driverAddress }}\",\n    \"destinations\": \"{{ $json.apiCallData.clientAddress }}\",\n    \"key\": \"REPLACE_WITH_ENV_VAR_GOOGLE_MAPS_API_KEY\",\n    \"mode\": \"driving\",\n    \"units\": \"metric\"\n  }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2400,
+        -192
+      ],
+      "id": "ca158351-fef8-4017-8815-e4c5bf3159c8",
+      "name": "Google Maps API - HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse API & Prepare Cache Update - Code\n// Version: v2.0.0 (Loop Over version)\n// Input: Google Maps API response\n// Uses Loop Over to get original data (reliable with single item)\n\nconst apiResponse = $input.first().json;\n\n// Get original data from Check Cache (via Loop Over - single item, so .first() works)\nconst checkCacheData = $('Check Cache - Code').first().json;\nconst driver = checkCacheData.driver;\nconst client = checkCacheData.client;\nconst appointment = checkCacheData.appointment;\nconst driverId = String(driver?.id || '');\n\n// Parse Google Maps response\nlet distanceKm = 0;\nlet durationMinutes = 0;\n\nif (apiResponse.status === 'OK' && apiResponse.rows?.[0]?.elements?.[0]?.status === 'OK') {\n  const element = apiResponse.rows[0].elements[0];\n  distanceKm = element.distance.value / 1000;\n  durationMinutes = Math.round(element.duration.value / 60);\n}\n\n// Build the updated driver_travel_times object\nconst existingTravelTimes = client.driver_travel_times || {};\nconst updatedTravelTimes = {\n  ...existingTravelTimes,\n  [driverId]: {\n    distance_km: Math.round(distanceKm * 100) / 100,\n    duration_minutes: durationMinutes,\n    from_address: apiResponse.origin_addresses?.[0] || '',\n    to_address: apiResponse.destination_addresses?.[0] || '',\n    calculated_at: new Date().toISOString()\n  }\n};\n\nreturn [{\n  json: {\n    clientKnumber: client.knumber,\n    distanceKm: Math.round(distanceKm * 100) / 100,\n    durationMinutes: durationMinutes,\n    updatedTravelTimes: updatedTravelTimes,\n    driver: driver,\n    client: client,\n    appointment: appointment\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        -192
+      ],
+      "id": "d5f07da1-7dce-48cc-9b05-c750bea5c26a",
+      "name": "Parse API & Prepare Cache Update - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "clients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "knumber",
+              "condition": "eq",
+              "keyValue": "={{ $json.clientKnumber }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "driver_travel_times",
+              "fieldValue": "={{ $json.updatedTravelTimes }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        -192
+      ],
+      "id": "a16ddaea-026c-419e-a1d1-b9b4e4d673d5",
+      "name": "Update Client Cache - Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Check Driver-Client Distance Cache\n// Version: v2.0.0 (Loop Over version)\n// Checks if driver_travel_times cache exists for this driver-client pair\n\nconst allItems = $input.all();\n\n// Find driver and client from merged data\nlet driver = null;\nlet client = null;\n\nfor (const item of allItems) {\n  const data = item.json;\n  if (data.name && data.google_calendar_id !== undefined && typeof data.id === 'number') {\n    driver = data;\n  }\n  if (data.knumber && data.firstname) {\n    client = data;\n  }\n}\n\n// Get appointment from Loop Over (reliable single item reference)\nconst loopData = $('Loop Over Appointments').first().json;\nconst appointment = loopData.appointment;\n\n// Check if cache exists\nconst driverId = String(driver?.id || '');\nconst hasCache = !!(client?.driver_travel_times && client.driver_travel_times[driverId]);\n\n// Get cached distance if available\nlet cachedDistance = null;\nif (hasCache) {\n  cachedDistance = client.driver_travel_times[driverId];\n}\n\nreturn [{\n  json: {\n    hasCache: hasCache ? 'true' : 'false',\n    driver: driver,\n    client: client,\n    appointment: appointment,\n    loopData: loopData,\n    cachedDistance: cachedDistance,\n    // For API call if needed\n    apiCallData: !hasCache ? {\n      driverId: driver?.id,\n      driverAddress: [driver?.home_address, driver?.home_city, driver?.home_province, driver?.home_postal_code].filter(Boolean).join(', '),\n      clientKnumber: client?.knumber,\n      clientAddress: [client?.civicaddress, client?.city, client?.prov, client?.postalcode].filter(Boolean).join(', ')\n    } : null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -80
+      ],
+      "id": "2db81f33-4390-4936-a262-b6ef86cda7c3",
+      "name": "Check Cache - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate Mileage (Fresh API Call) - Code\n// Version: v2.0.0 (Loop Over version)\n// Get data from Parse API (reliable with Loop Over single item)\n// Formula: (driver->client round trip) + (client->clinic one way)\n\n// Get all data from Parse API\nconst parsedApiData = $('Parse API & Prepare Cache Update - Code').first().json;\nconst driver = parsedApiData.driver;\nconst client = parsedApiData.client;\nconst appointment = parsedApiData.appointment;\nconst driverToClientKm = parsedApiData.distanceKm || 0;\n\n// Get clinic->client distance from client's clinic_travel_times\nlet clinicToClientKm = 0;\nconst clinicName = appointment.locationname || appointment.destination_name || '';\n\nif (client.clinic_travel_times && clinicName) {\n  const clinicData = client.clinic_travel_times[clinicName];\n  if (clinicData?.primary?.distance_km) {\n    clinicToClientKm = clinicData.primary.distance_km;\n  }\n}\n\n// Calculate total mileage: driver->client (round trip) + client->clinic (one way)\nconst driverRoundTrip = driverToClientKm * 2;\nconst totalMileage = driverRoundTrip + clinicToClientKm;\n\nreturn [{\n  json: {\n    appointmentId: appointment.id,\n    driverMileage: Math.round(totalMileage * 100) / 100,\n    calculation: {\n      driverToClientKm: driverToClientKm,\n      driverRoundTrip: driverRoundTrip,\n      clinicToClientKm: clinicToClientKm,\n      totalMileage: totalMileage,\n      source: 'fresh_api',\n      clinicName: clinicName\n    },\n    driver: driver,\n    client: client,\n    appointment: appointment\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3024,
+        -192
+      ],
+      "id": "565ef24f-db49-419e-b4dc-2b3ccc87d7c1",
+      "name": "Calculate Mileage (Fresh API Call) - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate Mileage (Cached) - Code\n// Version: v2.0.0 (Loop Over version)\n// Input: Check Cache - Code output via Switch (has_cache branch)\n// Formula: (driver->client round trip) + (client->clinic one way)\n\nconst data = $input.first().json;\nconst driver = data.driver;\nconst client = data.client;\nconst appointment = data.appointment;\nconst cachedDistance = data.cachedDistance;\n\n// Get driver->client distance from cache\nconst driverToClientKm = cachedDistance?.distance_km || 0;\n\n// Get clinic->client distance from client's clinic_travel_times\nlet clinicToClientKm = 0;\nconst clinicName = appointment.locationname || appointment.destination_name || '';\n\nif (client.clinic_travel_times && clinicName) {\n  const clinicData = client.clinic_travel_times[clinicName];\n  if (clinicData?.primary?.distance_km) {\n    clinicToClientKm = clinicData.primary.distance_km;\n  }\n}\n\n// Calculate total mileage: driver->client (round trip) + client->clinic (one way)\nconst driverRoundTrip = driverToClientKm * 2;\nconst totalMileage = driverRoundTrip + clinicToClientKm;\n\nreturn [{\n  json: {\n    appointmentId: appointment.id,\n    driverMileage: Math.round(totalMileage * 100) / 100,\n    calculation: {\n      driverToClientKm: driverToClientKm,\n      driverRoundTrip: driverRoundTrip,\n      clinicToClientKm: clinicToClientKm,\n      totalMileage: totalMileage,\n      source: 'cached',\n      clinicName: clinicName\n    },\n    driver: driver,\n    client: client,\n    appointment: appointment\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        48
+      ],
+      "id": "e7b1b097-4ccd-4e51-8418-b76a2e76c4f2",
+      "name": "Calculate Mileage (Cached) - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "driver_mileage",
+              "fieldValue": "={{ $json.driverMileage }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3440,
+        -16
+      ],
+      "id": "6395e912-0b93-4285-8678-25b0b05b1e60",
+      "name": "Update Appointment Mileage - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        432,
+        16
+      ],
+      "id": "981d728c-d471-4568-b70b-aad86e6423d5",
+      "name": "Loop Over Appointments"
+    }
+  ],
+  "pinData": {
+    "When clicking 'Execute workflow'": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  "connections": {
+    "Nightly 2AM Atlantic - Schedule": {
+      "main": [
+        [
+          {
+            "node": "Get Past Assigned Appointments - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Past Assigned Appointments - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Check for Appointments - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Appointments - Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Appointments": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Appointments - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Appointments - Switch": {
+      "main": [
+        [
+          {
+            "node": "Update Status to Completed - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Appointments - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status to Completed - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Get Driver - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Client - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Driver - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Driver & Client - Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Driver & Client - Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Driver & Client - Merge": {
+      "main": [
+        [
+          {
+            "node": "Check Cache - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Result - Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Results": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Batch Results - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Batch Results - Code": {
+      "main": [
+        [
+          {
+            "node": "Log Batch Summary - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Get Past Assigned Appointments - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need API Call - Switch": {
+      "main": [
+        [
+          {
+            "node": "Google Maps API - HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calculate Mileage (Cached) - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Maps API - HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Parse API & Prepare Cache Update - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse API & Prepare Cache Update - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Client Cache - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Client Cache - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Calculate Mileage (Fresh API Call) - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Cache - Code": {
+      "main": [
+        [
+          {
+            "node": "Need API Call - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Mileage (Fresh API Call) - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Appointment Mileage - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Mileage (Cached) - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Appointment Mileage - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Appointment Mileage - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Log Appointment Change - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Track Result - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Appointments - Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Appointments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "43fbf46a-f21d-4721-9169-dc9c12861d1a",
+  "meta": {
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "9gF6fzkz5hzrBR83",
+  "tags": []
+}
