@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 TEST MODE - Bulk Add Appointments - RRTS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/shared-styles.css" rel="stylesheet">
+    <script src="../js/auth/permissions.js"></script>
+    <style>
+        body {
+            background: #FFFFFF;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding-top: 130px; /* Account for TEST banner (40px) + fixed header (70px) */
+        }
+
+        /* RRTS Brand Colors */
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+            --color-success: #27ae60;
+            --color-warning: #f39c12;
+            --color-danger: #e74c3c;
+        }
+
+        /* Header Styles */
+        .app-header {
+            position: fixed;
+            top: 40px; /* TEST banner height */
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        /* Brand Section */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .header-brand:hover {
+            opacity: 0.9;
+        }
+
+        .brand-icon {
+            font-size: 1.8em;
+            line-height: 1;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation */
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .nav-link {
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+        }
+
+        .nav-link.active {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        /* User Section */
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .user-name {
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .user-role-badge {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: var(--color-white);
+            border: 1px solid var(--color-white);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--color-white);
+            color: var(--color-primary);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .header-container {
+                padding: 0 20px;
+            }
+
+            .user-name {
+                display: none;
+            }
+
+            .logout-btn span {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .header-nav {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 250px;
+                height: calc(100vh - 70px);
+                background-color: var(--color-primary);
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 10px;
+                transition: left 0.3s;
+                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .header-nav.mobile-open {
+                left: 0;
+            }
+
+            .nav-link {
+                width: 100%;
+                padding: 12px 16px;
+            }
+
+            .brand-text {
+                font-size: 0.9em;
+            }
+
+            .user-info {
+                gap: 8px;
+            }
+
+            .user-role-badge {
+                display: none;
+            }
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%);
+            color: #FFFFFF;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1B4332 0%, #000000 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(27, 67, 50, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
+            border: none;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #1B4332 0%, #000000 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(27, 67, 50, 0.3);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #2D6A4F;
+            box-shadow: 0 0 0 0.2rem rgba(45, 106, 79, 0.25);
+        }
+
+        .appointment-item {
+            background: #FFFFFF;
+            border: 1px solid #E5E5E5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .appointment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .appointment-number {
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%);
+            color: #FFFFFF;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .remove-appointment {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #e74c3c;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .remove-appointment:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+
+        .past-appointment {
+            border-color: #f39c12 !important;
+            background-color: rgba(243, 156, 18, 0.1) !important;
+        }
+
+        .past-appointment .appointment-number {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #333333;
+            padding: 60px 20px;
+        }
+
+        .appointment-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #333333;
+        }
+
+        .client-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #loadingSpinner {
+            display: none;
+        }
+
+        .is-loading #loadingSpinner {
+            display: block;
+        }
+
+        .is-loading .btn-text {
+            display: none;
+        }
+
+        .appointments-bottom-controls {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #E5E5E5;
+        }
+
+        .address-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-primary {
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .badge-secondary {
+            background: #6c757d;
+            color: #FFFFFF;
+        }
+
+        .pickup-address-help {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- TEST MODE WARNING BANNER -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 10000; background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); color: white; padding: 8px 20px; text-align: center; font-weight: 600; font-size: 0.95em; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <i class="bi bi-cone-striped me-2"></i>
+        🧪 TEST MODE - Bulk Add Appointments - Primary Clinic Pre-Selection Testing - Testing Branch Database
+        <i class="bi bi-cone-striped ms-2"></i>
+    </div>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <!-- Brand -->
+            <div class="header-brand" onclick="window.location.href='TEST-dashboard.html'">
+                <span class="brand-icon">🚐</span>
+                <span class="brand-text">RRTS</span>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <!-- Navigation -->
+            <nav class="header-nav" id="mainNav">
+                <!-- Navigation links will be populated by JavaScript based on RBAC -->
+            </nav>
+
+            <!-- User Section -->
+            <div class="header-user">
+                <div class="user-info">
+                    <span class="user-avatar" id="userAvatar">--</span>
+                    <span class="user-name" id="userName">User</span>
+                    <span class="user-role-badge" id="userRoleBadge">Guest</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="logout-text">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>
+                        <i class="bi bi-calendar-plus-fill me-2"></i>
+                        Bulk Add Appointments
+                    </h2>
+                    <div>
+                        <a href="TEST-appointments-sl.html" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Back to Appointments
+                        </a>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Bulk Add Mode:</strong> Create multiple appointments for the same client at once. Great for scheduling recurring appointments or multiple visits.
+                </div>
+
+                <!-- Client Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-search me-2"></i>
+                            Step 1: Select Client
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="clientSelect" class="form-label">Client (K Number)</label>
+                                <select class="form-select" id="clientSelect" onchange="selectClient()">
+                                    <option value="">Choose a client...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="clientInfo" class="client-info" style="display: none;">
+                                    <strong>Selected Client:</strong>
+                                    <div id="clientDetails"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Section -->
+                <div class="card mb-4" id="appointmentsCard" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            Step 2: Add Appointments
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="appointmentsList">
+                            <div class="empty-state">
+                                <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
+                                No appointments added yet. Click "Add Appointment" to begin.
+                            </div>
+                        </div>
+
+                        <div class="appointments-bottom-controls">
+                            <button class="btn btn-primary btn-lg" onclick="addAppointment()">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Add Another Appointment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Section -->
+                <div class="card" id="saveSection" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Step 3: Review & Save
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="appointmentSummary" class="appointment-summary mb-3"></div>
+                        <div class="text-center">
+                            <button class="btn btn-success btn-lg" onclick="saveAppointments()" id="saveButton">
+                                <span id="loadingSpinner" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span class="btn-text">
+                                    <i class="bi bi-cloud-upload me-2"></i>
+                                    Save All Appointments
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Messages -->
+                <div id="errorMessages"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JWT Authentication Helper -->
+    <script src="js/auth/TEST-jwt-auth.js"></script><!-- TEST version -->
+    <script src="js/components/TEST-navigation.js"></script><!-- Navigation Component -->
+    <script>
+        // Global variables
+        let clients = [];
+        let destinations = [];
+        let selectedClient = null;
+        let appointments = [];
+        let appointmentCounter = 0;
+        let availableAddresses = [];
+
+        // API Configuration
+        const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check JWT authentication (redirects if not authenticated)
+            if (!(await requireAuth('TEST-dashboard.html'))) {
+                return;
+            }
+
+            const user = getCurrentUser();
+
+            // Enforce page access
+            if (!enforcePageAccess()) return;
+
+            // Filter navigation
+            filterNavigationByRole(user.role);
+
+            loadClients();
+            loadDestinations();
+        });
+
+        // Load clients from API (TEST endpoint)
+        function loadClients() {
+            console.log('[TEST Bulk Add] Loading clients from TEST-getActiveClients...');
+            authenticatedFetch(`${apiBaseUrl}/TEST-getActiveClients`)
+            .then(response => response.json())
+            .then(data => {
+                clients = data.clients || data;
+                console.log('[TEST Bulk Add] Loaded', clients.length, 'clients');
+                populateClientDropdown();
+            })
+            .catch(error => {
+                console.error('Error loading clients:', error);
+                showError('Failed to load clients. Please refresh the page.');
+            });
+        }
+
+        // Load destinations from API
+        function loadDestinations() {
+            authenticatedFetch(`${apiBaseUrl}/clinic-locations`)
+            .then(response => response.json())
+            .then(data => {
+                destinations = data.destinations || data;
+            })
+            .catch(error => {
+                console.error('Error loading destinations:', error);
+                showError('Failed to load clinic locations.');
+            });
+        }
+
+        // Populate client dropdown
+        function populateClientDropdown() {
+            const clientSelect = document.getElementById('clientSelect');
+            clientSelect.innerHTML = '<option value="">Choose a client...</option>';
+
+            const activeClients = clients.filter(client => client.active === true);
+
+            activeClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.knumber;
+                option.textContent = `${client.lastname || ''}, ${client.firstname || ''} - ${client.knumber}`;
+                clientSelect.appendChild(option);
+            });
+        }
+
+        // Build available addresses for client
+        function buildAvailableAddresses(client) {
+            availableAddresses = [];
+
+            // Primary address (always exists)
+            const primaryAddress = [
+                client.civicaddress,
+                client.city,
+                client.prov,
+                client.postalcode
+            ].filter(Boolean).join(', ');
+
+            const primaryShort = [
+                client.civicaddress,
+                client.city
+            ].filter(Boolean).join(', ');
+
+            availableAddresses.push({
+                type: 'primary',
+                full: primaryAddress,
+                short: primaryShort,
+                label: 'Primary Address'
+            });
+
+            // Secondary address (if exists)
+            if (client.secondary_civic_address && client.secondary_civic_address.trim()) {
+                const secondaryAddress = [
+                    client.secondary_civic_address,
+                    client.secondary_city,
+                    client.secondary_province,
+                    client.secondary_postal_code
+                ].filter(Boolean).join(', ');
+
+                const secondaryShort = [
+                    client.secondary_civic_address,
+                    client.secondary_city
+                ].filter(Boolean).join(', ');
+
+                availableAddresses.push({
+                    type: 'secondary',
+                    full: secondaryAddress,
+                    short: secondaryShort,
+                    label: 'Secondary Address',
+                    notes: client.secondary_address_notes
+                });
+            }
+        }
+
+        // Handle client selection
+        function selectClient() {
+            const clientSelect = document.getElementById('clientSelect');
+            const knumber = clientSelect.value;
+
+            if (!knumber) {
+                selectedClient = null;
+                availableAddresses = [];
+                document.getElementById('clientInfo').style.display = 'none';
+                document.getElementById('appointmentsCard').style.display = 'none';
+                document.getElementById('saveSection').style.display = 'none';
+                appointments = [];
+                appointmentCounter = 0;
+                return;
+            }
+
+            selectedClient = clients.find(client => client.knumber === knumber);
+
+            if (selectedClient) {
+                buildAvailableAddresses(selectedClient);
+                displayClientInfo();
+                document.getElementById('appointmentsCard').style.display = 'block';
+                appointments = [];
+                appointmentCounter = 0;
+
+                // Automatically add the first appointment
+                addAppointment();
+            }
+        }
+
+        // Display selected client information
+        function displayClientInfo() {
+            const clientDetails = document.getElementById('clientDetails');
+            const primaryAddress = availableAddresses.find(addr => addr.type === 'primary');
+            const secondaryAddress = availableAddresses.find(addr => addr.type === 'secondary');
+
+            let addressDisplay = `<div><strong>Primary:</strong> ${primaryAddress.full}</div>`;
+            if (secondaryAddress) {
+                addressDisplay += `<div><strong>Secondary:</strong> ${secondaryAddress.full}</div>`;
+                if (secondaryAddress.notes) {
+                    addressDisplay += `<div class="text-muted" style="font-size: 0.875rem;"><em>${secondaryAddress.notes}</em></div>`;
+                }
+            }
+
+            clientDetails.innerHTML = `
+                <div><strong>${selectedClient.firstname || ''} ${selectedClient.lastname || ''}</strong></div>
+                ${addressDisplay}
+                <div>Phone: ${selectedClient.phone || 'Not provided'}</div>
+                <div>Email: ${selectedClient.email || 'Not provided'}</div>
+            `;
+
+            document.getElementById('clientInfo').style.display = 'block';
+        }
+
+        // Get last appointment values for pre-filling
+        function getLastAppointmentValues() {
+            if (appointments.length === 0) {
+                return { clinic: '', pickupAddress: 'primary' };
+            }
+
+            const lastAppointment = appointments[appointments.length - 1];
+            return {
+                clinic: lastAppointment.location || '',
+                pickupAddress: lastAppointment.pickupAddressType || 'primary'
+            };
+        }
+
+        // Add new appointment
+        function addAppointment() {
+            appointmentCounter++;
+            const lastValues = getLastAppointmentValues();
+
+            // TEST MODE: For first appointment, check if client has primary clinic
+            let initialClinic = lastValues.clinic;
+            if (appointments.length === 0 && selectedClient && selectedClient.primary_clinic_id) {
+                const primaryClinic = destinations.find(dest => dest.id === selectedClient.primary_clinic_id);
+                if (primaryClinic) {
+                    initialClinic = primaryClinic.name;
+                    console.log('[TEST Bulk Add] Pre-selecting primary clinic for first appointment:', primaryClinic.name);
+                }
+            }
+
+            const appointment = {
+                id: `appointment-${appointmentCounter}`,
+                date: '',
+                time: '',
+                location: initialClinic, // Pre-fill from primary clinic or last appointment
+                locationId: '',
+                locationAddress: '',
+                pickupAddressType: lastValues.pickupAddress, // Pre-fill from last appointment
+                pickupAddress: '',
+                appointmentNotes: '',
+                appointmentLength: selectedClient ? (selectedClient.appointmentLength || selectedClient.appointment_length || 120) : 120
+            };
+
+            // Set pickup address based on type
+            const selectedAddress = availableAddresses.find(addr => addr.type === appointment.pickupAddressType);
+            if (selectedAddress) {
+                appointment.pickupAddress = selectedAddress.full;
+            }
+
+            // Set location address if location is pre-filled
+            if (appointment.location) {
+                const destination = destinations.find(dest => dest.name === appointment.location);
+                if (destination) {
+                    appointment.locationId = destination.id;
+                    const addressParts = [
+                        destination.address,
+                        destination.city,
+                        destination.province
+                    ].filter(Boolean);
+                    appointment.locationAddress = addressParts.join(', ');
+                    if (destination.postalCode && destination.postalCode.trim()) {
+                        appointment.locationAddress += ` ${destination.postalCode}`;
+                    }
+                }
+            }
+
+            appointments.push(appointment);
+            displayAppointments();
+            updateSaveSection();
+
+            // Focus on the date field of the new appointment
+            setTimeout(() => {
+                const dateInput = document.getElementById(`date-${appointment.id}`);
+                if (dateInput) {
+                    dateInput.focus();
+                }
+            }, 100);
+        }
+
+        // Remove appointment
+        function removeAppointment(appointmentId) {
+            const index = appointments.findIndex(apt => apt.id === appointmentId);
+            if (index > -1) {
+                appointments.splice(index, 1);
+                displayAppointments();
+                updateSaveSection();
+            }
+        }
+
+        // Check if date is in the past
+        function isPastDate(dateStr) {
+            if (!dateStr) return false;
+            const appointmentDate = new Date(dateStr + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return appointmentDate < today;
+        }
+
+        // Build pickup address dropdown options
+        function buildPickupAddressOptions(selectedType) {
+            return availableAddresses.map(addr => {
+                const badgeClass = addr.type === 'primary' ? 'badge-primary' : 'badge-secondary';
+                const selected = addr.type === selectedType ? 'selected' : '';
+                return `<option value="${addr.type}" ${selected}>${addr.short}</option>`;
+            }).join('');
+        }
+
+        // Display appointments
+        function displayAppointments() {
+            const appointmentsList = document.getElementById('appointmentsList');
+
+            if (appointments.length === 0) {
+                appointmentsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
+                        No appointments added yet. Click "Add Another Appointment" to begin.
+                    </div>
+                `;
+                return;
+            }
+
+            appointmentsList.innerHTML = appointments.map((appointment, index) => {
+                const isPast = isPastDate(appointment.date);
+                const pastClass = isPast ? 'past-appointment' : '';
+
+                return `
+                    <div class="appointment-item ${pastClass}" id="appointment-${appointment.id}">
+                        <div class="appointment-number">Appointment ${index + 1}</div>
+                        ${appointments.length > 1 ? `
+                            <button class="remove-appointment" onclick="removeAppointment('${appointment.id}')" title="Remove appointment">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        ` : ''}
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="date-${appointment.id}" class="form-label">Date *</label>
+                                <input type="date" class="form-control" id="date-${appointment.id}"
+                                       value="${appointment.date}" onchange="updateAppointment('${appointment.id}', 'date', this.value)" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="time-${appointment.id}" class="form-label">Time *</label>
+                                <input type="time" class="form-control" id="time-${appointment.id}"
+                                       value="${appointment.time}" onchange="updateAppointment('${appointment.id}', 'time', this.value)" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="location-${appointment.id}" class="form-label">Clinic Location *</label>
+                                <select class="form-select" id="location-${appointment.id}"
+                                        onchange="updateAppointmentLocation('${appointment.id}', this.value)" required>
+                                    <option value="">Choose a clinic...</option>
+                                    ${destinations.map(dest => `
+                                        <option value="${dest.name}" ${appointment.location === dest.name ? 'selected' : ''}>
+                                            ${dest.name}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="length-${appointment.id}" class="form-label">Length (minutes)</label>
+                                <input type="number" class="form-control" id="length-${appointment.id}"
+                                       value="${appointment.appointmentLength}" min="15" max="480" step="15"
+                                       onchange="updateAppointment('${appointment.id}', 'appointmentLength', parseInt(this.value))">
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="pickup-${appointment.id}" class="form-label">
+                                    Pickup Address *
+                                    <i class="bi bi-info-circle" title="Select which address to pick up the client from"></i>
+                                </label>
+                                <select class="form-select" id="pickup-${appointment.id}"
+                                        onchange="updatePickupAddress('${appointment.id}', this.value)" required>
+                                    ${buildPickupAddressOptions(appointment.pickupAddressType)}
+                                </select>
+                                <div class="pickup-address-help">
+                                    ${availableAddresses.length > 1 ? 'Choose primary or secondary address for this appointment' : 'Using primary address'}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="notes-${appointment.id}" class="form-label">Appointment Notes</label>
+                                <textarea class="form-control" id="notes-${appointment.id}" rows="2"
+                                          placeholder="Enter any notes for this appointment..."
+                                          onchange="updateAppointment('${appointment.id}', 'appointmentNotes', this.value)">${appointment.appointmentNotes}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update appointment field
+        function updateAppointment(appointmentId, field, value) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (appointment) {
+                appointment[field] = value;
+                updateSaveSection();
+
+                if (field === 'date') {
+                    displayAppointments();
+                }
+            }
+        }
+
+        // Update appointment location and get address
+        function updateAppointmentLocation(appointmentId, locationName) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            const destination = destinations.find(dest => dest.name === locationName);
+
+            if (appointment) {
+                appointment.location = locationName;
+                appointment.locationId = destination ? destination.id : '';
+
+                if (destination) {
+                    const addressParts = [
+                        destination.address,
+                        destination.city,
+                        destination.province
+                    ].filter(Boolean);
+
+                    appointment.locationAddress = addressParts.join(', ');
+
+                    if (destination.postalCode && destination.postalCode.trim()) {
+                        appointment.locationAddress += ` ${destination.postalCode}`;
+                    }
+                } else {
+                    appointment.locationAddress = '';
+                }
+
+                updateSaveSection();
+            }
+        }
+
+        // Update pickup address
+        function updatePickupAddress(appointmentId, addressType) {
+            const appointment = appointments.find(apt => apt.id === appointmentId);
+            if (appointment) {
+                appointment.pickupAddressType = addressType;
+
+                const selectedAddress = availableAddresses.find(addr => addr.type === addressType);
+                if (selectedAddress) {
+                    appointment.pickupAddress = selectedAddress.full;
+                }
+
+                updateSaveSection();
+            }
+        }
+
+        // Update save section
+        function updateSaveSection() {
+            const validAppointments = appointments.filter(apt =>
+                apt.date && apt.time && apt.location && apt.pickupAddress
+            );
+
+            if (validAppointments.length > 0) {
+                document.getElementById('saveSection').style.display = 'block';
+                updateAppointmentSummary(validAppointments);
+            } else {
+                document.getElementById('saveSection').style.display = 'none';
+            }
+        }
+
+        // Update appointment summary
+        function updateAppointmentSummary(validAppointments) {
+            const summaryDiv = document.getElementById('appointmentSummary');
+            const pastAppointments = validAppointments.filter(apt => isPastDate(apt.date));
+
+            let summary = `<div><strong>Ready to save:</strong> ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}</div>`;
+
+            if (pastAppointments.length > 0) {
+                summary += `<div class="mt-2" style="color: #e74c3c;"><strong>⚠️ Warning:</strong> ${pastAppointments.length} appointment(s) scheduled in the past</div>`;
+            }
+
+            summaryDiv.innerHTML = summary + `<div class="mt-2">
+                ${validAppointments.map((apt, index) => {
+                    const pickupType = apt.pickupAddressType === 'primary' ? 'Primary' : 'Secondary';
+                    return `
+                        <div class="text-muted">
+                            ${index + 1}. ${apt.date} at ${apt.time} - ${apt.location} - ${pickupType} Address (${apt.appointmentLength} min)
+                        </div>
+                    `;
+                }).join('')}
+            </div>`;
+        }
+
+        // Save appointments
+        async function saveAppointments() {
+            const validAppointments = appointments.filter(apt =>
+                apt.date && apt.time && apt.location && apt.pickupAddress
+            );
+
+            if (validAppointments.length === 0) {
+                showError('Please complete at least one appointment before saving.');
+                return;
+            }
+
+            if (!selectedClient) {
+                showError('Please select a client first.');
+                return;
+            }
+
+            // Show loading state
+            const saveButton = document.getElementById('saveButton');
+            saveButton.classList.add('is-loading');
+            saveButton.disabled = true;
+
+            // Get current user for managed_by field
+            const currentUser = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
+
+            try {
+                // Build array of all appointments
+                const appointmentsArray = validAppointments.map(apt => {
+                    // Convert local date/time to UTC for storage
+                    const localDateTime = new Date(apt.date + 'T' + apt.time + ':00');
+
+                    // Get transit time from client's travel times for this clinic
+                    let transitTime = 30; // Default
+                    if (selectedClient.clinic_travel_times && apt.location) {
+                        const travelTime = selectedClient.clinic_travel_times[apt.location];
+                        if (travelTime) {
+                            // Match appointment-modal.js pattern: try primary, then secondary
+                            transitTime = travelTime.primary?.duration_minutes ||
+                                        travelTime.secondary?.duration_minutes ||
+                                        30;
+                        }
+                    }
+
+                    // Build appointment object (match workflow expected format)
+                    return {
+                        knumber: selectedClient.knumber,
+                        appointmentDateTime: localDateTime.toISOString(),
+                        appointmentLength: apt.appointmentLength || 120,
+                        status: 'pending',
+                        notes: apt.appointmentNotes || '',
+                        driver_instructions: null,
+                        scheduling_notes: '',
+                        transitTime: transitTime,
+                        pickup_address: apt.pickupAddress,
+                        customRate: null,
+                        location: apt.location,
+                        clinic_id: apt.locationId,
+                        locationAddress: apt.locationAddress,
+                        managed_by: currentUser.id || null,
+                        managed_by_name: currentUser.fullName || currentUser.full_name || currentUser.username || null
+                    };
+                });
+
+                // Send all appointments in single request (TEST endpoint)
+                console.log('[TEST Bulk Add] Saving', appointmentsArray.length, 'appointments to TEST-save-appointment...');
+                const response = await authenticatedFetch(`${apiBaseUrl}/TEST-save-appointment`, {
+                    method: 'POST',
+                    body: JSON.stringify({ appointments: appointmentsArray })
+                });
+
+                const data = await response.json();
+
+                // Restore button state
+                saveButton.classList.remove('is-loading');
+                saveButton.disabled = false;
+
+                if (data.success) {
+                    const savedCount = data.appointmentsSaved || data.totalAppointments || appointmentsArray.length;
+                    showSuccess(`All ${savedCount} appointment(s) saved successfully!`);
+                    setTimeout(() => {
+                        window.location.href = 'appointments-sl.html';
+                    }, 2000);
+                } else {
+                    showError(`Failed to save appointments: ${data.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error saving appointments:', error);
+                saveButton.classList.remove('is-loading');
+                saveButton.disabled = false;
+                showError(`Network error: ${error.message}`);
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorSection = document.getElementById('errorMessages');
+            errorSection.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const alert = errorSection.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const errorSection = document.getElementById('errorMessages');
+            errorSection.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        // Navigation handled by TEST-navigation.js
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+<!-- Version: v1.0.0 - Initial bulk add implementation with pickup address selection -->
+<!-- Features:
+  - Client selection with address display
+  - Multiple appointment forms
+  - Pickup address selection (primary/secondary)
+  - Smart pre-filling: clinic and pickup address from previous appointment
+  - Visual indicators for past appointments
+  - Auto-set managed_by to current user
+  - Save all appointments at once to existing workflow
+-->

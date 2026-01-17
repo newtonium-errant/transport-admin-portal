@@ -1,0 +1,632 @@
+{
+  "name": "TEST - CLIENT - Add New Client",
+  "nodes": [
+    {
+      "parameters": {
+        "tableId": "clients",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "knumber",
+              "fieldValue": "={{ $json.knumber }}"
+            },
+            {
+              "fieldId": "firstname",
+              "fieldValue": "={{ $json.firstname }}"
+            },
+            {
+              "fieldId": "lastname",
+              "fieldValue": "={{ $json.lastname }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $json.phone }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "civicaddress",
+              "fieldValue": "={{ $json.civicaddress }}"
+            },
+            {
+              "fieldId": "city",
+              "fieldValue": "={{ $json.city }}"
+            },
+            {
+              "fieldId": "prov",
+              "fieldValue": "={{ $json.prov }}"
+            },
+            {
+              "fieldId": "postalcode",
+              "fieldValue": "={{ $json.postalcode }}"
+            },
+            {
+              "fieldId": "emergency_contact_name",
+              "fieldValue": "={{ $json.emergency_contact_name }}"
+            },
+            {
+              "fieldId": "emergency_contact_number",
+              "fieldValue": "={{ $json.emergency_contact_number }}"
+            },
+            {
+              "fieldId": "notes",
+              "fieldValue": "={{ $json.notes }}"
+            },
+            {
+              "fieldId": "appointment_length",
+              "fieldValue": "={{ $json.appointmentlength }}"
+            },
+            {
+              "fieldId": "mapaddress",
+              "fieldValue": "={{ $json.mapaddress }}"
+            },
+            {
+              "fieldId": "secondary_civic_address",
+              "fieldValue": "={{ $json.secondary_civic_address }}"
+            },
+            {
+              "fieldId": "secondary_city",
+              "fieldValue": "={{ $json.secondary_city }}"
+            },
+            {
+              "fieldId": "secondary_province",
+              "fieldValue": "={{ $json.secondary_province }}"
+            },
+            {
+              "fieldId": "secondary_postal_code",
+              "fieldValue": "={{ $json.secondary_postal_code }}"
+            },
+            {
+              "fieldId": "secondary_address_notes",
+              "fieldValue": "={{ $json.secondary_address_notes }}"
+            },
+            {
+              "fieldId": "primary_clinic_id",
+              "fieldValue": "={{ $json.primary_clinic_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -96
+      ],
+      "id": "9aa7d0ec-e8cc-4ad0-9075-5d125a5dd705",
+      "name": "Create Client - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        2544,
+        352
+      ],
+      "id": "1bc216c3-9b40-4768-ae71-8697c46b9e13",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": " // Get incoming client data\n  const requestBody = $json.requestBody || $json;\n  const data = {\n      knumber: requestBody.kNumber,\n      firstname: requestBody.clientData.firstName,\n      lastname: requestBody.clientData.lastName,\n      phone: requestBody.clientData.phone,\n      email: requestBody.clientData.email,\n      civicaddress: requestBody.clientData.civicAddress,\n      mapaddress: requestBody.clientData.mapAddress,\n      city: requestBody.clientData.city,\n      prov: requestBody.clientData.province,\n      postalcode: requestBody.clientData.postalCode,\n      emergency_contact_name: requestBody.clientData.emergencyContactName,\n      emergency_contact_number: requestBody.clientData.emergencyContactNumber,\n      notes: requestBody.clientData.notes,\n      appointmentlength: requestBody.clientData.appointmentLength,\n      active: requestBody.clientData.active,\n      secondary_civic_address: requestBody.clientData.secondary_civic_address,\n      secondary_city: requestBody.clientData.secondary_city,\n      secondary_province: requestBody.clientData.secondary_province,\n      secondary_postal_code: requestBody.clientData.secondary_postal_code,\n      secondary_address_notes: requestBody.clientData.secondary_address_notes,\n      primary_clinic_id: requestBody.clientData.primaryClinicId  // NEW: Extract\n  primary clinic ID\n  };\n\n  // Validate required fields\n  const errors = [];\n  if (!data.knumber || !data.knumber.match(/^K\\d{7}$/i)) {\n      errors.push('K Number must be in format K1234567');\n  }\n  if (!data.firstname) errors.push('First name is required');\n  if (!data.lastname) errors.push('Last name is required');\n  if (!data.phone) errors.push('Phone is required');\n  if (!data.email) errors.push('Email is required');\n  if (!data.civicaddress) errors.push('Civic address is required');\n  if (!data.city) errors.push('City is required');\n  if (!data.prov) errors.push('Province is required');\n  if (!data.postalcode) errors.push('Postal code is required');\n\n  // Validate appointmentLength if provided\n  if (data.appointmentlength !== null && data.appointmentlength !== undefined &&\n  data.appointmentlength !== '') {\n      const appointmentLength = parseInt(data.appointmentlength);\n      if (isNaN(appointmentLength) || appointmentLength < 15 || appointmentLength >\n  480) {\n          errors.push('Appointment length must be a number between 15 and 480\n  minutes');\n      }\n  }\n\n  // Validate primary_clinic_id if provided (optional field)\n  if (data.primary_clinic_id !== null && data.primary_clinic_id !== undefined &&\n  data.primary_clinic_id !== '') {\n      const clinicId = parseInt(data.primary_clinic_id);\n      if (isNaN(clinicId) || clinicId <= 0) {\n          errors.push('Primary clinic ID must be a valid positive number');\n      }\n  }\n\n  // Get selected clinic IDs (optional - if not provided, calculate all)\n  const selectedClinics = requestBody.selectedClinicIds || [];\n\n  // If validation fails, return error immediately\n  if (errors.length > 0) {\n      return [{\n          json: {\n              success: false,\n              errors: errors,\n              message: 'Validation failed: ' + errors.join(', '),\n              skipSupabase: true\n          }\n      }];\n  }\n\n  // Format data for Supabase\n  return [{\n      json: {\n          success: true,\n          skipSupabase: false,\n          knumber: data.knumber.toUpperCase(),\n          firstname: data.firstname.trim(),\n          lastname: data.lastname.trim(),\n          phone: data.phone.trim(),\n          email: data.email.toLowerCase().trim(),\n          civicaddress: data.civicaddress.trim(),\n          mapaddress: data.mapaddress ? data.mapaddress.trim() : null,\n          city: data.city.trim(),\n          prov: data.prov,\n          postalcode: data.postalcode.toUpperCase().trim(),\n          emergency_contact_name: data.emergency_contact_name ?\n  data.emergency_contact_name.trim() : null,\n          emergency_contact_number: data.emergency_contact_number ?\n  data.emergency_contact_number.trim() : null,\n          notes: data.notes ? data.notes.trim() : null,\n          appointmentlength: data.appointmentlength ? parseInt(data.appointmentlength)\n  : null,\n          active: data.active !== undefined ? data.active : true,\n          secondary_civic_address: data.secondary_civic_address ?\n  data.secondary_civic_address.trim() : null,\n          secondary_city: data.secondary_city ? data.secondary_city.trim() : null,\n          secondary_province: data.secondary_province || null,\n          secondary_postal_code: data.secondary_postal_code ?\n  data.secondary_postal_code.toUpperCase().trim() : null,\n          secondary_address_notes: data.secondary_address_notes ?\n  data.secondary_address_notes.trim() : null,\n          primary_clinic_id: data.primary_clinic_id ? parseInt(data.primary_clinic_id)\n  : null,  // NEW: Include in output\n          selectedClinics: selectedClinics\n      }\n  }];\n\n  // Version 1.4 - Added primary_clinic_id support for primary clinic feature"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "9decfebe-6dea-4b19-82ae-cb6aaf7fb656",
+      "name": "Validate Data - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input from previous step\nconst input = $input.first().json;\n\n// Check if this is a validation error (skipSupabase = true)\nif (input.skipSupabase === true) {\n    // Return validation error response\n    return [{\n        json: {\n            success: false,\n            message: input.message,\n            errors: input.errors\n        }\n    }];\n}\n\n// Check if this is a Supabase error\nif (input.error) {\n    return [{\n        json: {\n            success: false,\n            message: 'Database error: ' + input.error\n        }\n    }];\n}\n\n// Otherwise it's a successful result\nreturn [{\n    json: {\n        success: true,\n        message: 'Client created successfully',\n        client: input\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        0
+      ],
+      "id": "2f16891b-4308-40e2-8878-8976b6b6c98b",
+      "name": "Format Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation for Backend Workflows\n// Version: v1.0.0\n// Use this code node at the start of any protected workflow\n\n// Get webhook input data\nconst webhookData = $input.first().json;\n\n// Extract Authorization header\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check Bearer token format\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format. Expected \"Bearer {token}\"',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7); // Remove \"Bearer \" prefix\n\n// JWT validation functions (matching generation code)\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"***REMOVED***\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\n// Check token type (reject LIMITED tokens unless specifically allowed)\n// Note: Individual workflows can override this by setting allowLimitedToken in webhook body\nconst allowLimitedToken = webhookData.body?.allowLimitedToken || false;\n\nif (payload.type === 'limited' && !allowLimitedToken) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication. Please complete password change.',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check if refresh token is being used for non-refresh operations\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used for this operation',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Token is valid - return user info and original request body\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type,\n      permissions: payload.permissions || []\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        160
+      ],
+      "id": "74653435-ae7c-4dc5-b045-72ccb5b58b9b",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d51c0154-5b23-4705-8876-1c83170f8070"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1c45a334-2da4-45e1-99a7-02ca348187f1",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        416,
+        160
+      ],
+      "id": "0fd24db4-ea00-4407-bc68-ec8c0747aaed",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Format Unauthorized Error Response - Simple Version\n  // Version: v1.0.0\n\n  const errorData = $input.first().json;\n\n  // Return standardized error format\n  return [{\n    json: {\n      success: false,\n      error: {\n        message: errorData.message || 'Unauthorized access',\n        statusCode: errorData.statusCode || 401\n      },\n      timestamp: errorData.timestamp || new Date().toISOString()\n    }\n  }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        288
+      ],
+      "id": "1ed1792a-7dd7-4b6c-9c62-14daf3ecdca5",
+      "name": "Unauthorized Response - Code"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "destinations",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "active",
+              "condition": "is",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        864,
+        96
+      ],
+      "id": "f0973a1b-ab88-4f53-9237-d187a50b139d",
+      "name": "Get Active Destinations - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "= {\n    \"origins\": \"{{ $json.clientAddress }}\",\n    \"destinations\": \"{{ $json.clinicAddress }}\",\n    \"key\": \"***REMOVED***\",\n    \"mode\": \"driving\",\n    \"units\": \"metric\"\n  }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1552,
+        0
+      ],
+      "id": "10f953ac-f427-4b1d-bcd2-9694ebe48a85",
+      "name": "Google Maps API - HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "clients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.clientId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "clinic_travel_times",
+              "fieldValue": "={{ $json.clinic_travel_times }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        0
+      ],
+      "id": "f7fdabc2-729b-4f84-a8d3-428d23cfee97",
+      "name": "Update Client Travel Times - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Group Destinations for Parallel Google Maps Processing\n  // Version: v1.1.0 - Updated to handle merged input from parallel Supabase calls\n\n  const validationData = $('Validate Data - Code').first().json;\n  const mergedInput = $input.all().map(item => item.json);\n\n  // First item is the client (from Create Client node), rest are destinations\n  const client = mergedInput[0];\n  const allDestinations = mergedInput.slice(1);\n\n  // Get selected clinic IDs (empty array = calculate all)\n  const selectedClinicIds = validationData.selectedClinics || [];\n\n  // Filter destinations if clinic selection was used\n  let destinationsToCalculate = allDestinations;\n  if (selectedClinicIds.length > 0) {\n    destinationsToCalculate = allDestinations.filter(dest =>\n      selectedClinicIds.includes(dest.id)\n    );\n  }\n\n  // Build primary client address\n  const primaryAddress = [\n    client.civicaddress,\n    client.city,\n    client.prov,\n    client.postalcode\n  ].filter(Boolean).join(', ');\n\n  // Build secondary address if it exists\n  let secondaryAddress = null;\n  if (client.secondary_civic_address) {\n    secondaryAddress = [\n      client.secondary_civic_address,\n      client.secondary_city,\n      client.secondary_province,\n      client.secondary_postal_code\n    ].filter(Boolean).join(', ');\n  }\n\n  // Create Google Maps request objects for parallel processing\n  const mapsRequests = [];\n\n  destinationsToCalculate.forEach(dest => {\n    // Build clinic address\n    const clinicAddress = [\n      dest.address,\n      dest.city,\n      dest.province,\n      dest.postal_code\n    ].filter(Boolean).join(', ');\n\n    // Primary address request\n    mapsRequests.push({\n      json: {\n        clientAddress: primaryAddress,\n        clinicAddress: clinicAddress,\n        destinationName: dest.name,\n        destinationId: dest.id,\n        clientId: client.id,\n        addressType: 'primary'\n      }\n    });\n\n    // Secondary address request (if exists)\n    if (secondaryAddress) {\n      mapsRequests.push({\n        json: {\n          clientAddress: secondaryAddress,\n          clinicAddress: clinicAddress,\n          destinationName: dest.name,\n          destinationId: dest.id,\n          clientId: client.id,\n          addressType: 'secondary'\n        }\n      });\n    }\n  });\n\n  return mapsRequests;\n\n  // Version: v1.1.0 - Updated to handle merged input from parallel Supabase calls"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "426fabe2-1c81-41d7-9653-1e0f27e666de",
+      "name": "Group Destinations for Maps - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": " // Aggregate Google Maps Results into travel_times JSONB\n  // Version: v1.3.0 - Added transit time buffer and rounding\n\n  const mapsResults = $input.all();\n\n  // Get original request data from Group Destinations node\n  const originalRequests = $('Group Destinations for Maps - Code').all();\n\n  // Get client ID from first original request\n  const clientId = originalRequests[0].json.clientId;\n\n  const travelTimes = {};\n  let successCount = 0;\n  let failCount = 0;\n\n  mapsResults.forEach((result, index) => {\n    // Get the original request data for this index\n    const originalData = originalRequests[index].json;\n    const destination = originalData.destinationName;\n    const addressType = originalData.addressType;\n    const mapsResponse = result.json;\n\n    // Initialize destination object if not exists\n    if (!travelTimes[destination]) {\n      travelTimes[destination] = {};\n    }\n\n    // Extract Google Maps data\n    if (mapsResponse.rows && mapsResponse.rows[0]?.elements[0]?.status === 'OK') {\n      const element = mapsResponse.rows[0].elements[0];\n\n      // Get raw duration from Google Maps API (convert seconds to minutes)\n      const rawDurationMinutes = Math.ceil(element.duration.value / 60);\n\n      // Apply +5 minute buffer and round up to nearest 5 minutes\n      // This matches the old Add Appointment workflow: Math.ceil((raw + 5) / 5) * 5\n      const durationMinutes = Math.ceil((rawDurationMinutes + 5) / 5) * 5;\n\n      const distanceKm = (element.distance.value / 1000).toFixed(2);\n\n      travelTimes[destination][addressType] = {\n        duration_minutes: durationMinutes,\n        distance_km: parseFloat(distanceKm),\n        calculated_at: new Date().toISOString()\n      };\n\n      successCount++;\n    } else {\n      console.error(`❌ Google Maps failed for ${destination} (${addressType})`);\n      travelTimes[destination][addressType] = {\n        duration_minutes: null,\n        distance_km: null,\n        calculated_at: new Date().toISOString(),\n        error: 'Google Maps API failed'\n      };\n      failCount++;\n    }\n  });\n\n  // Only log if there were failures\n  if (failCount > 0) {\n    console.error(`⚠️ Travel times: ${successCount} success, ${failCount} failed`);\n  }\n\n  return [{\n    json: {\n      clientId: clientId,\n      clinic_travel_times: travelTimes\n    }\n  }];\n\n  // Version: v1.3.0 - Added transit time buffer and rounding calculation"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        0
+      ],
+      "id": "563f7ee1-77e3-4ebb-bbd9-b7e7867e8b76",
+      "name": "Aggregate Travel Times - Code"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "8e507e7e-952b-4ca1-836b-d77feca67f37",
+      "name": "Merge Supabase Data"
+    },
+    {
+      "parameters": {
+        "httpMethod": "=POST",
+        "path": "TEST-new-client",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        160
+      ],
+      "id": "1b038832-0020-449f-bfd1-6954ab9e6e73",
+      "name": "POST New Client Data - Webhook",
+      "webhookId": "6b7e57bc-6d5e-4227-a8d2-d9bc2297051b"
+    }
+  ],
+  "pinData": {
+    "POST New Client Data - Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "webhook-processor-production-3bb8.up.railway.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+            "content-length": "378",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbmRyZXduZXd0b245NjVAZ21haWwuY29tIiwidHlwZSI6ImZ1bGwiLCJyb2xlIjoiYWRtaW4iLCJwZXJtaXNzaW9ucyI6WyJhbGwiXSwiaWF0IjoxNzYyMzU3NDg4LCJleHAiOjE3NjIzNjEwODgsImp0aSI6ImZ1bGxfMTc2MjM1NzQ4ODk1OF9uZmZra241Z3YifQ==.-stuujp",
+            "content-type": "application/json",
+            "origin": "null",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"Google Chrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "134.41.174.19",
+            "x-forwarded-host": "webhook-processor-production-3bb8.up.railway.app",
+            "x-forwarded-proto": "https",
+            "x-railway-edge": "railway/us-east4-eqdc4a",
+            "x-railway-request-id": "-i-aTH2cSsO0UEPMwoOzXw",
+            "x-real-ip": "134.41.174.19",
+            "x-request-start": "1762358433149"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "kNumber": "K0000111",
+            "clientData": {
+              "firstName": "Test Andrew",
+              "lastName": "Test Newton",
+              "phone": "902-760-0946",
+              "email": "andrew.newton@live.ca",
+              "civicAddress": "965 Labrador Lane",
+              "city": "Greenwood",
+              "province": "NS",
+              "postalCode": "b0p1n0",
+              "appointmentLength": 120,
+              "notes": "",
+              "emergencyContactName": "",
+              "emergencyContactNumber": "",
+              "active": true,
+              "mapAddress": ""
+            },
+            "selectedClinicIds": [
+              1
+            ]
+          },
+          "webhookUrl": "https://webhook-processor-production-3bb8.up.railway.app/webhook/create-client-destinations",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Create Client - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Supabase Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Data - Code": {
+      "main": [
+        [
+          {
+            "node": "Create Client - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Active Destinations - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate Data - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Destinations - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Supabase Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Maps API - HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Travel Times - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Client Travel Times - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group Destinations for Maps - Code": {
+      "main": [
+        [
+          {
+            "node": "Google Maps API - HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Travel Times - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Client Travel Times - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Supabase Data": {
+      "main": [
+        [
+          {
+            "node": "Group Destinations for Maps - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST New Client Data - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1b5c174c-0e9d-4cdd-8802-3bf3759ea9d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "MdZ3rn3t8OYVXIPz",
+  "tags": [
+    {
+      "updatedAt": "2025-10-30T17:16:58.339Z",
+      "createdAt": "2025-10-30T17:16:58.339Z",
+      "id": "enR5cvAvdrM9M4km",
+      "name": "Client Management"
+    },
+    {
+      "updatedAt": "2025-11-02T20:39:22.246Z",
+      "createdAt": "2025-11-02T20:39:22.246Z",
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    },
+    {
+      "updatedAt": "2025-11-02T23:08:15.396Z",
+      "createdAt": "2025-11-02T23:08:15.396Z",
+      "id": "oJcc7VfZ5UgsHMxV",
+      "name": "Google Maps API"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    }
+  ]
+}

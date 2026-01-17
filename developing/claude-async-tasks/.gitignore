@@ -1,28 +1,24 @@
 # Documentation and instruction files
 *.md
 !README.md
-!CLAUDE.md
-!developing/**/*.md
-!docs/**/*.md
+!docs/*.md
 Instructions/
 Implementation-Guide/
 n8n-updates/
 cloudflare-setup/
 frontend-updates/
 google-oauth/
-# developing/ - commented out for wip branch to enable mobile access
+developing/
 
 # Workflow files
 Workflows/
 *.json
 !package.json
 !package-lock.json
-!developing/**/*.json
 
-# SQL files
-sql/
-*.sql
-!developing/**/*.sql
+# SQL files (allow schema files for version control)
+# sql/
+# *.sql
 
 # Deprecated code
 deprecated/

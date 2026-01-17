@@ -1,0 +1,831 @@
+{
+  "name": "TEST - FIN - Invoice Update v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-update-invoice-status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2bd72956-a4ea-412b-9b60-bead70922133",
+      "name": "POST Invoice Update - Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1440,
+        368
+      ],
+      "webhookId": "invoice-update-v2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Invoice Update v2 - JWT Validation\n  // Version: v2.1.0 - Fixed to use custom JWT (matches Refresh Token workflow)\n  // Validates JWT token from Authorization header\n\n  const input = $input.first().json;\n\n  // Extract token from Authorization header\n  const authHeader = input.headers.authorization || input.headers.Authorization || '';\n  const token = authHeader.replace('Bearer ', '').trim();\n\n  if (!token) {\n    return [{\n      json: {\n        jwtValid: 'false',\n        statusCode: 401,\n        error: 'No authorization token provided'\n      }\n    }];\n  }\n\n  // JWT validation functions (matching Refresh Token workflow)\n  function simpleHash(input) {\n    let hash = 0;\n    for (let i = 0; i < input.length; i++) {\n      const char = input.charCodeAt(i);\n      hash = ((hash << 5) - hash) + char;\n      hash = hash & hash;\n    }\n    return hash.toString(36);\n  }\n\n  const JWT_SECRET = \"***REMOVED***\";\n\n  function verifyJWT(token) {\n    try {\n      const parts = token.split('.');\n      if (parts.length !== 3) {\n        return { valid: false, error: 'Invalid token format' };\n      }\n\n      const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n      // Verify signature\n      const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n      const expectedSignature = simpleHash(dataToSign);\n\n      if (receivedSignature !== expectedSignature) {\n        return { valid: false, error: 'Invalid signature' };\n      }\n\n      // Decode payload\n      const payload = JSON.parse(atob(encodedPayload));\n\n      // Check expiration\n      const now = Math.floor(Date.now() / 1000);\n      if (payload.exp && payload.exp < now) {\n        return { valid: false, error: 'Token expired' };\n      }\n\n      return { valid: true, payload: payload };\n\n    } catch (error) {\n      return { valid: false, error: 'Token verification failed: ' + error.message };\n    }\n  }\n\n  // Validate the token\n  const validation = verifyJWT(token);\n\n  if (!validation.valid) {\n    return [{\n      json: {\n        jwtValid: 'false',\n        statusCode: 401,\n        error: validation.error || 'Invalid or expired token'\n      }\n    }];\n  }\n\n  const payload = validation.payload;\n\n  // Check token_type - reject limited tokens\n  if (payload.type === 'limited') {\n    return [{\n      json: {\n        jwtValid: 'false',\n        statusCode: 403,\n        error: 'Limited tokens not allowed for this endpoint'\n      }\n    }];\n  }\n\n  // Token is valid\n  return [{\n    json: {\n      jwtValid: 'true',\n      user: {\n        username: payload.sub,\n        role: payload.role,\n        type: payload.type\n      },\n      body: input.body,\n      timestamp: new Date().toISOString()\n    }\n  }];"
+      },
+      "id": "d6acb301-4746-4a98-adab-130f1103caf4",
+      "name": "JWT Validation - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1200,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.jwtValid }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.jwtValid }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d3a5711b-0445-4048-88b0-c278f1cb2fbb",
+      "name": "JWT Check - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -960,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Invoice Update v2 - Validate Input\n  // Version: v2.0.1 - Fixed typo in validation check\n  // Validates request and prepares data for routing\n\n  const body = $input.first().json.body;\n\n  // Required fields\n  const appointmentId = body.appointmentId;\n  const invoiceStatus = body.invoice_status;\n\n  // Validation\n  const errors = [];\n\n  if (!appointmentId) {\n    errors.push('appointmentId is required');\n  }\n\n  if (!invoiceStatus) {\n    errors.push('invoice_status is required');\n  }\n\n  // Valid invoice statuses\n  const validStatuses = ['not_ready', 'ready', 'created', 'sent', 'paid'];\n  if (invoiceStatus && !validStatuses.includes(invoiceStatus)) {\n    errors.push(`invoice_status must be one of: ${validStatuses.join(', ')}`);\n  }\n\n  const validationPassed = errors.length === 0 ? 'true' : 'false';\n\n  // Convert status to string for Switch node (CRITICAL for typeValidation: strict)\n  const statusString = String(invoiceStatus || '');\n\n  return [{\n    json: {\n      validationPassed: validationPassed,\n      errors: errors,\n      appointmentId: appointmentId,\n      invoice_status: invoiceStatus,\n      statusString: statusString,\n      invoice_created_at: body.invoice_created_at || null,\n      invoice_sent_at: body.invoice_sent_at || null,\n      payment_received_at: body.payment_received_at || null,\n      timestamp: new Date().toISOString()\n    }\n  }];"
+      },
+      "id": "5068c251-17be-45a4-b569-a0fbaf91b1cb",
+      "name": "Validate Input - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "98baad6c-830b-44ae-98b6-77773c44d0e3",
+      "name": "Validation - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -480,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusString }}",
+                    "rightValue": "ready",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "563afa1a-151b-4dac-9bb4-5ad29928c70b"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Ready"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusString }}",
+                    "rightValue": "not_ready",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ecf5f544-330d-44a4-b790-e7bf8fe92d67"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "NotReady"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusString }}",
+                    "rightValue": "created",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "084e70da-56c0-43f5-a6bc-2d991a3669c3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusString }}",
+                    "rightValue": "sent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "454c29bd-0036-4b27-86be-d965be2975aa"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.statusString }}",
+                    "rightValue": "paid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a29600b3-b3f1-4df4-b0a0-1ab2de9b7edd"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Paid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f17e2dbc-a4cb-499b-a19b-05ed10d6d551",
+      "name": "Status Router - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -208,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_status",
+              "fieldValue": "={{ $json.invoice_status }}"
+            }
+          ]
+        }
+      },
+      "id": "ecee3941-21fb-4b14-b0af-aa66a5784150",
+      "name": "Update Ready - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -272
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_status",
+              "fieldValue": "={{ $json.invoice_status }}"
+            }
+          ]
+        }
+      },
+      "id": "bbc8dbc2-5d3b-4322-9981-8109e210626c",
+      "name": "Update NotReady - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -96
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_status",
+              "fieldValue": "={{ $json.invoice_status }}"
+            },
+            {
+              "fieldId": "invoice_created_at",
+              "fieldValue": "={{ $json.invoice_created_at }}"
+            }
+          ]
+        }
+      },
+      "id": "28aff7e5-d81a-489c-9b64-667dbd976430",
+      "name": "Update Created - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        112
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_status",
+              "fieldValue": "={{ $json.invoice_status }}"
+            },
+            {
+              "fieldId": "invoice_sent_at",
+              "fieldValue": "={{ $json.invoice_sent_at }}"
+            }
+          ]
+        }
+      },
+      "id": "b2ecb807-6a87-4791-b024-e6fc41c6c43e",
+      "name": "Update Sent - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        320
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_status",
+              "fieldValue": "={{ $json.invoice_status }}"
+            },
+            {
+              "fieldId": "payment_received_at",
+              "fieldValue": "={{ $json.payment_received_at }}"
+            }
+          ]
+        }
+      },
+      "id": "7eae94ba-c35c-4d3d-be4e-0c2345aff0f8",
+      "name": "Update Paid - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        512
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Invoice Update v2 - Success Response\n// Version: v2.0.0\n\nconst updateData = $input.first().json;\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Invoice status updated successfully',\n    data: updateData,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "ff57cf23-98dc-4ebc-8957-b703c00bc1a5",
+      "name": "Success Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Invoice Update v2 - Validation Error\n// Version: v2.0.0\n\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: 'Validation failed',\n    errors: errorData.errors || [],\n    statusCode: 400,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "882a1be1-c6e9-4fac-816d-4dcdd3f61235",
+      "name": "Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Invoice Update v2 - JWT Error Response\n// Version: v2.0.0\n\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.error || 'Authentication failed',\n    statusCode: errorData.statusCode || 401,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "3a94994e-5aa8-41f4-bd7f-a2e6a792b5db",
+      "name": "JWT Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bedabb65-0609-499d-a926-78d7a77d245d",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1056,
+        1232
+      ]
+    }
+  ],
+  "pinData": {
+    "POST Invoice Update - Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "webhook-processor-production-3bb8.up.railway.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+            "content-length": "129",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbmRyZXduZXd0b245NjVAZ21haWwuY29tIiwidHlwZSI6ImZ1bGwiLCJyb2xlIjoiYWRtaW4iLCJwZXJtaXNzaW9ucyI6WyJhbGwiXSwiaWF0IjoxNzY0MTA0OTM5LCJleHAiOjE3NjQxMDg1MzksImp0aSI6ImZ1bGxfMTc2NDEwNDkzOTgzNF9uYTRsam40azEifQ==.n3cyta",
+            "content-type": "application/json",
+            "origin": "null",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "134.41.46.208",
+            "x-forwarded-host": "webhook-processor-production-3bb8.up.railway.app",
+            "x-forwarded-proto": "https",
+            "x-railway-edge": "railway/us-east4-eqdc4a",
+            "x-railway-request-id": "RzpkF0vkSsuHZBdPAax-fw",
+            "x-real-ip": "134.41.46.208",
+            "x-request-start": "1764104949540",
+            "x-requested-with": "XMLHttpRequest"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "appointmentId": "cbbc3349-c5b5-4a74-8a80-d0554c088df5",
+            "invoice_status": "paid",
+            "payment_received_at": "2025-11-25T21:09:09.259Z"
+          },
+          "webhookUrl": "https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-update-invoice-status",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "POST Invoice Update - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Check - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Check - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate Input - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "JWT Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Status Router - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status Router - Switch": {
+      "main": [
+        [
+          {
+            "node": "Update Ready - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update NotReady - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Created - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Sent - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Paid - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Ready - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update NotReady - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Created - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Sent - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Paid - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "635a9949-8bc0-41d8-a5eb-6d1f5a23d23a",
+  "meta": {
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "AeM4LG8EcX0fLCVT",
+  "tags": [
+    {
+      "updatedAt": "2025-11-09T06:39:14.892Z",
+      "createdAt": "2025-11-09T06:39:14.892Z",
+      "id": "Q4i8xQtE7UtuEFhO",
+      "name": "Finance"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    },
+    {
+      "updatedAt": "2025-11-02T20:39:22.246Z",
+      "createdAt": "2025-11-02T20:39:22.246Z",
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    }
+  ]
+}

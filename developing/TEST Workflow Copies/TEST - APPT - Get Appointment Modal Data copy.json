@@ -1,0 +1,330 @@
+{
+  "name": "TEST - APPT - Get Appointment Modal Data copy",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "TEST-get-appointment-modal-data",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -624,
+        80
+      ],
+      "id": "cfac26cd-10fc-418e-93dd-8a4adcbccce3",
+      "name": "GET Modal Data - Webhook",
+      "webhookId": "2af672f4-3eb7-4f58-a4de-9150dd682f33"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation for Backend Workflows\n// Version: v1.0.0\n// Use this code node at the start of any protected workflow\n\n// Get webhook input data\nconst webhookData = $input.first().json;\n\n// Extract Authorization header\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check Bearer token format\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format. Expected \"Bearer {token}\"',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7); // Remove \"Bearer \" prefix\n\n// JWT validation functions (matching generation code)\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"***REMOVED***\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\n// Check token type (reject LIMITED tokens unless specifically allowed)\nconst allowLimitedToken = webhookData.body?.allowLimitedToken || false;\n\nif (payload.type === 'limited' && !allowLimitedToken) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication. Please complete password change.',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check if refresh token is being used for non-refresh operations\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used for this operation',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Token is valid - return user info and original request body\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type,\n      permissions: payload.permissions || []\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        80
+      ],
+      "id": "c3425d1e-283d-4a0a-9d26-1c48a878e0dc",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "authorized-condition"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "unauthorized-condition",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -208,
+        80
+      ],
+      "id": "48cb12ff-4fc0-426d-a815-db423c1811c3",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "drivers",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -144
+      ],
+      "id": "ee41347b-3061-464e-8b4c-d807d2350b34",
+      "name": "Get Drivers - Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "destinations",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        32,
+        16
+      ],
+      "id": "8e9c30f9-eb66-4823-a681-2e415bc145c7",
+      "name": "Get Clinics - Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        256,
+        -64
+      ],
+      "id": "3570d121-6702-4748-87ae-7fee3e37a094",
+      "name": "Merge Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// RRTS - Get Appointment Modal Data - Format Response\n// Returns drivers and clinics for appointment modal\n// v1.0.0 - Initial implementation for optimized modal loading\n\nconst items = $input.all();\n\n// Extract drivers and clinics from merged items\n// The merge node combines both Supabase queries\nconst driversData = [];\nconst clinicsData = [];\n\nitems.forEach(item => {\n  const json = item.json;\n  \n  // Check if this item has driver fields\n  if (json.first_name !== undefined || json.last_name !== undefined) {\n    driversData.push({\n      id: json.id,\n      first_name: json.first_name || '',\n      last_name: json.last_name || '',\n      name: json.name || '',\n      email: json.email || '',\n      phone: json.phone || '',\n      active: json.active !== false,\n      google_calendar_id: json.google_calendar_id || null\n    });\n  }\n  \n  // Check if this item has clinic/destination fields\n  if (json.name !== undefined && json.address !== undefined && json.first_name === undefined) {\n    clinicsData.push({\n      id: json.id,\n      name: json.name,\n      address: json.address,\n      city: json.city || '',\n      province: json.province || 'NS',\n      postal_code: json.postal_code || '',\n      phone: json.phone || '',\n      notes: json.notes || '',\n      active: json.active !== false\n    });\n  }\n});\n\n// Sort drivers by name\ndriversData.sort((a, b) => {\n  const nameA = `${a.last_name} ${a.first_name}`.toLowerCase();\n  const nameB = `${b.last_name} ${b.first_name}`.toLowerCase();\n  return nameA.localeCompare(nameB);\n});\n\n// Sort clinics by name\nclinicsData.sort((a, b) => a.name.localeCompare(b.name));\n\n// Return formatted response\nreturn [{\n  json: {\n    success: true,\n    drivers: driversData,\n    clinics: clinicsData,\n    count: {\n      drivers: driversData.length,\n      clinics: clinicsData.length\n    },\n    message: `Successfully retrieved ${driversData.length} drivers and ${clinicsData.length} clinics`,\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - Optimized modal data loading"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        48
+      ],
+      "id": "7bd08708-756a-45d0-a68d-a63ebb4c096c",
+      "name": "Format Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Unauthorized Error Response - Simple Version\n// Version: v1.0.0\n\nconst errorData = $input.first().json;\n\n// Return standardized error format\nreturn [{\n  json: {\n    success: false,\n    error: {\n      message: errorData.message || 'Unauthorized access',\n      statusCode: errorData.statusCode || 401\n    },\n    timestamp: errorData.timestamp || new Date().toISOString()\n  }\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        272
+      ],
+      "id": "2953b90b-2fba-473d-b431-262e3fbdb9ab",
+      "name": "Unauthorized Response - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        864,
+        384
+      ],
+      "id": "c5a9863e-e0d8-484a-84ca-7d08f089448e",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GET Modal Data - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Drivers - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Clinics - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Drivers - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Clinics - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Format Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ed3bbfdd-33f7-4ebf-85a6-a1342aaa5189",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "9pRnFvptbwRMUz9l",
+  "tags": [
+    {
+      "updatedAt": "2025-10-30T17:16:58.339Z",
+      "createdAt": "2025-10-30T17:16:58.339Z",
+      "id": "enR5cvAvdrM9M4km",
+      "name": "Client Management"
+    },
+    {
+      "updatedAt": "2025-11-02T20:39:22.246Z",
+      "createdAt": "2025-11-02T20:39:22.246Z",
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    },
+    {
+      "updatedAt": "2025-11-06T17:58:37.554Z",
+      "createdAt": "2025-11-06T17:58:37.554Z",
+      "id": "pLWvdHlwBOb9CWFU",
+      "name": "Modal Data"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    }
+  ]
+}

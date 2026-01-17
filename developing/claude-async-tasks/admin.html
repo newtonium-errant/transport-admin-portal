@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRTS - System Administration</title>
+    <link href="css/shared-styles.css" rel="stylesheet">
+    <script src="js/auth/permissions.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #FFFFFF;
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: 90px; /* Account for fixed header */
+        }
+
+        /* RRTS Brand Colors */
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+            --color-success: #27ae60;
+            --color-warning: #f39c12;
+            --color-danger: #e74c3c;
+        }
+
+        /* Header Styles */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        /* Brand Section */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .header-brand:hover {
+            opacity: 0.9;
+        }
+
+        .brand-icon {
+            font-size: 1.8em;
+            line-height: 1;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation */
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .nav-link {
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+        }
+
+        .nav-link.active {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        /* User Section */
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .user-name-link {
+            color: var(--color-white);
+            text-decoration: none;
+            transition: opacity 0.2s;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .user-name-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .user-role-badge {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: var(--color-white);
+            border: 1px solid var(--color-white);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--color-white);
+            color: var(--color-primary);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .header-container {
+                padding: 0 20px;
+            }
+
+            .user-name-link {
+            color: var(--color-white);
+            text-decoration: none;
+            transition: opacity 0.2s;
+                display: none;
+            }
+
+            .logout-btn span {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .header-nav {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 250px;
+                height: calc(100vh - 70px);
+                background-color: var(--color-primary);
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 10px;
+                transition: left 0.3s;
+                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .header-nav.mobile-open {
+                left: 0;
+            }
+
+            .nav-link {
+                width: 100%;
+                padding: 12px 16px;
+            }
+
+            .brand-text {
+                font-size: 0.9em;
+            }
+
+            .user-info {
+                gap: 8px;
+            }
+
+            .user-role-badge {
+                display: none;
+            }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .admin-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #E5E5E5;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2D6A4F;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #E5E5E5;
+            margin-bottom: 20px;
+        }
+
+        .user-management {
+            grid-column: 1 / -1;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #E5E5E5;
+        }
+
+        .user-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .user-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .user-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-locked {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #E5E5E5;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2D6A4F;
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-right: 8px;
+        }
+
+        .user-name-link:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+            margin-bottom: 8px;
+        }
+
+        .action-btn.primary {
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .action-btn.primary:hover {
+            background: #1B4332;
+        }
+
+        .action-btn.success {
+            background: #2D6A4F;
+            color: #FFFFFF;
+        }
+
+        .action-btn.success:hover {
+            background: #1B4332;
+        }
+
+        .action-btn.warning {
+            background: #f39c12;
+            color: #FFFFFF;
+        }
+
+        .action-btn.danger {
+            background: #e74c3c;
+            color: #FFFFFF;
+        }
+
+        .action-btn.secondary {
+            background: #E5E5E5;
+            color: #000000;
+        }
+
+        .action-btn.secondary:hover {
+            background: #333333;
+            color: #FFFFFF;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        .system-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-card {
+            background: #FFFFFF;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #E5E5E5;
+        }
+
+        .info-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .info-value.success { color: #2D6A4F; }
+        .info-value.warning { color: #f39c12; }
+        .info-value.danger { color: #e74c3c; }
+        .info-value.primary { color: #2D6A4F; }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #333333;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #E5E5E5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #FFFFFF;
+        }
+
+        .config-label {
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .config-value {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            padding: 10px;
+            border-left: 4px solid #2D6A4F;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .log-entry.error {
+            border-left-color: #e74c3c;
+            background: #fef8f8;
+        }
+
+        .log-entry.warning {
+            border-left-color: #f39c12;
+            background: #fffbf0;
+        }
+
+        .log-entry.success {
+            border-left-color: #2D6A4F;
+            background: #f8fff9;
+        }
+
+        .log-time {
+            font-size: 0.85em;
+            color: #333333;
+            margin-bottom: 5px;
+        }
+
+        .log-message {
+            color: #000000;
+        }
+
+        .backup-section {
+            border: 2px dashed #2D6A4F;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            background: #FFFFFF;
+        }
+
+        .backup-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #333333;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #2D6A4F;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #333333;
+            font-style: italic;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #E5E5E5;
+        }
+
+        .modal-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #000000;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .security-alert {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-icon {
+            font-size: 1.5em;
+        }
+
+        @media (max-width: 1200px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .system-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .user-table {
+                font-size: 0.9em;
+            }
+
+            .user-table th,
+            .user-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <!-- Brand -->
+            <div class="header-brand" onclick="window.location.href='dashboard.html'">
+                <span class="brand-icon">🚐</span>
+                <span class="brand-text">RRTS</span>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <!-- Navigation -->
+            <nav class="header-nav" id="mainNav">
+                <!-- Navigation links will be populated by JavaScript based on RBAC -->
+            </nav>
+
+            <!-- User Section -->
+            <div class="header-user">
+                <div class="user-info">
+                    <span class="user-avatar" id="userAvatar">--</span>
+                    <a href="profile.html" class="user-name-link" id="userName">User</a>
+                    <span class="user-role-badge" id="userRoleBadge">Guest</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="logout-text">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <div class="content">
+            <!-- System Overview -->
+            <div class="system-info">
+                <div class="info-card">
+                    <div class="info-value success" id="systemUptime">99.9%</div>
+                    <div class="info-label">System Uptime</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value primary" id="totalUsers">--</div>
+                    <div class="info-label">Total Users</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value warning" id="activeUsers">--</div>
+                    <div class="info-label">Active Users</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value danger" id="failedLogins">--</div>
+                    <div class="info-label">Failed Logins (24h)</div>
+                </div>
+            </div>
+
+            <!-- Security Alerts -->
+            <div id="securityAlerts"></div>
+
+            <div class="admin-grid">
+                <!-- User Management -->
+                <div class="admin-section user-management">
+                    <h3 class="section-title">👥 User Management</h3>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div style="flex: 1;">
+                            <input type="text" id="userSearch" placeholder="Search users..." style="width: 300px; margin-right: 15px;">
+                        </div>
+                        <button class="action-btn success" onclick="openAddUserModal()">
+                            ➕ Add User
+                        </button>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table class="user-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr>
+                                    <td colspan="6" class="loading">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- System Configuration -->
+                <div class="admin-section">
+                    <h3 class="section-title">⚙️ System Configuration</h3>
+                    
+                    <div id="systemConfig">
+                        <div class="loading">Loading configuration...</div>
+                    </div>
+                    
+                    <button class="action-btn primary" onclick="editSystemConfig()" style="margin-top: 15px;">
+                        ✏️ Edit Configuration
+                    </button>
+                </div>
+
+                <!-- API Management -->
+                <div class="admin-section">
+                    <h3 class="section-title">🔑 API Management</h3>
+                    
+                    <div id="apiConfig">
+                        <div class="config-item">
+                            <div class="config-label">Google Maps API</div>
+                            <div class="config-value">••••••••••••••••</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">Email Service</div>
+                            <div class="config-value">••••••••••••••••</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">SMS Service</div>
+                            <div class="config-value">••••••••••••••••</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">Google Calendar</div>
+                            <div class="config-value">••••••••••••••••</div>
+                        </div>
+                    </div>
+                    
+                    <button class="action-btn warning" onclick="manageApiKeys()">
+                        🔑 Manage API Keys
+                    </button>
+                </div>
+            </div>
+
+            <!-- Database & Backup -->
+            <div class="admin-grid">
+                <div class="admin-section">
+                    <h3 class="section-title">💾 Database Management</h3>
+                    
+                    <div class="backup-section">
+                        <div class="backup-icon">📦</div>
+                        <h4>Database Backup</h4>
+                        <p style="margin: 15px 0; color: #666;">Last backup: <span id="lastBackup">Loading...</span></p>
+                        
+                        <button class="action-btn success" onclick="createBackup()">
+                            💾 Create Backup
+                        </button>
+                        <button class="action-btn secondary" onclick="viewBackups()">
+                            📋 View Backups
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4 style="margin-bottom: 15px;">Database Statistics</h4>
+                        <div id="databaseStats">
+                            <div class="loading">Loading database statistics...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Logs -->
+                <div class="admin-section">
+                    <h3 class="section-title">📋 System Logs</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <select id="logFilter" onchange="filterLogs()" style="margin-right: 10px;">
+                            <option value="all">All Logs</option>
+                            <option value="error">Errors Only</option>
+                            <option value="warning">Warnings Only</option>
+                            <option value="success">Success Only</option>
+                        </select>
+                        <button class="action-btn secondary" onclick="refreshLogs()">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    
+                    <div id="systemLogs" style="max-height: 400px; overflow-y: auto;">
+                        <div class="loading">Loading system logs...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Add New User</div>
+                <button class="close-btn" onclick="closeAddUserModal()">&times;</button>
+            </div>
+            
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label for="newUsername">Username/Email *</label>
+                    <input type="email" id="newUsername" placeholder="Enter username (will be used as email too)" required>
+                    <small style="color: #666; font-size: 0.85em; margin-top: 5px; display: block;">
+                        This will be used as both username and email address
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="newFullName">Full Name</label>
+                    <input type="text" id="newFullName" placeholder="Enter full name (optional)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="tempPassword">Temporary Password</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="tempPassword" readonly style="background-color: #f8f9fa; color: #666;">
+                        <button type="button" class="action-btn secondary" onclick="generateTempPassword()" style="margin: 0; padding: 8px 12px;">
+                            🔄 Generate New
+                        </button>
+                    </div>
+                    <small style="color: #e74c3c; font-size: 0.85em; margin-top: 5px; display: block;">
+                        ⚠️ User must change this password on first login
+                    </small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userRole">Role</label>
+                        <select id="userRole">
+                            <option value="admin">Administrator</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="driver">Driver</option>
+                            <option value="booking_agent">Booking Agent</option>
+                            <option value="client">Client</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userStatus">Status</label>
+                        <select id="userStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="action-btn secondary" onclick="closeAddUserModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="action-btn success" style="margin-left: 10px;">
+                        💾 Add User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JWT Authentication Helper -->
+    <script src="js/auth/jwt-auth.js"></script>
+
+    <script>
+        // API Configuration
+        const API_ENDPOINTS = {
+            GET_USERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-users',
+            CREATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-user',
+            UPDATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-user',
+            DELETE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/delete-user',
+            RESET_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/password-reset',
+            GET_DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/admin-dashboard',
+            CREATE_BACKUP: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-backup'
+        };
+
+        // Global variables
+        let adminData = null;
+        let currentUsers = [];
+        let systemLogs = [];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('RRTS Admin Module Loaded');
+
+            // Check JWT authentication (redirects if not authenticated)
+            if (!(await requireAuth())) {
+                return;
+            }
+
+            // Check admin permissions
+            const user = getCurrentUser();
+            if (!user || user.role !== 'admin') {
+                showToast('Access denied. Administrator privileges required.', 'error');
+                setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                return;
+            }
+
+            // Ensure modal is hidden on page load
+            document.getElementById('addUserModal').classList.add('hidden');
+            
+            loadAdminData();
+            setupUserSearch();
+            setupAddUserForm();
+        });
+
+        async function loadAdminData() {
+            try {
+                // Load users from the database (with JWT authentication)
+                const usersResponse = await authenticatedFetch(API_ENDPOINTS.GET_USERS);
+                if (!usersResponse.ok) {
+                    throw new Error(`HTTP ${usersResponse.status}: ${usersResponse.statusText}`);
+                }
+
+                const usersData = await usersResponse.json();
+                console.log('Users data loaded:', usersData);
+
+                // The webhook returns a direct array, so use it directly
+                const users = Array.isArray(usersData) ? usersData : [];
+                currentUsers = users;
+
+                // Load dashboard data (config, logs, stats, alerts)
+                let dashboardData = null;
+
+                try {
+                    const dashboardResponse = await authenticatedFetch(API_ENDPOINTS.GET_DASHBOARD_DATA);
+                    if (dashboardResponse.ok) {
+                        const dashboardResult = await dashboardResponse.json();
+                        dashboardData = dashboardResult.success ? dashboardResult.data : null;
+                        console.log('Dashboard data loaded:', dashboardData);
+                    }
+                } catch (dashboardError) {
+                    console.log('Dashboard API not available, using mock data for dashboard sections');
+                }
+                
+                // Update system info with real user data
+                updateSystemInfo({
+                    totalUsers: users.length,
+                    activeUsers: users.filter(u => u.is_active).length,
+                    failedLogins: users.reduce((sum, u) => sum + (u.failed_login_attempts || 0), 0),
+                    uptime: 99.9
+                });
+                
+                // Render users
+                renderUsers(users);
+                
+                // Render dashboard data if available, otherwise use mock data
+                if (dashboardData) {
+                    renderSystemConfig(dashboardData.systemConfig || {});
+                    renderSystemLogs(dashboardData.systemLogs || []);
+                    renderDatabaseStats(dashboardData.databaseStats || {});
+                    renderSecurityAlerts(dashboardData.securityAlerts || []);
+                } else {
+                    // Fallback to mock data if dashboard API fails
+                    const mockData = generateMockAdminData();
+                    renderSystemConfig(mockData.systemConfig);
+                    renderSystemLogs(mockData.logs);
+                    renderDatabaseStats(mockData.databaseStats);
+                    renderSecurityAlerts(mockData.securityAlerts);
+                }
+
+            } catch (error) {
+                console.error('Failed to load admin data:', error);
+                
+                // Fallback to mock data if API fails
+                try {
+                    const mockData = generateMockAdminData();
+                    currentUsers = mockData.users;
+                    updateSystemInfo(mockData.systemInfo);
+                    renderUsers(mockData.users);
+                    renderSystemConfig(mockData.systemConfig);
+                    renderSystemLogs(mockData.logs);
+                    renderDatabaseStats(mockData.databaseStats);
+                    renderSecurityAlerts(mockData.securityAlerts);
+                } catch (fallbackError) {
+                    console.error('Failed to load fallback data:', fallbackError);
+                    showToast('Failed to load admin data', 'error');
+                }
+            }
+        }
+
+        function generateMockAdminData() {
+            return {
+                systemInfo: {
+                    totalUsers: 5,
+                    activeUsers: 3,
+                    failedLogins: 2,
+                    uptime: 99.9
+                },
+                users: [
+                    {
+                        id: 1,
+                        username: 'transport_admin',
+                        email: 'admin@rrts.ca',
+                        role: 'admin',
+                        status: 'active',
+                        lastLogin: '2025-08-21 10:30:00',
+                        failedAttempts: 0,
+                        created: '2025-01-01'
+                    },
+                    {
+                        id: 2,
+                        username: 'supervisor1',
+                        email: 'supervisor@rrts.ca',
+                        role: 'supervisor',
+                        status: 'active',
+                        lastLogin: '2025-08-21 09:15:00',
+                        failedAttempts: 0,
+                        created: '2025-02-15'
+                    },
+                    {
+                        id: 3,
+                        username: 'operator1',
+                        email: 'operator@rrts.ca',
+                        role: 'operator',
+                        status: 'inactive',
+                        lastLogin: '2025-08-18 16:45:00',
+                        failedAttempts: 1,
+                        created: '2025-03-01'
+                    }
+                ],
+                systemConfig: {
+                    'rrts_business_name': 'Rural Route Transportation Services',
+                    'rrts_phone_id': 'PNtqAn8pCC',
+                    'sms_signature': 'Andrew @ RRTS',
+                    'support_phone': '+17828226886',
+                    'reminder_buffer_minutes': '5',
+                    'reminder_hours_before': '1',
+                    'reminder_window_start': '07:00',
+                    'reminder_window_end': '20:00'
+                },
+                logs: [
+                    {
+                        id: 1,
+                        timestamp: '2025-08-21 10:35:00',
+                        level: 'success',
+                        message: 'User transport_admin logged in successfully',
+                        source: 'Authentication'
+                    },
+                    {
+                        id: 2,
+                        timestamp: '2025-08-21 10:30:00',
+                        level: 'error',
+                        message: 'Failed login attempt for user: test_user',
+                        source: 'Authentication'
+                    },
+                    {
+                        id: 3,
+                        timestamp: '2025-08-21 10:25:00',
+                        level: 'warning',
+                        message: 'High number of API requests detected',
+                        source: 'API Gateway'
+                    },
+                    {
+                        id: 4,
+                        timestamp: '2025-08-21 10:20:00',
+                        level: 'success',
+                        message: 'Daily backup completed successfully',
+                        source: 'Backup System'
+                    }
+                ],
+                databaseStats: {
+                    'Total Clients': 1247,
+                    'Total Appointments': 3892,
+                    'Total Drivers': 8,
+                    'Database Size': '142 MB',
+                    'Last Backup': '2025-08-21 02:00:00'
+                },
+                securityAlerts: [
+                    {
+                        id: 1,
+                        type: 'warning',
+                        message: 'Multiple failed login attempts detected from IP: 192.168.1.100',
+                        timestamp: '2025-08-21 10:30:00'
+                    }
+                ]
+            };
+        }
+
+        function updateSystemInfo(systemInfo) {
+            document.getElementById('totalUsers').textContent = systemInfo.totalUsers;
+            document.getElementById('activeUsers').textContent = systemInfo.activeUsers;
+            document.getElementById('failedLogins').textContent = systemInfo.failedLogins;
+            // Uptime is static in this mock
+        }
+
+        function renderUsers(users) {
+            currentUsers = users;
+            const tbody = document.getElementById('userTableBody');
+            
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                
+                const lastLogin = user.last_login ? 
+                    new Date(user.last_login).toLocaleDateString('en-CA', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'Never';
+                
+                const failedAttempts = user.failed_login_attempts || 0;
+                const isActive = user.is_active;
+                const isLocked = user.locked_until && new Date(user.locked_until) > new Date();
+                
+                // Determine status display
+                let statusClass = 'inactive';
+                let statusText = 'inactive';
+                
+                if (isActive && !isLocked) {
+                    statusClass = 'active';
+                    statusText = 'active';
+                } else if (isLocked) {
+                    statusClass = 'locked';
+                    statusText = 'locked';
+                }
+                
+                row.innerHTML = `
+                    <td>
+                        <strong>${user.username}</strong>
+                        ${user.full_name && user.full_name !== user.username ? `<br><small style="color: #666;">${user.full_name}</small>` : ''}
+                        ${failedAttempts > 0 ? `<br><small style="color: #e74c3c;">Failed attempts: ${failedAttempts}</small>` : ''}
+                        ${isLocked ? `<br><small style="color: #f39c12;">Account locked until ${new Date(user.locked_until).toLocaleDateString('en-CA')}</small>` : ''}
+                    </td>
+                    <td>${user.email}</td>
+                    <td>
+                        <span style="text-transform: capitalize; font-weight: 600; color: #2c3e50;">
+                            ${user.role || 'user'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="user-status status-${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td>${lastLogin}</td>
+                    <td>
+                        <button class="action-btn primary" onclick="editUser(${user.id})" title="Edit User">
+                            ✏️
+                        </button>
+                        <button class="action-btn warning" onclick="resetUserPassword(${user.id})" title="Reset Password">
+                            🔑
+                        </button>
+                        ${isActive ? 
+                            `<button class="action-btn secondary" onclick="deactivateUser(${user.id})" title="Deactivate">❌</button>` :
+                            `<button class="action-btn success" onclick="activateUser(${user.id})" title="Activate">✅</button>`
+                        }
+                        ${isLocked ? 
+                            `<button class="action-btn warning" onclick="unlockUser(${user.id})" title="Unlock Account">🔓</button>` : ''
+                        }
+                        <button class="action-btn danger" onclick="deleteUser(${user.id})" title="Delete User">🗑️</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderSystemConfig(config) {
+            const container = document.getElementById('systemConfig');
+            
+            // Map app_config keys to user-friendly labels and format values
+            const keyLabels = {
+                'rrts_phone_id': 'Phone ID',
+                'rrts_business_name': 'Business Name',
+                'sms_signature': 'SMS Signature',
+                'support_phone': 'Support Phone',
+                'reminder_buffer_minutes': 'Reminder Buffer',
+                'reminder_hours_before': 'Reminder Hours Before',
+                'reminder_window_start': 'Reminder Window Start',
+                'reminder_window_end': 'Reminder Window End',
+                'system_name': 'System Name',
+                'backup_frequency': 'Backup Frequency',
+                'session_timeout': 'Session Timeout',
+                'max_login_attempts': 'Max Login Attempts',
+                'password_policy': 'Password Policy',
+                'google_maps_api_status': 'Google Maps API',
+                'email_service_status': 'Email Service',
+                'sms_service_status': 'SMS Service',
+                'calendar_integration_status': 'Calendar Integration'
+            };
+
+            // Fields that should be editable in the future
+            const editableFields = ['rrts_business_name', 'sms_signature', 'support_phone', 'reminder_buffer_minutes', 'reminder_hours_before', 'reminder_window_start', 'reminder_window_end'];
+            
+            container.innerHTML = '';
+            
+            // Process config data to handle special formatting
+            const processedConfig = {};
+            let reminderWindow = '';
+            
+            Object.entries(config).forEach(([key, value]) => {
+                if (key === 'reminder_window_start') {
+                    const endTime = config['reminder_window_end'] || '';
+                    reminderWindow = `${value} - ${endTime}`;
+                    processedConfig['Reminder Window'] = reminderWindow;
+                } else if (key === 'reminder_window_end') {
+                    // Skip this as it's handled by start time
+                    return;
+                } else if (key === 'reminder_buffer_minutes') {
+                    processedConfig[key] = `${value} minutes`;
+                } else if (key === 'reminder_hours_before') {
+                    processedConfig[key] = `${value} hour${value > 1 ? 's' : ''}`;
+                } else {
+                    processedConfig[key] = value;
+                }
+            });
+            
+            // Add static system info
+            processedConfig['Database Host'] = 'supabase.co';
+            processedConfig['Backup Frequency'] = 'Manual backups via Supabase Dashboard';
+            
+            Object.entries(processedConfig).forEach(([key, value]) => {
+                const label = keyLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const isEditable = editableFields.includes(key);
+                
+                const configItem = document.createElement('div');
+                configItem.className = 'config-item';
+                configItem.innerHTML = `
+                    <div class="config-label">${label}</div>
+                    <div class="config-value" ${isEditable ? 'contenteditable="true" data-key="' + key + '" style="border: 1px dashed #ccc; padding: 4px; min-height: 20px;"' : ''}>${value || 'Not configured'}</div>
+                    ${isEditable ? '<button class="action-btn secondary" onclick="saveConfigValue(\'' + key + '\')" style="margin-left: 10px; padding: 4px 8px; font-size: 0.8em;" title="Save changes">💾</button>' : ''}
+                `;
+                container.appendChild(configItem);
+            });
+        }
+
+        function saveConfigValue(key) {
+            // Future implementation for saving config changes
+            // This will:
+            // 1. Update the app_config table in Supabase
+            // 2. For reminder settings, update the RMDR workflow cron trigger
+            // 3. For business settings, update SMS signature and phone settings
+            // 4. Refresh the display with new values
+            
+            const valueElement = document.querySelector(`[data-key="${key}"]`);
+            const newValue = valueElement.textContent.trim();
+            
+            showToast(`Saving ${key} = ${newValue}... (Feature coming soon)`, 'info');
+            
+            // TODO: Implement API call to update app_config
+            // TODO: For cron-related settings, update workflow trigger
+            // TODO: Validate input values (e.g., time format, numeric ranges)
+        }
+
+        function renderSystemLogs(logs) {
+            systemLogs = logs;
+            displayFilteredLogs(logs);
+        }
+
+        function displayFilteredLogs(logs) {
+            const container = document.getElementById('systemLogs');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<div class="empty-state">No logs found</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${log.level}`;
+                
+                const timestamp = new Date(log.timestamp).toLocaleString('en-CA');
+                
+                logEntry.innerHTML = `
+                    <div class="log-time">${timestamp} • ${log.source}</div>
+                    <div class="log-message">${log.message}</div>
+                `;
+                
+                container.appendChild(logEntry);
+            });
+        }
+
+        function renderDatabaseStats(stats) {
+            const container = document.getElementById('databaseStats');
+            
+            container.innerHTML = '';
+            Object.entries(stats).forEach(([key, value]) => {
+                const statItem = document.createElement('div');
+                statItem.className = 'config-item';
+                statItem.innerHTML = `
+                    <div class="config-label">${key}</div>
+                    <div class="config-value">${value}</div>
+                `;
+                container.appendChild(statItem);
+            });
+
+            // Update last backup display
+            document.getElementById('lastBackup').textContent = 
+                new Date(stats['Last Backup']).toLocaleString('en-CA');
+        }
+
+        function renderSecurityAlerts(alerts) {
+            const container = document.getElementById('securityAlerts');
+            
+            if (!alerts || alerts.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = '';
+            alerts.forEach(alert => {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'security-alert';
+                
+                const timestamp = new Date(alert.timestamp).toLocaleString('en-CA');
+                
+                alertDiv.innerHTML = `
+                    <span class="alert-icon">⚠️</span>
+                    <div style="flex: 1;">
+                        <strong>Security Alert</strong><br>
+                        ${alert.message}<br>
+                        <small>${timestamp}</small>
+                    </div>
+                    <button class="action-btn secondary" onclick="dismissAlert(${alert.id})">
+                        Dismiss
+                    </button>
+                `;
+                
+                container.appendChild(alertDiv);
+            });
+        }
+
+        function setupUserSearch() {
+            const searchInput = document.getElementById('userSearch');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filteredUsers = currentUsers.filter(user => 
+                    user.username.toLowerCase().includes(searchTerm) ||
+                    user.email.toLowerCase().includes(searchTerm) ||
+                    user.role.toLowerCase().includes(searchTerm)
+                );
+                renderUsers(filteredUsers);
+            });
+        }
+
+        function setupAddUserForm() {
+            document.getElementById('addUserForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addNewUser();
+            });
+            
+            // Generate initial temporary password when modal opens
+            generateTempPassword();
+        }
+
+        // User Management Functions
+        function openAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('hidden');
+            generateTempPassword(); // Generate password when modal opens
+        }
+
+        function generateTempPassword() {
+            // Generate a secure temporary password
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            
+            // Ensure at least one of each type
+            password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Uppercase
+            password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Lowercase
+            password += '0123456789'[Math.floor(Math.random() * 10)]; // Number
+            password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // Special char
+            
+            // Fill the rest randomly
+            for (let i = 4; i < 12; i++) {
+                password += chars[Math.floor(Math.random() * chars.length)];
+            }
+            
+            // Shuffle the password
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+            
+            document.getElementById('tempPassword').value = password;
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').classList.add('hidden');
+            document.getElementById('addUserForm').reset();
+        }
+
+        async function addNewUser() {
+            const username = document.getElementById('newUsername').value.trim();
+            const fullName = document.getElementById('newFullName').value.trim();
+            const password = document.getElementById('tempPassword').value;
+            const role = document.getElementById('userRole').value;
+            const status = document.getElementById('userStatus').value;
+
+            // Validation
+            if (!username) {
+                showToast('Please enter a username/email', 'error');
+                return;
+            }
+
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(username)) {
+                showToast('Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Check if username already exists
+            if (currentUsers.some(user => user.username === username)) {
+                showToast('Username already exists', 'error');
+                return;
+            }
+
+            try {
+                const userData = {
+                    username,
+                    email: username, // Use username as email
+                    password,
+                    full_name: fullName || username, // Use full name or fallback to username
+                    role,
+                    is_active: status === 'active'
+                };
+
+                console.log('Adding new user:', { ...userData, password: '••••••••' });
+
+                const response = await authenticatedFetch(API_ENDPOINTS.CREATE_USER, {
+                    method: 'POST',
+                    body: JSON.stringify(userData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`User created successfully! Temporary password: ${password}`, 'success');
+                    closeAddUserModal();
+                    
+                    // Wait a moment for the database to update, then refresh user list
+                    setTimeout(() => {
+                        loadAdminData();
+                    }, 500);
+                } else {
+                    showToast(result.message || 'Failed to create user', 'error');
+                }
+
+            } catch (error) {
+                console.error('Failed to create user:', error);
+                showToast('Failed to create user: ' + error.message, 'error');
+            }
+        }
+
+        function editUser(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            showToast(`Opening edit form for ${user.username}...`, 'info');
+            // TODO: Implement edit user modal
+        }
+
+        async function resetUserPassword(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            if (confirm(`Reset password for ${user.username}? A temporary password will be emailed directly to them.`)) {
+                try {
+                    const resetData = {
+                        username: user.username
+                    };
+
+                    console.log('Resetting password for user:', user.username);
+
+                    const response = await authenticatedFetch(API_ENDPOINTS.RESET_PASSWORD, {
+                        method: 'POST',
+                        body: JSON.stringify(resetData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`Password reset successfully! A temporary password has been emailed to ${user.username}.`, 'success');
+                    } else {
+                        showToast(result.message || 'Failed to reset password', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to reset password:', error);
+                    showToast('Failed to reset password: ' + error.message, 'error');
+                }
+            }
+        }
+
+
+        function activateUser(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            if (confirm(`Activate user ${user.username}?`)) {
+                showToast(`User ${user.username} activated`, 'success');
+                // TODO: Implement user activation
+                loadAdminData();
+            }
+        }
+
+        function deactivateUser(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            if (confirm(`Deactivate user ${user.username}? They will not be able to log in.`)) {
+                showToast(`User ${user.username} deactivated`, 'warning');
+                // TODO: Implement user deactivation
+                loadAdminData();
+            }
+        }
+
+        function unlockUser(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            if (confirm(`Unlock account for ${user.username}?`)) {
+                showToast(`Account unlocked for ${user.username}`, 'success');
+                // TODO: Implement account unlock
+                loadAdminData();
+            }
+        }
+
+        async function deleteUser(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            if (user.username === 'transport_admin') {
+                showToast('Cannot delete the main administrator account', 'error');
+                return;
+            }
+            
+            if (confirm(`DELETE user ${user.username}? This action cannot be undone.`)) {
+                try {
+                    const userData = {
+                        userId: userId,
+                        username: user.username
+                    };
+
+                    console.log('Deleting user:', userData);
+
+                    const response = await authenticatedFetch(API_ENDPOINTS.DELETE_USER, {
+                        method: 'POST',
+                        body: JSON.stringify(userData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`User ${user.username} deleted successfully`, 'success');
+                        loadAdminData(); // Refresh user list
+                    } else {
+                        showToast(result.message || 'Failed to delete user', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Failed to delete user:', error);
+                    showToast('Failed to delete user: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // System Configuration Functions
+        function editSystemConfig() {
+            showToast('Opening system configuration editor...', 'info');
+            // TODO: Implement system config editor modal
+        }
+
+        function manageApiKeys() {
+            showToast('Opening API key management...', 'info');
+            // TODO: Implement API key management modal
+        }
+
+        // Database Functions
+        async function createBackup() {
+            if (confirm('Create a new database backup? This may take a few minutes.')) {
+                showToast('Creating database backup...', 'info');
+                
+                try {
+                    const backupData = {
+                        backupType: 'full',
+                        requestedBy: JSON.parse(sessionStorage.getItem('rrts_user')).username || 'admin'
+                    };
+
+                    console.log('Creating backup with data:', backupData);
+
+                    const response = await authenticatedFetch(API_ENDPOINTS.CREATE_BACKUP, {
+                        method: 'POST',
+                        body: JSON.stringify(backupData)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(`Database backup created successfully: ${result.data.filename}`, 'success');
+                        console.log('Backup details:', result.data);
+                        loadAdminData(); // Refresh to show new backup time and logs
+                    } else {
+                        showToast(result.message || 'Failed to create backup', 'error');
+                        console.error('Backup failed:', result);
+                    }
+
+                } catch (error) {
+                    console.error('Failed to create backup:', error);
+                    showToast('Failed to create backup: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function viewBackups() {
+            showToast('Opening backup history...', 'info');
+            // TODO: Implement backup history modal
+        }
+
+        // Log Functions
+        function filterLogs() {
+            const filter = document.getElementById('logFilter').value;
+            let filteredLogs = systemLogs;
+
+            if (filter !== 'all') {
+                filteredLogs = systemLogs.filter(log => log.level === filter);
+            }
+
+            displayFilteredLogs(filteredLogs);
+        }
+
+        function refreshLogs() {
+            showToast('Refreshing system logs...', 'info');
+            loadAdminData();
+        }
+
+        // Security Functions
+        function dismissAlert(alertId) {
+            const alertElement = event.target.closest('.security-alert');
+            alertElement.remove();
+            showToast('Security alert dismissed', 'info');
+            // TODO: Mark alert as dismissed in database
+        }
+
+        // Utility Functions
+        function showToast(message, type = 'info') {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+
+            const colors = {
+                success: '#27ae60',
+                error: '#e74c3c',
+                warning: '#f39c12',
+                info: '#3498db'
+            };
+
+            toast.style.backgroundColor = colors[type] || colors.info;
+            toast.textContent = message;
+
+            document.body.appendChild(toast);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showError(message) {
+            const systemInfo = document.querySelector('.system-info');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'security-alert';
+            errorDiv.innerHTML = `
+                <span class="alert-icon">❌</span>
+                <div style="flex: 1;">
+                    <strong>System Error</strong><br>
+                    ${message}
+                </div>
+            `;
+            systemInfo.insertAdjacentElement('afterend', errorDiv);
+        }
+
+        function logout() {
+            sessionStorage.removeItem('rrts_user');
+            window.location.href = 'dashboard.html';
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                closeAddUserModal();
+            }
+        });
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize header
+        (function initializeHeader() {
+            // Populate navigation based on RBAC
+            const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
+            const role = user.role || 'guest';
+
+            const navItems = [
+                { label: 'Dashboard', page: 'dashboard.html', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent'] },
+                { label: 'Appointments', page: 'appointments-sl.html', icon: 'bi-calendar-check', roles: ['admin', 'supervisor', 'booking_agent'] },
+                { label: 'Bulk Add', page: 'appointments-bulk-add.html', icon: 'bi-calendar-plus', roles: ['admin', 'supervisor', 'booking_agent'] },
+                { label: 'Clients', page: 'clients-sl.html', icon: 'bi-people', roles: ['admin', 'supervisor', 'booking_agent'] },
+                { label: 'Drivers', page: 'driver-management.html', icon: 'bi-truck', roles: ['admin', 'supervisor'] },
+                { label: 'Operations', page: 'operations.html', icon: 'bi-clipboard-data', roles: ['admin', 'supervisor'] },
+                { label: 'Admin', page: 'admin.html', icon: 'bi-gear', roles: ['admin'] }
+            ];
+
+            const navContainer = document.getElementById('mainNav');
+            if (!navContainer) return; // Exit if nav not found
+
+            const currentPage = window.location.pathname.split('/').pop();
+
+            navItems.forEach(item => {
+                if (item.roles.includes(role)) {
+                    const link = document.createElement('a');
+                    link.href = item.page;
+                    link.className = 'nav-link';
+                    if (item.page === currentPage) {
+                        link.classList.add('active');
+                    }
+                    link.innerHTML = `<i class="bi ${item.icon}"></i> ${item.label}`;
+                    navContainer.appendChild(link);
+                }
+            });
+
+            // Set user info
+            const userNameEl = document.getElementById('userName');
+            const userRoleBadgeEl = document.getElementById('userRoleBadge');
+            const userAvatarEl = document.getElementById('userAvatar');
+
+            if (userNameEl) userNameEl.textContent = user.fullName || user.full_name || user.username || 'User';
+            if (userRoleBadgeEl) userRoleBadgeEl.textContent = role;
+            if (userAvatarEl) {
+                const initials = (user.fullName || user.full_name || user.username || 'U').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                userAvatarEl.textContent = initials;
+            }
+
+            // Mobile menu toggle
+            const toggleBtn = document.getElementById('mobileMenuToggle');
+            const nav = document.getElementById('mainNav');
+
+            if (toggleBtn && nav) {
+                toggleBtn.addEventListener('click', () => {
+                    nav.classList.toggle('mobile-open');
+                    const icon = toggleBtn.querySelector('i');
+                    if (nav.classList.contains('mobile-open')) {
+                        icon.className = 'bi bi-x';
+                    } else {
+                        icon.className = 'bi bi-list';
+                    }
+                });
+            }
+        })();
+
+    </script>
+</body>
+</html>
+<!-- 
+Version: v1.0.0 - RRTS Admin Module Portal
+- v1.0.0: Initial system administration interface with comprehensive admin tools
+- Features: User management with full CRUD operations and role-based permissions
+- Admin user table with search, filter, and status management capabilities
+- Password reset and account unlock functionality with security controls
+- System configuration management with editable settings display
+- API key management interface for Google Maps, Email, SMS, and Calendar services
+- Database backup and restore functionality with automated scheduling
+- Real-time system logs with filtering by error level and source
+- Security alert monitoring with dismissible notifications
+- Database statistics and health monitoring dashboard
+- Role-based access control (admin, supervisor, operator, readonly)
+- Session management and authentication verification
+- Responsive design optimized for administrative workflows
+- Ready for integration with admin_users table and authentication APIs
+- Mock data demonstrates complete admin workflow and user management
+-->

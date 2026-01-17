@@ -1,0 +1,302 @@
+{
+  "name": "TEST - FIN - Mark Driver Paid",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-mark-driver-paid",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5fb25906-d850-40bb-8118-3d98e4af1504",
+      "name": "POST Mark Driver Paid - Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -656,
+        128
+      ],
+      "webhookId": "mark-driver-paid"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Driver Paid - Validate Input\n// Version: v1.0.0\n// Validates batch driver payment request\n\nconst body = $input.first().json.body;\n\n// Required fields\nconst appointmentIds = body.appointmentIds;\nconst driverPaidAt = body.driver_paid_at;\n\n// Validation\nconst errors = [];\n\nif (!appointmentIds || !Array.isArray(appointmentIds)) {\n  errors.push('appointmentIds must be an array');\n}\n\nif (appointmentIds && appointmentIds.length === 0) {\n  errors.push('appointmentIds array cannot be empty');\n}\n\nif (!driverPaidAt) {\n  errors.push('driver_paid_at timestamp is required');\n}\n\nconst validationPassed = errors.length === 0 ? 'true' : 'false';\n\nreturn [{\n  json: {\n    validationPassed: validationPassed,\n    errors: errors,\n    appointmentIds: appointmentIds || [],\n    driver_paid_at: driverPaidAt,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "bc54adbe-88e1-4598-8d25-b05ac4b52b27",
+      "name": "Validate Input - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ad7194a-5d71-4771-9909-79851e88478f",
+      "name": "Validation - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Driver Paid - Prepare Batch Update\n// Version: v1.0.0\n// Splits appointment IDs into individual items for batch processing\n\nconst validatedData = $input.first().json;\nconst appointmentIds = validatedData.appointmentIds;\nconst driverPaidAt = validatedData.driver_paid_at;\n\n// Create one item per appointment ID\nreturn appointmentIds.map(id => ({\n  json: {\n    appointmentId: id,\n    driver_paid_at: driverPaidAt,\n    timestamp: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "4320c09f-eb3c-4ebd-8855-8abaea2b7137",
+      "name": "Prepare Batch Update - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "driver_paid_at",
+              "fieldValue": "={{ $json.driver_paid_at }}"
+            }
+          ]
+        }
+      },
+      "id": "445e3137-3c10-4c64-b4c7-24235c36509b",
+      "name": "Update Driver Paid - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Driver Paid - Aggregate Results\n// Version: v1.0.0\n// Combines all batch update results\n\nconst items = $input.all();\n\nconst updatedCount = items.length;\nconst appointmentIds = items.map(item => item.json.id || item.json.appointmentId);\n\nreturn [{\n  json: {\n    success: true,\n    message: `Successfully marked ${updatedCount} appointment(s) as paid for driver`,\n    data: {\n      updatedCount: updatedCount,\n      appointmentIds: appointmentIds\n    },\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "1408d11a-0c6f-452b-8fd6-631d843c4f3d",
+      "name": "Aggregate Results - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Driver Paid - Validation Error\n// Version: v1.0.0\n\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: 'Validation failed',\n    errors: errorData.errors || [],\n    statusCode: 400,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "01dea820-38b0-4cde-b3ef-96b31beba4ec",
+      "name": "Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6905e4c6-41fe-40c2-8184-17d1fb89abe4",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        688,
+        128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "POST Mark Driver Paid - Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Batch Update - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Batch Update - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Driver Paid - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Driver Paid - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3b661d84-e72b-4d1e-930d-9ee19cb19069",
+  "meta": {
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "3odz2CEJIjRTX30z",
+  "tags": [
+    {
+      "updatedAt": "2025-11-09T06:39:14.892Z",
+      "createdAt": "2025-11-09T06:39:14.892Z",
+      "id": "Q4i8xQtE7UtuEFhO",
+      "name": "Finance"
+    },
+    {
+      "updatedAt": "2025-11-09T06:46:34.269Z",
+      "createdAt": "2025-11-09T06:46:34.269Z",
+      "id": "EZF3X9a7HxdIQJMx",
+      "name": "Driver Payment"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    }
+  ]
+}

@@ -1,0 +1,327 @@
+{
+  "name": "TEST - USER - Refresh Token copy",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-refresh-token",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a1fd9528-bd36-4a2f-bb75-f489d4cea3c7",
+      "name": "POST Refresh Token - Webhook",
+      "webhookId": "2e46494c-d71c-4284-a2a1-6c9617c91bcf"
+    },
+    {
+      "parameters": {
+        "jsCode": "// USER - Refresh Token - Validate Input\n// Version: v1.0.0\n// Validates refresh token request has required field\n\nconst body = $input.first().json.body;\n\n// Validate refresh_token exists\nif (!body.refresh_token) {\n  return [{\n    json: {\n      _route: 'error',\n      success: false,\n      message: 'Refresh token is required',\n      statusCode: 400,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Return validated data\nreturn [{\n  json: {\n    _route: 'validate',\n    refresh_token: body.refresh_token\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c2d0668f-cd87-4da6-ae5a-c22296ed0164",
+      "name": "Validate Refresh Token - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// USER - Refresh Token - Validate JWT\n// Version: v1.1.0 - Fixed to match Change Password JWT pattern\n// Validates refresh token signature and structure\n\nconst validatedData = $input.first().json;\nconst token = validatedData.refresh_token;\n\n// JWT validation functions (matching Change Password workflow)\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"***REMOVED***\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature (matching Change Password pattern)\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'error',\n      success: false,\n      message: validation.error || 'Invalid refresh token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\n// Check token type\nif (payload.type !== 'refresh') {\n  return [{\n    json: {\n      _route: 'error',\n      success: false,\n      message: 'Invalid token type. Refresh token required.',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Return validated payload\nreturn [{\n  json: {\n    _route: 'success',\n    username: payload.sub,\n    token_id: payload.jti,\n    issued_at: payload.iat\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "35108411-58c1-4431-8253-e6ebb1f1f3eb",
+      "name": "Validate JWT - Code"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "users",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "username",
+              "condition": "eq",
+              "keyValue": "={{ $json.username }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b066cc5a-4978-4d72-8c9e-c8b9763e890c",
+      "name": "Lookup User - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.username }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "6254e959-7161-4708-8d46-2f0bc0a0d5b5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "User Exists"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "85d843a0-e0ea-45d1-9b83-37cad914e207",
+                    "leftValue": "={{ $json.username }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "User Does Not Exist"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "70cf7bdd-ac72-40dd-a1c7-ec317763fa51",
+      "name": "User Exists - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": " // USER - Refresh Token - Generate Access Token\n  // Version: v1.2.0 - Added refresh token rotation for security\n  // Generates new FULL access token AND new refresh token\n\n  // Get user data from Supabase lookup\n  const userData = $('Lookup User - Supabase').first().json;\n  const validatedToken = $('Validate JWT - Code').first().json;\n\n  // JWT generation functions (matching Change Password workflow)\n  function simpleHash(input) {\n    let hash = 0;\n    for (let i = 0; i < input.length; i++) {\n      const char = input.charCodeAt(i);\n      hash = ((hash << 5) - hash) + char;\n      hash = hash & hash;\n    }\n    return hash.toString(36);\n  }\n\n  const JWT_SECRET = \"***REMOVED***\";\n\n  function generateJWT(payload) {\n    const header = {\n      alg: \"HS256\",\n      typ: \"JWT\"\n    };\n\n    const encodedHeader = btoa(JSON.stringify(header));\n    const encodedPayload = btoa(JSON.stringify(payload));\n\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const signature = simpleHash(dataToSign);\n\n    return `${encodedHeader}.${encodedPayload}.${signature}`;\n  }\n\n  // Generate new FULL access token\n  const now = Math.floor(Date.now() / 1000);\n  const accessExpiry = now + (60 * 60); // 1 hour\n  const tokenId = `full_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n  const accessPayload = {\n    sub: userData.username,\n    type: 'full',\n    role: userData.role,\n    permissions: ['all'],\n    iat: now,\n    exp: accessExpiry,\n    jti: tokenId\n  };\n\n  const accessToken = generateJWT(accessPayload);\n\n  // Generate new REFRESH token (TOKEN ROTATION)\n  const refreshExpiry = now + (7 * 24 * 60 * 60); // 7 days\n  const refreshTokenId = `refresh_${Date.now()}_${Math.random().toString(36).substr(2,\n  9)}`;\n\n  const refreshPayload = {\n    sub: userData.username,\n    type: 'refresh',\n    iat: now,\n    exp: refreshExpiry,\n    jti: refreshTokenId\n  };\n\n  const refreshToken = generateJWT(refreshPayload);\n\n  // Return BOTH tokens (old refresh token is now invalid)\n  return [{\n    json: {\n      success: true,\n      message: 'Tokens refreshed successfully',\n      access_token: accessToken,\n      refresh_token: refreshToken,\n      token_type: 'Bearer',\n      expires_in: 3600,\n      refresh_expires_in: 604800,\n      user: {\n        username: userData.username,\n        role: userData.role,\n        full_name: userData.full_name,\n        email: userData.email\n      },\n      timestamp: new Date().toISOString()\n    }\n  }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -144
+      ],
+      "id": "6c4f4a4b-ed2d-42c1-92f3-d1fdf8fa74f7",
+      "name": "Generate Access Token - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1376,
+        -144
+      ],
+      "id": "8c86307f-78f4-4160-a9bb-f3efb5a2d946",
+      "name": "Success - Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1376,
+        112
+      ],
+      "id": "96a62df5-b915-4138-8029-25ff9e85fef8",
+      "name": "Error - Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // USER - Refresh Token - Format User Not Found Error\n  // Version: v1.0.0\n  // Formats error when user doesn't exist in database\n\n  return [{\n    json: {\n      success: false,\n      message: 'User not found or refresh token invalid',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        112
+      ],
+      "id": "59c6624a-2c75-4392-bbc4-a121b57fef95",
+      "name": "Error Response - Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "POST Refresh Token - Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Refresh Token - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Refresh Token - Code": {
+      "main": [
+        [
+          {
+            "node": "Validate JWT - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate JWT - Code": {
+      "main": [
+        [
+          {
+            "node": "Lookup User - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup User - Supabase": {
+      "main": [
+        [
+          {
+            "node": "User Exists - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Exists - Switch": {
+      "main": [
+        [
+          {
+            "node": "Generate Access Token - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Access Token - Code": {
+      "main": [
+        [
+          {
+            "node": "Success - Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Error - Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "321cc037-29a8-4bac-a46c-ac25f973861c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "JO76gzSUJqLrnJIx",
+  "tags": [
+    {
+      "updatedAt": "2025-11-02T20:34:22.538Z",
+      "createdAt": "2025-11-02T20:34:22.538Z",
+      "id": "3gkfLI99ZQWyI4nV",
+      "name": "refresh token JWT"
+    },
+    {
+      "updatedAt": "2025-10-30T17:24:20.682Z",
+      "createdAt": "2025-10-30T17:24:20.682Z",
+      "id": "FOXlFdf9P95OPvm7",
+      "name": "Login"
+    },
+    {
+      "updatedAt": "2025-11-02T20:33:29.538Z",
+      "createdAt": "2025-11-02T20:33:29.538Z",
+      "id": "GH1TWRkaKLzUvb4Q",
+      "name": "no JWT"
+    },
+    {
+      "updatedAt": "2025-10-30T17:24:20.746Z",
+      "createdAt": "2025-10-30T17:24:20.746Z",
+      "id": "HoYrf30PBP9hMopv",
+      "name": "Dashboard"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    }
+  ]
+}

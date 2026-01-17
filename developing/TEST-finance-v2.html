@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST MODE - RRTS - Finance Dashboard v2</title>
+    <link href="../css/shared-styles.css" rel="stylesheet">
+    <script src="../js/auth/permissions.js"></script>
+    <script src="js/components/TEST-navigation.js"></script><!-- Navigation Component -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        /* RRTS Brand Colors */
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+            --color-success: #27ae60;
+            --color-warning: #f39c12;
+            --color-danger: #e74c3c;
+        }
+
+        body {
+            padding-top: 110px;
+            background-color: #f5f7fa;
+        }
+
+        /* Header Styles */
+        .app-header {
+            position: fixed;
+            top: 40px;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+            cursor: pointer;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .nav-link {
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .user-role-badge {
+            background-color: var(--color-accent);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            border: 2px solid var(--color-white);
+            color: var(--color-white);
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--color-white);
+            color: var(--color-primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin: 0;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .summary-card .label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .summary-card.revenue .value { color: var(--color-success); }
+        .summary-card.expense .value { color: var(--color-danger); }
+        .summary-card.profit .value { color: var(--color-primary); }
+
+        /* Pay Period Selector */
+        .period-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .period-selector label {
+            font-weight: 600;
+            color: var(--color-gray-dark);
+        }
+
+        .period-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .date-range-display {
+            font-size: 0.95rem;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        /* Section Cards */
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: var(--color-primary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .section-header .badge {
+            background-color: var(--color-accent);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        .section-body {
+            padding: 20px;
+        }
+
+        /* Tables */
+        .finance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .finance-table th {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-gray-dark);
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .finance-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        .finance-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .finance-table .text-right {
+            text-align: right;
+        }
+
+        .finance-table .text-center {
+            text-align: center;
+        }
+
+        /* Expandable Rows */
+        .expandable-row {
+            cursor: pointer;
+        }
+
+        .expandable-row:hover {
+            background-color: #f0f7f4;
+        }
+
+        .expandable-row i {
+            transition: transform 0.3s;
+            margin-right: 8px;
+        }
+
+        .expandable-row.expanded i {
+            transform: rotate(90deg);
+        }
+
+        .expanded-details {
+            display: none;
+            background-color: #fafafa;
+        }
+
+        .expanded-details.show {
+            display: table-row;
+        }
+
+        .expanded-details td {
+            padding: 15px 20px 15px 50px;
+        }
+
+        .detail-table {
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .detail-table th {
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            font-weight: 600;
+        }
+
+        .detail-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        /* Status Badges */
+        .badge-paid {
+            background-color: var(--color-success);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .badge-unpaid {
+            background-color: var(--color-warning);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .badge-tier {
+            background-color: var(--color-accent);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        /* Trip Type Badges */
+        .trip-standard { background-color: #3498db; color: white; }
+        .trip-oneway { background-color: #9b59b6; color: white; }
+        .trip-overtime { background-color: #e67e22; color: white; }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-row {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .skeleton-cell {
+            height: 20px;
+        }
+
+        .skeleton-cell.wide { flex: 2; }
+        .skeleton-cell.medium { flex: 1; }
+        .skeleton-cell.narrow { width: 80px; }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        /* Total Row */
+        .total-row {
+            background-color: #f0f7f4 !important;
+            font-weight: 700;
+        }
+
+        .total-row td {
+            border-top: 2px solid var(--color-primary);
+        }
+
+        /* Action Buttons */
+        .btn-mark-paid {
+            background-color: var(--color-success);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-mark-paid:hover {
+            background-color: #219a52;
+        }
+
+        .btn-mark-paid:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- TEST MODE Banner -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; height: 40px; background: linear-gradient(90deg, #ff6b6b, #ffa500); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 9999; font-size: 14px;">
+        TEST MODE - Finance v2 - Using Testing Branch Database
+    </div>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <a href="TEST-dashboard.html" class="header-brand">
+                <span class="brand-icon"><i class="bi bi-truck"></i></span>
+                <span class="brand-text">RRTS Admin</span>
+            </a>
+
+            <nav class="header-nav" id="mainNav">
+                <a href="TEST-dashboard.html" class="nav-link">Dashboard</a>
+                <a href="TEST-appointments-sl.html" class="nav-link">Appointments</a>
+                <a href="TEST-clients-sl.html" class="nav-link">Clients</a>
+                <a href="TEST-finance-v2.html" class="nav-link active">Finance</a>
+            </nav>
+
+            <div class="header-user">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">?</div>
+                    <span class="user-name" id="userName">Loading...</span>
+                    <span class="user-role-badge" id="userRole">-</span>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title"><i class="bi bi-currency-dollar"></i> Finance Dashboard v2</h1>
+            <div class="period-selector">
+                <label for="payPeriodSelect">Pay Period:</label>
+                <select id="payPeriodSelect">
+                    <option value="current">Current Period</option>
+                    <option value="previous" selected>Previous Period (Most Recent Complete)</option>
+                    <option value="ytd">Year to Date</option>
+                </select>
+                <span class="date-range-display" id="dateRangeDisplay">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card revenue">
+                <div class="label">Total Revenue</div>
+                <div class="value" id="totalRevenue">$0.00</div>
+            </div>
+            <div class="summary-card expense">
+                <div class="label">Mileage Reimbursements</div>
+                <div class="value" id="totalMileage">$0.00</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Hours to Pay</div>
+                <div class="value" id="totalHours">0.0</div>
+            </div>
+            <div class="summary-card profit">
+                <div class="label">Net Profit</div>
+                <div class="value" id="netProfit">$0.00</div>
+            </div>
+        </div>
+
+        <!-- Driver Payroll Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="bi bi-person-badge"></i> Driver Payroll</h3>
+                <span class="badge" id="driverCount">0 Drivers</span>
+            </div>
+            <div class="section-body">
+                <!-- Loading Skeleton -->
+                <div id="driverTableSkeleton">
+                    <div class="skeleton-row">
+                        <div class="skeleton skeleton-cell wide"></div>
+                        <div class="skeleton skeleton-cell narrow"></div>
+                        <div class="skeleton skeleton-cell medium"></div>
+                        <div class="skeleton skeleton-cell medium"></div>
+                        <div class="skeleton skeleton-cell medium"></div>
+                        <div class="skeleton skeleton-cell narrow"></div>
+                    </div>
+                    <div class="skeleton-row">
+                        <div class="skeleton skeleton-cell wide"></div>
+                        <div class="skeleton skeleton-cell narrow"></div>
+                        <div class="skeleton skeleton-cell medium"></div>
+                        <div class="skeleton skeleton-cell medium"></div>
+                        <div class="skeleton skeleton-cell medium"></div>
+                        <div class="skeleton skeleton-cell narrow"></div>
+                    </div>
+                </div>
+
+                <!-- Actual Table -->
+                <table class="finance-table" id="driverTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Driver</th>
+                            <th class="text-center">Tier</th>
+                            <th class="text-center">Trips</th>
+                            <th class="text-right">Total km</th>
+                            <th class="text-right">Mileage $</th>
+                            <th class="text-right">Hours</th>
+                            <th class="text-right">Total Pay</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driverTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CRA Mileage Info -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="bi bi-info-circle"></i> CRA Mileage Rates</h3>
+            </div>
+            <div class="section-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Rate (first 5,000 km):</strong>
+                        <span id="craRateUnder">$0.72/km</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Rate (over 5,000 km):</strong>
+                        <span id="craRateOver">$0.66/km</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Threshold:</strong>
+                        <span id="craThreshold">5,000 km</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/auth/TEST-jwt-auth.js"></script>
+    <script src="../js/core/api-security.js"></script>
+    <script src="js/core/TEST-api-client.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/core/TEST-finance-v2.js"></script>
+</body>
+</html>

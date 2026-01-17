@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Appointment - RRTS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/shared-styles.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .client-info-section {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 2px solid #3498db;
+        }
+
+        .appointment-info-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 2px solid #6c757d;
+        }
+
+        .readonly-field {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            color: #6c757d;
+        }
+
+        .alert {
+            border-radius: 8px;
+        }
+
+        .breadcrumb {
+            background: none;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            color: #6c757d;
+        }
+
+        .breadcrumb-item a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+
+        .auto-calculated {
+            background-color: #f0f8ff;
+            border-color: #3498db;
+        }
+
+        .auto-calculated-label {
+            color: #3498db;
+            font-size: 0.85em;
+        }
+
+        /* Driver availability indicators */
+        .available-driver {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .outside-hours-driver {
+            color: #f39c12;
+            font-weight: 500;
+            font-style: italic;
+        }
+
+        .unavailable-driver {
+            color: #95a5a6;
+            text-decoration: line-through;
+        }
+
+        optgroup {
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 8px 0 4px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        optgroup[label*="Available"] {
+            color: #27ae60;
+        }
+
+        optgroup[label*="Outside"] {
+            color: #f39c12;
+        }
+
+        optgroup[label*="Unavailable"] {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>RRTS Dashboard</h1>
+        <div class="header-info">
+            <span id="currentDateTime"></span>
+            <span>•</span>
+            <span id="welcomeUser">Welcome, Admin</span>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="client-management.html">Clients</a>
+            <a href="appointment-management.html" class="active">Appointments</a>
+            <a href="add-appointments.html">Add Appointments</a>
+            <a href="operations.html">Operations</a>
+            <a href="driver-management.html">Drivers</a>
+            <a href="admin.html">Admin</a>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="dashboard.html">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="appointment-management.html">Appointments</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit Appointment</li>
+            </ol>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-pencil-square me-2"></i>
+                Edit Appointment
+            </h2>
+            <a href="appointment-management.html" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Appointments
+            </a>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading appointment...</span>
+            </div>
+            <p class="mt-2">Loading appointment details...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="alert alert-danger" style="display: none;">
+            <h4 class="alert-heading">Error Loading Appointment</h4>
+            <p id="errorMessage">Unable to load appointment details. Please try again.</p>
+            <hr>
+            <a href="appointment-management.html" class="btn btn-outline-danger">Return to Appointments</a>
+        </div>
+
+        <!-- Edit Form -->
+        <div id="editForm" style="display: none;">
+            <!-- Client Information (Read-only) -->
+            <div class="client-info-section">
+                <h4 class="mb-3">
+                    <i class="bi bi-person-fill me-2"></i>
+                    Client Information
+                </h4>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">K Number</label>
+                        <input type="text" class="form-control readonly-field" id="clientKNumber" readonly>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-control readonly-field" id="clientFirstName" readonly>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-control readonly-field" id="clientLastName" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control readonly-field" id="clientPhone" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control readonly-field" id="clientEmail" readonly>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control readonly-field" id="clientAddress" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">City</label>
+                        <input type="text" class="form-control readonly-field" id="clientCity" readonly>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Province</label>
+                        <input type="text" class="form-control readonly-field" id="clientProvince" readonly>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Postal Code</label>
+                        <input type="text" class="form-control readonly-field" id="clientPostalCode" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointment Information (Editable) -->
+            <div class="appointment-info-section">
+                <h4 class="mb-3">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    Appointment Details
+                </h4>
+                <form id="appointmentForm">
+                    <input type="hidden" id="appointmentId">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="appointmentDateTime" class="form-label">Appointment Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="appointmentDateTime" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pickupTime" class="form-label">
+                                Pickup Time 
+                                <span class="auto-calculated-label">(auto-calculated)</span>
+                            </label>
+                            <input type="datetime-local" class="form-control auto-calculated" id="pickupTime" readonly>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="transitTime" class="form-label">Transit Time (minutes)</label>
+                            <input type="number" class="form-control" id="transitTime" min="1" max="300" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="appointmentLength" class="form-label">Appointment Length (minutes)</label>
+                            <input type="number" class="form-control" id="appointmentLength" min="15" max="480" step="15" value="120">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="clinicLocation" class="form-label">Clinic Location</label>
+                            <select class="form-select" id="clinicLocation" required>
+                                <option value="">Loading locations...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="driverAssigned" class="form-label">Driver Assigned</label>
+                            <select class="form-select" id="driverAssigned">
+                                <option value="">Loading drivers...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" required>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="customRate" class="form-label">Custom Rate ($)</label>
+                            <input type="number" class="form-control" id="customRate" step="0.01" min="0">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="appointment-management.html" class="btn btn-secondary">
+                            <i class="bi bi-x-circle me-2"></i>
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="saveButton">
+                            <span class="btn-text">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Save Changes
+                            </span>
+                            <span class="loading-text" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                Saving...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let appointmentData = null;
+        let clinicLocations = [];
+        let drivers = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            const savedUser = sessionStorage.getItem('rrts_user');
+            if (!savedUser) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const appointmentId = urlParams.get('id');
+            
+            if (!appointmentId) {
+                showError('No appointment ID provided');
+                return;
+            }
+            
+            loadAppointmentData(appointmentId);
+            loadClinicLocations();
+            loadDrivers();
+        });
+
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                timeZone: 'America/Halifax',
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
+        }
+
+        // Driver availability calculation (copied from operations.html)
+        function calculateDriverAvailability(driver, appointmentDateTime, pickupTime, dropOffTime, appointmentLength = 120) {
+            const appointmentDate = new Date(appointmentDateTime);
+            const pickupDate = new Date(pickupTime);
+            
+            // Calculate dropOffTime if not provided
+            let dropOffDate;
+            if (dropOffTime && dropOffTime !== 'undefined' && dropOffTime !== 'null') {
+                dropOffDate = new Date(dropOffTime);
+            } else {
+                // Fallback: Calculate dropOffTime from appointment time + appointment length
+                dropOffDate = new Date(appointmentDate.getTime() + (appointmentLength * 60000));
+            }
+            
+            // Convert UTC times to Halifax time (AST/ADT) for comparison with driver work hours
+            const halifaxTimeZone = 'America/Halifax';
+            const dayOfWeek = appointmentDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                timeZone: halifaxTimeZone 
+            }).toLowerCase();
+            
+            // Check if driver is on leave or offline
+            if (driver.status === 'on-leave' || driver.status === 'offline') {
+                return {
+                    status: 'unavailable',
+                    reason: driver.status === 'on-leave' ? 'On Leave' : 'Off Duty',
+                    canAssign: false
+                };
+            }
+            
+            // ✅ NEW: Check time off data first
+            const timeOff = driver.time_off || [];
+            const appointmentDateOnly = appointmentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            for (const timeOffRecord of timeOff) {
+                const startDate = timeOffRecord.start_date;
+                const endDate = timeOffRecord.end_date;
+                
+                // Check if appointment date falls within time off period
+                if (appointmentDateOnly >= startDate && appointmentDateOnly <= endDate) {
+                    // If it's an all-day time off, driver is unavailable
+                    if (timeOffRecord.all_day) {
+                        return {
+                            status: 'unavailable',
+                            reason: `Time off: ${timeOffRecord.reason}`,
+                            canAssign: false
+                        };
+                    }
+                    
+                    // If it's partial day time off, check if appointment times conflict
+                    if (timeOffRecord.start_time && timeOffRecord.end_time) {
+                        const pickupTimeString = pickupDate.toLocaleTimeString('en-CA', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            timeZone: halifaxTimeZone,
+                            hour12: false 
+                        });
+                        const dropOffTimeString = dropOffDate.toLocaleTimeString('en-CA', { 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            timeZone: halifaxTimeZone,
+                            hour12: false 
+                        });
+                        
+                        // Check if appointment times overlap with time off
+                        const timeOffStart = timeOffRecord.start_time;
+                        const timeOffEnd = timeOffRecord.end_time;
+                        
+                        if ((pickupTimeString < timeOffEnd && dropOffTimeString > timeOffStart)) {
+                            return {
+                                status: 'unavailable',
+                                reason: `Time off: ${timeOffRecord.reason} (${timeOffStart}-${timeOffEnd})`,
+                                canAssign: false
+                            };
+                        }
+                    }
+                }
+            }
+            
+            // Get driver's weekly schedule
+            const weeklyHours = driver.weekly_hours || {};
+            const daySchedule = weeklyHours[dayOfWeek];
+            
+            // Check if driver is available on this day
+            if (!daySchedule || !daySchedule.available) {
+                return {
+                    status: 'unavailable',
+                    reason: 'Not available this day',
+                    canAssign: false
+                };
+            }
+            
+            // Get driver's work hours for this day
+            const workStart = daySchedule.start;
+            const workEnd = daySchedule.end;
+            
+            if (!workStart || !workEnd) {
+                return {
+                    status: 'unavailable',
+                    reason: 'No scheduled hours for this day',
+                    canAssign: false
+                };
+            }
+            
+            // Convert UTC times to Halifax time (AST/ADT) for comparison
+            const pickupTimeString = pickupDate.toLocaleTimeString('en-CA', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                timeZone: halifaxTimeZone,
+                hour12: false 
+            });
+            const dropOffTimeString = dropOffDate.toLocaleTimeString('en-CA', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                timeZone: halifaxTimeZone,
+                hour12: false 
+            });
+            
+            // Check if entire appointment duration (pickup to dropoff) is within work hours
+            const isWithinWorkHours = pickupTimeString >= workStart && dropOffTimeString <= workEnd;
+            
+            if (isWithinWorkHours) {
+                return {
+                    status: 'available',
+                    reason: 'Within scheduled hours',
+                    canAssign: true
+                };
+            } else {
+                return {
+                    status: 'outside-hours',
+                    reason: `Outside work hours (${workStart}-${workEnd})`,
+                    canAssign: true,
+                    warning: `Appointment runs ${pickupTimeString}-${dropOffTimeString} Halifax time, driver scheduled ${workStart}-${workEnd}`
+                };
+            }
+        }
+
+        async function loadAppointmentData(appointmentId) {
+            try {
+                console.log('Loading appointment with ID:', appointmentId);
+                
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-appointment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: appointmentId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Appointment API response:', data);
+                
+                // Handle different response formats
+                if (Array.isArray(data) && data.length > 0) {
+                    appointmentData = data[0];
+                    populateForm(appointmentData);
+                    showEditForm();
+                } else if (data && data.id) {
+                    // Single object response
+                    appointmentData = data;
+                    populateForm(appointmentData);
+                    showEditForm();
+                } else {
+                    console.error('Unexpected appointment response format:', data);
+                    throw new Error('Appointment not found or invalid response format');
+                }
+            } catch (error) {
+                console.error('Error loading appointment:', error);
+                showError('Failed to load appointment: ' + error.message);
+            }
+        }
+
+        async function loadClinicLocations() {
+            try {
+                console.log('Loading clinic locations...');
+                
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/clinic-locations');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Clinic locations API response:', data);
+                
+                // Handle the actual API response format: [{ success: true, destinations: [...] }]
+                let locations = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].destinations) {
+                    locations = data[0].destinations;
+                } else if (data && data.destinations && Array.isArray(data.destinations)) {
+                    locations = data.destinations;
+                } else {
+                    console.warn('Unexpected clinic locations response format:', data);
+                    locations = [];
+                }
+                
+                clinicLocations = locations;
+                const select = document.getElementById('clinicLocation');
+                select.innerHTML = '<option value="">Select a clinic...</option>';
+                
+                if (locations.length > 0) {
+                    locations.forEach(location => {
+                        const option = document.createElement('option');
+                        option.value = location.id;
+                        option.textContent = `${location.name} - ${location.address}, ${location.city}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No clinics available</option>';
+                }
+                
+                // Set the current clinic if appointment data is loaded
+                if (appointmentData && appointmentData.location) {
+                    setClinicLocationFromName(appointmentData.location);
+                }
+            } catch (error) {
+                console.error('Error loading clinic locations:', error);
+            }
+        }
+
+        async function loadDrivers() {
+            try {
+                console.log('Loading drivers...');
+                
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-availability');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Drivers API response:', data);
+                
+                // Handle the actual API response format: [{ success: true, drivers: [...] }]
+                let driverList = [];
+                if (Array.isArray(data) && data.length > 0 && data[0].drivers) {
+                    driverList = data[0].drivers;
+                } else if (data && data.drivers && Array.isArray(data.drivers)) {
+                    driverList = data.drivers;
+                } else {
+                    console.warn('Unexpected drivers response format:', data);
+                    driverList = [];
+                }
+                
+                drivers = driverList;
+                updateDriverDropdown();
+                
+                // Set the current driver if appointment data is loaded
+                if (appointmentData && appointmentData.driver_assigned) {
+                    document.getElementById('driverAssigned').value = appointmentData.driver_assigned;
+                }
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+            }
+        }
+
+        function updateDriverDropdown() {
+            const select = document.getElementById('driverAssigned');
+            
+            // Store the currently selected driver ID before rebuilding the dropdown
+            const currentlySelectedDriver = select.value;
+            
+            select.innerHTML = '<option value="">No driver assigned</option>';
+            
+            if (drivers.length === 0) {
+                select.innerHTML = '<option value="">No drivers available</option>';
+                return;
+            }
+            
+            // Get current appointment times for availability calculation
+            const appointmentDateTime = document.getElementById('appointmentDateTime').value;
+            const pickupTime = document.getElementById('pickupTime').value;
+            const appointmentLength = parseInt(document.getElementById('appointmentLength').value) || 120;
+            
+            if (!appointmentDateTime || !pickupTime) {
+                // If no appointment data yet, show basic driver list
+                drivers.forEach(driver => {
+                    const option = document.createElement('option');
+                    option.value = driver.id;
+                    option.textContent = driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim();
+                    if (driver.id == currentlySelectedDriver) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+                return;
+            }
+            
+            // Group drivers by availability
+            const availableDrivers = [];
+            const outsideHoursDrivers = [];
+            const unavailableDrivers = [];
+            
+            drivers.forEach(driver => {
+                const availability = calculateDriverAvailability(
+                    driver, 
+                    appointmentDateTime, 
+                    pickupTime, 
+                    null, // dropOffTime will be calculated
+                    appointmentLength
+                );
+                
+                const driverOption = {
+                    id: driver.id,
+                    name: driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim(),
+                    availability: availability
+                };
+                
+                switch (availability.status) {
+                    case 'available':
+                        availableDrivers.push(driverOption);
+                        break;
+                    case 'outside-hours':
+                        outsideHoursDrivers.push(driverOption);
+                        break;
+                    case 'unavailable':
+                        unavailableDrivers.push(driverOption);
+                        break;
+                }
+            });
+            
+            // Render available drivers
+            if (availableDrivers.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Available (Scheduled Hours)';
+                availableDrivers.forEach(driver => {
+                    const option = document.createElement('option');
+                    option.value = driver.id;
+                    option.className = 'available-driver';
+                    option.textContent = `✅ ${driver.name}`;
+                    if (driver.id == currentlySelectedDriver) {
+                        option.selected = true;
+                    }
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+            
+            // Render outside hours drivers
+            if (outsideHoursDrivers.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Outside Scheduled Hours';
+                outsideHoursDrivers.forEach(driver => {
+                    const option = document.createElement('option');
+                    option.value = driver.id;
+                    option.className = 'outside-hours-driver';
+                    option.textContent = `⚠️ ${driver.name}`;
+                    if (driver.id == currentlySelectedDriver) {
+                        option.selected = true;
+                    }
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+            
+            // Render unavailable drivers
+            if (unavailableDrivers.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Unavailable';
+                unavailableDrivers.forEach(driver => {
+                    const option = document.createElement('option');
+                    option.value = driver.id;
+                    option.className = 'unavailable-driver';
+                    option.disabled = true;
+                    option.textContent = `❌ ${driver.name} (${driver.availability.reason})`;
+                    if (driver.id == currentlySelectedDriver) {
+                        option.selected = true;
+                        option.disabled = false; // Allow selection of currently assigned driver even if unavailable
+                    }
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+        }
+
+        function setClinicLocationFromName(locationName) {
+            if (!locationName || clinicLocations.length === 0) return;
+            
+            const select = document.getElementById('clinicLocation');
+            
+            // Find the clinic that matches the location name
+            const matchingClinic = clinicLocations.find(clinic => 
+                clinic.name === locationName || 
+                clinic.name.toLowerCase().includes(locationName.toLowerCase()) ||
+                locationName.toLowerCase().includes(clinic.name.toLowerCase())
+            );
+            
+            if (matchingClinic) {
+                select.value = matchingClinic.id;
+                console.log(`Set clinic location to: ${matchingClinic.name} (ID: ${matchingClinic.id})`);
+            } else {
+                console.warn(`Could not find matching clinic for location: ${locationName}`);
+                console.log('Available clinics:', clinicLocations.map(c => c.name));
+            }
+        }
+
+        function populateForm(data) {
+            // Client information (readonly)
+            document.getElementById('clientKNumber').value = data.knumber || '';
+            document.getElementById('clientFirstName').value = data.clientFirstName || '';
+            document.getElementById('clientLastName').value = data.clientLastName || '';
+            document.getElementById('clientPhone').value = data.clientPhone || '';
+            document.getElementById('clientEmail').value = data.clientEmail || '';
+            document.getElementById('clientAddress').value = data.clientAddress || '';
+            document.getElementById('clientCity').value = data.clientCity || '';
+            document.getElementById('clientProvince').value = data.clientProvince || '';
+            document.getElementById('clientPostalCode').value = data.clientPostalCode || '';
+
+            // Appointment information (editable)
+            document.getElementById('appointmentId').value = data.id;
+            
+            // Convert UTC datetime to local datetime-local format
+            if (data.appointmentDateTime) {
+                document.getElementById('appointmentDateTime').value = formatDateTimeLocal(data.appointmentDateTime);
+            }
+            
+            if (data.pickupTime) {
+                document.getElementById('pickupTime').value = formatDateTimeLocal(data.pickupTime);
+            }
+            
+            document.getElementById('transitTime').value = data.transitTime || '';
+            document.getElementById('appointmentLength').value = data.appointmentLength || 120;
+            document.getElementById('status').value = data.status || 'pending';
+            document.getElementById('customRate').value = data.customRate || '';
+            document.getElementById('notes').value = data.notes || '';
+
+            // Set clinic location if clinic locations are already loaded
+            if (clinicLocations.length > 0 && data.location) {
+                setClinicLocationFromName(data.location);
+            }
+
+            // Set driver assignment if drivers are already loaded
+            if (drivers.length > 0 && data.driver_assigned) {
+                document.getElementById('driverAssigned').value = data.driver_assigned;
+            }
+
+            // Set up event listeners for automatic pickup time calculation
+            setupPickupTimeCalculation();
+            
+            // Update driver dropdown with availability after form is populated
+            if (drivers.length > 0) {
+                updateDriverDropdown();
+            }
+            
+            // Update notes field if appointment time and clinic are already set
+            if (data.appointmentDateTime && data.location) {
+                // Small delay to ensure clinic locations are loaded
+                setTimeout(() => {
+                    const clinicLocationField = document.getElementById('clinicLocation');
+                    if (clinicLocationField.value) {
+                        // Trigger the notes update by calling the updateNotesField function
+                        const appointmentDateTimeField = document.getElementById('appointmentDateTime');
+                        const selectedClinicId = clinicLocationField.value;
+                        
+                        if (appointmentDateTimeField.value && selectedClinicId) {
+                            const selectedClinic = clinicLocations.find(clinic => clinic.id == selectedClinicId);
+                            
+                            if (selectedClinic) {
+                                const appointmentDate = new Date(appointmentDateTimeField.value);
+                                const formattedTime = appointmentDate.toLocaleString('en-US', {
+                                    timeZone: 'America/Halifax',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                });
+                                
+                                const notesField = document.getElementById('notes');
+                                const newNotesText = `${formattedTime} appointment at ${selectedClinic.name}`;
+                                
+                                // Only update if the field is empty or contains the old format
+                                const currentNotes = notesField.value.trim();
+                                if (!currentNotes || currentNotes.match(/^\(\w{3} \d{1,2}, \d{4}, \d{2}:\d{2} [AP]M\) appointment at .+$/) || currentNotes.match(/^\d{1,2}:\d{2} [AP]M appointment at .+$/)) {
+                                    notesField.value = newNotesText;
+                                }
+                            }
+                        }
+                    }
+                }, 100);
+            }
+        }
+
+        function formatDateTimeLocal(dateTimeString) {
+            if (!dateTimeString) return '';
+            
+            try {
+                const date = new Date(dateTimeString);
+                if (isNaN(date.getTime())) return '';
+                
+                // Convert UTC to local time and format for datetime-local input
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            } catch (error) {
+                console.error('Error formatting datetime for input:', error);
+                return '';
+            }
+        }
+
+        function setupPickupTimeCalculation() {
+            const appointmentDateTimeField = document.getElementById('appointmentDateTime');
+            const transitTimeField = document.getElementById('transitTime');
+            const appointmentLengthField = document.getElementById('appointmentLength');
+            const clinicLocationField = document.getElementById('clinicLocation');
+            
+            function calculatePickupTime() {
+                const appointmentDateTime = appointmentDateTimeField.value;
+                const transitTime = parseInt(transitTimeField.value) || 0;
+                
+                if (appointmentDateTime && transitTime > 0) {
+                    const appointmentDate = new Date(appointmentDateTime);
+                    const pickupDate = new Date(appointmentDate.getTime() - (transitTime * 60 * 1000));
+                    
+                    document.getElementById('pickupTime').value = formatDateTimeLocal(pickupDate.toISOString());
+                    
+                    // Update driver dropdown with new times
+                    updateDriverDropdown();
+                }
+            }
+            
+            function updateNotesField() {
+                const appointmentDateTime = appointmentDateTimeField.value;
+                const selectedClinicId = clinicLocationField.value;
+                
+                if (appointmentDateTime && selectedClinicId) {
+                    // Find the selected clinic
+                    const selectedClinic = clinicLocations.find(clinic => clinic.id == selectedClinicId);
+                    
+                    if (selectedClinic) {
+                        // Format the appointment time for display (time only)
+                        const appointmentDate = new Date(appointmentDateTime);
+                        const formattedTime = appointmentDate.toLocaleString('en-US', {
+                            timeZone: 'America/Halifax',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                        
+                        // Update the notes field with the formatted text
+                        const notesField = document.getElementById('notes');
+                        const newNotesText = `${formattedTime} appointment at ${selectedClinic.name}`;
+                        
+                        // Only update if the field is empty or contains the old format
+                        const currentNotes = notesField.value.trim();
+                        if (!currentNotes || currentNotes.match(/^\(\w{3} \d{1,2}, \d{4}, \d{2}:\d{2} [AP]M\) appointment at .+$/) || currentNotes.match(/^\d{1,2}:\d{2} [AP]M appointment at .+$/)) {
+                            notesField.value = newNotesText;
+                        }
+                    }
+                }
+            }
+            
+            function updateDriverAvailability() {
+                // Update driver dropdown when appointment details change
+                updateDriverDropdown();
+            }
+            
+            // Add event listeners
+            appointmentDateTimeField.addEventListener('change', () => {
+                calculatePickupTime();
+                updateDriverAvailability();
+                updateNotesField();
+            });
+            transitTimeField.addEventListener('input', () => {
+                calculatePickupTime();
+                updateDriverAvailability();
+            });
+            appointmentLengthField.addEventListener('change', updateDriverAvailability);
+            clinicLocationField.addEventListener('change', updateNotesField);
+        }
+
+        function showEditForm() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('editForm').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorState').style.display = 'block';
+        }
+
+        // Handle form submission
+        document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const saveButton = document.getElementById('saveButton');
+            const btnText = saveButton.querySelector('.btn-text');
+            const loadingText = saveButton.querySelector('.loading-text');
+            
+            // Show loading state
+            saveButton.disabled = true;
+            btnText.style.display = 'none';
+            loadingText.style.display = 'inline-flex';
+            
+            try {
+                // Get selected clinic details
+                const clinicSelect = document.getElementById('clinicLocation');
+                const selectedClinicId = clinicSelect.value;
+                const selectedClinic = clinicLocations.find(clinic => clinic.id == selectedClinicId);
+                
+                // Get selected driver details
+                const selectedDriverId = document.getElementById('driverAssigned').value;
+                const selectedDriver = drivers.find(driver => driver.id == selectedDriverId);
+                
+                const formData = {
+                    id: document.getElementById('appointmentId').value,
+                    appointmentDateTime: new Date(document.getElementById('appointmentDateTime').value).toISOString(),
+                    pickupTime: new Date(document.getElementById('pickupTime').value).toISOString(),
+                    appointmentLength: parseInt(document.getElementById('appointmentLength').value) || 120,
+                    transitTime: parseInt(document.getElementById('transitTime').value) || null,
+                    status: document.getElementById('status').value,
+                    notes: document.getElementById('notes').value,
+                    customRate: parseFloat(document.getElementById('customRate').value) || null,
+                    driver_assigned: selectedDriverId || null,
+                    driver_first_name: selectedDriver ? selectedDriver.first_name : null,
+                    location: selectedClinic ? selectedClinic.name : null,
+                    locationAddress: selectedClinic ? `${selectedClinic.address}, ${selectedClinic.city}, ${selectedClinic.province}` : null
+                };
+
+                console.log('Sending update data:', formData);
+
+                const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Update response:', result);
+                
+                if (result.success) {
+                    // Show success message and redirect
+                    alert('Appointment updated successfully!');
+                    window.location.href = 'appointment-management.html';
+                } else {
+                    throw new Error(result.message || 'Failed to update appointment');
+                }
+            } catch (error) {
+                console.error('Error updating appointment:', error);
+                alert('Failed to update appointment: ' + error.message);
+            } finally {
+                // Reset button state
+                saveButton.disabled = false;
+                btnText.style.display = 'inline-flex';
+                loadingText.style.display = 'none';
+            }
+        });
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
+
+<!-- Version: v4.4.0 - Enhanced notes auto-generation with debugging and simplified logic -->
+<!-- - v3.7.0: Fixed timezone conversion for UTC timestamps -->
+<!-- - v3.8.0: Enhanced error handling for API responses -->
+<!-- - v3.9.0: Improved form validation and user feedback -->
+<!-- - v4.0.0: Added automatic pickup time calculation and proper clinic location mapping -->

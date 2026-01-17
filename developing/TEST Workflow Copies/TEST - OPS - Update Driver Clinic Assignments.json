@@ -1,0 +1,489 @@
+{
+  "name": "TEST - OPS - Update Driver Clinic Assignments",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-update-driver-clinic-assignments",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "id": "webhook-update-dca",
+      "name": "POST Update Driver Clinic Assignments - Webhook",
+      "webhookId": "ops-update-dca"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation - v1.0.0\n// Update driver-clinic assignments requires ADMIN ONLY\n\nconst webhookData = $input.first().json;\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"***REMOVED***\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    const payload = JSON.parse(atob(encodedPayload));\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\nif (payload.type === 'limited' || payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// ADMIN ONLY - stricter than supervisor\nif (payload.role !== 'admin') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Only administrators can modify driver-clinic assignments',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    user: {\n      id: payload.userId,\n      username: payload.sub,\n      role: payload.role,\n      fullName: payload.fullName\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "id": "jwt-validation",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [440, 300],
+      "id": "jwt-switch",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate Update Request - v1.0.0\n\nconst authData = $input.first().json;\nconst body = authData.requestBody || {};\n\nconst errors = [];\n\n// Validate driverId\nconst driverId = body.driverId;\nif (!driverId || isNaN(parseInt(driverId))) {\n  errors.push('driverId is required and must be a number');\n}\n\n// Validate assignments array\nconst assignments = body.assignments;\nif (!Array.isArray(assignments)) {\n  errors.push('assignments must be an array');\n} else {\n  assignments.forEach((a, index) => {\n    if (!a.clinicId || isNaN(parseInt(a.clinicId))) {\n      errors.push(`assignments[${index}].clinicId must be a number`);\n    }\n  });\n}\n\nif (errors.length > 0) {\n  return [{\n    json: {\n      _route: 'invalid',\n      success: false,\n      message: 'Validation failed: ' + errors.join(', '),\n      errors: errors,\n      statusCode: 400,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'valid',\n    driverId: parseInt(driverId),\n    assignments: assignments.map(a => ({\n      clinicId: parseInt(a.clinicId),\n      isPrimary: a.isPrimary === true,\n      notes: a.notes || null\n    })),\n    user: authData.user,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 200],
+      "id": "validate-request",
+      "name": "Validate Request - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "valid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "invalid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [880, 200],
+      "id": "validation-switch",
+      "name": "Validation - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "driver_clinic_assignments",
+        "filterType": "string",
+        "filterString": "driver_id=eq.{{ $json.driverId }}"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1100, 100],
+      "id": "delete-existing",
+      "name": "Delete Existing - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-credential-id",
+          "name": "Supabase Testing"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Insert Batch - v1.0.0\n// Create one item per assignment for batch insert\n\nconst validData = $('Validate Request - Code').first().json;\n\n// If no assignments, return empty to skip insert\nif (!validData.assignments || validData.assignments.length === 0) {\n  return [{\n    json: {\n      _skip_insert: true,\n      driverId: validData.driverId,\n      user: validData.user,\n      assignmentsCount: 0\n    }\n  }];\n}\n\n// Create one item per assignment for batch insert\nconst insertItems = validData.assignments.map(a => ({\n  driver_id: validData.driverId,\n  clinic_id: a.clinicId,\n  is_primary: a.isPrimary,\n  notes: a.notes,\n  created_by: validData.user.id,\n  _driverId: validData.driverId,\n  _user: validData.user,\n  _assignmentsCount: validData.assignments.length\n}));\n\nreturn insertItems.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 100],
+      "id": "prepare-insert",
+      "name": "Prepare Insert Batch - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ String($json._skip_insert || false) }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Assignments"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ String($json._skip_insert || false) }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Assignments"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1540, 100],
+      "id": "insert-switch",
+      "name": "Insert Check - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "tableId": "driver_clinic_assignments",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "driver_id",
+              "fieldValue": "={{ $json.driver_id }}"
+            },
+            {
+              "fieldName": "clinic_id",
+              "fieldValue": "={{ $json.clinic_id }}"
+            },
+            {
+              "fieldName": "is_primary",
+              "fieldValue": "={{ $json.is_primary }}"
+            },
+            {
+              "fieldName": "notes",
+              "fieldValue": "={{ $json.notes }}"
+            },
+            {
+              "fieldName": "created_by",
+              "fieldValue": "={{ $json.created_by }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1760, 0],
+      "id": "insert-assignment",
+      "name": "Insert Assignment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-credential-id",
+          "name": "Supabase Testing"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Update Response - v1.0.0\n\nconst validData = $('Validate Request - Code').first().json;\nconst insertResults = $input.all();\n\nreturn [{\n  json: {\n    success: true,\n    data: {\n      driverId: validData.driverId,\n      assignmentsUpdated: insertResults.length\n    },\n    message: `Driver clinic assignments updated: ${insertResults.length} assignments`,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 0],
+      "id": "format-response",
+      "name": "Format Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Empty Response - v1.0.0\n// When all assignments are cleared\n\nconst inputData = $input.first().json;\n\nreturn [{\n  json: {\n    success: true,\n    data: {\n      driverId: inputData.driverId,\n      assignmentsUpdated: 0\n    },\n    message: 'All driver clinic assignments cleared',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 200],
+      "id": "format-empty-response",
+      "name": "Format Empty Response - Code"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2200, 100],
+      "id": "respond-success",
+      "name": "Success Response - Respond"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 401 }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 500],
+      "id": "respond-error",
+      "name": "Error Response - Respond"
+    }
+  ],
+  "connections": {
+    "POST Update Driver Clinic Assignments - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate Request - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Delete Existing - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Existing - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Prepare Insert Batch - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Insert Batch - Code": {
+      "main": [
+        [
+          {
+            "node": "Insert Check - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Check - Switch": {
+      "main": [
+        [
+          {
+            "node": "Insert Assignment - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Empty Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Assignment - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Empty Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-17T00:00:00.000Z",
+  "versionId": "1"
+}

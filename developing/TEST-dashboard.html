@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 TEST MODE - RRTS - Dashboard</title>
+    <link href="../css/shared-styles.css" rel="stylesheet">
+    <script src="../js/auth/permissions.js"></script>
+    <script src="js/components/TEST-navigation.js"></script><!-- Navigation Component -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: 130px; /* Account for TESTING banner (40px) + fixed header (70px) + spacing (20px) */
+        }
+
+        /* RRTS Brand Colors */
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+            --color-success: #27ae60;
+            --color-warning: #f39c12;
+            --color-danger: #e74c3c;
+        }
+
+        /* Header Styles */
+        .app-header {
+            position: fixed;
+            top: 40px; /* Position below TESTING banner (40px) */
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        /* Brand Section */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .header-brand:hover {
+            opacity: 0.9;
+        }
+
+        .brand-icon {
+            font-size: 1.8em;
+            line-height: 1;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation */
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .nav-link {
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+        }
+
+        .nav-link.active {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        /* User Section */
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .user-name {
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .user-role-badge {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: var(--color-white);
+            border: 1px solid var(--color-white);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--color-white);
+            color: var(--color-primary);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .header-container {
+                padding: 0 20px;
+            }
+
+            .user-name {
+                display: none;
+            }
+
+            .logout-btn span {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .header-nav {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 250px;
+                height: calc(100vh - 70px);
+                background-color: var(--color-primary);
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 10px;
+                transition: left 0.3s;
+                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .header-nav.mobile-open {
+                left: 0;
+            }
+
+            .nav-link {
+                width: 100%;
+                padding: 12px 16px;
+            }
+
+            .brand-text {
+                font-size: 0.9em;
+            }
+
+            .user-info {
+                gap: 8px;
+            }
+
+            .user-role-badge {
+                display: none;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .metric {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric.success { color: #27ae60; }
+        .metric.warning { color: #f39c12; }
+        .metric.danger { color: #e74c3c; }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(52, 152, 219, 0.3);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+
+        .action-btn.success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+
+        .action-btn.warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .action-btn.brand {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+        }
+
+        .action-btn .icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .appointments-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .appointment-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .appointment-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .appointment-item.pending {
+            border-left-color: #f39c12;
+        }
+
+        .appointment-item.assigned {
+            border-left-color: #17a2b8;
+        }
+
+        .appointment-item.confirmed {
+            border-left-color: #17a2b8;
+        }
+
+        .appointment-item.flagged {
+            border-left-color: #e74c3c;
+            background-color: #fef9e7;
+        }
+
+        .appointment-info {
+            flex: 1;
+        }
+
+        .appointment-client {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .appointment-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .appointment-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-assigned {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-confirmed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-flagged {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3498db;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .login-section {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .system-status {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-operational {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Time Filter Styles */
+        .time-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .filter-btn:hover:not(.active) {
+            background: #bdc3c7;
+        }
+
+        /* Appointment Item Styles */
+        .appointment-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+            border-left: 5px solid #3498db;
+        }
+
+        .appointment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .appointment-item.assigned {
+            border-left-color: #17a2b8;
+        }
+
+        .appointment-item.confirmed {
+            border-left-color: #17a2b8;
+        }
+
+        .appointment-item.pending {
+            border-left-color: #f39c12;
+        }
+
+        .appointment-item.flagged {
+            border-left-color: #e74c3c;
+            background-color: #fef9e7;
+        }
+
+        .appointment-item.in-progress {
+            border-left-color: #9b59b6;
+            background-color: #f8f5ff;
+        }
+
+        .appointment-item.completed {
+            border-left-color: #95a5a6;
+            background-color: #f8f9fa;
+            opacity: 0.8;
+        }
+
+        .appointment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .appointment-time {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .appointment-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-assigned {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-confirmed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-flagged {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-in-progress {
+            background: #e7e3ff;
+            color: #6f42c1;
+        }
+
+        .status-completed {
+            background: #e2e6ea;
+            color: #6c757d;
+        }
+
+        .appointment-client {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .appointment-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .detail-icon {
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+
+        .appointment-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-btn.primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .action-btn.success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .action-btn.warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .action-btn.danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .action-btn.secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        .appointment-notes {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+            border-left: 3px solid #3498db;
+        }
+
+        .flagged-reason {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .appointment-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- TEST MODE WARNING BANNER -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 10000; background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); color: white; padding: 8px 20px; text-align: center; font-weight: 600; font-size: 0.95em; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <i class="bi bi-cone-striped me-2"></i>
+        🧪 TEST MODE - Dashboard - Testing Branch Database
+        <i class="bi bi-cone-striped ms-2"></i>
+    </div>
+
+    <div class="container" style="padding-top: 50px;">
+        <!-- Login Section -->
+        <div id="loginSection">
+            <div class="header">
+                <h1>Rural Route Transportation Services</h1>
+                <div class="header-info">
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+            <div class="login-section">
+                <h3 style="text-align: center; margin-bottom: 30px; color: #2c3e50;">Administrator Login</h3>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group" style="text-align: center; margin-top: 30px;">
+                    <button type="button" id="loginBtn" class="action-btn brand" onclick="login()" style="width: 100%; font-size: 18px; padding: 15px;">
+                        <span class="icon">🔐</span> Login
+                    </button>
+                </div>
+                <div id="loginError" class="hidden"></div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="#" onclick="showForgotPasswordModal(); return false;" style="color: #2D6A4F; text-decoration: none; font-size: 0.9em;">
+                        Forgot Password?
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header" style="background-color: #1B4332; color: white;">
+                        <h5 class="modal-title" id="forgotPasswordModalLabel">Reset Password</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">
+                            Enter your email address and we'll send you a temporary password.
+                        </p>
+                        <div class="mb-3">
+                            <label for="forgotPasswordEmail" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="forgotPasswordEmail" placeholder="your-email@example.com" required>
+                        </div>
+                        <div id="forgotPasswordMessage" class="hidden"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn" style="background-color: #1B4332; color: white;" onclick="submitForgotPassword()">
+                            <span id="forgotPasswordBtnText">Send Reset Email</span>
+                            <span id="forgotPasswordBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password Change Modal -->
+        <div id="passwordChangeSection" class="hidden">
+            <div class="header">
+                <h1>Rural Route Transportation Services</h1>
+                <div class="header-info">
+                    <span id="currentDate2"></span>
+                </div>
+            </div>
+            <div class="login-section">
+                <h3 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">Password Change Required</h3>
+                <p style="text-align: center; margin-bottom: 30px; color: #666;">
+                    For security reasons, you must change your password before continuing.
+                </p>
+                <div class="form-group">
+                    <label for="currentPassword">Current Password:</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">New Password:</label>
+                    <input type="password" id="newPassword" required>
+                    <small style="color: #666; font-size: 0.85em;">
+                        Password must be at least 8 characters with uppercase, lowercase, number, and special character.
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm New Password:</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="form-group" style="text-align: center; margin-top: 30px;">
+                    <button type="button" id="changePasswordBtn" class="action-btn brand" onclick="changePassword()" style="width: 100%; font-size: 18px; padding: 15px;">
+                        <span class="icon">🔐</span> Change Password
+                    </button>
+                </div>
+                <div id="passwordChangeError" class="hidden"></div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Section -->
+        <div id="dashboardSection" class="hidden">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-container">
+                    <!-- Brand -->
+                    <div class="header-brand" onclick="window.location.href='TEST-dashboard.html'">
+                        <span class="brand-icon">🚐</span>
+                        <span class="brand-text">RRTS</span>
+                    </div>
+
+                    <!-- Mobile Menu Toggle -->
+                    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+
+                    <!-- Navigation -->
+                    <nav class="header-nav" id="mainNav">
+                        <!-- Navigation links will be populated by JavaScript based on RBAC -->
+                    </nav>
+
+                    <!-- User Section -->
+                    <div class="header-user">
+                        <div class="user-info">
+                            <span class="user-avatar" id="userAvatar">--</span>
+                            <span class="user-name" id="userName">User</span>
+                            <span class="user-role-badge" id="userRoleBadge">Guest</span>
+                        </div>
+                        <button class="logout-btn" onclick="logout()" title="Logout">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="logout-text">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- System Status -->
+                <div class="system-status">
+                    <div class="status-indicator status-operational">
+                        ✅ System Operational
+                    </div>
+                    <div class="status-indicator status-operational">
+                        ✅ Database Connected
+                    </div>
+                    <div class="status-indicator status-operational">
+                        ✅ API Services Online
+                    </div>
+                </div>
+
+                <!-- Metrics Dashboard -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">📅</div>
+                            <div class="card-title">Today's Appointments</div>
+                        </div>
+                        <div class="metric" id="todaysAppointments">--</div>
+                        <div class="metric-label">Scheduled Today</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">⚠️</div>
+                            <div class="card-title">Pending Approval</div>
+                        </div>
+                        <div class="metric warning" id="pendingApprovals">--</div>
+                        <div class="metric-label">Need Review</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">👥</div>
+                            <div class="card-title">Active Clients</div>
+                        </div>
+                        <div class="metric success" id="activeClients">--</div>
+                        <div class="metric-label">This Month</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">🚗</div>
+                            <div class="card-title">Driver Status</div>
+                        </div>
+                        <div class="metric" id="availableDrivers">--</div>
+                        <div class="metric-label">Available Today</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <a href="clients-sl.html" class="action-btn">
+                        <span class="icon">👤</span>
+                        Manage Clients
+                    </a>
+                    <a href="operations.html" class="action-btn success">
+                        <span class="icon">📋</span>
+                        Today's Operations
+                    </a>
+                    <a href="driver-management.html" class="action-btn secondary">
+                        <span class="icon">🚗</span>
+                        Driver Schedules
+                    </a>
+                    <button class="action-btn warning" onclick="viewPendingApprovals()">
+                        <span class="icon">⚠️</span>
+                        Review Approvals
+                    </button>
+                </div>
+
+                <!-- Today's Schedule -->
+                <div class="appointments-section">
+                    <h3 class="section-title">📅 Today's Schedule</h3>
+                    
+                    <!-- Time Filter -->
+                    <div class="time-filter">
+                        <button class="filter-btn active" data-filter="all">All Day</button>
+                        <button class="filter-btn" data-filter="current">Current Hour</button>
+                        <button class="filter-btn" data-filter="next2">Next 2 Hours</button>
+                        <button class="filter-btn" data-filter="morning">Morning</button>
+                        <button class="filter-btn" data-filter="afternoon">Afternoon</button>
+                        <button class="filter-btn" data-filter="flagged">Flagged Only</button>
+                    </div>
+
+                    <!-- Appointments List -->
+                    <div id="todaysAppointmentsList">
+                        <div class="loading">Loading today's appointments...</div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Flagged Appointments -->
+                <div class="appointments-section">
+                    <h3 class="section-title">⚠️ Appointments Requiring Attention</h3>
+                    <div id="flaggedAppointmentsList">
+                        <div class="loading">Loading flagged appointments...</div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="appointments-section">
+                    <h3 class="section-title">📊 Recent Activity</h3>
+                    <div id="recentActivityList">
+                        <div class="loading">Loading recent activity...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+	// API Configuration for RRTS Dashboard - TEST MODE (uses TEST- workflows)
+	const API_ENDPOINTS = {
+		// Authentication endpoints
+    	LOGIN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-user-login',
+   	 CHANGE_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-change-password',
+   	 REFRESH_TOKEN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-refresh-token',
+   	 SELF_SERVE_PASSWORD_RESET: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-self-serve-password-reset',
+		ADMIN_SENDS_USER_PASSWORD_RESET: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-admin-sends-user-password-reset',
+
+		// User management endpoints (admin only)
+		CREATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-create-user',
+		DELETE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-delete-user',
+		GET_BOOKING_AGENT_LIST: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-get-booking-agent-list',
+
+		// Appointment endpoints
+		GET_APPOINTMENT_MODAL_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-get-appointment-modal-data',
+
+		// Client endpoints
+		GET_ALL_CLIENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-get-all-clients',
+
+		// Driver endpoints
+		UPDATE_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-update-driver',
+
+		// Audit logging
+		STORE_AUDIT_LOG: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-store-audit-log',
+
+		// Dashboard data (TODO: Create TEST-dashboard-data workflow)
+   	 DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management'
+	};
+
+	// Session and user management
+	let isLoggedIn = false;
+	let currentUser = null;
+
+		// Initialize the dashboard
+	document.addEventListener('DOMContentLoaded', function() {
+    	console.log('RRTS Dashboard loaded');
+    	console.log('API Endpoints configured:', API_ENDPOINTS);
+
+    	// Initialize header (will show guest/default if not logged in)
+    	initializeNavigation(); setupMobileMenu();
+
+    	// Check for password reset parameter
+    	const urlParams = new URLSearchParams(window.location.search);
+    	const resetUsername = urlParams.get('reset');
+   	 
+    	if (resetUsername) {
+    	    // Pre-fill username in password reset form
+    	    showPasswordReset();
+    	    setTimeout(() => {
+    	        document.getElementById('resetUsername').value = resetUsername;
+    	    }, 100);
+    	} else {
+    	    // Check for existing session
+    	    const savedUser = sessionStorage.getItem('rrts_user');
+    	    if (savedUser) {
+    	        try {
+    	            currentUser = JSON.parse(savedUser);
+    	            isLoggedIn = true;
+    	            
+    	            // Enforce page access and filter navigation
+    	            if (typeof enforcePageAccess !== 'undefined' && enforcePageAccess) {
+    	                enforcePageAccess();
+    	            }
+    	            
+    	            showDashboard();
+    	            loadDashboardData();
+    	        } catch (error) {
+    	            console.log('Invalid saved session, showing login');
+    	            sessionStorage.removeItem('rrts_user');
+    	            showLogin();
+    	        }
+    	    } else {
+    	        showLogin();
+    	    }
+    	}
+    
+    	// Update current time
+  	  updateCurrentTime();
+    	setInterval(updateCurrentTime, 1000);
+    
+  	  // Focus on username field
+  	  const usernameField = document.getElementById('username');
+  	  if (usernameField) {
+  	      usernameField.focus();
+  	  }
+  	  
+  	  // Add Enter key support for login form
+  	  const passwordField = document.getElementById('password');
+  	  if (usernameField) {
+  	      usernameField.addEventListener('keydown', function(event) {
+  	          if (event.key === 'Enter') {
+  	              event.preventDefault();
+  	              login();
+  	          }
+  	      });
+  	  }
+  	  if (passwordField) {
+  	      passwordField.addEventListener('keydown', function(event) {
+  	          if (event.key === 'Enter') {
+  	              event.preventDefault();
+  	              login();
+  	          }
+  	      });
+  	  }
+
+  	  // Add Enter key support for forgot password modal
+  	  const forgotPasswordEmailField = document.getElementById('forgotPasswordEmail');
+  	  if (forgotPasswordEmailField) {
+  	      forgotPasswordEmailField.addEventListener('keydown', function(event) {
+  	          if (event.key === 'Enter') {
+  	              event.preventDefault();
+  	              submitForgotPassword();
+  	          }
+  	      });
+  	  }
+	});
+
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            const dateTimeString = now.toLocaleDateString('en-CA', options);
+            
+            const currentDateElement = document.getElementById('currentDate');
+            const currentDateTimeElement = document.getElementById('currentDateTime');
+            
+            if (currentDateElement) {
+                currentDateElement.textContent = dateTimeString.split(' at ')[0];
+            }
+            if (currentDateTimeElement) {
+                currentDateTimeElement.textContent = dateTimeString;
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+
+            // Set loading state
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Logging in...';
+
+            try {
+                const response = await fetch(API_ENDPOINTS.LOGIN, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+                console.log('Login result:', result);
+
+                if (result.success) {
+                    // Check if password change is required
+                    if (result.must_change_password) {
+                        console.log('Password change required - showing change password modal');
+
+                        // Store limited token temporarily
+                        sessionStorage.setItem('rrts_limited_token', result.limited_token);
+                        sessionStorage.setItem('rrts_temp_username', username);
+                        sessionStorage.setItem('rrts_temp_password', password);
+
+                        // Reset button state
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = '<span class="icon">🔐</span> Login';
+
+                        // Show password change modal
+                        showPasswordChangeModal();
+                        return;
+                    }
+
+                    // Normal login - store JWT tokens
+                    isLoggedIn = true;
+                    currentUser = {
+                        id: result.userId || result.id,
+                        username: result.username || username,
+                        role: result.userRole || result.role || 'admin',
+                        fullName: result.fullName || username
+                    };
+
+                    sessionStorage.setItem('rrts_user', JSON.stringify(currentUser));
+                    sessionStorage.setItem('rrts_access_token', result.access_token);
+                    sessionStorage.setItem('rrts_refresh_token', result.refresh_token);
+                    sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
+
+                    console.log('Login successful - tokens stored');
+
+                    // Show success state briefly
+                    loginBtn.innerHTML = '<span class="icon">✓</span> Success!';
+
+                    // Update header with user info
+                    initializeNavigation(); setupMobileMenu();
+
+                    showDashboard();
+                    loadDashboardData();
+
+                    // Start token refresh timer
+                    startTokenRefreshTimer();
+                } else {
+                    // Reset button state on error
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<span class="icon">🔐</span> Login';
+                    showError(result.message || 'Invalid username or password');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                // Reset button state on error
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<span class="icon">🔐</span> Login';
+                showError('Login failed - please try again');
+            }
+        }
+
+	function updateCurrentTime() {
+  	  const now = new Date();
+  	  const options = {
+    	    weekday: 'long',
+  	      year: 'numeric',
+   	     month: 'long',
+   	     day: 'numeric',
+   	     hour: '2-digit',
+    	    minute: '2-digit'
+  	  };
+ 	   const dateTimeString = now.toLocaleDateString('en-CA', options);
+    
+  	  const currentDateElement = document.getElementById('currentDate');
+  	  const currentDateTimeElement = document.getElementById('currentDateTime');
+    
+ 	   if (currentDateElement) {
+  	      currentDateElement.textContent = dateTimeString.split(' at ')[0];
+ 	   }
+  	  if (currentDateTimeElement) {
+  	      currentDateTimeElement.textContent = dateTimeString;
+  	  }
+	}
+
+	function showLogin() {
+    	document.getElementById('loginSection').classList.remove('hidden');
+    	document.getElementById('passwordChangeSection').classList.add('hidden');
+    	document.getElementById('dashboardSection').classList.add('hidden');
+	}
+
+	function showDashboard() {
+   	 document.getElementById('loginSection').classList.add('hidden');
+   	 document.getElementById('passwordChangeSection').classList.add('hidden');
+   	 document.getElementById('dashboardSection').classList.remove('hidden');
+
+   	 if (currentUser) {
+    	    const welcomeElement = document.getElementById('welcomeUser');
+      	  if (welcomeElement) {
+      	      welcomeElement.textContent = `Welcome, ${currentUser.username}`;
+     	   }
+   	 }
+	}
+
+	async function loadDashboardData() {
+	    try {
+	        // Load appointments from the appointments API - TEST endpoint
+	        const appointmentsResponse = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-get-active-present-future-appointments');
+	        
+	        if (!appointmentsResponse.ok) {
+	            throw new Error(`HTTP ${appointmentsResponse.status}: ${appointmentsResponse.statusText}`);
+	        }
+
+        	const appointmentsData = await appointmentsResponse.json();
+	        console.log('Appointments data loaded:', appointmentsData);
+	        
+	        // Extract appointments from the response
+	        let appointments = [];
+	        if (Array.isArray(appointmentsData) && appointmentsData.length > 0 && appointmentsData[0].appointments) {
+	            appointments = appointmentsData[0].appointments;
+	        } else if (appointmentsData.appointments && Array.isArray(appointmentsData.appointments)) {
+	            appointments = appointmentsData.appointments;
+	        }
+	        
+	        // Filter for today's appointments
+	        const today = new Date();
+	        today.setHours(0, 0, 0, 0);
+	        const tomorrow = new Date(today);
+	        tomorrow.setDate(tomorrow.getDate() + 1);
+	        
+	        const todaysAppointments = appointments.filter(apt => {
+	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
+	            return aptDate >= today && aptDate < tomorrow;
+	        });
+
+        	// Transform the appointments data into dashboard metrics
+	        const dashboardMetrics = {
+        	    todaysAppointments: todaysAppointments.length,
+	            pendingApprovals: todaysAppointments.filter(apt =>
+	                (apt.operation_status || apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
+        	    ).length,
+	            activeClients: appointments.length, // Total appointments as proxy for activity
+        	    availableDrivers: 3 // This would come from a drivers API
+	        };
+
+        	// Update the metrics display
+	        updateDashboardMetrics(dashboardMetrics);
+
+        	// Store appointments globally for filtering
+	        window.todaysAppointments = todaysAppointments;
+	        
+	        // Render today's appointments
+	        renderTodaysAppointments(todaysAppointments);
+	        
+	        // Set up time filters
+	        setupTimeFilters();
+
+	        // Render flagged appointments (those needing review)
+  	      const flaggedAppointments = todaysAppointments.filter(apt =>
+  	          (apt.operation_status || apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
+  	      ).map(apt => ({
+   	         id: apt.id || apt.appointment_id,
+   	         client: `${apt.firstname || apt.clientFirstName || ''} ${apt.lastname || apt.clientLastName || ''}`.trim(),
+            	date: 'Today',
+         	   time: new Date(apt.appointmenttime || apt.appointmentDateTime).toLocaleTimeString('en-US', { 
+         	       hour: 'numeric', 
+         	       minute: '2-digit',
+         	       hour12: true 
+         	   }),
+        	    location: apt.locationname || apt.location || 'No location',
+         	   reason: !apt.driverAssigned ? 'No driver assigned' : 'Requires approval',
+        	    hoursNotice: 24 // Default value
+      	  }));
+
+     	   renderFlaggedAppointments(flaggedAppointments);
+
+       	 // Create recent activity from today's appointments
+     	   const recentActivity = todaysAppointments.slice(0, 5).map((apt, index) => {
+     	       const status = apt.operation_status || apt.appointmentstatus || apt.status;
+     	       const isAssigned = status === 'assigned' || status === 'confirmed';
+     	       return {
+     	       type: isAssigned ? 'appointment_confirmed' : 'appointment_created',
+       	     message: `${isAssigned ? 'Assigned' : 'Created'} appointment for ${(apt.firstname || apt.clientFirstName || '')} ${(apt.lastname || apt.clientLastName || '')}`.trim(),
+      	      time: `${index + 1} hour${index + 1 > 1 ? 's' : ''} ago`,
+      	      user: 'admin'
+      	  };
+      	  }).concat([
+         	   {
+         	       type: 'system_start',
+         	       message: 'Dashboard loaded successfully',
+         	       time: 'Just now',
+         	       user: 'system'
+         	   }
+      	  ]);
+
+      	  renderRecentActivity(recentActivity);
+
+  	  } catch (error) {
+   	     console.error('Failed to load dashboard data:', error);
+        
+    	    // Show specific error message
+     	   const errorMessage = error.message.includes('Failed to fetch') 
+      	      ? 'Unable to connect to backend services' 
+      	      : `Backend error: ${error.message}`;
+            
+    	    showDashboardError(errorMessage);
+    	}
+	}
+
+	// Enhanced error display function
+	function showDashboardError(customMessage) {
+  	  const errorMsg = customMessage || 'Failed to load dashboard data';
+    
+  	  document.getElementById('todaysAppointmentsList').innerHTML = 
+  	      `<div class="error">⚠️ ${errorMsg}</div>`;
+ 	   document.getElementById('flaggedAppointmentsList').innerHTML = 
+  	      `<div class="error">⚠️ ${errorMsg}</div>`;
+ 	   document.getElementById('recentActivityList').innerHTML = 
+  	      `<div class="error">⚠️ ${errorMsg}</div>`;
+        
+ 	   // Set metrics to show error state
+ 	   document.getElementById('todaysAppointments').textContent = '--';
+  	  document.getElementById('pendingApprovals').textContent = '--';
+ 	   document.getElementById('activeClients').textContent = '--';
+ 	   document.getElementById('availableDrivers').textContent = '--';
+	}
+        function updateDashboardMetrics(data) {
+            document.getElementById('todaysAppointments').textContent = data.todaysAppointments;
+            document.getElementById('pendingApprovals').textContent = data.pendingApprovals;
+            document.getElementById('activeClients').textContent = data.activeClients;
+            document.getElementById('availableDrivers').textContent = data.availableDrivers;
+        }
+
+        function renderTodaysAppointments(appointments) {
+            const container = document.getElementById('todaysAppointmentsList');
+            
+            if (!appointments || appointments.length === 0) {
+                container.innerHTML = '<div class="empty-state">No appointments scheduled for today</div>';
+                return;
+            }
+
+            container.innerHTML = appointments.map(apt => {
+                const appointmentTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                const timeString = appointmentTime.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+                
+                const clientName = `${apt.firstname || apt.clientFirstName || ''} ${apt.lastname || apt.clientLastName || ''}`.trim() || 'Unknown Client';
+                const kNumber = apt.knumber ? ` (${apt.knumber})` : '';
+                const status = apt.operation_status || apt.appointmentstatus || apt.status || 'pending';
+                const driver = apt.driverAssigned || apt.driver_assigned || 'Unassigned';
+                const location = apt.locationname || apt.location || 'No location';
+                
+                return `
+                    <div class="appointment-item ${status}">
+                        <div class="appointment-header">
+                            <div class="appointment-time">${timeString}</div>
+                            <div class="appointment-status status-${status}">${status.replace('-', ' ')}</div>
+                        </div>
+                        <div class="appointment-client">${clientName}${kNumber}</div>
+                        <div class="appointment-details">
+                            <div class="detail-item">
+                                <span class="detail-icon">📍</span>
+                                ${location}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🚗</span>
+                                Driver: ${driver}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">⏰</span>
+                                Pickup: ${new Date(apt.pickuptime || apt.pickupTime).toLocaleTimeString('en-US', { 
+                                    hour: 'numeric', 
+                                    minute: '2-digit',
+                                    hour12: true 
+                                })}
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-icon">🕐</span>
+                                Duration: ${apt.appointmentlength || apt.appointmentLength || 60}min
+                            </div>
+                        </div>
+                        ${!apt.driverAssigned ? `
+                            <div class="flagged-reason">
+                                ⚠️ No driver assigned
+                            </div>
+                        ` : ''}
+                        ${apt.notes ? `
+                            <div class="appointment-notes">
+                                📝 ${apt.notes}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderFlaggedAppointments(flaggedAppointments) {
+            const container = document.getElementById('flaggedAppointmentsList');
+            
+            if (!flaggedAppointments || flaggedAppointments.length === 0) {
+                container.innerHTML = '<div class="empty-state">No appointments requiring attention</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            flaggedAppointments.forEach(appointment => {
+                const appointmentDiv = document.createElement('div');
+                appointmentDiv.className = 'appointment-item flagged';
+                
+                appointmentDiv.innerHTML = `
+                    <div class="appointment-info">
+                        <div class="appointment-client">${appointment.client}</div>
+                        <div class="appointment-details">
+                            ${appointment.date} at ${appointment.time} • ${appointment.location}<br>
+                            <strong>⚠️ ${appointment.reason}</strong> (${appointment.hoursNotice} hours notice)
+                        </div>
+                    </div>
+                    <div class="appointment-status status-flagged">
+                        Needs Review
+                    </div>
+                `;
+                
+                container.appendChild(appointmentDiv);
+            });
+        }
+
+        function renderRecentActivity(activities) {
+            const container = document.getElementById('recentActivityList');
+            
+            if (!activities || activities.length === 0) {
+                container.innerHTML = '<div class="empty-state">No recent activity</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            activities.forEach(activity => {
+                const activityDiv = document.createElement('div');
+                activityDiv.className = 'appointment-item';
+                
+                const icon = getActivityIcon(activity.type);
+                
+                activityDiv.innerHTML = `
+                    <div class="appointment-info">
+                        <div class="appointment-client">${icon} ${activity.message}</div>
+                        <div class="appointment-details">
+                            ${activity.time} • by ${activity.user}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(activityDiv);
+            });
+        }
+
+        function getActivityIcon(type) {
+            const icons = {
+                appointment_created: '📅',
+                appointment_modified: '✏️',
+                appointment_deleted: '🗑️',
+                client_added: '👤',
+                client_modified: '✏️',
+                driver_assigned: '🚗',
+                system_alert: '⚠️'
+            };
+            return icons[type] || '📋';
+        }
+
+        function viewPendingApprovals() {
+            // TODO: Navigate to approval management page or show modal
+            alert('Pending approvals functionality will be implemented in the operations module');
+        }
+
+        function showDashboardError() {
+            document.getElementById('todaysAppointmentsList').innerHTML = 
+                '<div class="error">Failed to load appointment data</div>';
+            document.getElementById('flaggedAppointmentsList').innerHTML = 
+                '<div class="error">Failed to load flagged appointments</div>';
+            document.getElementById('recentActivityList').innerHTML = 
+                '<div class="error">Failed to load activity data</div>';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function logout() {
+            isLoggedIn = false;
+            currentUser = null;
+
+            // Clear all session storage (user data and JWT tokens)
+            sessionStorage.removeItem('rrts_user');
+            sessionStorage.removeItem('rrts_access_token');
+            sessionStorage.removeItem('rrts_refresh_token');
+            sessionStorage.removeItem('rrts_token_expiry');
+            sessionStorage.removeItem('rrts_limited_token');
+            sessionStorage.removeItem('rrts_temp_username');
+            sessionStorage.removeItem('rrts_temp_password');
+
+            // Clear form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+
+            // Clear token refresh timer if exists
+            if (window.tokenRefreshInterval) {
+                clearInterval(window.tokenRefreshInterval);
+            }
+
+            showLogin();
+        }
+
+        // Show password change modal
+        function showPasswordChangeModal() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('passwordChangeSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+
+            // Pre-fill current password
+            const tempPassword = sessionStorage.getItem('rrts_temp_password');
+            if (tempPassword) {
+                document.getElementById('currentPassword').value = tempPassword;
+            }
+
+            // Clear error
+            document.getElementById('passwordChangeError').classList.add('hidden');
+        }
+
+        // Change password function
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+            // Validation
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showPasswordChangeError('All fields are required');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showPasswordChangeError('New password and confirmation do not match');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showPasswordChangeError('Password must be at least 8 characters long');
+                return;
+            }
+
+            // Get limited token
+            const limitedToken = sessionStorage.getItem('rrts_limited_token');
+            if (!limitedToken) {
+                showPasswordChangeError('Session expired. Please login again.');
+                setTimeout(() => {
+                    logout();
+                }, 2000);
+                return;
+            }
+
+            // Set loading state
+            changePasswordBtn.disabled = true;
+            changePasswordBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Changing Password...';
+
+            try {
+                const response = await fetch(API_ENDPOINTS.CHANGE_PASSWORD, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${limitedToken}`
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+
+                const result = await response.json();
+                console.log('Password change result:', result);
+
+                if (result.success) {
+                    // Show success state
+                    changePasswordBtn.innerHTML = '<span class="icon">✓</span> Success!';
+
+                    // Clear temp storage
+                    sessionStorage.removeItem('rrts_limited_token');
+                    sessionStorage.removeItem('rrts_temp_username');
+                    sessionStorage.removeItem('rrts_temp_password');
+
+                    // Store new JWT tokens
+                    isLoggedIn = true;
+                    currentUser = {
+                        username: result.user.username,
+                        role: result.user.role || 'admin',
+                        fullName: result.user.full_name || result.user.username
+                    };
+
+                    sessionStorage.setItem('rrts_user', JSON.stringify(currentUser));
+                    sessionStorage.setItem('rrts_access_token', result.access_token);
+                    sessionStorage.setItem('rrts_refresh_token', result.refresh_token);
+                    sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
+
+                    console.log('Password changed successfully - proceeding to dashboard');
+
+                    // Clear form
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+
+                    // Update header with user info
+                    initializeNavigation(); setupMobileMenu();
+
+                    // Show dashboard
+                    showDashboard();
+                    loadDashboardData();
+
+                    // Start token refresh timer
+                    startTokenRefreshTimer();
+                } else {
+                    // Reset button state on error
+                    changePasswordBtn.disabled = false;
+                    changePasswordBtn.innerHTML = '<span class="icon">🔐</span> Change Password';
+                    showPasswordChangeError(result.message || 'Password change failed');
+                }
+            } catch (error) {
+                console.error('Password change error:', error);
+                // Reset button state on error
+                changePasswordBtn.disabled = false;
+                changePasswordBtn.innerHTML = '<span class="icon">🔐</span> Change Password';
+                showPasswordChangeError('An error occurred. Please try again.');
+            }
+        }
+
+        // Show password change error
+        function showPasswordChangeError(message) {
+            const errorDiv = document.getElementById('passwordChangeError');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // Forgot Password Functions
+        function showForgotPasswordModal() {
+            // Clear previous state
+            document.getElementById('forgotPasswordEmail').value = '';
+            document.getElementById('forgotPasswordMessage').classList.add('hidden');
+            document.getElementById('forgotPasswordMessage').innerHTML = '';
+
+            // Show modal using Bootstrap
+            const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+            modal.show();
+        }
+
+        async function submitForgotPassword() {
+            const email = document.getElementById('forgotPasswordEmail').value.trim().toLowerCase();
+
+            // Validation
+            if (!email) {
+                showForgotPasswordMessage('Please enter your email address', 'error');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showForgotPasswordMessage('Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Show loading state
+            const btnText = document.getElementById('forgotPasswordBtnText');
+            const btnSpinner = document.getElementById('forgotPasswordBtnSpinner');
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch(API_ENDPOINTS.FORGOT_PASSWORD, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: email })
+                });
+
+                const result = await response.json();
+                console.log('Forgot password result:', result);
+
+                // Reset button state
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+
+                if (result.success) {
+                    // Show success message (generic for security)
+                    showForgotPasswordMessage(
+                        result.message || 'If an account exists with that email, a password reset link has been sent.',
+                        'success'
+                    );
+
+                    // Close modal after 3 seconds
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+                    }, 3000);
+                } else {
+                    // Show error message
+                    if (result.statusCode === 429) {
+                        // Rate limited
+                        showForgotPasswordMessage(result.message || 'Too many attempts. Please try again later.', 'error');
+                    } else {
+                        showForgotPasswordMessage(result.message || 'An error occurred. Please try again.', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Forgot password error:', error);
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+                showForgotPasswordMessage('An error occurred. Please try again.', 'error');
+            }
+        }
+
+        function showForgotPasswordMessage(message, type) {
+            const messageDiv = document.getElementById('forgotPasswordMessage');
+            const className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
+            messageDiv.innerHTML = `<div class="${className}" role="alert">${message}</div>`;
+            messageDiv.classList.remove('hidden');
+        }
+
+        // Token refresh functions
+        function startTokenRefreshTimer() {
+            // Clear existing timer if any
+            if (window.tokenRefreshInterval) {
+                clearInterval(window.tokenRefreshInterval);
+            }
+
+            // Refresh token every 45 minutes (token expires in 1 hour)
+            window.tokenRefreshInterval = setInterval(async () => {
+                console.log('Token refresh timer triggered');
+                await refreshAccessToken();
+            }, 45 * 60 * 1000);
+
+            console.log('Token refresh timer started (45 min interval)');
+        }
+
+        async function refreshAccessToken() {
+            const refreshToken = sessionStorage.getItem('rrts_refresh_token');
+
+            if (!refreshToken) {
+                console.log('No refresh token found - user needs to login');
+                return;
+            }
+
+            try {
+                console.log('Refreshing access token...');
+
+                const response = await fetch(API_ENDPOINTS.REFRESH_TOKEN, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        refresh_token: refreshToken
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update access token and expiry
+                    sessionStorage.setItem('rrts_access_token', result.access_token);
+                    sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
+
+                    console.log('Access token refreshed successfully');
+                } else {
+                    console.error('Token refresh failed:', result.message);
+                    // If refresh fails, logout user
+                    alert('Your session has expired. Please login again.');
+                    logout();
+                }
+            } catch (error) {
+                console.error('Token refresh error:', error);
+            }
+        }
+
+        // Helper function to get auth headers for API calls
+        function getAuthHeaders() {
+            const accessToken = sessionStorage.getItem('rrts_access_token');
+
+            if (accessToken) {
+                return {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                };
+            }
+
+            return {
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Time filter functionality
+        function setupTimeFilters() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Update current filter
+                    const currentFilter = this.getAttribute('data-filter');
+                    
+                    // Filter and re-render appointments
+                    filterAndRenderAppointments(currentFilter);
+                });
+            });
+        }
+
+        function filterAndRenderAppointments(filter) {
+            if (!window.todaysAppointments) return;
+            
+            const filteredAppointments = filterAppointments(window.todaysAppointments, filter);
+            renderTodaysAppointments(filteredAppointments);
+        }
+
+        function filterAppointments(appointments, filter) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            switch (filter) {
+                case 'current':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        return aptTime.getHours() === currentHour;
+                    });
+                    
+                case 'next2':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        const aptHour = aptTime.getHours();
+                        return aptHour >= currentHour && aptHour <= currentHour + 2;
+                    });
+                    
+                case 'morning':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        return aptTime.getHours() < 12;
+                    });
+                    
+                case 'afternoon':
+                    return appointments.filter(apt => {
+                        const aptTime = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                        return aptTime.getHours() >= 12;
+                    });
+                    
+                case 'flagged':
+                    return appointments.filter(apt =>
+                        (apt.operation_status || apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
+                    );
+                    
+                case 'all':
+                default:
+                    return appointments;
+            }
+        }
+
+        // Navigation handled by TEST-navigation.js (initializeNavigation, setupMobileMenu)
+
+    </script>
+
+    <!-- Background Task Monitoring -->
+    <script src="../js/core/task-monitor.js"></script>
+    <script src="../js/components/task-notifications.js"></script>
+    <script src="../js/components/failed-tasks-widget.js"></script>
+</body>
+</html>
+<!-- 
+Version: v2.0.0 - RRTS Dashboard with Daily Schedule
+- v2.0.0: Added daily schedule view with time filtering from operations page
+- v1.1.2: fixes missing functions
+- v1.1.1: Uses actual data, updated endpoints
+- v1.0.0: Initial dashboard with login, metrics overview, today's appointments
+- Features: System status indicators, daily schedule with time filtering, appointment management
+- Real-time dashboard data loading with appointments API integration
+- Today's schedule view with enhanced appointment display and time-based filtering
+- Flagged appointments requiring attention with approval workflow hooks
+- Recent activity feed for system monitoring
+- Responsive design with mobile support and enhanced appointment styling
+- Session-based authentication with automatic login state persistence
+- Ready for integration with appointments and driver management API endpoints
+-->

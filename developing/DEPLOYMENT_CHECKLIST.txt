@@ -1,0 +1,66 @@
+DEPLOYMENT CHECKLIST - Testing to Production
+=============================================
+Date: 2026-01-13
+
+STEP 1: UPDATE N8N WORKFLOWS
+-----------------------------
+For each TEST workflow, duplicate and update:
+
+Workflows to update:
+- TEST-get-finance-appointments
+- TEST-get-invoices
+- TEST-get-app-config
+- TEST-mark-appointment-ready
+- TEST-create-invoice
+- TEST-update-invoice-status-v2
+- TEST-void-invoice
+- TEST-mark-driver-paid
+- TEST-mark-agent-paid
+- TEST-store-audit-log
+
+For each workflow:
+1. Remove TEST from workflow name
+2. Remove TEST from tags
+3. Remove TEST- from webhook endpoint path
+4. Change Supabase nodes to production branch
+5. Activate the workflow
+
+
+STEP 2: MERGE SUPABASE BRANCHES
+--------------------------------
+1. Open Supabase Dashboard
+2. Select your project
+3. Click "Branches" in left sidebar
+4. Select the Testing branch
+5. Click "Open pull request"
+6. Review the diff
+7. Click "Merge branch"
+8. Confirm
+
+Production database will now have the new schema.
+
+
+STEP 3: PUSH CODE TO PRODUCTION
+--------------------------------
+1. Verify all n8n workflows are active
+2. Verify Supabase merge is complete
+3. Push Testing branch to main:
+   git checkout main
+   git merge Testing
+   git push origin main
+
+
+STEP 4: VALIDATE
+-----------------
+1. Open production site
+2. Test login
+3. Test finance dashboard
+4. Test appointment creation
+5. Test client management
+
+
+ROLLBACK (if needed)
+---------------------
+Code backup location: deprecated/2026-01-13/
+- Contains all files before merge
+- Copy back to root if rollback needed

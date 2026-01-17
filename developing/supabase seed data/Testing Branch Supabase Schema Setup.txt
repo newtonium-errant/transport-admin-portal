@@ -1,0 +1,241 @@
+-- RRTS Transport Admin Portal - Testing Database Schema (CORRECTED)
+-- Generated: 2025-11-09 from actual production schema
+-- Copy this SQL and run it in Supabase Dashboard → SQL Editor
+-- URL: https://supabase.com/dashboard/project/bkgrouxtldxnbjalnmms/sql
+
+-- Drop existing tables if they exist (to start fresh)
+DROP TABLE IF EXISTS driver_time_off CASCADE;
+DROP TABLE IF EXISTS system_logs CASCADE;
+DROP TABLE IF EXISTS app_config CASCADE;
+DROP TABLE IF EXISTS appointments CASCADE;
+DROP TABLE IF EXISTS clients CASCADE;
+DROP TABLE IF EXISTS destinations CASCADE;
+DROP TABLE IF EXISTS drivers CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- Users table
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    full_name TEXT,
+    role TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMPTZ,
+    password_reset_token TEXT,
+    password_reset_expires TIMESTAMPTZ,
+    failed_login_attempts INTEGER DEFAULT 0,
+    locked_until TIMESTAMPTZ,
+    last_password_change TIMESTAMPTZ,
+    status TEXT,
+    must_change_password BOOLEAN DEFAULT false,
+    last_activity TIMESTAMPTZ,
+    password_reset_attempts INTEGER DEFAULT 0,
+    password_reset_last_attempt TIMESTAMPTZ
+);
+
+-- Destinations table (clinic locations)
+CREATE TABLE destinations (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    address TEXT,
+    city TEXT,
+    province TEXT DEFAULT 'NS',
+    postal_code TEXT,
+    phone TEXT,
+    notes TEXT,
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Clients table
+CREATE TABLE clients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    knumber TEXT UNIQUE NOT NULL,
+    phone TEXT,
+    email TEXT,
+    firstname TEXT,
+    lastname TEXT,
+    civicaddress TEXT,
+    city TEXT,
+    prov TEXT,
+    postalcode TEXT,
+    notes TEXT,
+    emergency_contact_name TEXT,
+    emergency_contact_number TEXT,
+    driver_gender_requirement TEXT,
+    preferred_driver INTEGER,
+    mapaddress TEXT,
+    active BOOLEAN DEFAULT true,
+    appointment_length INTEGER,
+    openphone_contact_id TEXT,
+    openphone_sync_status TEXT,
+    openphone_sync_date TIMESTAMPTZ,
+    status TEXT,
+    clinic_travel_times JSONB,
+    secondary_civic_address TEXT,
+    secondary_city TEXT,
+    secondary_province TEXT,
+    secondary_postal_code TEXT,
+    secondary_address_notes TEXT,
+    primary_clinic_id INTEGER
+);
+
+-- Drivers table
+CREATE TABLE drivers (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    email TEXT,
+    phone TEXT,
+    google_calendar_id TEXT,
+    preferred_calendar_type TEXT,
+    active BOOLEAN DEFAULT true,
+    weekly_hours JSONB,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    gender TEXT,
+    workload_preference TEXT,
+    workload_percentage INTEGER,
+    is_male BOOLEAN,
+    first_name TEXT,
+    last_name TEXT,
+    google_calendar_access_token TEXT,
+    google_calendar_refresh_token TEXT,
+    google_calendar_connected BOOLEAN DEFAULT false,
+    google_calendar_connected_at TIMESTAMPTZ,
+    google_calendar_calendar_id TEXT,
+    work_phone TEXT
+);
+
+-- Appointments table
+CREATE TABLE appointments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    knumber TEXT NOT NULL,
+    appointmenttime TIMESTAMPTZ NOT NULL,
+    pickuptime TIMESTAMPTZ,
+    locationname TEXT,
+    locationaddress TEXT,
+    notes TEXT,
+    transittime INTEGER,
+    appointmentstatus TEXT,
+    custom_rate NUMERIC,
+    maptraveltime INTEGER,
+    google_maps_success BOOLEAN,
+    google_maps_error TEXT,
+    is_existing BOOLEAN,
+    driver_assigned INTEGER,
+    driver_email TEXT,
+    driver_calendar_event_id TEXT,
+    client_notification_sent BOOLEAN DEFAULT false,
+    driver_notification_sent BOOLEAN DEFAULT false,
+    reminder_sent_client BOOLEAN DEFAULT false,
+    reminder_sent_driver BOOLEAN DEFAULT false,
+    notification_status JSONB,
+    scheduling_notes TEXT,
+    preferred_driver INTEGER,
+    tripdistance NUMERIC,
+    clinic_id INTEGER,
+    this_appointment_length INTEGER,
+    google_calendar_last_synced TIMESTAMPTZ,
+    google_calendar_sync_error TEXT,
+    "appointmentStatusUpdated" TIMESTAMPTZ,
+    "dropOffTime" TIMESTAMPTZ,
+    reminder_1h_sent_at TIMESTAMPTZ,
+    reminder_1h_error TEXT,
+    driver_first_name TEXT,
+    operation_status TEXT,
+    invoice_status TEXT,
+    deleted_at TIMESTAMPTZ,
+    cancelled_at TIMESTAMPTZ,
+    driver_paid_at TIMESTAMPTZ,
+    booking_agent_paid_at TIMESTAMPTZ,
+    invoice_created_at TIMESTAMPTZ,
+    invoice_sent_at TIMESTAMPTZ,
+    payment_received_at TIMESTAMPTZ,
+    cancelled_by INTEGER,
+    cancellation_reason TEXT,
+    deleted_by INTEGER,
+    pickup_address TEXT,
+    managed_by INTEGER,
+    managed_by_name TEXT,
+    driver_instructions TEXT
+);
+
+-- System logs table
+CREATE TABLE system_logs (
+    id SERIAL PRIMARY KEY,
+    log_type TEXT,
+    log_level TEXT,
+    message TEXT,
+    details JSONB,
+    user_id INTEGER,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- App config table
+CREATE TABLE app_config (
+    id SERIAL PRIMARY KEY,
+    config_key TEXT UNIQUE NOT NULL,
+    config_value TEXT,
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Driver time off table
+CREATE TABLE driver_time_off (
+    id SERIAL PRIMARY KEY,
+    driver_id INTEGER NOT NULL,
+    start_date TIMESTAMPTZ NOT NULL,
+    end_date TIMESTAMPTZ NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add foreign key constraints
+ALTER TABLE clients
+ADD CONSTRAINT fk_clients_primary_clinic
+FOREIGN KEY (primary_clinic_id) REFERENCES destinations(id)
+ON DELETE SET NULL;
+
+-- Create indexes for performance
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_clients_knumber ON clients(knumber);
+CREATE INDEX idx_clients_active ON clients(active);
+CREATE INDEX idx_clients_primary_clinic ON clients(primary_clinic_id);
+CREATE INDEX idx_destinations_active ON destinations(active);
+CREATE INDEX idx_appointments_knumber ON appointments(knumber);
+CREATE INDEX idx_appointments_appointmenttime ON appointments(appointmenttime);
+CREATE INDEX idx_appointments_driver_assigned ON appointments(driver_assigned);
+CREATE INDEX idx_drivers_active ON drivers(active);
+
+-- Enable RLS (you'll need to configure policies separately)
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE destinations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE drivers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE driver_time_off ENABLE ROW LEVEL SECURITY;
+
+-- Table comments
+COMMENT ON TABLE users IS 'System users with authentication and role information';
+COMMENT ON TABLE destinations IS 'Clinic and medical facility locations for appointments';
+COMMENT ON TABLE clients IS 'Client records with K-numbers and contact information';
+COMMENT ON TABLE drivers IS 'Driver information with Google Calendar integration';
+COMMENT ON TABLE appointments IS 'Medical transportation appointments';
+COMMENT ON TABLE system_logs IS 'System audit and error logs';
+COMMENT ON TABLE app_config IS 'Application configuration key-value pairs';
+COMMENT ON TABLE driver_time_off IS 'Driver availability and time off tracking';
+
+-- Column comments
+COMMENT ON COLUMN clients.primary_clinic_id IS 'Default/preferred clinic for client appointments. References destinations(id). NULL if no preference.';

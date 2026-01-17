@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 TEST MODE - RRTS - Appointments</title>
+    <link href="../css/shared-styles.css" rel="stylesheet">
+    <script src="../js/auth/permissions.js"></script>
+    <script src="js/components/TEST-navigation.js"></script><!-- Navigation Component -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        /* RRTS Brand Colors */
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+            --color-success: #27ae60;
+            --color-warning: #f39c12;
+            --color-danger: #e74c3c;
+        }
+
+        /* Reset Bootstrap container padding for fixed header */
+        body {
+            padding-top: 110px; /* Account for TEST banner (40px) + fixed header (70px) */
+        }
+
+        /* Header Styles */
+        .app-header {
+            position: fixed;
+            top: 40px; /* Below TEST banner */
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        /* Brand Section */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .header-brand:hover {
+            opacity: 0.9;
+        }
+
+        .brand-icon {
+            font-size: 1.8em;
+            line-height: 1;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation */
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .nav-link {
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+        }
+
+        .nav-link.active {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        /* User Section */
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .user-name {
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .user-role-badge {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: var(--color-white);
+            border: 1px solid var(--color-white);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--color-white);
+            color: var(--color-primary);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .header-container {
+                padding: 0 20px;
+            }
+
+            .user-name {
+                display: none;
+            }
+
+            .logout-btn span {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .header-nav {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 250px;
+                height: calc(100vh - 70px);
+                background-color: var(--color-primary);
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 10px;
+                transition: left 0.3s;
+                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .header-nav.mobile-open {
+                left: 0;
+            }
+
+            .nav-link {
+                width: 100%;
+                padding: 12px 16px;
+            }
+
+            .brand-text {
+                font-size: 0.9em;
+            }
+
+            .user-info {
+                gap: 8px;
+            }
+
+            .user-role-badge {
+                display: none;
+            }
+        }
+
+        /* Calendar Week View Styles */
+        .calendar-week-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .calendar-header {
+            display: grid;
+            grid-template-columns: 120px repeat(5, 1fr);
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .time-column-header {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .day-header.today {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .calendar-body {
+            display: grid;
+            grid-template-columns: 120px repeat(5, 1fr);
+            gap: 10px;
+            position: relative;
+        }
+
+        .time-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .time-slot {
+            height: 60px;
+            border-top: 1px solid #dee2e6;
+            padding: 5px 10px;
+            font-size: 0.85em;
+            color: #6c757d;
+            position: relative;
+        }
+
+        .time-slot.hour-mark {
+            border-top: 2px solid #adb5bd;
+            font-weight: 600;
+        }
+
+        .day-column {
+            border: 1px solid #dee2e6;
+            background: white;
+            min-height: 720px; /* 12 hours (9 AM - 9 PM) * 60px */
+            position: relative;
+        }
+
+        .appointment-block {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            cursor: pointer;
+            overflow: hidden;
+            border-left: 3px solid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .appointment-block:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .appointment-block.status-confirmed {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .appointment-block.status-pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .appointment-block.status-cancelled {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            opacity: 0.7;
+        }
+
+        .appointment-block.status-assigned {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .appointment-block.status-completed {
+            background: #cfe2ff;
+            border-color: #0d6efd;
+            color: #084298;
+        }
+
+        .past-appointment {
+            opacity: 0.6;
+        }
+
+        .appointment-time {
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .appointment-client {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .appointment-location {
+            font-size: 0.8em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .appointment-driver {
+            font-size: 0.75em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            opacity: 0.8;
+        }
+
+        .list-view {
+            display: block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn-group .btn.active {
+            background: #0d6efd;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+
+        /* Week navigation */
+        .week-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .week-navigation h4 {
+            margin: 0;
+            color: #495057;
+        }
+
+        /* Month Calendar Styles */
+        .calendar-month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #dee2e6;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .month-day-header {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .month-day-cell {
+            background: white;
+            min-height: 120px;
+            padding: 8px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .month-day-cell:hover {
+            background: #f8f9fa;
+        }
+
+        .month-day-cell.day-other-month {
+            background: #f8f9fa;
+            opacity: 0.6;
+        }
+
+        .month-day-cell.day-today {
+            background: #e3f2fd;
+            border: 2px solid #1976d2;
+        }
+
+        .month-day-cell.day-past {
+            opacity: 0.7;
+        }
+
+        .month-day-number {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .month-day-cell.day-other-month .month-day-number {
+            color: #adb5bd;
+        }
+
+        .month-day-cell.day-today .month-day-number {
+            color: #1976d2;
+        }
+
+        .month-appointment-mini {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            padding: 3px 5px;
+            margin-bottom: 3px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.2s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .month-appointment-mini:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .month-appointment-mini.status-confirmed {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .month-appointment-mini.status-pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .month-appointment-mini.status-cancelled {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            opacity: 0.7;
+        }
+
+        .month-appointment-mini.status-assigned {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .month-appointment-mini.status-completed {
+            background: #cfe2ff;
+            border-color: #0d6efd;
+            color: #084298;
+        }
+
+        .month-appointment-time {
+            font-weight: 600;
+        }
+
+        .month-more-link {
+            font-size: 0.75em;
+            color: #0d6efd;
+            cursor: pointer;
+            padding: 2px 5px;
+            text-decoration: underline;
+            display: inline-block;
+            margin-top: 2px;
+        }
+
+        .month-more-link:hover {
+            color: #0a58ca;
+            font-weight: 600;
+        }
+
+        /* Day Popover */
+        .day-popover {
+            position: absolute;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 15px;
+            z-index: 1000;
+            min-width: 300px;
+            max-width: 400px;
+        }
+
+        .day-popover-header {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .day-popover-appointment {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            border-left: 3px solid;
+            transition: all 0.2s;
+        }
+
+        .day-popover-appointment:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .day-popover-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+
+        .day-popover-close:hover {
+            color: #000;
+        }
+
+        /* Skeleton Loading Styles - Phase 4 */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-calendar {
+            min-height: 600px;
+            padding: 20px;
+        }
+
+        .skeleton-header {
+            height: 50px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .skeleton-week-grid {
+            display: grid;
+            grid-template-columns: 120px repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .skeleton-day-header {
+            height: 40px;
+            border-radius: 6px;
+        }
+
+        .skeleton-time-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .skeleton-time-slot {
+            height: 60px;
+        }
+
+        .skeleton-day-column {
+            height: 720px;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .skeleton-appointment {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            height: 80px;
+            border-radius: 4px;
+            opacity: 0.6;
+        }
+
+        .skeleton-list {
+            padding: 20px;
+        }
+
+        .skeleton-table-row {
+            height: 50px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        /* Fade in animation when content loads */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Toast Notification Styles - Phase 4 */
+        .toast-container {
+            position: fixed;
+            top: 90px; /* Below header */
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 300px;
+            max-width: 400px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid;
+        }
+
+        .toast.toast-success {
+            border-left-color: #28a745;
+        }
+
+        .toast.toast-error {
+            border-left-color: #dc3545;
+        }
+
+        .toast.toast-warning {
+            border-left-color: #ffc107;
+        }
+
+        .toast.toast-info {
+            border-left-color: #17a2b8;
+        }
+
+        .toast-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .toast-success .toast-icon {
+            color: #28a745;
+        }
+
+        .toast-error .toast-icon {
+            color: #dc3545;
+        }
+
+        .toast-warning .toast-icon {
+            color: #ffc107;
+        }
+
+        .toast-info .toast-icon {
+            color: #17a2b8;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .toast-message {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .toast-close {
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2em;
+            line-height: 1;
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        .toast-close:hover {
+            color: #333;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.hiding {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        /* Button Loading States - Phase 6 */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.65;
+        }
+
+        @keyframes button-spinner {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Hide button text during loading */
+        .btn-loading .btn-text {
+            opacity: 0;
+        }
+
+        /* Inline spinner for buttons */
+        .btn-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            border-top-color: currentColor;
+            animation: button-spinner 0.6s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* Disabled state styling */
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- TEST MODE WARNING BANNER -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 10000; background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); color: white; padding: 8px 20px; text-align: center; font-weight: 600; font-size: 0.95em; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <i class="bi bi-cone-striped me-2"></i>
+        🧪 TEST MODE - Appointments Management - Testing Branch Database
+        <i class="bi bi-cone-striped ms-2"></i>
+    </div>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <!-- Brand -->
+            <div class="header-brand" onclick="window.location.href='TEST-dashboard.html'">
+                <span class="brand-icon">🚐</span>
+                <span class="brand-text">RRTS</span>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <!-- Navigation -->
+            <nav class="header-nav" id="mainNav">
+                <!-- Navigation links will be populated by JavaScript based on RBAC -->
+            </nav>
+
+            <!-- User Section -->
+            <div class="header-user">
+                <div class="user-info">
+                    <span class="user-avatar" id="userAvatar">--</span>
+                    <span class="user-name" id="userName">User</span>
+                    <span class="user-role-badge" id="userRoleBadge">Guest</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="logout-text">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container my-4">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Appointments</h1>
+            <div>
+                <a href="../dashboard.html" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <!-- View Toggles -->
+                    <div class="d-flex align-items-center">
+                        <div class="btn-group me-3" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" data-view="calendar">
+                                <i class="bi bi-calendar3"></i> Calendar
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-view="list">
+                                <i class="bi bi-list"></i> List
+                            </button>
+                        </div>
+
+                        <!-- Calendar sub-toggle (only shown in calendar view) -->
+                        <div id="calendarSubToggle">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-calendar-view="week">
+                                    <i class="bi bi-calendar-week"></i> Week
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-calendar-view="month">
+                                    <i class="bi bi-calendar-month"></i> Month
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" id="toggleFiltersBtn" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+                            <i class="bi bi-funnel"></i> Filters
+                        </button>
+                        <button class="btn btn-primary" id="addAppointmentBtn">
+                            <i class="bi bi-plus-circle"></i> Add Appointment
+                        </button>
+                        <button class="btn btn-outline-secondary" id="refreshBtn">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared Filters (Collapsible) -->
+        <div class="collapse" id="filtersCollapse">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <!-- Filters Header with Count Badge (Phase 5) -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Filters</h5>
+                        <span class="badge bg-secondary" id="filterCount">
+                            <i class="bi bi-funnel"></i> <span id="filterCountText">All appointments</span>
+                        </span>
+                    </div>
+
+                    <!-- Filter Controls - Phase 5 Enhanced -->
+                    <div class="row g-3 mb-3">
+                        <!-- Row 1: Main Filters -->
+                        <div class="col-md-3">
+                            <label class="form-label">Search</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="searchFilter"
+                                placeholder="Search by name, location, K-number..."
+                            >
+                            <small class="text-muted">Type to filter appointments</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Operation Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2" id="invoiceStatusFilterContainer" style="display: none;">
+                            <label class="form-label">Invoice Status</label>
+                            <select class="form-select" id="invoiceStatusFilter">
+                                <option value="">All Invoice Statuses</option>
+                                <option value="not_ready">Not Ready</option>
+                                <option value="ready">Ready</option>
+                                <option value="created">Created</option>
+                                <option value="sent">Sent</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Driver</label>
+                            <select class="form-select" id="driverFilter">
+                                <option value="">All Drivers</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="dateFromFilter">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="dateToFilter">
+                        </div>
+
+                        <!-- Row 2: Additional Controls (Phase 5) -->
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showArchivedCheckbox">
+                                <label class="form-check-label" for="showArchivedCheckbox">
+                                    <i class="bi bi-archive"></i> Show Archived
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-outline-secondary w-100" id="clearFiltersBtn">
+                                <i class="bi bi-x-circle"></i> Clear Filters
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-outline-info w-100" id="loadAllHistoricalBtn" title="Load all historical appointments">
+                                <i class="bi bi-clock-history"></i> Load All Historic
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State - Skeleton Screen (Phase 4) -->
+        <div id="loadingView" class="skeleton-calendar hidden">
+            <!-- Skeleton Week Header -->
+            <div class="skeleton-week-grid">
+                <div class="skeleton skeleton-day-header"></div>
+                <div class="skeleton skeleton-day-header"></div>
+                <div class="skeleton skeleton-day-header"></div>
+                <div class="skeleton skeleton-day-header"></div>
+                <div class="skeleton skeleton-day-header"></div>
+                <div class="skeleton skeleton-day-header"></div>
+            </div>
+
+            <!-- Skeleton Week Grid -->
+            <div class="skeleton-week-grid">
+                <!-- Time column -->
+                <div class="skeleton-time-column">
+                    <div class="skeleton skeleton-time-slot"></div>
+                    <div class="skeleton skeleton-time-slot"></div>
+                    <div class="skeleton skeleton-time-slot"></div>
+                    <div class="skeleton skeleton-time-slot"></div>
+                    <div class="skeleton skeleton-time-slot"></div>
+                    <div class="skeleton skeleton-time-slot"></div>
+                </div>
+
+                <!-- Day columns with sample appointments -->
+                <div class="skeleton skeleton-day-column">
+                    <div class="skeleton skeleton-appointment" style="top: 120px;"></div>
+                    <div class="skeleton skeleton-appointment" style="top: 280px;"></div>
+                </div>
+                <div class="skeleton skeleton-day-column">
+                    <div class="skeleton skeleton-appointment" style="top: 60px;"></div>
+                    <div class="skeleton skeleton-appointment" style="top: 360px;"></div>
+                </div>
+                <div class="skeleton skeleton-day-column">
+                    <div class="skeleton skeleton-appointment" style="top: 180px;"></div>
+                </div>
+                <div class="skeleton skeleton-day-column">
+                    <div class="skeleton skeleton-appointment" style="top: 100px;"></div>
+                    <div class="skeleton skeleton-appointment" style="top: 300px;"></div>
+                    <div class="skeleton skeleton-appointment" style="top: 480px;"></div>
+                </div>
+                <div class="skeleton skeleton-day-column">
+                    <div class="skeleton skeleton-appointment" style="top: 200px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared Calendar Navigation -->
+        <div id="calendarNavigation" class="week-navigation hidden">
+            <button class="btn btn-outline-secondary" id="prevWeekBtn">
+                <i class="bi bi-chevron-left"></i> <span id="prevBtnText">Previous Week</span>
+            </button>
+            <h4 id="weekRange"></h4>
+            <button class="btn btn-outline-secondary" id="nextWeekBtn">
+                <span id="nextBtnText">Next Week</span> <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Calendar Week View -->
+        <div id="calendarWeekView" class="hidden">
+            <div id="calendarWeekContent" class="calendar-week-container"></div>
+        </div>
+
+        <!-- Calendar Month View -->
+        <div id="calendarMonthView" class="hidden">
+            <div id="calendarMonthContent" class="text-center py-5">
+                <i class="bi bi-calendar-month" style="font-size: 4rem; color: #ccc;"></i>
+                <h4 class="mt-3 text-muted">Month View</h4>
+                <p class="text-muted">Calendar month view coming soon...</p>
+            </div>
+        </div>
+
+        <!-- List View -->
+        <div id="listView" class="list-view">
+            <div class="card">
+                <div class="card-body">
+                    <div id="listViewContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container (Phase 4) -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- JWT Authentication Helper -->
+    <script src="js/auth/TEST-jwt-auth.js"></script><!-- TEST version -->
+    <!-- API Security & Audit Logging -->
+    <script src="../js/core/api-security.js"></script>
+    <!-- Modal Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/components/appointment-modal.js"></script>
+    <script src="../js/components/client-quick-view.js"></script>
+    <script src="js/pages/TEST-appointments-sl.js"></script>
+</body>
+</html>

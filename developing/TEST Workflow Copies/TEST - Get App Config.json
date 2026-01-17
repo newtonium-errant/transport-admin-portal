@@ -1,0 +1,127 @@
+{
+  "name": "TEST - Get App Config",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "TEST-get-app-config",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c1c2c3c4-c5c6-c7c8-c9c0-d1d2d3d4d5d6",
+      "name": "GET App Config - Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-800, 300],
+      "webhookId": "get-app-config"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get App Config - JWT Validation\n// Version: v1.0.0\n\nconst input = $input.first().json;\nconst authHeader = input.headers.authorization || input.headers.Authorization || '';\nconst token = authHeader.replace('Bearer ', '').trim();\n\nif (!token) return [{ json: { jwtValid: 'false', statusCode: 401, error: 'No authorization token provided' } }];\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"***REMOVED***\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) return { valid: false, error: 'Invalid token format' };\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n    if (receivedSignature !== expectedSignature) return { valid: false, error: 'Invalid signature' };\n    const payload = JSON.parse(atob(encodedPayload));\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) return { valid: false, error: 'Token expired' };\n    return { valid: true, payload: payload };\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\nconst validation = verifyJWT(token);\nif (!validation.valid) return [{ json: { jwtValid: 'false', statusCode: 401, error: validation.error || 'Invalid or expired token' } }];\n\nconst payload = validation.payload;\nif (payload.type === 'limited') return [{ json: { jwtValid: 'false', statusCode: 403, error: 'Limited tokens not allowed for this endpoint' } }];\n\nreturn [{ json: { jwtValid: 'true', user: { username: payload.sub, role: payload.role }, query: input.query || {}, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "d2d3d4d5-d6d7-d8d9-d0e1-e2e3e4e5e6e7",
+      "name": "JWT Validation - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-560, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.jwtValid }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.jwtValid }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e3e4e5e6-e7e8-e9e0-f1f2-f3f4f5f6f7f8",
+      "name": "JWT Check - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-320, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "app_config",
+        "returnAll": true
+      },
+      "id": "f4f5f6f7-f8f9-f0g1-g2g3-g4g5g6g7g8g9",
+      "name": "Get All Config - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-80, 188],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get App Config - Format Response\n// Version: v1.0.0\n\nconst configItems = $input.all().map(item => item.json);\n\n// Convert array of config items to key-value object\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.key] = item.value;\n});\n\nreturn [{ json: { success: true, message: 'App config retrieved successfully', data: { config }, count: configItems.length, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "g5g6g7g8-g9g0-h1h2-h3h4-h5h6h7h8h9h0",
+      "name": "Format Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [160, 188]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get App Config - JWT Error\n\nconst errorData = $input.first().json;\nreturn [{ json: { success: false, message: 'Authentication failed', error: errorData.error || 'Invalid or expired token', statusCode: errorData.statusCode || 401, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "h6h7h8h9-h0i1-i2i3-i4i5-i6i7i8i9i0j1",
+      "name": "JWT Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-80, 412]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "j1j2j3j4-j5j6-j7j8-j9j0-k1k2k3k4k5k6",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [400, 300]
+    }
+  ],
+  "connections": {
+    "GET App Config - Webhook": { "main": [[{ "node": "JWT Validation - Code", "type": "main", "index": 0 }]] },
+    "JWT Validation - Code": { "main": [[{ "node": "JWT Check - Switch", "type": "main", "index": 0 }]] },
+    "JWT Check - Switch": { "main": [[{ "node": "Get All Config - Supabase", "type": "main", "index": 0 }], [{ "node": "JWT Error Response - Code", "type": "main", "index": 0 }]] },
+    "Get All Config - Supabase": { "main": [[{ "node": "Format Response - Code", "type": "main", "index": 0 }]] },
+    "Format Response - Code": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] },
+    "JWT Error Response - Code": { "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "00000000-0000-0000-0000-000000000000",
+  "meta": { "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca" },
+  "id": "NEW_WORKFLOW",
+  "tags": [
+    { "id": "tZpzEwpoeg8SrGGa", "name": "TEST" },
+    { "id": "k6k7k8k9", "name": "Config" }
+  ]
+}

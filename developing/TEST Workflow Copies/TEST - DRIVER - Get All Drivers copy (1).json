@@ -1,0 +1,290 @@
+{
+  "name": "TEST - DRIVER - Get All Drivers copy",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1472,
+        400
+      ],
+      "id": "d1af5da9-601d-49be-a33b-b84fbc2ea30f",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "drivers",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "c37589b4-adf0-48d9-a694-9200b21a6062",
+      "name": "Get All Drivers - Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Drivers Data - v1.0\nconst drivers = $input.all().map(item => item.json);\n\n// Sort drivers by name\nconst sortedDrivers = drivers.sort((a, b) => a.name.localeCompare(b.name));\n\nreturn [{\n  json: {\n    type: 'drivers',\n    data: sortedDrivers\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "31a177f1-c1a7-4cde-b174-dd2d64c403c2",
+      "name": "Process Drivers - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simple Drivers Response - v1.1.0\nconst driversData = $input.first().json;\nconst drivers = driversData.data || [];\n\n// Only log if there's an issue\nif (drivers.length === 0) {\n    console.log('⚠️ No drivers found');\n}\n\n// Return simple drivers list\nreturn [{\n    json: {\n        success: true,\n        message: 'Drivers retrieved successfully',\n        totalDrivers: drivers.length,\n        drivers: drivers.map(driver => ({\n            id: driver.id,\n            name: driver.name,\n            email: driver.email,\n            phone: driver.phone,\n            gender: driver.gender,\n            is_male: driver.is_male,\n            active: driver.active,\n            workload_preference: driver.workload_preference,\n            workload_percentage: driver.workload_percentage,\n            preferred_calendar_type: driver.preferred_calendar_type,\n            google_calendar_id: driver.google_calendar_id,\n            weekly_hours: driver.weekly_hours\n        }))\n    }\n}];\n\n// Version: v1.1.0 - Reduced logging volume"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "3f582699-ea8f-4e50-a51c-5d570f3202f4",
+      "name": "Final Processing - Code"
+    },
+    {
+      "parameters": {
+        "path": "TEST-get-all-drivers",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        144
+      ],
+      "id": "e359c334-a048-49b7-98d5-0f5e09442b5c",
+      "name": "GET allDrivers - Webhook",
+      "webhookId": "0ea20046-7ddb-4aee-959b-6007a3abc285"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation for Backend Workflows\n// Version: v1.0.0\n// Use this code node at the start of any protected workflow\n\n// Get webhook input data\nconst webhookData = $input.first().json;\n\n// Extract Authorization header\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check Bearer token format\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format. Expected \"Bearer {token}\"',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7); // Remove \"Bearer \" prefix\n\n// JWT validation functions (matching generation code)\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"***REMOVED***\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\n// Check token type (reject LIMITED tokens unless specifically allowed)\n// Note: Individual workflows can override this by setting allowLimitedToken in webhook body\nconst allowLimitedToken = webhookData.body?.allowLimitedToken || false;\n\nif (payload.type === 'limited' && !allowLimitedToken) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication. Please complete password change.',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check if refresh token is being used for non-refresh operations\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used for this operation',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Token is valid - return user info and original request body\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type,\n      permissions: payload.permissions || []\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        144
+      ],
+      "id": "b42a915c-6754-45fb-ac8c-bd83f7d2dc67",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "efe56bb9-e987-4ee4-97bb-f9490b7e138c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1183fd0b-6842-4408-83a2-05eca8cf529a",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        384,
+        144
+      ],
+      "id": "1735a9e8-39f1-4800-a5cc-1b41656c0406",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Format Unauthorized Error Response - Simple Version\n  // Version: v1.0.0\n\n  const errorData = $input.first().json;\n\n  // Return standardized error format\n  return [{\n    json: {\n      success: false,\n      error: {\n        message: errorData.message || 'Unauthorized access',\n        statusCode: errorData.statusCode || 401\n      },\n      timestamp: errorData.timestamp || new Date().toISOString()\n    }\n  }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        240
+      ],
+      "id": "e79622e7-3fb8-4f98-b17b-16c2a8355137",
+      "name": "Unauthorized Response - Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get All Drivers - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Process Drivers - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Drivers - Code": {
+      "main": [
+        [
+          {
+            "node": "Final Processing - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Processing - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET allDrivers - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get All Drivers - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "89c82ac7-bb65-4ede-9928-94337f8dacec",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "EuikEe4GiRLkTA2u",
+  "tags": [
+    {
+      "updatedAt": "2025-10-30T17:13:53.320Z",
+      "createdAt": "2025-10-30T17:13:53.320Z",
+      "id": "3od10wQiA1OAAozv",
+      "name": "Appointment Management"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    },
+    {
+      "updatedAt": "2025-11-02T20:39:22.246Z",
+      "createdAt": "2025-11-02T20:39:22.246Z",
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    }
+  ]
+}
