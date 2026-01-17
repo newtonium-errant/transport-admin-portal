@@ -1,0 +1,599 @@
+{
+  "name": "TEST - APPT - Add Appointment copy",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-save-appointment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        192
+      ],
+      "id": "a0530033-9bdb-49f4-8de9-8200795b48a3",
+      "name": "Webhook - Save Appointment",
+      "webhookId": "e26bb73c-d306-4bb6-b416-dcf92552783d"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation - v1.0.0\n\nconst webhookData = $input.first().json;\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    const payload = JSON.parse(atob(encodedPayload));\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        192
+      ],
+      "id": "58762325-1826-474d-9d81-0b8b88d07ee2",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "jwt-authorized"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "jwt-unauthorized",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -672,
+        192
+      ],
+      "id": "2884716f-68d6-4d88-86ce-cb3ce6cb7927",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate Request Data - v2.0.0\n  // Validates appointments array (single or multiple)\n\n  const data = $json.requestBody || $json.body || $json;\n\n  // Handle both single appointment and array format\n  let appointments = [];\n  if (data.appointments && Array.isArray(data.appointments)) {\n      appointments = data.appointments;\n  } else {\n      // Backward compatibility: single appointment wrapped in array\n      appointments = [data];\n  }\n\n  if (appointments.length === 0) {\n      return [{\n          json: {\n              _route: 'error',\n              success: false,\n              message: 'No appointments provided',\n              timestamp: new Date().toISOString()\n          }\n      }];\n  }\n\n  const processedAppointments = [];\n  const requiredFields = ['knumber', 'appointmentDateTime', 'location',\n  'locationAddress'];\n\n  for (let i = 0; i < appointments.length; i++) {\n      const apt = appointments[i];\n\n      // Validate required fields\n      const missingFields = requiredFields.filter(field => !apt[field]);\n\n      if (missingFields.length > 0) {\n          console.error(`Appointment ${i+1} missing: ${missingFields.join(', ')}`);\n          continue; // Skip invalid appointments\n      }\n\n      // Validate date format\n      try {\n          const testDate = new Date(apt.appointmentDateTime);\n          if (isNaN(testDate.getTime())) {\n              console.error(`Appointment ${i+1} has invalid date`);\n              continue;\n          }\n      } catch (e) {\n          console.error(`Appointment ${i+1} date parse error`);\n          continue;\n      }\n\n      // Add to processed array\n      processedAppointments.push({\n          json: {\n              _route: 'valid',\n              ...apt\n          }\n      });\n  }\n\n  if (processedAppointments.length === 0) {\n      return [{\n          json: {\n              _route: 'error',\n              success: false,\n              message: 'No valid appointments to process',\n              timestamp: new Date().toISOString()\n          }\n      }];\n  }\n\n  return processedAppointments; // Array creates multiple items in n8n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        96
+      ],
+      "id": "f06c235b-cfee-4346-b252-38022ad06d72",
+      "name": "Validate Request - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "valid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "data-valid"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "data-invalid",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        96
+      ],
+      "id": "10f237d4-9d61-44dc-97b3-f07765cbb4a3",
+      "name": "Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": " // Calculate Times - v2.0.0\n  // Calculates pickup and dropoff times from transit time for all appointments\n\n  const items = $input.all();\n\n  return items.map(item => {\n    const appointmentDateTime = new Date(item.json.appointmentDateTime);\n    const transitTime = parseInt(item.json.transitTime) || 30;\n    const appointmentLength = parseInt(item.json.appointmentLength) || 120;\n\n    // Calculate pickup time (appointment - transit)\n    const pickupDateTime = new Date(appointmentDateTime.getTime() - (transitTime *\n  60000));\n    const pickupTime = pickupDateTime.toISOString();\n\n    // Calculate dropoff time (appointment + length + transit)\n    const totalDuration = appointmentLength + transitTime;\n    const dropOffDateTime = new Date(appointmentDateTime.getTime() + (totalDuration *\n  60000));\n    const dropOffTime = dropOffDateTime.toISOString();\n\n    return {\n      json: {\n        ...item.json,\n        pickupTime: pickupTime,\n        dropOffTime: dropOffTime,\n        transitTime: transitTime,\n        appointmentLength: appointmentLength\n      }\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7cbde2f1-951c-47a7-9bc3-b1d19e18913f",
+      "name": "Calculate Times - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine Notes - v2.0.0\n  // Combines driver instructions with scheduling notes for all appointments\n\n  const items = $input.all();\n\n  return items.map(item => {\n    const driverInstructions = (item.json.driver_instructions || '').trim();\n    const schedulingNotes = (item.json.scheduling_notes || '').trim();\n\n    let combinedNotes = '';\n    if (driverInstructions && schedulingNotes) {\n      combinedNotes = `${driverInstructions}. ${schedulingNotes}`;\n    } else if (driverInstructions) {\n      combinedNotes = driverInstructions;\n    } else {\n      combinedNotes = schedulingNotes;\n    }\n\n    return {\n      json: {\n        ...item.json,\n        scheduling_notes: combinedNotes\n      }\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "3bdaf15f-b1ab-41e6-b476-3e45750a3e64",
+      "name": "Combine Notes - Code"
+    },
+    {
+      "parameters": {
+        "tableId": "appointments",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "knumber",
+              "fieldValue": "={{ $json.knumber }}"
+            },
+            {
+              "fieldId": "appointmenttime",
+              "fieldValue": "={{ $json.appointmentDateTime }}"
+            },
+            {
+              "fieldId": "pickuptime",
+              "fieldValue": "={{ $json.pickupTime }}"
+            },
+            {
+              "fieldId": "dropOffTime",
+              "fieldValue": "={{ $json.dropOffTime }}"
+            },
+            {
+              "fieldId": "locationname",
+              "fieldValue": "={{ $json.location }}"
+            },
+            {
+              "fieldId": "locationaddress",
+              "fieldValue": "={{ $json.locationAddress }}"
+            },
+            {
+              "fieldId": "clinic_id",
+              "fieldValue": "={{ $json.clinic_id }}"
+            },
+            {
+              "fieldId": "transittime",
+              "fieldValue": "={{ $json.transitTime }}"
+            },
+            {
+              "fieldId": "this_appointment_length",
+              "fieldValue": "={{ $json.appointmentLength }}"
+            },
+            {
+              "fieldId": "scheduling_notes",
+              "fieldValue": "={{ $json.scheduling_notes }}"
+            },
+            {
+              "fieldId": "notes",
+              "fieldValue": "={{ $json.notes }}"
+            },
+            {
+              "fieldId": "driver_instructions",
+              "fieldValue": "={{ $json.driver_instructions }}"
+            },
+            {
+              "fieldId": "pickup_address",
+              "fieldValue": "={{ $json.pickup_address }}"
+            },
+            {
+              "fieldId": "appointmentstatus",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "operation_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "custom_rate",
+              "fieldValue": "={{ $json.customRate }}"
+            },
+            {
+              "fieldId": "client_notification_sent",
+              "fieldValue": "=false"
+            },
+            {
+              "fieldId": "driver_notification_sent",
+              "fieldValue": "=false"
+            },
+            {
+              "fieldId": "reminder_sent_client",
+              "fieldValue": "=false"
+            },
+            {
+              "fieldId": "reminder_sent_driver",
+              "fieldValue": "=false"
+            },
+            {
+              "fieldId": "driver_assigned",
+              "fieldValue": "={{ $json.driver_assigned }}"
+            },
+            {
+              "fieldId": "driver_first_name",
+              "fieldValue": "={{ $json.driver_first_name }}"
+            },
+            {
+              "fieldId": "managed_by",
+              "fieldValue": "={{ $json.managed_by }}"
+            },
+            {
+              "fieldId": "managed_by_name",
+              "fieldValue": "={{ $json.managed_by_name }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "8313b1f4-efe0-491c-aaf4-0f826b67a8d2",
+      "name": "Insert Appointment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Success Response - v2.0.0\n  // Aggregates results from multiple appointments\n\n  const allResults = $input.all();\n  const successCount = allResults.filter(item => item.json.id).length;\n  const totalCount = allResults.length;\n\n  return [{\n      json: {\n          success: true,\n          message: `${successCount} of ${totalCount} appointment(s) saved\n  successfully`,\n          appointmentsSaved: successCount,\n          totalAppointments: totalCount,\n          appointments: allResults.map(item => ({\n              id: item.json.id,\n              knumber: item.json.knumber,\n              appointmenttime: item.json.appointmenttime,\n              pickuptime: item.json.pickuptime,\n              location: item.json.locationname\n          })),\n          timestamp: new Date().toISOString()\n      }\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "fb18ae8e-f7b2-4453-b750-105889be134d",
+      "name": "Format Success Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Error Response - v1.0.0\n\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'Failed to save appointment',\n    error: errorData.error || 'Unknown error',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        304
+      ],
+      "id": "1d9743ae-62fa-4621-84b0-ef0815fe8b76",
+      "name": "Format Error Response - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        480
+      ],
+      "id": "bc346b53-2bcf-4aed-a1ce-863e50c3477f",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {
+    "Webhook - Save Appointment": [
+      {
+        "json": {
+          "headers": {
+            "host": "webhook-processor-production-3bb8.up.railway.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+            "content-length": "880",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "authorization": "Bearer REPLACE_WITH_VALID_TOKEN",
+            "content-type": "application/json",
+            "origin": "null",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "134.41.174.19",
+            "x-forwarded-host": "webhook-processor-production-3bb8.up.railway.app",
+            "x-forwarded-proto": "https",
+            "x-railway-edge": "railway/us-east4-eqdc4a",
+            "x-railway-request-id": "_swyvJ1RRpyPK7KQPvyhXg",
+            "x-real-ip": "134.41.174.19",
+            "x-request-start": "1762535317225"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "appointments": [
+              {
+                "knumber": "K7648322",
+                "appointmentDateTime": "2025-12-01T14:00:00.000Z",
+                "appointmentLength": 90,
+                "status": "pending",
+                "notes": "",
+                "driver_instructions": null,
+                "scheduling_notes": "",
+                "transitTime": 30,
+                "pickup_address": "1008 Mill Road, New Ross, NS, B0J 2M0",
+                "customRate": null,
+                "location": "NuVista Psychedelic - New Minas",
+                "clinic_id": 2,
+                "locationAddress": "21 Roy Avenue Suite 230, New Minas, NS B4N 3R7",
+                "managed_by": 13,
+                "managed_by_name": null
+              },
+              {
+                "knumber": "K7648322",
+                "appointmentDateTime": "2025-12-08T14:00:00.000Z",
+                "appointmentLength": 90,
+                "status": "pending",
+                "notes": "",
+                "driver_instructions": null,
+                "scheduling_notes": "",
+                "transitTime": 30,
+                "pickup_address": "1008 Mill Road, New Ross, NS, B0J 2M0",
+                "customRate": null,
+                "location": "NuVista Psychedelic - New Minas",
+                "clinic_id": 2,
+                "locationAddress": "21 Roy Avenue Suite 230, New Minas, NS B4N 3R7",
+                "managed_by": 13,
+                "managed_by_name": null
+              }
+            ]
+          },
+          "webhookUrl": "https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-v7",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook - Save Appointment": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate Request - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Calculate Times - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Times - Code": {
+      "main": [
+        [
+          {
+            "node": "Combine Notes - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Notes - Code": {
+      "main": [
+        [
+          {
+            "node": "Insert Appointment - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Appointment - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2cf4b547-d346-4e17-b914-2edf7d64afba",
+  "meta": {
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "llLjDwj1kKvQyeuS",
+  "tags": [
+    {
+      "updatedAt": "2025-10-30T17:13:53.320Z",
+      "createdAt": "2025-10-30T17:13:53.320Z",
+      "id": "3od10wQiA1OAAozv",
+      "name": "Appointment Management"
+    },
+    {
+      "updatedAt": "2025-10-30T17:16:58.339Z",
+      "createdAt": "2025-10-30T17:16:58.339Z",
+      "id": "enR5cvAvdrM9M4km",
+      "name": "Client Management"
+    },
+    {
+      "updatedAt": "2025-11-02T20:39:22.246Z",
+      "createdAt": "2025-11-02T20:39:22.246Z",
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    }
+  ]
+}

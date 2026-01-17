@@ -1,0 +1,296 @@
+{
+  "name": "TEST - FIN - Mark Booking Agent Paid",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "TEST-mark-agent-paid",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b5646de3-bd8a-4eea-bddb-ccc31109074e",
+      "name": "POST Mark Agent Paid - Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -656,
+        128
+      ],
+      "webhookId": "mark-agent-paid"
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Booking Agent Paid - Validate Input\n// Version: v1.0.0\n// Validates batch booking agent payment request\n\nconst body = $input.first().json.body;\n\n// Required fields\nconst appointmentIds = body.appointmentIds;\nconst agentPaidAt = body.booking_agent_paid_at;\n\n// Validation\nconst errors = [];\n\nif (!appointmentIds || !Array.isArray(appointmentIds)) {\n  errors.push('appointmentIds must be an array');\n}\n\nif (appointmentIds && appointmentIds.length === 0) {\n  errors.push('appointmentIds array cannot be empty');\n}\n\nif (!agentPaidAt) {\n  errors.push('booking_agent_paid_at timestamp is required');\n}\n\nconst validationPassed = errors.length === 0 ? 'true' : 'false';\n\nreturn [{\n  json: {\n    validationPassed: validationPassed,\n    errors: errors,\n    appointmentIds: appointmentIds || [],\n    booking_agent_paid_at: agentPaidAt,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "37a206ea-c8b3-4e2d-b134-465a2b26ea55",
+      "name": "Validate Input - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.validationPassed }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "02cbe503-15b4-4538-ad73-1e0d45e5d6f4",
+      "name": "Validation - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Booking Agent Paid - Prepare Batch Update\n// Version: v1.0.0\n// Splits appointment IDs into individual items for batch processing\n\nconst validatedData = $input.first().json;\nconst appointmentIds = validatedData.appointmentIds;\nconst agentPaidAt = validatedData.booking_agent_paid_at;\n\n// Create one item per appointment ID\nreturn appointmentIds.map(id => ({\n  json: {\n    appointmentId: id,\n    booking_agent_paid_at: agentPaidAt,\n    timestamp: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "eede976d-8e94-46af-987f-8f15ead071cf",
+      "name": "Prepare Batch Update - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "booking_agent_paid_at",
+              "fieldValue": "={{ $json.booking_agent_paid_at }}"
+            }
+          ]
+        }
+      },
+      "id": "1d2bea9a-f9ab-4804-a21b-a64a51d9a19d",
+      "name": "Update Agent Paid - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Booking Agent Paid - Aggregate Results\n// Version: v1.0.0\n// Combines all batch update results\n\nconst items = $input.all();\n\nconst updatedCount = items.length;\nconst appointmentIds = items.map(item => item.json.id || item.json.appointmentId);\n\nreturn [{\n  json: {\n    success: true,\n    message: `Successfully marked ${updatedCount} appointment(s) as paid for booking agent`,\n    data: {\n      updatedCount: updatedCount,\n      appointmentIds: appointmentIds\n    },\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "6ed974f2-4921-42c8-96a6-0f2d6cdcf90f",
+      "name": "Aggregate Results - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Mark Booking Agent Paid - Validation Error\n// Version: v1.0.0\n\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: 'Validation failed',\n    errors: errorData.errors || [],\n    statusCode: 400,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "7f6dc351-c1a1-4716-8014-b2bfa70cdc74",
+      "name": "Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c1bcf4b9-1ca1-45c9-8cfe-c72e64fe935b",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        688,
+        128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "POST Mark Agent Paid - Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Batch Update - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Batch Update - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Agent Paid - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Agent Paid - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "99992876-fc63-4ff9-a8a3-708dc90da024",
+  "meta": {
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "igpD3i8hA7YXGgF0",
+  "tags": [
+    {
+      "name": "Finance",
+      "id": "Q4i8xQtE7UtuEFhO",
+      "updatedAt": "2025-11-09T06:39:14.892Z",
+      "createdAt": "2025-11-09T06:39:14.892Z"
+    },
+    {
+      "name": "Agent Payment",
+      "id": "KpsUSYHOGyoD14Yn",
+      "updatedAt": "2025-11-09T06:48:20.278Z",
+      "createdAt": "2025-11-09T06:48:20.278Z"
+    }
+  ]
+}
