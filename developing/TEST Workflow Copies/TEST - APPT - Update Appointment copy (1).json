@@ -824,7 +824,7 @@
             "accept": "*/*",
             "accept-encoding": "gzip, deflate, br, zstd",
             "accept-language": "en-US,en;q=0.9",
-            "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbmRyZXduZXd0b245NjVAZ21haWwuY29tIiwidHlwZSI6ImZ1bGwiLCJyb2xlIjoiYWRtaW4iLCJwZXJtaXNzaW9ucyI6WyJhbGwiXSwiaWF0IjoxNzYyNjQ0NjkwLCJleHAiOjE3NjI2NDgyOTAsImp0aSI6ImZ1bGxfMTc2MjY0NDY5MDc0Ml94bG0ycjhkaWkifQ==.erw1hk",
+            "authorization": "Bearer REPLACE_WITH_VALID_TOKEN",
             "content-type": "application/json",
             "origin": "null",
             "priority": "u=1, i",

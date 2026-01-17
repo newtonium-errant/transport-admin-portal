@@ -479,7 +479,7 @@
         "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
         "sendQuery": true,
         "specifyQuery": "json",
-        "jsonQuery": "= {\n    \"origins\": \"{{ $json.apiCallData.driverAddress }}\",\n    \"destinations\": \"{{ $json.apiCallData.clientAddress }}\",\n    \"key\": \"***REMOVED***\",\n    \"mode\": \"driving\",\n    \"units\": \"metric\"\n  }",
+        "jsonQuery": "= {\n    \"origins\": \"{{ $json.apiCallData.driverAddress }}\",\n    \"destinations\": \"{{ $json.apiCallData.clientAddress }}\",\n    \"key\": \"REPLACE_WITH_ENV_VAR_GOOGLE_MAPS_API_KEY\",\n    \"mode\": \"driving\",\n    \"units\": \"metric\"\n  }",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
