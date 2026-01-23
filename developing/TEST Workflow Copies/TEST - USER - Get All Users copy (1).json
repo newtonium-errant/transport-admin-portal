@@ -1,0 +1,302 @@
+{
+  "name": "TEST - USER - Get All Users copy",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "users",
+        "returnAll": true
+      },
+      "id": "0f3832f1-de42-42ff-8640-37ee46928a97",
+      "name": "Get All Users",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        688,
+        -112
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "TEST-get-all-users",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fd4e2b5c-04b5-4d6f-ab77-751041458da6",
+      "name": "Get All Users - Webhook",
+      "webhookId": "c90d9a2f-ea11-4959-8293-dad47b8d9d12"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1296,
+        176
+      ],
+      "id": "4739a9ca-c814-4e95-986a-036d41389c21",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation for Backend Workflows\n// Version: v1.0.0\n// Use this code node at the start of any protected workflow\n\n// Get webhook input data\nconst webhookData = $input.first().json;\n\n// Extract Authorization header\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check Bearer token format\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format. Expected \"Bearer {token}\"',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7); // Remove \"Bearer \" prefix\n\n// JWT validation functions (matching generation code)\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\n// Check token type (reject LIMITED tokens unless specifically allowed)\n// Note: Individual workflows can override this by setting allowLimitedToken in webhook body\nconst allowLimitedToken = webhookData.body?.allowLimitedToken || false;\n\nif (payload.type === 'limited' && !allowLimitedToken) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication. Please complete password change.',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check if refresh token is being used for non-refresh operations\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used for this operation',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Token is valid - return user info and original request body\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type,\n      permissions: payload.permissions || []\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "cae179bc-5014-4abc-9ca6-d7b1d3590078",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9c4038fa-e1d7-43f0-bef1-6ae1a326e81f"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "64e9ae2d-4ec0-4dc4-a458-c7aa5fde46a1",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "dd3cc396-ad4f-4139-b7ee-399794d3d6c2",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Simple Users Response - v1.0.0\n  const users = $input.all().map(item => item.json);\n\n  // Only log if there's an issue\n  if (users.length === 0) {\n      console.log('⚠️ No users found');\n  }\n\n  // Return simple users list (filtering out sensitive fields)\n  return [{\n      json: {\n          success: true,\n          message: 'Users retrieved successfully',\n          totalUsers: users.length,\n          data: users.map(user => ({\n              id: user.id,\n              username: user.username,\n              email: user.email,\n              role: user.role,\n              full_name: user.full_name,\n              active: user.active,\n              last_login: user.last_login,\n              created_at: user.created_at\n              // Note: Omitting password_hash, refresh_token, and other sensitive\n  fields\n          }))\n      }\n  }];\n\n  // Version: v1.0.0 - Reduced logging volume"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        -112
+      ],
+      "id": "92f1e430-a967-4789-b3c9-dca23c24fc2f",
+      "name": "Response Formatter - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Format Unauthorized Error Response - Simple Version\n  // Version: v1.0.0\n\n  const errorData = $input.first().json;\n\n  // Return standardized error format\n  return [{\n    json: {\n      success: false,\n      error: {\n        message: errorData.message || 'Unauthorized access',\n        statusCode: errorData.statusCode || 401\n      },\n      timestamp: errorData.timestamp || new Date().toISOString()\n    }\n  }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        80
+      ],
+      "id": "89fe7f15-4a78-4631-b356-25ded3e9567a",
+      "name": "Unauthorized Response - Code"
+    }
+  ],
+  "pinData": {
+    "Get All Users - Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "webhook-processor-production-3bb8.up.railway.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "origin": "null",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"Chromium\";v=\"140\", \"Not=A?Brand\";v=\"24\", \"Google Chrome\";v=\"140\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "134.41.174.19",
+            "x-forwarded-host": "webhook-processor-production-3bb8.up.railway.app",
+            "x-forwarded-proto": "https",
+            "x-railway-edge": "railway/us-east4-eqdc4a",
+            "x-railway-request-id": "l2ix8Sp6Q3ekIl5hg4a9AQ",
+            "x-real-ip": "134.41.174.19",
+            "x-request-start": "1759870700693"
+          },
+          "params": {},
+          "query": {},
+          "body": {},
+          "webhookUrl": "https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-users",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get All Users": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Users - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get All Users",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Formatter - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fc232055-55ba-40fb-9767-d42159cbd3cb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "MtZ6q7webp75YeM3",
+  "tags": [
+    {
+      "updatedAt": "2025-10-30T17:12:04.468Z",
+      "createdAt": "2025-10-30T17:12:04.468Z",
+      "id": "9hOXePwFOkPfBNfm",
+      "name": "Admin"
+    },
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    },
+    {
+      "updatedAt": "2025-11-02T20:39:22.246Z",
+      "createdAt": "2025-11-02T20:39:22.246Z",
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    }
+  ]
+}

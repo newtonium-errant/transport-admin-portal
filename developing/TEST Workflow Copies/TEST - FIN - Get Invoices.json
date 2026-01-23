@@ -1,0 +1,416 @@
+{
+  "name": "TEST - FIN - Get Invoices",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation for Backend Workflows\n// Version: v1.0.0\n// Use this code node at the start of any protected workflow\n\n// Get webhook input data\nconst webhookData = $input.first().json;\n\n// Extract Authorization header\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check Bearer token format\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format. Expected \"Bearer {token}\"',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Extract token\nconst token = authHeader.substring(7); // Remove \"Bearer \" prefix\n\n// JWT validation functions (matching generation code)\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"REPLACE_WITH_ENV_VAR_JWT_SECRET\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [encodedHeader, encodedPayload, receivedSignature] = parts;\n\n    // Verify signature\n    const dataToSign = `${encodedHeader}.${encodedPayload}.${JWT_SECRET}`;\n    const expectedSignature = simpleHash(dataToSign);\n\n    if (receivedSignature !== expectedSignature) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    // Decode payload\n    const payload = JSON.parse(atob(encodedPayload));\n\n    // Check expiration\n    const now = Math.floor(Date.now() / 1000);\n    if (payload.exp && payload.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: payload };\n\n  } catch (error) {\n    return { valid: false, error: 'Token verification failed: ' + error.message };\n  }\n}\n\n// Validate the token\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\n// Check token type (reject LIMITED tokens unless specifically allowed)\n// Note: Individual workflows can override this by setting allowLimitedToken in webhook body\nconst allowLimitedToken = webhookData.body?.allowLimitedToken || false;\n\nif (payload.type === 'limited' && !allowLimitedToken) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'This operation requires full authentication. Please complete password change.',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Check if refresh token is being used for non-refresh operations\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used for this operation',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Token is valid - return user info and original request body\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type,\n      permissions: payload.permissions || []\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
+      },
+      "id": "eddfb3ac-ed01-4769-b79d-ed1de6c5163b",
+      "name": "JWT Validation - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e5845271-c8bc-4f31-9fa0-fcf3c941cdb5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c2978a14-5a60-4877-8cf8-de002dfdc3bb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c747af55-139d-4947-8786-5f9d7c6c37d7",
+      "name": "JWT Check - Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "invoices",
+        "returnAll": true
+      },
+      "id": "9dc8ebeb-a3a9-4140-b751-fc1ff5113841",
+      "name": "Get All Invoices - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Invoices - Filter and Format - v1.1.0 (Fixed for empty table)\n\n  const allItems = $input.all();\n\n  // Handle empty invoices table\n  if (allItems.length === 0) {\n    return [{\n      json: {\n        invoices: [],\n        count: 0,\n        filters: {}\n      }\n    }];\n  }\n\n  const invoices = allItems.map(item => item.json);\n\n  // Sort by invoice_date descending (newest first)\n  const sorted = invoices.sort((a, b) => {\n    if (!a.invoice_date || !b.invoice_date) return 0;\n    return new Date(b.invoice_date) - new Date(a.invoice_date);\n  });\n\n  // Format to camelCase for frontend\n  const formattedInvoices = sorted.map(inv => ({\n    id: inv.id,\n    invoiceNumber: inv.invoice_number,\n    knumber: inv.knumber,\n    invoiceStatus: inv.invoice_status,\n    invoiceDate: inv.invoice_date,\n    invoiceSubtotal: parseFloat(inv.invoice_subtotal || 0),\n    invoiceTax: parseFloat(inv.invoice_tax || 0),\n    invoiceTotal: parseFloat(inv.invoice_total || 0),\n    invoiceCreatedAt: inv.invoice_created_at,\n    invoiceSentAt: inv.invoice_sent_at,\n    paymentReceivedAt: inv.payment_received_at,\n    qboInvoiceId: inv.qbo_invoice_id,\n    qboInvoiceNumber: inv.qbo_invoice_number,\n    qboSyncStatus: inv.qbo_sync_status,\n    qboSyncedAt: inv.qbo_synced_at,\n    qboErrorMessage: inv.qbo_error_message,\n    notes: inv.notes,\n    createdBy: inv.created_by\n  }));\n\n  return [{\n    json: {\n      invoices: formattedInvoices,\n      count: formattedInvoices.length,\n      filters: {}\n    }\n  }];"
+      },
+      "id": "6a9792a5-3f2e-4e1e-b447-197f73e9507c",
+      "name": "Filter and Format - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "  // FIN - Get Invoices - Prepare Count Query - v1.1.0 (Fixed for empty)\n\n  const invoiceData = $input.first().json;\n  const invoices = invoiceData.invoices;\n\n  // If no invoices, skip the count query - return final format\n  if (invoices.length === 0) {\n    return [{\n      json: {\n        skipCount: true,\n        invoices: [],\n        count: 0\n      }\n    }];\n  }\n\n  // Create items for batch fetching appointment counts\n  return invoices.map(invoice => ({\n    json: {\n      invoice: invoice,\n      invoice_id: invoice.id,\n      allInvoices: invoices\n    }\n  }));"
+      },
+      "id": "ec1829ab-6da1-4e7c-b4de-8c45f146bc6a",
+      "name": "Prepare Count Query - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "appointments",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "invoice_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.invoice_id }}"
+            }
+          ]
+        }
+      },
+      "id": "5b26e2f7-74aa-4284-8597-07622d288176",
+      "name": "Get Appointment Count - Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        720,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "pHAY0PSxRTkwJnPE",
+          "name": "Testing Branch - Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Invoices - Merge Counts\n  // Version: v1.0.0\n  // Merges appointment counts with invoice data\n\n  const items = $input.all();\n\n  // Group by invoice\n  const invoiceMap = new Map();\n\n  items.forEach(item => {\n    const invoice = item.json.invoice;\n    const appointments = $input.all().filter(i => i.json.invoice_id === invoice.id);\n\n    if (!invoiceMap.has(invoice.id)) {\n      invoiceMap.set(invoice.id, {\n        ...invoice,\n        appointmentCount: appointments.length\n      });\n    }\n  });\n\n  const invoicesWithCounts = Array.from(invoiceMap.values());\n\n  return [{\n    json: {\n      invoices: invoicesWithCounts,\n      count: invoicesWithCounts.length\n    }\n  }];"
+      },
+      "id": "3edf2d8e-7490-4f5e-8539-af9bfbb3f2bb",
+      "name": "Merge Counts - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Invoices - Success Response\n  // Version: v1.0.0\n\n  const data = $input.first().json;\n\n  return [{\n    json: {\n      success: true,\n      message: 'Invoices retrieved successfully',\n      data: {\n        invoices: data.invoices,\n        count: data.count\n      },\n      timestamp: new Date().toISOString()\n    }\n  }];"
+      },
+      "id": "5dcc945d-3597-45bd-8a42-523a1f47ae23",
+      "name": "Success Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIN - Get Invoices - JWT Error Response\n  // Version: v1.0.0\n\n  const errorData = $input.first().json;\n\n  return [{\n    json: {\n      success: false,\n      message: 'Authentication failed',\n      error: errorData.error || 'Invalid or expired token',\n      statusCode: errorData.statusCode || 401,\n      timestamp: new Date().toISOString()\n    }\n  }];"
+      },
+      "id": "4605c30d-9ad0-4bf3-9c74-ad853ef6e342",
+      "name": "JWT Error Response - Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "487c7a8f-59d6-410a-a361-deb72558b9cd",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1440,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "path": "TEST-get-invoices",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        112
+      ],
+      "id": "9d2e6cf9-c79f-4df5-9cef-ee55b007821e",
+      "name": "TEST-get-invoices - Webhook",
+      "webhookId": "3e14af44-9152-4222-828f-463bacd73f23"
+    }
+  ],
+  "pinData": {
+    "TEST-get-invoices - Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "webhook-processor-production-3bb8.up.railway.app",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "authorization": "Bearer REPLACE_WITH_VALID_TOKEN",
+            "content-type": "application/json",
+            "origin": "null",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "134.41.46.208",
+            "x-forwarded-host": "webhook-processor-production-3bb8.up.railway.app",
+            "x-forwarded-proto": "https",
+            "x-railway-edge": "railway/us-east4-eqdc4a",
+            "x-railway-request-id": "Ikf8gzNNTWqugxQVAax-fw",
+            "x-real-ip": "134.41.46.208",
+            "x-request-start": "1764219760721",
+            "x-requested-with": "XMLHttpRequest"
+          },
+          "params": {},
+          "query": {},
+          "body": {},
+          "webhookUrl": "https://webhook-processor-production-3bb8.up.railway.app/webhook/TEST-get-invoices",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Check - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Check - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get All Invoices - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "JWT Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Invoices - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Filter and Format - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter and Format - Code": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Count Query - Code": {
+      "main": [
+        [
+          {
+            "node": "Get Appointment Count - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Appointment Count - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Counts - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Counts - Code": {
+      "main": [
+        [
+          {
+            "node": "Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TEST-get-invoices - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f9cb50ca-87dc-48c1-902f-e950e699fd6b",
+  "meta": {
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "jnL6fFxEnAYccogF",
+  "tags": [
+    {
+      "updatedAt": "2025-11-09T06:15:47.425Z",
+      "createdAt": "2025-11-09T06:15:47.425Z",
+      "id": "tZpzEwpoeg8SrGGa",
+      "name": "TEST"
+    },
+    {
+      "updatedAt": "2025-11-09T06:39:14.842Z",
+      "createdAt": "2025-11-09T06:39:14.842Z",
+      "id": "oCkAyP5U0C49SJQC",
+      "name": "Invoice"
+    },
+    {
+      "updatedAt": "2025-11-09T06:39:14.892Z",
+      "createdAt": "2025-11-09T06:39:14.892Z",
+      "id": "Q4i8xQtE7UtuEFhO",
+      "name": "Finance"
+    }
+  ]
+}
