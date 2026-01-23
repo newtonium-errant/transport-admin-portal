@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - RRTS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            padding-top: 70px;
+            line-height: 1.7;
+        }
+
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+        }
+
+        .brand-icon {
+            font-size: 1.8em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-actions a {
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .header-actions a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .main-content {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 50px;
+            margin-bottom: 40px;
+        }
+
+        .content-card h1 {
+            color: var(--color-primary);
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .last-updated {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--color-gray-light);
+        }
+
+        .content-card h2 {
+            color: var(--color-primary);
+            margin-top: 35px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .content-card h3 {
+            color: var(--color-accent);
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .content-card p {
+            color: var(--color-gray-dark);
+            margin-bottom: 15px;
+        }
+
+        .content-card ul {
+            color: var(--color-gray-dark);
+            margin-bottom: 15px;
+            padding-left: 25px;
+        }
+
+        .content-card li {
+            margin-bottom: 8px;
+        }
+
+        .contact-section {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .contact-section h3 {
+            margin-top: 0;
+        }
+
+        .footer {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            text-align: center;
+            padding: 25px;
+            margin-top: 60px;
+        }
+
+        .footer a {
+            color: var(--color-white);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .content-card {
+                padding: 30px 20px;
+            }
+
+            .content-card h1 {
+                font-size: 1.6rem;
+            }
+
+            .header-container {
+                padding: 0 15px;
+            }
+
+            .header-brand {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <a href="index.html" class="header-brand">
+                <i class="bi bi-geo-alt-fill brand-icon"></i>
+                <span>RRTS</span>
+            </a>
+            <div class="header-actions">
+                <a href="index.html"><i class="bi bi-house"></i> Home</a>
+                <a href="privacy.html"><i class="bi bi-shield-check"></i> Privacy</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <article class="content-card">
+            <h1>Terms of Service</h1>
+            <p class="last-updated">Last Updated: January 2025</p>
+
+            <p>Welcome to Rural Route Transportation Services ("RRTS", "we", "us", or "our"). These Terms of Service ("Terms") govern your use of our transportation services and administrative portal. By using our services, you agree to be bound by these Terms.</p>
+
+            <h2>1. Services Description</h2>
+            <p>RRTS provides non-emergency medical transportation services primarily serving veterans and residents in the Annapolis Valley, Nova Scotia. Our services include:</p>
+            <ul>
+                <li>Scheduled transportation to and from medical appointments</li>
+                <li>Coordination with healthcare facilities</li>
+                <li>Administrative portal access for authorized staff</li>
+            </ul>
+
+            <h2>2. Eligibility and Registration</h2>
+            <p>To use our transportation services, clients must:</p>
+            <ul>
+                <li>Provide accurate personal and contact information</li>
+                <li>Be capable of traveling safely with our transportation services</li>
+                <li>Comply with all applicable laws and regulations</li>
+            </ul>
+            <p>Access to the administrative portal is restricted to authorized RRTS staff members who have been provided credentials by management.</p>
+
+            <h2>3. Booking and Cancellation</h2>
+
+            <h3>Scheduling</h3>
+            <ul>
+                <li>Appointments should be scheduled in advance whenever possible</li>
+                <li>We will confirm pickup times and locations prior to scheduled appointments</li>
+                <li>Clients should be ready at the designated pickup time and location</li>
+            </ul>
+
+            <h3>Cancellations</h3>
+            <ul>
+                <li>Please provide as much advance notice as possible for cancellations</li>
+                <li>Repeated no-shows or last-minute cancellations may affect future service availability</li>
+                <li>We reserve the right to cancel or reschedule trips due to weather, vehicle issues, or other circumstances beyond our control</li>
+            </ul>
+
+            <h2>4. Client Responsibilities</h2>
+            <p>Clients using our services agree to:</p>
+            <ul>
+                <li>Provide accurate information about their transportation needs</li>
+                <li>Be ready at the scheduled pickup time</li>
+                <li>Treat drivers and staff with respect</li>
+                <li>Follow all safety instructions provided by drivers</li>
+                <li>Wear seatbelts during transportation</li>
+                <li>Not engage in disruptive or dangerous behavior</li>
+                <li>Not consume alcohol or illegal substances during transportation</li>
+            </ul>
+
+            <h2>5. Administrative Portal Use</h2>
+            <p>Authorized users of the RRTS administrative portal agree to:</p>
+            <ul>
+                <li>Maintain the confidentiality of login credentials</li>
+                <li>Use the portal only for legitimate business purposes</li>
+                <li>Protect client information and privacy</li>
+                <li>Report any security concerns or unauthorized access immediately</li>
+                <li>Comply with all applicable privacy laws and regulations</li>
+            </ul>
+
+            <h2>6. Fees and Payment</h2>
+            <ul>
+                <li>Service fees will be communicated at the time of booking</li>
+                <li>Payment terms and methods will be agreed upon prior to service</li>
+                <li>We reserve the right to modify our fee structure with reasonable notice</li>
+            </ul>
+
+            <h2>7. Limitation of Liability</h2>
+            <p>To the maximum extent permitted by law:</p>
+            <ul>
+                <li>RRTS is not liable for delays caused by traffic, weather, or circumstances beyond our control</li>
+                <li>We are not responsible for missed appointments due to client-caused delays</li>
+                <li>Our liability is limited to the fees paid for the specific service in question</li>
+                <li>We are not liable for indirect, incidental, or consequential damages</li>
+            </ul>
+
+            <h2>8. Insurance</h2>
+            <p>RRTS maintains appropriate insurance coverage for our transportation services. Clients are encouraged to maintain their own personal insurance coverage.</p>
+
+            <h2>9. Privacy</h2>
+            <p>Your use of our services is also governed by our <a href="privacy.html">Privacy Policy</a>, which describes how we collect, use, and protect your personal information.</p>
+
+            <h2>10. Intellectual Property</h2>
+            <p>All content, trademarks, and materials on our website and administrative portal are the property of RRTS or our licensors. You may not reproduce, distribute, or create derivative works without our express written permission.</p>
+
+            <h2>11. Third-Party Services</h2>
+            <p>Our services integrate with third-party platforms including Google Maps and Google Calendar. Your use of these integrated services is subject to their respective terms of service and privacy policies.</p>
+
+            <h2>12. Termination</h2>
+            <p>We reserve the right to:</p>
+            <ul>
+                <li>Refuse or discontinue service to any client for violations of these Terms</li>
+                <li>Terminate administrative portal access for any user who violates these Terms or company policies</li>
+                <li>Modify or discontinue any aspect of our services with reasonable notice</li>
+            </ul>
+
+            <h2>13. Modifications to Terms</h2>
+            <p>We may update these Terms from time to time. Material changes will be communicated through our website or direct notification. Continued use of our services after changes constitutes acceptance of the updated Terms.</p>
+
+            <h2>14. Governing Law</h2>
+            <p>These Terms are governed by the laws of the Province of Nova Scotia, Canada. Any disputes arising from these Terms or our services shall be resolved in the courts of Nova Scotia.</p>
+
+            <h2>15. Severability</h2>
+            <p>If any provision of these Terms is found to be unenforceable, the remaining provisions will continue in full force and effect.</p>
+
+            <div class="contact-section">
+                <h3>16. Contact Information</h3>
+                <p>For questions about these Terms of Service, please contact us:</p>
+                <p>
+                    <strong>Rural Route Transportation Services</strong><br>
+                    Email: <a href="mailto:ruralroutetransportation@gmail.com">ruralroutetransportation@gmail.com</a><br>
+                    Phone: <a href="tel:+17828226886">(782) 822-6886</a>
+                </p>
+            </div>
+        </article>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; <span id="year"></span> Rural Route Transportation Services. All rights reserved.</p>
+        <p><a href="privacy.html">Privacy Policy</a> | <a href="terms.html">Terms of Service</a></p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
