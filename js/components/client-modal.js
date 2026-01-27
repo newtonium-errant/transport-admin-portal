@@ -192,8 +192,8 @@ class ClientModal {
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label for="appointmentLength" class="form-label">Default Appointment Length (minutes) *</label>
-                                                <input type="number" class="form-control" id="appointmentLength" min="15" max="480" step="15" value="120" required>
+                                                <label for="clientAppointmentLength" class="form-label">Default Appointment Length (minutes) *</label>
+                                                <input type="number" class="form-control" id="clientAppointmentLength" min="15" max="480" step="15" value="120" required>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -328,7 +328,7 @@ class ClientModal {
         }
 
         // Appointment settings
-        document.getElementById('appointmentLength').value =
+        document.getElementById('clientAppointmentLength').value =
             client.appointment_length || client.appointmentLength || 120;
         document.getElementById('clientActive').value =
             (client.active === false ? 'false' : 'true');
@@ -389,7 +389,7 @@ class ClientModal {
         }
 
         // Appointment length validation
-        const appointmentLength = parseInt(document.getElementById('appointmentLength').value);
+        const appointmentLength = parseInt(document.getElementById('clientAppointmentLength').value);
         if (!appointmentLength || appointmentLength < 15 || appointmentLength > 480) {
             errors.push('Appointment length must be between 15 and 480 minutes');
         }
@@ -442,7 +442,7 @@ class ClientModal {
                     secondary_address_notes: document.getElementById('secondaryAddressNotes').value.trim() || null,
 
                     // Appointment settings (camelCase)
-                    appointmentLength: parseInt(document.getElementById('appointmentLength').value),
+                    appointmentLength: parseInt(document.getElementById('clientAppointmentLength').value),
                     active: document.getElementById('clientActive').value === 'true',
 
                     // Additional info (camelCase for new fields)
@@ -555,4 +555,4 @@ class ClientModal {
 // Global instance (for onclick handlers)
 let clientModalInstance = null;
 
-// Version: v2.0.0 - Updated for update-client-destinations endpoint with travel times
+// Version: v2.1.0 - Fixed duplicate ID bug: renamed appointmentLength to clientAppointmentLength
