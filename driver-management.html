@@ -1716,13 +1716,13 @@
                 console.log('Update response:', result);
 
                 if (result.success) {
+                    // Show success message first
+                    showToast('Driver updated successfully!', 'success');
+
                     // Close modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('editDriverModal'));
                     modal.hide();
 
-                    // Show success message
-                    showToast('Driver updated successfully!', 'success');
-                    
                     // Reload drivers list
                     loadDrivers();
                 } else {
@@ -1779,6 +1779,9 @@
             `;
 
             container.appendChild(toast);
+
+            // Trigger show animation (required for Bootstrap compatibility)
+            setTimeout(() => toast.classList.add('show'), 10);
 
             // Auto-remove after duration
             if (duration > 0) {
