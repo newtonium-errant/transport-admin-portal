@@ -1349,7 +1349,7 @@
             };
 
             drivers.forEach(driver => {
-                const status = (driver.status || 'offline').toLowerCase();
+                const status = driver.active ? 'available' : 'offline';
                 if (stats.hasOwnProperty(status)) {
                     stats[status]++;
                 }
@@ -1402,7 +1402,7 @@
                 const legalName = driver.name || `${firstName} ${lastName}`.trim();
                 const email = driver.email || 'No email';
                 const phone = driver.phone || '';
-                const status = (driver.status || 'offline').toLowerCase();
+                const status = driver.active ? 'available' : 'offline';
                 const workloadPref = driver.workload_preference || 'normal';
                 const workloadPct = driver.workload_percentage || 100;
                 const calendarType = driver.preferred_calendar_type || 'google';

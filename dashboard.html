@@ -1334,13 +1334,17 @@
 	            appointments = appointmentsData.appointments;
 	        }
 	        
-	        // Filter for today's appointments
+	        // Filter for today's appointments (exclude archived)
 	        const today = new Date();
 	        today.setHours(0, 0, 0, 0);
 	        const tomorrow = new Date(today);
 	        tomorrow.setDate(tomorrow.getDate() + 1);
-	        
+
 	        const todaysAppointments = appointments.filter(apt => {
+	            // Exclude archived appointments
+	            if (apt.is_archived || apt.isArchived || apt.archived) return false;
+	            if (apt.status === 'archived' || apt.appointmentstatus === 'archived') return false;
+
 	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
 	            return aptDate >= today && aptDate < tomorrow;
 	        });
@@ -2029,11 +2033,12 @@
                 userAvatarEl.textContent = initials;
             }
 
-            // Mobile menu toggle
+            // Mobile menu toggle - only add listener once
             const toggleBtn = document.getElementById('mobileMenuToggle');
             const nav = document.getElementById('mainNav');
 
-            if (toggleBtn && nav) {
+            if (toggleBtn && nav && !toggleBtn.hasAttribute('data-listener-added')) {
+                toggleBtn.setAttribute('data-listener-added', 'true');
                 toggleBtn.addEventListener('click', () => {
                     nav.classList.toggle('mobile-open');
                     const icon = toggleBtn.querySelector('i');
