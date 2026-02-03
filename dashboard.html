@@ -1335,13 +1335,17 @@
 	            appointments = appointmentsData.appointments;
 	        }
 	        
-	        // Filter for today's appointments
+	        // Filter for today's appointments (exclude archived)
 	        const today = new Date();
 	        today.setHours(0, 0, 0, 0);
 	        const tomorrow = new Date(today);
 	        tomorrow.setDate(tomorrow.getDate() + 1);
-	        
+
 	        const todaysAppointments = appointments.filter(apt => {
+	            // Exclude archived appointments
+	            if (apt.is_archived || apt.isArchived || apt.archived) return false;
+	            if (apt.status === 'archived' || apt.appointmentstatus === 'archived') return false;
+
 	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
 	            return aptDate >= today && aptDate < tomorrow;
 	        });
