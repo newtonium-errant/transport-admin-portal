@@ -502,7 +502,7 @@ class ClientModal {
                 saveBtn.dataset.originalContent = saveBtn.innerHTML;
             }
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem; margin-right: 0.25rem;"></span>Saving...';
         } else {
             saveBtn.disabled = false;
             // Restore original content
@@ -519,14 +519,19 @@ class ClientModal {
      * @param {string} message - Error message
      */
     showError(message) {
-        const errorDiv = document.getElementById('modalErrorMessages');
-        errorDiv.innerHTML = `
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
+        // Use page's toast function if available, otherwise fall back to inline alert
+        if (typeof showToast === 'function') {
+            showToast(message, 'error');
+        } else {
+            const errorDiv = document.getElementById('modalErrorMessages');
+            errorDiv.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
     }
 
     /**
@@ -534,14 +539,19 @@ class ClientModal {
      * @param {string} message - Success message
      */
     showSuccess(message) {
-        const errorDiv = document.getElementById('modalErrorMessages');
-        errorDiv.innerHTML = `
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
+        // Use page's toast function if available, otherwise fall back to inline alert
+        if (typeof showToast === 'function') {
+            showToast(message, 'success');
+        } else {
+            const errorDiv = document.getElementById('modalErrorMessages');
+            errorDiv.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
     }
 
     /**
@@ -555,4 +565,4 @@ class ClientModal {
 // Global instance (for onclick handlers)
 let clientModalInstance = null;
 
-// Version: v2.0.0 - Updated for update-client-destinations endpoint with travel times
+// Version: v2.1.0 - Fixed spinner size, use page toast instead of inline alerts
