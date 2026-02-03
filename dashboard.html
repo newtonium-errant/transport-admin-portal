@@ -2029,11 +2029,12 @@
                 userAvatarEl.textContent = initials;
             }
 
-            // Mobile menu toggle
+            // Mobile menu toggle - only add listener once
             const toggleBtn = document.getElementById('mobileMenuToggle');
             const nav = document.getElementById('mainNav');
 
-            if (toggleBtn && nav) {
+            if (toggleBtn && nav && !toggleBtn.hasAttribute('data-listener-added')) {
+                toggleBtn.setAttribute('data-listener-added', 'true');
                 toggleBtn.addEventListener('click', () => {
                     nav.classList.toggle('mobile-open');
                     const icon = toggleBtn.querySelector('i');
