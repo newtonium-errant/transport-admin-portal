@@ -1240,7 +1240,7 @@
     <script>
         // API Configuration - Updated with Production Endpoints
         const API_ENDPOINTS = {
-            DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management',
+            DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/allDrivers',
             ADD_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/add-driver',
             UPDATE_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver',
             GET_ASSIGNMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments'
@@ -1475,7 +1475,7 @@
             };
 
             drivers.forEach(driver => {
-                const status = (driver.status || 'offline').toLowerCase();
+                const status = driver.active ? 'available' : 'offline';
                 if (stats.hasOwnProperty(status)) {
                     stats[status]++;
                 }
@@ -1528,7 +1528,7 @@
                 const legalName = driver.name || `${firstName} ${lastName}`.trim();
                 const email = driver.email || 'No email';
                 const phone = driver.phone || '';
-                const status = (driver.status || 'offline').toLowerCase();
+                const status = driver.active ? 'available' : 'offline';
                 const workloadPref = driver.workload_preference || 'normal';
                 const workloadPct = driver.workload_percentage || 100;
                 const calendarType = driver.preferred_calendar_type || 'google';

@@ -212,5 +212,41 @@ async function authenticatedFetch(url, options = {}) {
     }
 }
 
+// JWTManager object for compatibility with session-manager.js
+const JWTManager = {
+    getCurrentUser: function() {
+        return getCurrentUser();
+    },
+
+    isAuthenticated: function() {
+        const accessToken = sessionStorage.getItem('rrts_access_token');
+        const user = sessionStorage.getItem('rrts_user');
+        return !!(accessToken && user);
+    },
+
+    clearTokens: function() {
+        sessionStorage.removeItem('rrts_user');
+        sessionStorage.removeItem('rrts_access_token');
+        sessionStorage.removeItem('rrts_refresh_token');
+        sessionStorage.removeItem('rrts_token_expiry');
+        sessionStorage.removeItem('rrts_limited_token');
+        sessionStorage.removeItem('rrts_temp_username');
+        sessionStorage.removeItem('rrts_temp_password');
+
+        // Clear token refresh timer if exists
+        if (window.tokenRefreshInterval) {
+            clearInterval(window.tokenRefreshInterval);
+        }
+    },
+
+    getAccessToken: async function() {
+        // Check if token needs refresh first
+        if (isTokenExpired()) {
+            await refreshAccessToken();
+        }
+        return sessionStorage.getItem('rrts_access_token');
+    }
+};
+
 // Initialize JWT auth on page load
 console.log('JWT Authentication Helper loaded');
