@@ -211,10 +211,10 @@ class AppointmentsPage {
     }
 
     // Header Initialization
+    // Note: Navigation is now handled by js/components/navigation.js
     initHeader() {
-        this.displayUserInfo();
-        this.buildNavigation();
-        this.setupMobileMenu();
+        // displayUserInfo, buildNavigation, and setupMobileMenu are handled by navigation.js
+        // which auto-initializes on DOMContentLoaded
     }
 
     displayUserInfo() {
@@ -261,11 +261,12 @@ class AppointmentsPage {
         // Define navigation items with their display names and icons
         const navItems = [
             { page: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2' },
-            { page: 'appointments-sl', label: 'Appointments', icon: 'bi-calendar-event' },
+            { page: 'appointments', label: 'Appointments', icon: 'bi-calendar-check' },
             { page: 'appointments-bulk-add', label: 'Bulk Add', icon: 'bi-calendar-plus' },
-            { page: 'clients-sl', label: 'Clients', icon: 'bi-people' },
-            { page: 'driver-management', label: 'Drivers', icon: 'bi-person-badge' },
-            { page: 'operations', label: 'Operations', icon: 'bi-kanban' },
+            { page: 'clients', label: 'Clients', icon: 'bi-people' },
+            { page: 'driver-management', label: 'Drivers', icon: 'bi-truck' },
+            { page: 'operations', label: 'Operations', icon: 'bi-clipboard-data' },
+            { page: 'finance', label: 'Finance', icon: 'bi-currency-dollar' },
             { page: 'admin', label: 'Admin', icon: 'bi-gear' }
         ];
 

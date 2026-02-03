@@ -1013,7 +1013,7 @@
 
                 <!-- Quick Actions -->
                 <div class="quick-actions">
-                    <a href="clients-sl.html" class="action-btn">
+                    <a href="clients.html" class="action-btn">
                         <span class="icon">👤</span>
                         Manage Clients
                     </a>
@@ -1070,6 +1070,7 @@
         </div>
     </div>
 
+    <script src="js/components/navigation.js"></script>
     <script>
 	// API Configuration for RRTS Dashboard
 	const API_ENDPOINTS = {
@@ -1090,7 +1091,7 @@
     	console.log('API Endpoints configured:', API_ENDPOINTS);
 
     	// Initialize header (will show guest/default if not logged in)
-    	initializeHeader();
+    	initializeNavigation();
 
     	// Check for password reset parameter
     	const urlParams = new URLSearchParams(window.location.search);
@@ -1244,7 +1245,7 @@
                     console.log('Login successful - tokens stored');
 
                     // Update header with user info
-                    initializeHeader();
+                    initializeNavigation();
 
                     showDashboard();
                     loadDashboardData();
@@ -1706,7 +1707,7 @@
                     document.getElementById('confirmPassword').value = '';
 
                     // Update header with user info
-                    initializeHeader();
+                    initializeNavigation();
 
                     // Show dashboard
                     showDashboard();
@@ -1958,77 +1959,16 @@
             }
         }
 
-        // Initialize header
-        function initializeHeader() {
-            // Populate navigation based on RBAC
-            const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
-            const role = user.role || 'guest';
-
-            const navItems = [
-                { label: 'Dashboard', page: 'dashboard.html', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Appointments', page: 'appointments-sl.html', icon: 'bi-calendar-check', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Bulk Add', page: 'appointments-bulk-add.html', icon: 'bi-calendar-plus', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Clients', page: 'clients-sl.html', icon: 'bi-people', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Drivers', page: 'driver-management.html', icon: 'bi-truck', roles: ['admin', 'supervisor'] },
-                { label: 'Operations', page: 'operations.html', icon: 'bi-clipboard-data', roles: ['admin', 'supervisor'] },
-                { label: 'Admin', page: 'admin.html', icon: 'bi-gear', roles: ['admin'] }
-            ];
-
-            const navContainer = document.getElementById('mainNav');
-            if (!navContainer) return; // Exit if nav not found
-
-            // Clear existing navigation items (important for re-initialization after login)
-            navContainer.innerHTML = '';
-
-            const currentPage = window.location.pathname.split('/').pop();
-
-            navItems.forEach(item => {
-                if (item.roles.includes(role)) {
-                    const link = document.createElement('a');
-                    link.href = item.page;
-                    link.className = 'nav-link';
-                    if (item.page === currentPage) {
-                        link.classList.add('active');
-                    }
-                    link.innerHTML = `<i class="bi ${item.icon}"></i> ${item.label}`;
-                    navContainer.appendChild(link);
-                }
-            });
-
-            // Set user info
-            const userNameEl = document.getElementById('userName');
-            const userRoleBadgeEl = document.getElementById('userRoleBadge');
-            const userAvatarEl = document.getElementById('userAvatar');
-
-            if (userNameEl) userNameEl.textContent = user.fullName || user.full_name || user.username || 'User';
-            if (userRoleBadgeEl) userRoleBadgeEl.textContent = role;
-            if (userAvatarEl) {
-                const initials = (user.fullName || user.full_name || user.username || 'U').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                userAvatarEl.textContent = initials;
-            }
-
-            // Mobile menu toggle
-            const toggleBtn = document.getElementById('mobileMenuToggle');
-            const nav = document.getElementById('mainNav');
-
-            if (toggleBtn && nav) {
-                toggleBtn.addEventListener('click', () => {
-                    nav.classList.toggle('mobile-open');
-                    const icon = toggleBtn.querySelector('i');
-                    if (nav.classList.contains('mobile-open')) {
-                        icon.className = 'bi bi-x';
-                    } else {
-                        icon.className = 'bi bi-list';
-                    }
-                });
-            }
-        }
-
     </script>
+
+    <!-- Background Task Monitoring -->
+    <script src="js/core/task-monitor.js"></script>
+    <script src="js/components/task-notifications.js"></script>
+    <script src="js/components/failed-tasks-widget.js"></script>
 </body>
 </html>
-<!-- 
-Version: v2.0.0 - RRTS Dashboard with Daily Schedule
+<!--
+Version: v2.1.0 - RRTS Dashboard with Daily Schedule and Background Task Monitoring
 - v2.0.0: Added daily schedule view with time filtering from operations page
 - v1.1.2: fixes missing functions
 - v1.1.1: Uses actual data, updated endpoints

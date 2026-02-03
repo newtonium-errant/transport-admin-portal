@@ -2,7 +2,6 @@
 *.md
 !README.md
 !CLAUDE.md
-!developing/**/*.md
 !docs/**/*.md
 Instructions/
 Implementation-Guide/
@@ -10,19 +9,19 @@ n8n-updates/
 cloudflare-setup/
 frontend-updates/
 google-oauth/
-# developing/ - commented out for wip branch to enable mobile access
+
+# Developing folder - local work in progress (use wip branch instead)
+developing/
 
 # Workflow files
 Workflows/
 *.json
 !package.json
 !package-lock.json
-!developing/**/*.json
 
 # SQL files
 sql/
 *.sql
-!developing/**/*.sql
 
 # Deprecated code
 deprecated/
