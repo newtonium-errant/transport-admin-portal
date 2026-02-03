@@ -4,11 +4,11 @@
  * Handles automatic logout after period of inactivity
  * Timeout duration varies by user role for security
  *
- * Dependencies: jwt-manager.js (for user info and token management)
+ * Dependencies: jwt-auth.js (for JWTManager object and token management)
  *
  * Usage:
- *   <script src="jwt-manager.js"></script>
- *   <script src="session-manager.js"></script>
+ *   <script src="js/auth/jwt-auth.js"></script>
+ *   <script src="js/auth/session-manager.js"></script>
  *   <script>
  *     // Start session monitoring after login
  *     SessionManager.start();
@@ -51,6 +51,8 @@ const SessionManager = (function() {
     let warningTimer = null;
     let isRunning = false;
     let currentTimeout = DEFAULT_TIMEOUT;
+    let lastActivityTime = 0;
+    const THROTTLE_INTERVAL = 1000; // Only process activity events once per second
 
     /**
      * Start session monitoring
@@ -77,10 +79,11 @@ const SessionManager = (function() {
 
         // Set up activity listeners
         ACTIVITY_EVENTS.forEach(event => {
-            document.addEventListener(event, resetTimer, true);
+            document.addEventListener(event, handleActivity, true);
         });
 
-        // Start timer
+        // Start timer (initial start, not from activity)
+        lastActivityTime = Date.now();
         resetTimer();
     }
 
@@ -109,8 +112,27 @@ const SessionManager = (function() {
 
         // Remove activity listeners
         ACTIVITY_EVENTS.forEach(event => {
-            document.removeEventListener(event, resetTimer, true);
+            document.removeEventListener(event, handleActivity, true);
         });
+    }
+
+    /**
+     * Handle activity event (throttled wrapper for resetTimer)
+     */
+    function handleActivity() {
+        if (!isRunning) {
+            return;
+        }
+
+        const now = Date.now();
+
+        // Throttle: only reset timer if enough time has passed since last activity
+        if (now - lastActivityTime < THROTTLE_INTERVAL) {
+            return;
+        }
+
+        lastActivityTime = now;
+        resetTimer();
     }
 
     /**
@@ -138,6 +160,9 @@ const SessionManager = (function() {
 
         // Set inactivity timer
         inactivityTimer = setTimeout(handleTimeout, currentTimeout);
+
+        // Update last activity time
+        lastActivityTime = Date.now();
     }
 
     /**
