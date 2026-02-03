@@ -615,11 +615,11 @@
                 grid-template-columns: 1fr;
                 gap: 20px;
             }
-            
+
             .form-row {
                 grid-template-columns: 1fr;
             }
-            
+
             .dashboard-stats {
                 grid-template-columns: 1fr 1fr;
             }
@@ -632,6 +632,125 @@
             .nav-links a {
                 padding: 6px 12px;
                 font-size: 0.9em;
+            }
+        }
+
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 300px;
+            max-width: 400px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid;
+        }
+
+        .toast.toast-success {
+            border-left-color: #28a745;
+        }
+
+        .toast.toast-error {
+            border-left-color: #dc3545;
+        }
+
+        .toast.toast-warning {
+            border-left-color: #ffc107;
+        }
+
+        .toast.toast-info {
+            border-left-color: #17a2b8;
+        }
+
+        .toast-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .toast-success .toast-icon {
+            color: #28a745;
+        }
+
+        .toast-error .toast-icon {
+            color: #dc3545;
+        }
+
+        .toast-warning .toast-icon {
+            color: #ffc107;
+        }
+
+        .toast-info .toast-icon {
+            color: #17a2b8;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .toast-message {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .toast-close {
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2em;
+            line-height: 1;
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        .toast-close:hover {
+            color: #333;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.hiding {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
             }
         }
     </style>
@@ -1111,6 +1230,9 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <!-- JWT Authentication Helper -->
     <script src="js/auth/jwt-auth.js"></script>
     <script src="js/auth/session-manager.js"></script>
@@ -1467,7 +1589,7 @@
 
                 // Validate required fields
                 if (!formData.first_name || !formData.last_name || !formData.email || !formData.gender || !formData.workload_preference) {
-                    alert('Please fill in all required fields (marked with *)');
+                    showToast('Please fill in all required fields (marked with *)', 'warning');
                     return;
                 }
 
@@ -1482,7 +1604,7 @@
                 console.log('Save response:', result);
 
                 if (result.success) {
-                    alert('Driver added successfully!');
+                    showToast('Driver added successfully!', 'success');
                     clearForm();
                     
                     // Collapse form after successful save
@@ -1497,7 +1619,7 @@
 
             } catch (error) {
                 console.error('Error saving driver:', error);
-                alert(`Error saving driver: ${error.message}`);
+                showToast(`Error saving driver: ${error.message}`, 'error');
             }
         }
 
@@ -1505,7 +1627,7 @@
         function editDriver(driverId) {
             const driver = driversData.find(d => d.id === driverId);
             if (!driver) {
-                alert('Driver not found');
+                showToast('Driver not found', 'error');
                 return;
             }
 
@@ -1579,7 +1701,7 @@
 
                 // Validate required fields
                 if (!formData.first_name || !formData.last_name || !formData.email || !formData.gender || !formData.workload_preference) {
-                    alert('Please fill in all required fields (marked with *)');
+                    showToast('Please fill in all required fields (marked with *)', 'warning');
                     return;
                 }
 
@@ -1599,7 +1721,7 @@
                     modal.hide();
 
                     // Show success message
-                    alert('Driver updated successfully!');
+                    showToast('Driver updated successfully!', 'success');
                     
                     // Reload drivers list
                     loadDrivers();
@@ -1609,7 +1731,7 @@
 
             } catch (error) {
                 console.error('Error updating driver:', error);
-                alert(`Error updating driver: ${error.message}`);
+                showToast(`Error updating driver: ${error.message}`, 'error');
             } finally {
                 // Reset loading state
                 btnText.classList.remove('d-none');
@@ -1622,6 +1744,49 @@
         function logout() {
             sessionStorage.removeItem('rrts_user');
             window.location.href = 'dashboard.html';
+        }
+
+        // Toast Notification Function
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const icons = {
+                success: '<i class="bi bi-check-circle-fill"></i>',
+                error: '<i class="bi bi-x-circle-fill"></i>',
+                warning: '<i class="bi bi-exclamation-triangle-fill"></i>',
+                info: '<i class="bi bi-info-circle-fill"></i>'
+            };
+
+            const titles = {
+                success: 'Success',
+                error: 'Error',
+                warning: 'Warning',
+                info: 'Info'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type]}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${titles[type]}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.closest('.toast').classList.add('hiding'); setTimeout(() => this.closest('.toast').remove(), 300);">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remove after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    toast.classList.add('hiding');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
         }
 
         // Initialize header
@@ -1691,7 +1856,8 @@
 </body>
 </html>
 
-<!-- Version: 1.5.5 - RRTS Driver Management Portal
+<!-- Version: 1.5.6 - RRTS Driver Management Portal
+- v1.5.6: Replaced alert() popups with toast notifications for better UX
 - v1.5.5: Removed toggle button since driver status is automatically calculated from active state, assignments, and time-off
 - v1.5.4: Added comprehensive weekly work schedule interface for both add and edit forms with JSONB weekly_hours support
 - v1.5.3: Added edit driver modal with separate update function using UPDATE_DRIVER endpoint instead of expanding add form
