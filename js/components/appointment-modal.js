@@ -1326,36 +1326,10 @@ class AppointmentModal {
                 }
             }
 
-            // Generate new scheduling notes (add mode or edit mode with changes)
-            const appointmentDateTime = currentAppointmentDateField.value;
-            const clinicName = currentClinicDropdown.value;
-
-            if (appointmentDateTime && clinicName) {
-                // Format the appointment time for display (time only, Halifax timezone)
-                const apptDate = new Date(appointmentDateTime);
-                const formattedTime = apptDate.toLocaleString('en-US', {
-                    timeZone: 'America/Halifax',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                });
-
-                // Generate scheduling notes (simple format: time + clinic)
-                currentSchedulingNotesField.value = `${formattedTime} appointment at ${clinicName}`;
-                console.log(`[Scheduling Notes] Generated: "${currentSchedulingNotesField.value}"`);
-            }
+            // Scheduling notes are now user-entered only, no auto-generation
+            // This prevents redundant info like "2:30 PM appointment at Clinic"
+            // since calendar already shows pickup time, appointment time, and location
         };
-
-        // Remove existing listeners by cloning
-        const newDateField = appointmentDateField.cloneNode(true);
-        appointmentDateField.parentNode.replaceChild(newDateField, appointmentDateField);
-
-        const newTransitTimeField = transitTimeField.cloneNode(true);
-        transitTimeField.parentNode.replaceChild(newTransitTimeField, transitTimeField);
-
-        // Add event listeners to the new elements
-        document.getElementById('appointmentDate').addEventListener('change', updateSchedulingNotes);
-        document.getElementById('transitTime').addEventListener('input', updateSchedulingNotes);
     }
 
     populateForm(appointment) {
