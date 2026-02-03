@@ -999,6 +999,10 @@
                                     <option value="false">Inactive</option>
                                 </select>
                             </div>
+                            <div class="col-md-6">
+                                <label for="editDriverVehicle" class="form-label">Vehicle Description</label>
+                                <input type="text" class="form-control" id="editDriverVehicle" placeholder="e.g., white Honda CRV">
+                            </div>
                         </div>
 
                         <!-- Weekly Schedule Section for Edit Modal -->
@@ -1423,9 +1427,9 @@
                         </div>
                         <div class="driver-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-top: 8px;">
                             <div><strong>Email:</strong> ${email}</div>
-                            <div><strong>Phone:</strong> ${phone || 'Not provided'}</div>
-                            <div><strong>Workload:</strong> ${workloadPref} (${workloadPct}%)</div>
-                            <div><strong>Calendar:</strong> ${calendarType}</div>
+                            <div><strong>Personal:</strong> ${phone || 'Not provided'}</div>
+                            <div><strong>Work Phone:</strong> <span style="background: #e3f2fd; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${driver.work_phone || 'Not assigned'}</span></div>
+                            <div><strong>Vehicle:</strong> ${driver.vehicle_description || 'Not specified'}</div>
                         </div>
                         <div class="driver-meta" style="font-size: 11px; color: #7f8c8d; margin-top: 4px;">
                             Driver ID: ${driverId} • ${isActive ? 'Active' : 'Inactive'}
@@ -1518,6 +1522,7 @@
             document.getElementById('editDriverCalendarType').value = driver.preferred_calendar_type || 'google';
             document.getElementById('editDriverStatus').value = driver.status || 'available';
             document.getElementById('editDriverActive').value = driver.active !== false ? 'true' : 'false';
+            document.getElementById('editDriverVehicle').value = driver.vehicle_description || '';
 
             // Populate weekly schedule
             if (driver.weekly_hours) {
@@ -1568,6 +1573,7 @@
                     preferred_calendar_type: document.getElementById('editDriverCalendarType').value,
                     status: document.getElementById('editDriverStatus').value,
                     active: document.getElementById('editDriverActive').value === 'true',
+                    vehicle_description: document.getElementById('editDriverVehicle').value,
                     weekly_hours: getWeeklyHoursData('edit-')
                 };
 
