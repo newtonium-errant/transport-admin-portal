@@ -82,6 +82,18 @@ These endpoints support the frontend task monitoring UI:
 2. Call `dismiss_all_failed_tasks(user_id)`
 3. Return count dismissed
 
+#### `/retry-task`
+**Trigger:** HTTP Webhook (authenticated)
+**Input:** `{ task_id }`
+**Steps:**
+1. Get user ID from JWT
+2. Fetch task, verify user can retry (owner or admin/supervisor)
+3. Check `result.steps_completed` to see what already succeeded
+4. Reset task status to 'processing'
+5. Resume from failed step, skipping completed steps
+6. Update task status on completion or failure
+**Details:** See "Retry Logic" section below for full implementation.
+
 ---
 
 ### Step 3: Modify Existing Workflows (Single Workflow Pattern)
@@ -231,23 +243,29 @@ Create n8n workflow (see `docs/n8n-archive-cleanup-workflow.md`):
 ### Step 6: Test the System
 
 1. **Add a test client** - Should return quickly, check `background_tasks` table for pending tasks
-2. **Simulate failure** - In `/process-drive-times`, temporarily add an error. Check that:
+2. **Simulate partial failure** - Force Quo sync to fail after drive times succeed. Check that:
    - Task status becomes 'failed'
-   - Error toast appears in frontend
-   - Task shows in failed tasks panel
-3. **Dismiss task** - Click dismiss, verify `dismissed_at` is set
-4. **Archive test** - Run `SELECT archive_old_tasks();` manually
+   - `result.steps_completed` contains `["drive_times"]`
+   - `result.failed_step` is `"quo_sync"`
+   - Error message shows: "Add client: Quo sync failed. Drive times completed."
+   - Error toast appears in frontend with the detailed message
+3. **Test retry** - Click retry button (or call `/retry-task`). Verify:
+   - Drive times step is skipped (already completed)
+   - Only Quo sync is retried
+   - On success, task status becomes 'completed'
+4. **Dismiss task** - Click dismiss, verify `dismissed_at` is set
+5. **Archive test** - Run `SELECT archive_old_tasks();` manually
 
 ---
 
 ## Implementation Order
 
 1. Apply SQL schema to Supabase
-2. Create `/get-failed-tasks` and `/dismiss-task` endpoints (so frontend works)
+2. Create task management endpoints: `/get-failed-tasks`, `/dismiss-task`, `/retry-task`
 3. Add frontend scripts to dashboard.html
 4. Verify notifications appear when manually inserting failed tasks
-5. Modify `/add-client` to use single workflow pattern with early webhook response
-6. Test end-to-end
+5. Modify `/add-client` to use single workflow pattern with step tracking
+6. Test end-to-end including retry functionality
 7. Repeat for other workflows (update-client, add-driver, save-appointment, etc.)
 
 ---
@@ -281,6 +299,170 @@ In the async phase of your workflow (after the "Respond to Webhook" node):
 ```
 
 This ensures every task gets a final status, even if something goes wrong.
+
+### Step Tracking for Partial Completion
+
+When a task has multiple async steps (drive times, Quo sync, etc.), track progress so retries can resume from where they failed.
+
+#### Store Progress in Task Result
+
+Use the task's `result` JSONB field to track completed steps:
+
+```json
+{
+  "steps_completed": ["drive_times"],
+  "failed_step": "quo_sync",
+  "error": "Quo API returned 429: Rate limited",
+  "entity_id": "client-uuid-here"
+}
+```
+
+#### Update Progress After Each Step
+
+In n8n, after each successful step, update the task:
+
+```sql
+UPDATE background_tasks
+SET result = jsonb_set(
+    COALESCE(result, '{}'),
+    '{steps_completed}',
+    COALESCE(result->'steps_completed', '[]') || '"drive_times"'
+)
+WHERE id = :task_id;
+```
+
+#### On Failure, Record What Failed
+
+```sql
+UPDATE background_tasks
+SET
+    status = 'failed',
+    error_message = 'Add client: Quo sync failed (Rate limited). Drive times completed.',
+    failed_at = NOW(),
+    result = jsonb_set(
+        COALESCE(result, '{}'),
+        '{failed_step}',
+        '"quo_sync"'
+    )
+WHERE id = :task_id;
+```
+
+### Retry Logic with `/retry-task` Endpoint
+
+#### Endpoint: `/retry-task`
+
+**Trigger:** HTTP Webhook (authenticated)
+**Input:** `{ task_id }`
+
+**Steps:**
+
+1. Get task from database:
+```sql
+SELECT * FROM background_tasks WHERE id = :task_id AND status = 'failed';
+```
+
+2. Verify user can retry (created_by = user OR user is admin/supervisor)
+
+3. Check what steps were completed:
+```javascript
+const stepsCompleted = task.result?.steps_completed || [];
+const failedStep = task.result?.failed_step;
+```
+
+4. Reset task status to processing:
+```sql
+UPDATE background_tasks
+SET status = 'processing', started_at = NOW(), error_message = NULL, failed_at = NULL
+WHERE id = :task_id;
+```
+
+5. Resume from failed step (skip completed steps):
+```
+IF NOT stepsCompleted.includes('drive_times'):
+    → [Calculate Drive Times] → Append to steps_completed
+IF NOT stepsCompleted.includes('quo_sync'):
+    → [Quo Sync] → Append to steps_completed
+```
+
+6. On success: `complete_background_task(task_id, result_json)`
+   On error: `fail_background_task(task_id, error_message)` with updated steps_completed
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Task retry started",
+  "task_id": "..."
+}
+```
+
+### Making Steps Idempotent (Safe to Repeat)
+
+Design each async step so it can be safely re-run:
+
+| Step | Idempotent Strategy |
+|------|---------------------|
+| Calculate drive times | Upsert to `client_drive_times` table (overwrites) |
+| Quo sync | Use Quo's upsert/update endpoint with external_id |
+| Send notification | Check `notifications_sent` in result before sending |
+| Generate report | Overwrite existing report file |
+
+**Example: Idempotent Drive Times**
+```sql
+-- Use ON CONFLICT to upsert
+INSERT INTO client_drive_times (client_id, driver_id, duration_seconds, distance_meters)
+VALUES (:client_id, :driver_id, :duration, :distance)
+ON CONFLICT (client_id, driver_id)
+DO UPDATE SET
+    duration_seconds = EXCLUDED.duration_seconds,
+    distance_meters = EXCLUDED.distance_meters,
+    updated_at = NOW();
+```
+
+### Updated Workflow Pattern with Step Tracking
+
+```
+[After Respond to Webhook]
+    │
+    ▼
+[Start Task] → Initialize result: { steps_completed: [], entity_id: "..." }
+    │
+    ▼
+[Calculate Drive Times]
+    │
+    ├─► Success → UPDATE result.steps_completed += "drive_times"
+    │                │
+    │                ▼
+    │         [Quo Sync]
+    │                │
+    │                ├─► Success → UPDATE result.steps_completed += "quo_sync"
+    │                │                │
+    │                │                ▼
+    │                │         [Complete Task]
+    │                │
+    │                └─► Error → Fail with { failed_step: "quo_sync", steps_completed: ["drive_times"] }
+    │
+    └─► Error → Fail with { failed_step: "drive_times", steps_completed: [] }
+```
+
+### Frontend Retry Button
+
+The task notifications UI can include a retry button that calls `/retry-task`:
+
+```javascript
+async function retryTask(taskId) {
+    const response = await authenticatedFetch('/retry-task', {
+        method: 'POST',
+        body: JSON.stringify({ task_id: taskId })
+    });
+
+    if (response.success) {
+        // Remove from failed tasks UI - it's now processing
+        TaskNotifications.removeTask(taskId);
+        showToast('Retrying task...', 'info');
+    }
+}
+```
 
 ---
 
