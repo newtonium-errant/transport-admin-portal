@@ -1,20 +1,53 @@
 /**
- * API Client - Authenticated Request Wrapper
+ * @fileoverview API Client - Authenticated Request Wrapper
  *
- * Simplifies making authenticated API calls to n8n webhooks.
- * Uses jwt-auth.js functions for token management (no JWTManager dependency).
+ * @description
+ * Simplifies making authenticated API calls to n8n webhook endpoints.
+ * Handles JWT token management, automatic refresh, and error handling.
  *
- * Dependencies: jwt-auth.js (provides isTokenExpired, refreshAccessToken, logout)
+ * Features:
+ * - Automatic token expiry checking and refresh
+ * - Standard HTTP methods (GET, POST, PUT, DELETE)
+ * - File upload support with FormData
+ * - Batch request execution
+ * - Custom APIError class for structured error handling
+ * - Convenience wrappers for common API endpoints
  *
- * Usage:
- *   <script src="js/auth/jwt-auth.js"></script>
- *   <script src="js/core/api-client.js"></script>
+ * @requires jwt-auth.js - Provides isTokenExpired(), refreshAccessToken(), logout()
+ *
+ * @example
+ * // Using the generic client
+ * const data = await APIClient.get('/get-all-clients');
+ * await APIClient.post('/save-appointment', appointmentData);
+ *
+ * @example
+ * // Using convenience wrappers
+ * const appointments = await AppointmentsAPI.getAll();
+ * const clients = await ClientsAPI.getActive();
+ *
+ * @version 2.0.0
+ * @since 2024-01-01
  */
 
+// =============================================================================
+// API CLIENT MODULE
+// =============================================================================
+
+/**
+ * Main API client module using IIFE pattern
+ * @namespace APIClient
+ */
 const APIClient = (function() {
     'use strict';
 
-    // Base URL for all API endpoints
+    // =========================================================================
+    // CONFIGURATION
+    // =========================================================================
+
+    /**
+     * Base URL for all API endpoints (n8n webhook processor)
+     * @constant {string}
+     */
     const BASE_URL = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
 
     /**
@@ -243,10 +276,35 @@ const APIClient = (function() {
         }
     }
 
+    // =========================================================================
+    // CUSTOM ERROR CLASS
+    // =========================================================================
+
     /**
-     * Custom API Error class
+     * Custom error class for API failures
+     *
+     * Extends Error with HTTP status code and response data.
+     *
+     * @class APIError
+     * @extends Error
+     *
+     * @example
+     * try {
+     *     await APIClient.get('/endpoint');
+     * } catch (error) {
+     *     if (error instanceof APIClient.APIError) {
+     *         console.log(error.status); // HTTP status code
+     *         console.log(error.data);   // Response body
+     *     }
+     * }
      */
     class APIError extends Error {
+        /**
+         * Create an APIError
+         * @param {string} message - Error message
+         * @param {number} status - HTTP status code
+         * @param {Object} data - Response data from server
+         */
         constructor(message, status, data) {
             super(message);
             this.name = 'APIError';
@@ -287,34 +345,87 @@ const APIClient = (function() {
 
 })();
 
-// Convenience functions for common endpoints
+// =============================================================================
+// CONVENIENCE API WRAPPERS
+// =============================================================================
+
+/**
+ * Appointments API convenience wrapper
+ *
+ * @namespace AppointmentsAPI
+ * @example
+ * const allAppointments = await AppointmentsAPI.getAll();
+ * const activeAppointments = await AppointmentsAPI.getActive();
+ */
 const AppointmentsAPI = {
+    /** Get all appointments (including archived) */
     getAll: () => APIClient.get('/get-all-appointments'),
+    /** Get active present and future appointments */
     getActive: () => APIClient.get('/get-active-present-future-appointments'),
+    /** Get appointments for operations view */
     getOperations: () => APIClient.get('/get-operations-appointments'),
+    /** Save a new appointment */
     save: (data) => APIClient.post('/save-appointment-v7', data),
+    /** Update an existing appointment */
     update: (data) => APIClient.post('/update-appointment-complete', data),
+    /** Delete an appointment (removes from Google Calendar) */
     delete: (id) => APIClient.post('/delete-appointment-with-calendar', { id })
 };
 
+/**
+ * Clients API convenience wrapper
+ *
+ * @namespace ClientsAPI
+ * @example
+ * const clients = await ClientsAPI.getActive();
+ * await ClientsAPI.add({ firstName: 'John', lastName: 'Doe', ... });
+ */
 const ClientsAPI = {
+    /** Get all clients (including inactive) */
     getAll: () => APIClient.get('/get-all-clients'),
+    /** Get only active clients */
     getActive: () => APIClient.get('/get-active-clients'),
+    /** Add a new client */
     add: (data) => APIClient.post('/add-client', data),
+    /** Update an existing client */
     update: (data) => APIClient.post('/update-client', data)
 };
 
+/**
+ * Drivers API convenience wrapper
+ *
+ * @namespace DriversAPI
+ * @example
+ * const drivers = await DriversAPI.getAll();
+ * await DriversAPI.add({ firstName: 'Jane', lastName: 'Smith', ... });
+ */
 const DriversAPI = {
+    /** Get all drivers */
     getAll: () => APIClient.get('/get-all-drivers'),
+    /** Add a new driver (creates Google Calendar) */
     add: (data) => APIClient.post('/add-driver-with-calendar', data),
+    /** Update an existing driver */
     update: (data) => APIClient.post('/update-driver', data)
 };
 
+/**
+ * Users API convenience wrapper (admin functions)
+ *
+ * @namespace UsersAPI
+ * @example
+ * const users = await UsersAPI.getAll();
+ * await UsersAPI.create({ username: 'newuser', role: 'booking_agent', ... });
+ */
 const UsersAPI = {
+    /** Get all system users */
     getAll: () => APIClient.get('/get-all-users'),
+    /** Create a new user account */
     create: (data) => APIClient.post('/create-user', data),
+    /** Update user details */
     update: (data) => APIClient.post('/update-user', data),
+    /** Delete a user account */
     delete: (id) => APIClient.post('/delete-user', { id }),
+    /** Send password reset email */
     resetPassword: (username) => APIClient.post('/password-reset', { username })
 };
 

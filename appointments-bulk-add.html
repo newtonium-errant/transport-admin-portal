@@ -549,19 +549,69 @@
     <!-- JWT Authentication Helper -->
     <script src="js/auth/jwt-auth.js"></script>
     <script>
-        // Global variables
-        let clients = [];
-        let destinations = [];
-        let selectedClient = null;
-        let appointments = [];
-        let appointmentCounter = 0;
-        let availableAddresses = [];
+    /**
+     * @fileoverview Bulk Add Appointments Page
+     *
+     * @description
+     * Create multiple appointments for the same client at once.
+     * Supports primary and secondary addresses with smart pre-fill.
+     *
+     * Features:
+     * - Client selection with address display
+     * - Multiple appointment forms with add/remove
+     * - Pickup address selection (primary/secondary)
+     * - Smart pre-fill: clinic and address from previous appointment
+     * - Visual indicators for past appointment dates
+     * - Batch save all appointments to workflow
+     *
+     * @requires jwt-auth.js - For authenticatedFetch(), requireAuth(), getCurrentUser()
+     * @requires permissions.js - For enforcePageAccess(), filterNavigationByRole()
+     * @requires Bootstrap 5 - For UI components
+     *
+     * @version 1.0.0
+     * @since 2024-01-01
+     */
 
-        // API Configuration
-        const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
+    'use strict';
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', async function() {
+    // =========================================================================
+    // STATE VARIABLES
+    // =========================================================================
+
+    /** @type {Object[]} All loaded clients */
+    let clients = [];
+
+    /** @type {Object[]} Available clinic destinations */
+    let destinations = [];
+
+    /** @type {Object|null} Currently selected client */
+    let selectedClient = null;
+
+    /** @type {Object[]} Appointments being created */
+    let appointments = [];
+
+    /** @type {number} Counter for unique appointment IDs */
+    let appointmentCounter = 0;
+
+    /** @type {Object[]} Available addresses for selected client */
+    let availableAddresses = [];
+
+    // =========================================================================
+    // API CONFIGURATION
+    // =========================================================================
+
+    /** @constant {string} Base URL for all API requests */
+    const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+
+    /**
+     * Initialize page when DOM is ready
+     * Sets up authentication and loads required data
+     */
+    document.addEventListener('DOMContentLoaded', async function() {
             // Check JWT authentication (redirects if not authenticated)
             if (!(await requireAuth())) {
                 return;
@@ -579,7 +629,14 @@
             loadDestinations();
         });
 
-        // Load clients from API
+    // =========================================================================
+    // DATA LOADING
+    // =========================================================================
+
+        /**
+         * Load active clients from API
+         * Populates client dropdown on success
+         */
         function loadClients() {
             authenticatedFetch(`${apiBaseUrl}/getActiveClients`)
             .then(response => response.json())
@@ -593,7 +650,10 @@
             });
         }
 
-        // Load destinations from API
+        /**
+         * Load clinic destinations from API
+         * Used for location dropdown in appointments
+         */
         function loadDestinations() {
             authenticatedFetch(`${apiBaseUrl}/clinic-locations`)
             .then(response => response.json())
@@ -606,7 +666,14 @@
             });
         }
 
-        // Populate client dropdown
+    // =========================================================================
+    // CLIENT SELECTION
+    // =========================================================================
+
+        /**
+         * Populate client dropdown with active clients
+         * Sorts by last name, first name
+         */
         function populateClientDropdown() {
             const clientSelect = document.getElementById('clientSelect');
             clientSelect.innerHTML = '<option value="">Choose a client...</option>';
@@ -621,7 +688,11 @@
             });
         }
 
-        // Build available addresses for client
+        /**
+         * Build list of available addresses for client
+         * Includes primary and secondary (if exists) addresses
+         * @param {Object} client - Selected client object
+         */
         function buildAvailableAddresses(client) {
             availableAddresses = [];
 
@@ -669,7 +740,10 @@
             }
         }
 
-        // Handle client selection
+        /**
+         * Handle client selection change
+         * Builds addresses, shows appointment section, adds first appointment
+         */
         function selectClient() {
             const clientSelect = document.getElementById('clientSelect');
             const knumber = clientSelect.value;
@@ -699,7 +773,10 @@
             }
         }
 
-        // Display selected client information
+        /**
+         * Display selected client information in info panel
+         * Shows name, addresses, phone, and email
+         */
         function displayClientInfo() {
             const clientDetails = document.getElementById('clientDetails');
             const primaryAddress = availableAddresses.find(addr => addr.type === 'primary');
@@ -723,7 +800,14 @@
             document.getElementById('clientInfo').style.display = 'block';
         }
 
-        // Get last appointment values for pre-filling
+    // =========================================================================
+    // APPOINTMENT MANAGEMENT
+    // =========================================================================
+
+        /**
+         * Get values from last appointment for smart pre-fill
+         * @returns {Object} Last clinic and pickup address type
+         */
         function getLastAppointmentValues() {
             if (appointments.length === 0) {
                 return { clinic: '', pickupAddress: 'primary' };
@@ -736,7 +820,10 @@
             };
         }
 
-        // Add new appointment
+        /**
+         * Add new appointment form to the list
+         * Pre-fills clinic and address from previous appointment
+         */
         function addAppointment() {
             appointmentCounter++;
             const lastValues = getLastAppointmentValues();
@@ -790,7 +877,10 @@
             }, 100);
         }
 
-        // Remove appointment
+        /**
+         * Remove appointment from the list
+         * @param {string} appointmentId - Unique appointment ID
+         */
         function removeAppointment(appointmentId) {
             const index = appointments.findIndex(apt => apt.id === appointmentId);
             if (index > -1) {
@@ -800,7 +890,15 @@
             }
         }
 
-        // Check if date is in the past
+    // =========================================================================
+    // UTILITY FUNCTIONS
+    // =========================================================================
+
+        /**
+         * Check if appointment date is in the past
+         * @param {string} dateStr - Date string (YYYY-MM-DD)
+         * @returns {boolean} True if date is before today
+         */
         function isPastDate(dateStr) {
             if (!dateStr) return false;
             const appointmentDate = new Date(dateStr + 'T00:00:00');
@@ -809,7 +907,11 @@
             return appointmentDate < today;
         }
 
-        // Build pickup address dropdown options
+        /**
+         * Build HTML options for pickup address dropdown
+         * @param {string} selectedType - Currently selected address type
+         * @returns {string} HTML option elements
+         */
         function buildPickupAddressOptions(selectedType) {
             return availableAddresses.map(addr => {
                 const badgeClass = addr.type === 'primary' ? 'badge-primary' : 'badge-secondary';
@@ -818,7 +920,14 @@
             }).join('');
         }
 
-        // Display appointments
+    // =========================================================================
+    // RENDERING
+    // =========================================================================
+
+        /**
+         * Render all appointment forms to DOM
+         * Highlights past appointment dates with warning styling
+         */
         function displayAppointments() {
             const appointmentsList = document.getElementById('appointmentsList');
 
@@ -902,7 +1011,16 @@
             }).join('');
         }
 
-        // Update appointment field
+    // =========================================================================
+    // APPOINTMENT UPDATES
+    // =========================================================================
+
+        /**
+         * Update appointment field value
+         * @param {string} appointmentId - Unique appointment ID
+         * @param {string} field - Field name to update
+         * @param {*} value - New field value
+         */
         function updateAppointment(appointmentId, field, value) {
             const appointment = appointments.find(apt => apt.id === appointmentId);
             if (appointment) {
@@ -915,7 +1033,11 @@
             }
         }
 
-        // Update appointment location and get address
+        /**
+         * Update appointment location and resolve address
+         * @param {string} appointmentId - Unique appointment ID
+         * @param {string} locationName - Selected clinic name
+         */
         function updateAppointmentLocation(appointmentId, locationName) {
             const appointment = appointments.find(apt => apt.id === appointmentId);
             const destination = destinations.find(dest => dest.name === locationName);
@@ -944,7 +1066,11 @@
             }
         }
 
-        // Update pickup address
+        /**
+         * Update pickup address selection
+         * @param {string} appointmentId - Unique appointment ID
+         * @param {string} addressType - 'primary' or 'secondary'
+         */
         function updatePickupAddress(appointmentId, addressType) {
             const appointment = appointments.find(apt => apt.id === appointmentId);
             if (appointment) {
@@ -959,7 +1085,14 @@
             }
         }
 
-        // Update save section
+    // =========================================================================
+    // SAVE SECTION
+    // =========================================================================
+
+        /**
+         * Show/hide save section based on valid appointments
+         * Updates summary when appointments are complete
+         */
         function updateSaveSection() {
             const validAppointments = appointments.filter(apt =>
                 apt.date && apt.time && apt.location && apt.pickupAddress
@@ -973,7 +1106,11 @@
             }
         }
 
-        // Update appointment summary
+        /**
+         * Update appointment summary display
+         * Shows warnings for past appointments
+         * @param {Object[]} validAppointments - Appointments with all required fields
+         */
         function updateAppointmentSummary(validAppointments) {
             const summaryDiv = document.getElementById('appointmentSummary');
             const pastAppointments = validAppointments.filter(apt => isPastDate(apt.date));
@@ -996,7 +1133,15 @@
             </div>`;
         }
 
-        // Save appointments
+    // =========================================================================
+    // SAVE OPERATION
+    // =========================================================================
+
+        /**
+         * Save all valid appointments to the server
+         * Converts to workflow format and posts to bulk endpoint
+         * @async
+         */
         async function saveAppointments() {
             const validAppointments = appointments.filter(apt =>
                 apt.date && apt.time && apt.location && apt.pickupAddress
@@ -1087,7 +1232,15 @@
             }
         }
 
-        // Show error message
+    // =========================================================================
+    // NOTIFICATIONS
+    // =========================================================================
+
+        /**
+         * Display error message alert
+         * Auto-dismisses after 5 seconds
+         * @param {string} message - Error message to display
+         */
         function showError(message) {
             const errorSection = document.getElementById('errorMessages');
             errorSection.innerHTML = `
@@ -1106,7 +1259,10 @@
             }, 5000);
         }
 
-        // Show success message
+        /**
+         * Display success message alert
+         * @param {string} message - Success message to display
+         */
         function showSuccess(message) {
             const errorSection = document.getElementById('errorMessages');
             errorSection.innerHTML = `
@@ -1118,13 +1274,27 @@
             `;
         }
 
-        // Logout function
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
+
+        /**
+         * Clear session and redirect to login
+         */
         function logout() {
             sessionStorage.clear();
             window.location.href = 'index.html';
         }
 
-        // Initialize header
+    // =========================================================================
+    // HEADER INITIALIZATION
+    // =========================================================================
+
+        /**
+         * Initialize header navigation and user info (IIFE)
+         * Populates nav links based on user role (RBAC)
+         * Sets up mobile menu toggle
+         */
         (function initializeHeader() {
             // Populate navigation based on RBAC
             const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');

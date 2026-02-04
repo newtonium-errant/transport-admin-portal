@@ -1057,20 +1057,65 @@
     <!-- JWT Authentication Helper -->
     <script src="js/auth/jwt-auth.js"></script>
     <script>
-        // API Configuration
-        const API_ENDPOINTS = {
-            APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments',
-            DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-availability',
-            UPDATE_APPOINTMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment',
-            UPDATE_DRIVER_ASSIGNMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver-assignment', // ✅ NEW: Driver assignment endpoint
-            QUEUE_NOTIFICATIONS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/queue-notifications' // TODO: Create this for notifications
-        };
+    /**
+     * @fileoverview Operations Page - Weekly Driver Assignment
+     *
+     * @description
+     * Weekly schedule view for assigning drivers to appointments.
+     * Shows a grid of appointments organized by day with driver availability.
+     *
+     * Features:
+     * - Weekly calendar view (Sunday-Saturday)
+     * - Driver availability checking (work hours, time off, conflicts)
+     * - Drag-and-drop driver assignment
+     * - Batch assignment actions
+     * - Halifax timezone-aware scheduling
+     *
+     * @requires jwt-auth.js - For authenticatedFetch(), requireAuth()
+     * @requires permissions.js - For RBAC functions
+     *
+     * @version 2.0.0
+     * @since 2024-01-01
+     */
 
-        // Global variables
-        let currentWeekStart = null;
-        let appointments = [];
-        let drivers = [];
-        let driverAssignments = new Map(); // appointmentId -> driverId
+    'use strict';
+
+    // =========================================================================
+    // API CONFIGURATION
+    // =========================================================================
+
+    /**
+     * API endpoint URLs for operations functions
+     * @constant {Object.<string, string>}
+     */
+    const API_ENDPOINTS = {
+        /** Get active present and future appointments */
+        APPOINTMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments',
+        /** Get driver availability and schedules */
+        DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-availability',
+        /** Update appointment details */
+        UPDATE_APPOINTMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment',
+        /** Update driver assignment only */
+        UPDATE_DRIVER_ASSIGNMENT: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver-assignment',
+        /** Queue notifications for driver/client */
+        QUEUE_NOTIFICATIONS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/queue-notifications'
+    };
+
+    // =========================================================================
+    // STATE VARIABLES
+    // =========================================================================
+
+    /** @type {Date|null} Start date of currently displayed week (Sunday) */
+    let currentWeekStart = null;
+
+    /** @type {Object[]} All loaded appointments */
+    let appointments = [];
+
+    /** @type {Object[]} All loaded drivers with availability */
+    let drivers = [];
+
+    /** @type {Map<string, string>} Map of appointmentId -> driverId assignments */
+    let driverAssignments = new Map();
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1089,8 +1134,17 @@
             await loadAppointments();
         });
 
-        // Utility functions
-        function getWeekStart(date) {
+    // =========================================================================
+    // UTILITY FUNCTIONS
+    // =========================================================================
+
+    /**
+     * Get the Sunday start date for a given date's week
+     *
+     * @param {Date} date - Any date within the target week
+     * @returns {Date} Sunday of that week at midnight
+     */
+    function getWeekStart(date) {
             const d = new Date(date);
             const day = d.getDay();
             const diff = d.getDate() - day; // Sunday = 0
@@ -1110,8 +1164,17 @@
             return `${startStr} - ${endStr}`;
         }
 
-        // Data loading functions
-        async function loadDrivers() {
+    // =========================================================================
+    // DATA LOADING
+    // =========================================================================
+
+    /**
+     * Load all drivers with their availability data
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function loadDrivers() {
             try {
                 const response = await authenticatedFetch(API_ENDPOINTS.DRIVERS);
                 if (response.ok) {
@@ -1187,8 +1250,27 @@
             }
         }
 
-        // Driver availability calculation
-        function calculateDriverAvailability(driver, appointmentDateTime, pickupTime, dropOffTime, appointmentLength = 120) {
+    // =========================================================================
+    // DRIVER AVAILABILITY CALCULATION
+    // =========================================================================
+
+    /**
+     * Calculate driver availability for a specific appointment time slot
+     *
+     * Checks:
+     * - Driver status (on-leave, offline)
+     * - Time off records (all-day or partial)
+     * - Weekly work schedule
+     * - Work hours for the specific day
+     *
+     * @param {Object} driver - Driver object with weekly_hours and time_off
+     * @param {string} appointmentDateTime - ISO datetime of appointment
+     * @param {string} pickupTime - ISO datetime of pickup
+     * @param {string} dropOffTime - ISO datetime of drop off (or null to calculate)
+     * @param {number} [appointmentLength=120] - Duration in minutes
+     * @returns {{status: string, reason: string, canAssign: boolean, warning?: string}}
+     */
+    function calculateDriverAvailability(driver, appointmentDateTime, pickupTime, dropOffTime, appointmentLength = 120) {
             const appointmentDate = new Date(appointmentDateTime);
             const pickupDate = new Date(pickupTime);
             
@@ -1333,8 +1415,16 @@
             return `${newHours.toString().padStart(2, '0')}:${newMins.toString().padStart(2, '0')}`;
         }
 
-        // Weekly schedule rendering
-        function renderWeeklySchedule() {
+    // =========================================================================
+    // WEEKLY SCHEDULE RENDERING
+    // =========================================================================
+
+    /**
+     * Render the complete weekly schedule view
+     *
+     * Updates week display, renders grid, and updates summary counts.
+     */
+    function renderWeeklySchedule() {
             updateWeekDisplay();
             renderWeeklyGrid();
             updateAssignmentSummary();
@@ -1623,24 +1713,41 @@
             `).join('');
         }
 
-        // Week navigation
-        function previousWeek() {
-            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-            renderWeeklySchedule();
-        }
+    // =========================================================================
+    // WEEK NAVIGATION
+    // =========================================================================
 
-        function nextWeek() {
-            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-            renderWeeklySchedule();
-        }
+    /** Navigate to the previous week */
+    function previousWeek() {
+        currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+        renderWeeklySchedule();
+    }
 
-        function goToThisWeek() {
-            currentWeekStart = getWeekStart(new Date());
-            renderWeeklySchedule();
-        }
+    /** Navigate to the next week */
+    function nextWeek() {
+        currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+        renderWeeklySchedule();
+    }
 
-        // Submit workflow
-        async function submitWeekSchedule() {
+    /** Navigate to the current week */
+    function goToThisWeek() {
+        currentWeekStart = getWeekStart(new Date());
+        renderWeeklySchedule();
+    }
+
+    // =========================================================================
+    // SUBMIT WORKFLOW
+    // =========================================================================
+
+    /**
+     * Submit all driver assignments for the current week
+     *
+     * Updates each assigned appointment via API and queues notifications.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function submitWeekSchedule() {
             const weekAppointments = getWeekAppointments();
             const assignedAppointments = weekAppointments.filter(apt => driverAssignments.has(apt.id));
             

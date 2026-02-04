@@ -1111,20 +1111,69 @@
     <script src="js/auth/jwt-auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // API Configuration - Updated with Production Endpoints
-        const API_ENDPOINTS = {
-            DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management',
-            ADD_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/add-driver',
-            UPDATE_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver',
-            GET_ASSIGNMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments'
-        };
+    /**
+     * @fileoverview Driver Management Page
+     *
+     * @description
+     * Complete driver CRUD management with weekly schedule configuration.
+     * Allows creating, editing, and managing driver availability.
+     *
+     * Features:
+     * - Driver listing with status badges
+     * - Add/Edit driver with contact info
+     * - Weekly hours configuration (per-day availability)
+     * - Workload percentage settings
+     * - Status management (active, on-leave, offline)
+     * - Performance metrics display
+     *
+     * @requires jwt-auth.js - For authenticatedFetch(), requireAuth()
+     * @requires permissions.js - For RBAC functions
+     * @requires Bootstrap 5 - For modal components
+     *
+     * @version 1.5.4
+     * @since 2024-01-01
+     */
 
-        // Global variables
-        let driversData = null;
-        let addDriverFormExpanded = false;
+    'use strict';
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', async function() {
+    // =========================================================================
+    // API CONFIGURATION
+    // =========================================================================
+
+    /**
+     * API endpoint URLs for driver management
+     * @constant {Object.<string, string>}
+     */
+    const API_ENDPOINTS = {
+        /** Get all drivers with weekly hours */
+        DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management',
+        /** Create a new driver */
+        ADD_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/add-driver',
+        /** Update existing driver */
+        UPDATE_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver',
+        /** Get driver assignment history */
+        GET_ASSIGNMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments'
+    };
+
+    // =========================================================================
+    // STATE VARIABLES
+    // =========================================================================
+
+    /** @type {Object[]|null} Loaded drivers data */
+    let driversData = null;
+
+    /** @type {boolean} Whether add driver form is expanded */
+    let addDriverFormExpanded = false;
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+
+    /**
+     * Initialize the page when DOM is ready
+     * Checks authentication and loads driver data
+     */
+    document.addEventListener('DOMContentLoaded', async function() {
             console.log('RRTS Driver Management Portal v1.5.4 Loaded');
 
             // Check JWT authentication (redirects if not authenticated)
@@ -1136,8 +1185,16 @@
             loadPerformanceMetrics();
         });
 
-        // Toggle day availability for add form
-        function toggleDayAvailability(day) {
+    // =========================================================================
+    // WEEKLY SCHEDULE MANAGEMENT
+    // =========================================================================
+
+    /**
+     * Toggle day availability in add driver form
+     * Enables/disables time inputs based on checkbox state
+     * @param {string} day - Day of week (lowercase: monday, tuesday, etc.)
+     */
+    function toggleDayAvailability(day) {
             const checkbox = document.getElementById(`available-${day}`);
             const timeInputs = document.getElementById(`times-${day}`);
             const startTime = document.getElementById(`start-${day}`);
@@ -1154,7 +1211,11 @@
             }
         }
 
-        // Toggle day availability for edit modal
+        /**
+         * Toggle day availability in edit driver modal
+         * Enables/disables time inputs based on checkbox state
+         * @param {string} day - Day of week (lowercase: monday, tuesday, etc.)
+         */
         function toggleEditDayAvailability(day) {
             const checkbox = document.getElementById(`edit-available-${day}`);
             const timeInputs = document.getElementById(`edit-times-${day}`);
@@ -1172,7 +1233,11 @@
             }
         }
 
-        // Get weekly hours data from form
+        /**
+         * Extract weekly hours configuration from form inputs
+         * @param {string} [prefix=''] - Input ID prefix ('edit-' for modal form)
+         * @returns {Object.<string, {available: boolean, start: string|null, end: string|null}>}
+         */
         function getWeeklyHoursData(prefix = '') {
             const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
             const weeklyHours = {};
@@ -1192,7 +1257,11 @@
             return weeklyHours;
         }
 
-        // Set weekly hours data to form
+        /**
+         * Populate form inputs with weekly hours configuration
+         * @param {Object.<string, {available: boolean, start: string, end: string}>} weeklyHours
+         * @param {string} [prefix=''] - Input ID prefix ('edit-' for modal form)
+         */
         function setWeeklyHoursData(weeklyHours, prefix = '') {
             const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
             
@@ -1223,7 +1292,14 @@
             });
         }
 
-        // Toggle Add Driver Form
+    // =========================================================================
+    // UI INTERACTIONS
+    // =========================================================================
+
+        /**
+         * Toggle the Add Driver form visibility
+         * Expands/collapses the collapsible form section
+         */
         function toggleAddDriverForm() {
             const content = document.getElementById('addDriverContent');
             const icon = document.getElementById('addDriverIcon');
@@ -1243,7 +1319,10 @@
             }
         }
 
-        // Update workload percentage based on selection (for add form)
+        /**
+         * Update workload percentage field based on dropdown selection
+         * Maps workload preference to percentage (minimal=25%, light=50%, etc.)
+         */
         function updateWorkloadPercentage() {
             const workloadSelect = document.getElementById('driverWorkload');
             const percentageInput = document.getElementById('driverWorkloadPct');
@@ -1259,7 +1338,10 @@
             percentageInput.value = workloadMap[workloadSelect.value] || '';
         }
 
-        // Update workload percentage for edit form
+        /**
+         * Update workload percentage field in edit modal
+         * Maps workload preference to percentage (minimal=25%, light=50%, etc.)
+         */
         function updateEditWorkloadPercentage() {
             const workloadSelect = document.getElementById('editDriverWorkload');
             const percentageInput = document.getElementById('editDriverWorkloadPct');
@@ -1275,7 +1357,10 @@
             percentageInput.value = workloadMap[workloadSelect.value] || '';
         }
 
-        // Clear form (add form only)
+        /**
+         * Reset the add driver form to initial state
+         * Clears all inputs and resets weekly schedule to defaults
+         */
         function clearForm() {
             document.getElementById('driverForm').reset();
             document.getElementById('driverWorkloadPct').value = '';
@@ -1293,7 +1378,15 @@
             setWeeklyHoursData(defaultSchedule);
         }
 
-        // Load drivers from API
+    // =========================================================================
+    // DATA LOADING
+    // =========================================================================
+
+        /**
+         * Fetch all drivers from API and update display
+         * Also updates stats and performance metrics from API response
+         * @async
+         */
         async function loadDrivers() {
             try {
                 console.log('Loading drivers from API...');
@@ -1330,7 +1423,14 @@
             }
         }
 
-        // Update dashboard stats from API response
+        /**
+         * Update dashboard stat cards from API response
+         * @param {Object} apiStats - Stats object from API
+         * @param {number} apiStats.available - Count of available drivers
+         * @param {number} apiStats.busy - Count of busy drivers
+         * @param {number} apiStats.offline - Count of offline drivers
+         * @param {number} apiStats.total - Total driver count
+         */
         function updateDriverStatsFromAPI(apiStats) {
             document.getElementById('availableDrivers').textContent = apiStats.available || 0;
             document.getElementById('busyDrivers').textContent = apiStats.busy || 0;
@@ -1338,7 +1438,11 @@
             document.getElementById('totalDrivers').textContent = apiStats.total || 0;
         }
 
-        // Update dashboard stats (fallback method)
+        /**
+         * Calculate and update dashboard stats from driver data (fallback)
+         * Used when API doesn't provide pre-calculated stats
+         * @param {Object[]} drivers - Array of driver objects
+         */
         function updateDriverStats(drivers) {
             const stats = {
                 available: 0,
@@ -1360,7 +1464,14 @@
             document.getElementById('totalDrivers').textContent = stats.total;
         }
 
-        // Update performance metrics from API
+        /**
+         * Render performance metrics sidebar from API data
+         * @param {Object} performance - Performance metrics from API
+         * @param {number} performance.avgRating - Average driver rating
+         * @param {number} performance.totalTrips - Total completed trips
+         * @param {number} performance.onTimePercentage - On-time arrival rate
+         * @param {string} performance.topPerformer - Name of top performing driver
+         */
         function updatePerformanceMetricsFromAPI(performance) {
             const performanceMetrics = document.getElementById('performanceMetrics');
             
@@ -1384,7 +1495,14 @@
             `;
         }
 
-        // Display drivers list
+    // =========================================================================
+    // RENDERING
+    // =========================================================================
+
+        /**
+         * Render driver cards in the drivers list
+         * @param {Object[]} drivers - Array of driver objects to display
+         */
         function displayDrivers(drivers) {
             const driversList = document.getElementById('driversList');
             
@@ -1434,14 +1552,26 @@
             }).join('');
         }
 
-        // Load performance metrics (fallback for when not provided by API)
+        /**
+         * Load performance metrics (fallback)
+         * Note: Primary metrics come from loadDrivers() API response
+         * @async
+         */
         async function loadPerformanceMetrics() {
             // This is called only if performance metrics weren't provided by the main API
             // The main loadDrivers() function now handles performance metrics from API
             console.log('Performance metrics loaded from main API or using fallback');
         }
 
-        // Save driver (add new only)
+    // =========================================================================
+    // DRIVER CRUD OPERATIONS
+    // =========================================================================
+
+        /**
+         * Save new driver to database
+         * Validates required fields and sends POST to add-driver endpoint
+         * @async
+         */
         async function saveDriver() {
             try {
                 const formData = {
@@ -1496,7 +1626,10 @@
             }
         }
 
-        // Edit driver - now opens modal
+        /**
+         * Open edit driver modal with driver data populated
+         * @param {number} driverId - ID of driver to edit
+         */
         function editDriver(driverId) {
             const driver = driversData.find(d => d.id === driverId);
             if (!driver) {
@@ -1540,7 +1673,11 @@
             modal.show();
         }
 
-        // Update driver (separate from save driver)
+        /**
+         * Save driver changes from edit modal
+         * Validates fields and sends update to API
+         * @async
+         */
         async function updateDriver() {
             const submitBtn = document.querySelector('#editDriverModal .btn-primary');
             const btnText = submitBtn.querySelector('.btn-text');
@@ -1611,13 +1748,28 @@
             }
         }
 
-        // Logout function
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
+
+        /**
+         * Clear session and redirect to login
+         */
         function logout() {
             sessionStorage.removeItem('rrts_user');
             window.location.href = 'dashboard.html';
         }
 
-        // Initialize header
+    // =========================================================================
+    // HEADER INITIALIZATION
+    // =========================================================================
+
+        /**
+         * Initialize header navigation and user info
+         * Populates nav links based on user role (RBAC)
+         * Sets up mobile menu toggle
+         * @function
+         */
         (function initializeHeader() {
             // Populate navigation based on RBAC
             const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');

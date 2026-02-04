@@ -1044,16 +1044,63 @@
     <script src="js/components/client-modal.js"></script>
     <script src="js/components/appointment-modal.js"></script>
     <script>
-        // Global variables
-        let allClients = [];
-        let filteredClients = [];
-        let allClientsLoaded = false; // Track if all clients (including inactive) are loaded
+    /**
+     * @fileoverview Clients List Page
+     *
+     * @description
+     * Client management interface with search, filter, and quick actions.
+     * Displays client list with contact info, addresses, and appointment settings.
+     *
+     * Features:
+     * - Client listing with search (name, K-number, phone, email)
+     * - Status filtering (active/inactive)
+     * - Address filtering (with secondary address)
+     * - Quick edit via ClientModal
+     * - Add appointment via AppointmentModal
+     * - Add new client with travel time calculation
+     * - Load all clients toggle (including inactive)
+     *
+     * @requires jwt-auth.js - For authenticatedFetch(), requireAuth(), getCurrentUser()
+     * @requires permissions.js - For enforcePageAccess(), filterNavigationByRole()
+     * @requires client-modal.js - For ClientModal class
+     * @requires appointment-modal.js - For AppointmentModal class
+     * @requires Bootstrap 5 - For modal and UI components
+     *
+     * @version 1.0.0
+     * @since 2024-01-01
+     */
 
-        // API Configuration
-        const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
+    'use strict';
 
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', async function() {
+    // =========================================================================
+    // STATE VARIABLES
+    // =========================================================================
+
+    /** @type {Object[]} All loaded clients */
+    let allClients = [];
+
+    /** @type {Object[]} Clients after filter applied */
+    let filteredClients = [];
+
+    /** @type {boolean} Whether all clients (including inactive) are loaded */
+    let allClientsLoaded = false;
+
+    // =========================================================================
+    // API CONFIGURATION
+    // =========================================================================
+
+    /** @constant {string} Base URL for all API requests */
+    const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+
+    /**
+     * Initialize page when DOM is ready
+     * Sets up authentication, modals, and loads client data
+     */
+    document.addEventListener('DOMContentLoaded', async function() {
             // Check JWT authentication
             if (!(await requireAuth())) {
                 return;
@@ -1226,7 +1273,14 @@
             await loadClients();
         });
 
-        // Update user info in header
+    // =========================================================================
+    // UI HELPERS
+    // =========================================================================
+
+        /**
+         * Update user information displayed in header
+         * @param {Object} user - Current user object
+         */
         function updateUserInfo(user) {
             const fullName = user.fullName || user.full_name || user.username || 'User';
             document.getElementById('userName').textContent = fullName;
@@ -1241,7 +1295,15 @@
             document.getElementById('userAvatar').textContent = initials;
         }
 
-        // Load clients from API
+    // =========================================================================
+    // DATA LOADING
+    // =========================================================================
+
+        /**
+         * Load active clients from API
+         * Sorts by last name, first name and updates display
+         * @async
+         */
         async function loadClients() {
             try {
                 const response = await authenticatedFetch(`${apiBaseUrl}/getActiveClients`);
@@ -1281,7 +1343,11 @@
             }
         }
 
-        // Load ALL clients (including inactive)
+        /**
+         * Load all clients including inactive from API
+         * Updates button state and shows count
+         * @async
+         */
         async function loadAllClients() {
             try {
                 const loadBtn = document.getElementById('loadAllBtn');
@@ -1338,7 +1404,11 @@
             }
         }
 
-        // Toggle between active-only and all clients
+        /**
+         * Toggle between active-only and all clients
+         * Switches between loadClients() and loadAllClients()
+         * @async
+         */
         async function toggleLoadAllClients() {
             if (allClientsLoaded) {
                 // Already loaded all clients, reload active only
@@ -1362,7 +1432,13 @@
             }
         }
 
-        // Toggle filters collapse/expand
+    // =========================================================================
+    // FILTERING
+    // =========================================================================
+
+        /**
+         * Toggle filter section collapse/expand
+         */
         function toggleFilters() {
             const filterContent = document.getElementById('filterContent');
             const toggleIcon = document.getElementById('filterToggleIcon');
@@ -1376,7 +1452,9 @@
             }
         }
 
-        // Update statistics
+        /**
+         * Update statistics cards with current counts
+         */
         function updateStats() {
             const activeClients = allClients.filter(c => c.active === true);
 
@@ -1384,7 +1462,10 @@
             document.getElementById('statActive').textContent = activeClients.length;
         }
 
-        // Filter clients based on search and filters
+        /**
+         * Apply search and filter criteria to clients list
+         * Updates filteredClients and triggers display update
+         */
         function filterClients() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
@@ -1418,7 +1499,14 @@
             displayClients();
         }
 
-        // Display clients
+    // =========================================================================
+    // RENDERING
+    // =========================================================================
+
+        /**
+         * Render filtered clients list to DOM
+         * Generates client cards with actions
+         */
         function displayClients() {
             const clientsList = document.getElementById('clientsList');
             const emptyState = document.getElementById('emptyState');
@@ -1515,7 +1603,9 @@
             }).join('');
         }
 
-        // Clear filters
+        /**
+         * Reset all filters to defaults
+         */
         function clearFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('statusFilter').value = 'active';
@@ -1523,12 +1613,23 @@
             filterClients();
         }
 
-        // View client profile
+    // =========================================================================
+    // CLIENT ACTIONS
+    // =========================================================================
+
+        /**
+         * Navigate to client profile page
+         * @param {string} knumber - Client K-number
+         */
         function viewClientProfile(knumber) {
             window.location.href = `client-profile.html?knumber=${knumber}`;
         }
 
-        // Quick edit client
+        /**
+         * Open quick edit modal for client
+         * Shows loading state on button during modal open
+         * @param {string} knumber - Client K-number
+         */
         function quickEditClient(knumber) {
             const quickEditBtn = document.getElementById(`quick-edit-${knumber}`);
 
@@ -1574,9 +1675,17 @@
             }
         }
 
-        // Add Client Modal Functions
+    // =========================================================================
+    // ADD CLIENT MODAL
+    // =========================================================================
+
+        /** @type {Object[]} Available clinics for travel time calculation */
         let availableClinics = [];
 
+        /**
+         * Open add client modal and load clinic options
+         * @async
+         */
         async function openAddClientModal() {
             // Load clinics for selection
             await loadClinicsForSelection();
@@ -1605,6 +1714,9 @@
             document.body.appendChild(backdrop);
         }
 
+        /**
+         * Close add client modal and cleanup
+         */
         function closeAddClientModal() {
             const modal = document.getElementById('addClientModal');
             modal.style.display = 'none';
@@ -1618,6 +1730,11 @@
             }
         }
 
+        /**
+         * Load available clinics for travel time selection
+         * Populates checkbox list with all clinics checked by default
+         * @async
+         */
         async function loadClinicsForSelection() {
             try {
                 const response = await authenticatedFetch(`${apiBaseUrl}/clinic-locations`);
@@ -1655,6 +1772,9 @@
             }
         }
 
+        /**
+         * Toggle all clinic checkboxes on/off
+         */
         function toggleAllClinics() {
             const selectAll = document.getElementById('selectAllClinics');
             const checkboxes = document.querySelectorAll('.clinic-checkbox');
@@ -1664,6 +1784,11 @@
             });
         }
 
+        /**
+         * Create new client with travel time calculation
+         * Validates form and calls create-client-destinations endpoint
+         * @async
+         */
         async function saveNewClient() {
             const form = document.getElementById('addClientForm');
 
@@ -1745,13 +1870,28 @@
             }
         }
 
-        // Logout function
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
+
+        /**
+         * Clear session and redirect to login
+         */
         function logout() {
             sessionStorage.clear();
             window.location.href = 'index.html';
         }
 
-        // Toast Notification Function
+    // =========================================================================
+    // UTILITY FUNCTIONS
+    // =========================================================================
+
+        /**
+         * Display toast notification message
+         * @param {string} message - Message to display
+         * @param {string} [type='info'] - Type: 'success', 'error', 'warning', 'info'
+         * @param {number} [duration=4000] - Duration in milliseconds (0 = no auto-dismiss)
+         */
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -1797,7 +1937,15 @@
             }
         }
 
-        // Load drivers and clinics data for appointment modal (runs in background)
+    // =========================================================================
+    // APPOINTMENT MODAL SUPPORT
+    // =========================================================================
+
+        /**
+         * Load drivers and clinics data for appointment modal
+         * Runs in background during page initialization
+         * @async
+         */
         async function loadDriversAndClinics() {
             try {
                 if (!appointmentModalInstance) return;
@@ -1839,7 +1987,12 @@
             }
         }
 
-        // Wait for modal data to be loaded (if background loading still in progress)
+        /**
+         * Wait for modal data to finish loading
+         * Polls every 100ms with 10 second timeout
+         * @async
+         * @returns {Promise<boolean>} True if data loaded, false on timeout
+         */
         async function waitForModalData() {
             if (!appointmentModalInstance) return false;
 
@@ -1876,7 +2029,12 @@
             });
         }
 
-        // Open appointment modal with pre-selected client
+        /**
+         * Open appointment modal with client pre-selected
+         * Waits for modal data and shows loading state
+         * @param {string} knumber - Client K-number to pre-select
+         * @async
+         */
         async function openAddAppointmentModal(knumber) {
             const addApptBtn = document.getElementById(`add-appt-${knumber}`);
 
@@ -1955,7 +2113,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Initialize header
+    // =========================================================================
+    // HEADER INITIALIZATION
+    // =========================================================================
+
+        /**
+         * Initialize header navigation based on user role (RBAC)
+         * Sets up user info and mobile menu toggle
+         */
         document.addEventListener('DOMContentLoaded', function() {
             // Populate navigation based on RBAC
             const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');

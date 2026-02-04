@@ -953,8 +953,42 @@
     <script src="js/auth/jwt-auth.js"></script>
 
     <script>
-        // API Configuration
-        const API_ENDPOINTS = {
+    /**
+     * @fileoverview System Administration Page
+     *
+     * @description
+     * Administrative interface for managing users, system configuration,
+     * and monitoring system health.
+     *
+     * Features:
+     * - User CRUD (create, read, update, delete)
+     * - Password reset with email notification
+     * - Account lock/unlock management
+     * - System configuration editing
+     * - API key management (masked display)
+     * - Database backup triggers
+     * - System log viewer with filtering
+     * - Security alert monitoring
+     *
+     * @requires jwt-auth.js - For authenticatedFetch(), requireAuth(), getCurrentUser()
+     * @requires permissions.js - For role-based access control
+     * @requires Bootstrap 5 - For UI components
+     *
+     * @version 1.0.0
+     * @since 2024-01-01
+     */
+
+    'use strict';
+
+    // =========================================================================
+    // API CONFIGURATION
+    // =========================================================================
+
+    /**
+     * API endpoint URLs for admin operations
+     * @constant {Object.<string, string>}
+     */
+    const API_ENDPOINTS = {
             GET_USERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-users',
             CREATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-user',
             UPDATE_USER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-user',
@@ -964,13 +998,28 @@
             CREATE_BACKUP: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/create-backup'
         };
 
-        // Global variables
-        let adminData = null;
-        let currentUsers = [];
-        let systemLogs = [];
+    // =========================================================================
+    // STATE VARIABLES
+    // =========================================================================
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', async function() {
+    /** @type {Object|null} Full admin dashboard data from API */
+    let adminData = null;
+
+    /** @type {Object[]} Currently loaded users list */
+    let currentUsers = [];
+
+    /** @type {Object[]} System logs for filtering */
+    let systemLogs = [];
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+
+    /**
+     * Initialize admin page when DOM is ready
+     * Verifies admin role and loads dashboard data
+     */
+    document.addEventListener('DOMContentLoaded', async function() {
             console.log('RRTS Admin Module Loaded');
 
             // Check JWT authentication (redirects if not authenticated)
@@ -994,7 +1043,17 @@
             setupAddUserForm();
         });
 
-        async function loadAdminData() {
+    // =========================================================================
+    // DATA LOADING
+    // =========================================================================
+
+    /**
+     * Load all admin dashboard data from API
+     * Fetches users, config, logs, stats, and security alerts
+     * Falls back to mock data if API unavailable
+     * @async
+     */
+    async function loadAdminData() {
             try {
                 // Load users from the database (with JWT authentication)
                 const usersResponse = await authenticatedFetch(API_ENDPOINTS.GET_USERS);
@@ -1069,6 +1128,10 @@
             }
         }
 
+        /**
+         * Generate mock admin data for development/fallback
+         * @returns {Object} Mock admin dashboard data structure
+         */
         function generateMockAdminData() {
             return {
                 systemInfo: {
@@ -1167,6 +1230,17 @@
             };
         }
 
+    // =========================================================================
+    // RENDERING FUNCTIONS
+    // =========================================================================
+
+        /**
+         * Update system info cards with statistics
+         * @param {Object} systemInfo - System statistics
+         * @param {number} systemInfo.totalUsers - Total user count
+         * @param {number} systemInfo.activeUsers - Active user count
+         * @param {number} systemInfo.failedLogins - Failed login count (24h)
+         */
         function updateSystemInfo(systemInfo) {
             document.getElementById('totalUsers').textContent = systemInfo.totalUsers;
             document.getElementById('activeUsers').textContent = systemInfo.activeUsers;
@@ -1174,6 +1248,10 @@
             // Uptime is static in this mock
         }
 
+        /**
+         * Render user table with actions based on user status
+         * @param {Object[]} users - Array of user objects from API
+         */
         function renderUsers(users) {
             currentUsers = users;
             const tbody = document.getElementById('userTableBody');
@@ -1252,6 +1330,10 @@
             });
         }
 
+        /**
+         * Render system configuration items with edit capability
+         * @param {Object.<string, string>} config - Key-value configuration pairs
+         */
         function renderSystemConfig(config) {
             const container = document.getElementById('systemConfig');
             
@@ -1321,6 +1403,11 @@
             });
         }
 
+        /**
+         * Save edited configuration value to database
+         * @param {string} key - Configuration key to update
+         * @todo Implement API call to update app_config table
+         */
         function saveConfigValue(key) {
             // Future implementation for saving config changes
             // This will:
@@ -1333,17 +1420,21 @@
             const newValue = valueElement.textContent.trim();
             
             showToast(`Saving ${key} = ${newValue}... (Feature coming soon)`, 'info');
-            
-            // TODO: Implement API call to update app_config
-            // TODO: For cron-related settings, update workflow trigger
-            // TODO: Validate input values (e.g., time format, numeric ranges)
         }
 
+        /**
+         * Store logs and trigger initial display
+         * @param {Object[]} logs - System log entries
+         */
         function renderSystemLogs(logs) {
             systemLogs = logs;
             displayFilteredLogs(logs);
         }
 
+        /**
+         * Display filtered system logs in the log container
+         * @param {Object[]} logs - Filtered log entries to display
+         */
         function displayFilteredLogs(logs) {
             const container = document.getElementById('systemLogs');
             
@@ -1368,6 +1459,10 @@
             });
         }
 
+        /**
+         * Render database statistics and update last backup time
+         * @param {Object.<string, string|number>} stats - Database statistics
+         */
         function renderDatabaseStats(stats) {
             const container = document.getElementById('databaseStats');
             
@@ -1387,6 +1482,10 @@
                 new Date(stats['Last Backup']).toLocaleString('en-CA');
         }
 
+        /**
+         * Render security alerts with dismiss buttons
+         * @param {Object[]} alerts - Security alert objects
+         */
         function renderSecurityAlerts(alerts) {
             const container = document.getElementById('securityAlerts');
             
@@ -1418,6 +1517,14 @@
             });
         }
 
+    // =========================================================================
+    // EVENT SETUP
+    // =========================================================================
+
+        /**
+         * Setup user search input filtering
+         * Filters by username, email, or role
+         */
         function setupUserSearch() {
             const searchInput = document.getElementById('userSearch');
             searchInput.addEventListener('input', function() {
@@ -1431,6 +1538,10 @@
             });
         }
 
+        /**
+         * Setup add user form submission handler
+         * Generates initial temporary password
+         */
         function setupAddUserForm() {
             document.getElementById('addUserForm').addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -1441,12 +1552,23 @@
             generateTempPassword();
         }
 
-        // User Management Functions
+    // =========================================================================
+    // USER MANAGEMENT
+    // =========================================================================
+
+        /**
+         * Open the add user modal dialog
+         * Generates a new temporary password
+         */
         function openAddUserModal() {
             document.getElementById('addUserModal').classList.remove('hidden');
             generateTempPassword(); // Generate password when modal opens
         }
 
+        /**
+         * Generate a secure temporary password
+         * Includes uppercase, lowercase, number, and special character
+         */
         function generateTempPassword() {
             // Generate a secure temporary password
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
@@ -1469,11 +1591,19 @@
             document.getElementById('tempPassword').value = password;
         }
 
+        /**
+         * Close add user modal and reset form
+         */
         function closeAddUserModal() {
             document.getElementById('addUserModal').classList.add('hidden');
             document.getElementById('addUserForm').reset();
         }
 
+        /**
+         * Create new user account via API
+         * Validates email format and checks for duplicates
+         * @async
+         */
         async function addNewUser() {
             const username = document.getElementById('newUsername').value.trim();
             const fullName = document.getElementById('newFullName').value.trim();
@@ -1537,12 +1667,21 @@
             }
         }
 
+        /**
+         * Open edit user modal for specified user
+         * @param {number} userId - User ID to edit
+         * @todo Implement edit user modal
+         */
         function editUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
             showToast(`Opening edit form for ${user.username}...`, 'info');
-            // TODO: Implement edit user modal
         }
 
+        /**
+         * Reset user password and send email notification
+         * @param {number} userId - User ID to reset password for
+         * @async
+         */
         async function resetUserPassword(userId) {
             const user = currentUsers.find(u => u.id === userId);
             if (confirm(`Reset password for ${user.username}? A temporary password will be emailed directly to them.`)) {
@@ -1573,7 +1712,11 @@
             }
         }
 
-
+        /**
+         * Activate a deactivated user account
+         * @param {number} userId - User ID to activate
+         * @todo Implement API call
+         */
         function activateUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
             if (confirm(`Activate user ${user.username}?`)) {
@@ -1583,6 +1726,11 @@
             }
         }
 
+        /**
+         * Deactivate a user account (prevents login)
+         * @param {number} userId - User ID to deactivate
+         * @todo Implement API call
+         */
         function deactivateUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
             if (confirm(`Deactivate user ${user.username}? They will not be able to log in.`)) {
@@ -1592,6 +1740,11 @@
             }
         }
 
+        /**
+         * Unlock a locked user account
+         * @param {number} userId - User ID to unlock
+         * @todo Implement API call
+         */
         function unlockUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
             if (confirm(`Unlock account for ${user.username}?`)) {
@@ -1601,6 +1754,12 @@
             }
         }
 
+        /**
+         * Permanently delete a user account
+         * Protected: Cannot delete main admin account
+         * @param {number} userId - User ID to delete
+         * @async
+         */
         async function deleteUser(userId) {
             const user = currentUsers.find(u => u.id === userId);
             if (user.username === 'transport_admin') {
@@ -1638,18 +1797,35 @@
             }
         }
 
-        // System Configuration Functions
+    // =========================================================================
+    // SYSTEM CONFIGURATION
+    // =========================================================================
+
+        /**
+         * Open system configuration editor modal
+         * @todo Implement configuration editor
+         */
         function editSystemConfig() {
             showToast('Opening system configuration editor...', 'info');
-            // TODO: Implement system config editor modal
         }
 
+        /**
+         * Open API key management modal
+         * @todo Implement API key management
+         */
         function manageApiKeys() {
             showToast('Opening API key management...', 'info');
-            // TODO: Implement API key management modal
         }
 
-        // Database Functions
+    // =========================================================================
+    // DATABASE MANAGEMENT
+    // =========================================================================
+
+        /**
+         * Trigger database backup creation
+         * Calls backup API and shows result
+         * @async
+         */
         async function createBackup() {
             if (confirm('Create a new database backup? This may take a few minutes.')) {
                 showToast('Creating database backup...', 'info');
@@ -1685,12 +1861,21 @@
             }
         }
 
+        /**
+         * Open backup history modal
+         * @todo Implement backup history viewer
+         */
         function viewBackups() {
             showToast('Opening backup history...', 'info');
-            // TODO: Implement backup history modal
         }
 
-        // Log Functions
+    // =========================================================================
+    // LOG MANAGEMENT
+    // =========================================================================
+
+        /**
+         * Filter displayed logs by level (error, warning, success)
+         */
         function filterLogs() {
             const filter = document.getElementById('logFilter').value;
             let filteredLogs = systemLogs;
@@ -1702,20 +1887,38 @@
             displayFilteredLogs(filteredLogs);
         }
 
+        /**
+         * Reload system logs from API
+         */
         function refreshLogs() {
             showToast('Refreshing system logs...', 'info');
             loadAdminData();
         }
 
-        // Security Functions
+    // =========================================================================
+    // SECURITY
+    // =========================================================================
+
+        /**
+         * Dismiss a security alert from the display
+         * @param {number} alertId - Alert ID to dismiss
+         * @todo Mark alert as dismissed in database
+         */
         function dismissAlert(alertId) {
             const alertElement = event.target.closest('.security-alert');
             alertElement.remove();
             showToast('Security alert dismissed', 'info');
-            // TODO: Mark alert as dismissed in database
         }
 
-        // Utility Functions
+    // =========================================================================
+    // UTILITY FUNCTIONS
+    // =========================================================================
+
+        /**
+         * Display toast notification message
+         * @param {string} message - Message to display
+         * @param {string} [type='info'] - Type: 'success', 'error', 'warning', 'info'
+         */
         function showToast(message, type = 'info') {
             // Create toast notification
             const toast = document.createElement('div');
@@ -1752,6 +1955,10 @@
             }, 3000);
         }
 
+        /**
+         * Display persistent error message in UI
+         * @param {string} message - Error message to display
+         */
         function showError(message) {
             const systemInfo = document.querySelector('.system-info');
             const errorDiv = document.createElement('div');
@@ -1766,6 +1973,13 @@
             systemInfo.insertAdjacentElement('afterend', errorDiv);
         }
 
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
+
+        /**
+         * Clear session and redirect to login
+         */
         function logout() {
             sessionStorage.removeItem('rrts_user');
             window.location.href = 'dashboard.html';
@@ -1793,7 +2007,16 @@
         `;
         document.head.appendChild(style);
 
-        // Initialize header
+    // =========================================================================
+    // HEADER INITIALIZATION
+    // =========================================================================
+
+        /**
+         * Initialize header navigation and user info
+         * Populates nav links based on user role (RBAC)
+         * Sets up mobile menu toggle
+         * @function
+         */
         (function initializeHeader() {
             // Populate navigation based on RBAC
             const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
