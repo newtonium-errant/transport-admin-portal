@@ -1,59 +1,118 @@
 /**
- * Session Manager - Role-Based Timeout and Activity Tracking
+ * @fileoverview Session Manager - Role-Based Inactivity Timeout
  *
- * Handles automatic logout after period of inactivity
- * Timeout duration varies by user role for security
+ * @description
+ * Monitors user activity and automatically logs out after a period of inactivity.
+ * Timeout duration varies by user role for security - admin accounts have shorter
+ * timeouts than standard users due to their elevated privileges.
  *
- * Dependencies: jwt-manager.js (for user info and token management)
+ * Activity Detection:
+ * - Monitors mouse, keyboard, scroll, click, and touch events
+ * - Resets inactivity timer on any user interaction
+ * - Shows warning dialog 5 minutes before timeout
  *
- * Usage:
- *   <script src="jwt-manager.js"></script>
- *   <script src="session-manager.js"></script>
- *   <script>
- *     // Start session monitoring after login
- *     SessionManager.start();
+ * @requires jwt-auth.js - Provides getCurrentUser() for role detection
  *
- *     // Stop monitoring on logout
- *     SessionManager.stop();
- *   </script>
+ * @example
+ * // Start monitoring after successful login
+ * SessionManager.start();
+ *
+ * @example
+ * // Stop monitoring on manual logout
+ * SessionManager.stop();
+ *
+ * @version 2.0.0
+ * @since 2024-01-01
  */
 
 const SessionManager = (function() {
     'use strict';
 
-    // Role-based session timeout durations (in milliseconds)
-    const SESSION_TIMEOUTS = {
-        admin: 30 * 60 * 1000,           // 30 minutes
-        supervisor: 60 * 60 * 1000,       // 60 minutes (1 hour)
-        booking_agent: 120 * 60 * 1000,   // 120 minutes (2 hours)
-        driver: 120 * 60 * 1000,          // 120 minutes (2 hours)
-        client: 120 * 60 * 1000           // 120 minutes (2 hours)
-    };
-
-    // Default timeout if role not found
-    const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-
-    // Warning before timeout (5 minutes)
-    const WARNING_BEFORE_TIMEOUT = 5 * 60 * 1000;
-
-    // Activity events to monitor
-    const ACTIVITY_EVENTS = [
-        'mousedown',
-        'mousemove',
-        'keypress',
-        'scroll',
-        'touchstart',
-        'click'
-    ];
-
-    // Internal state
-    let inactivityTimer = null;
-    let warningTimer = null;
-    let isRunning = false;
-    let currentTimeout = DEFAULT_TIMEOUT;
+    // =========================================================================
+    // CONFIGURATION
+    // =========================================================================
 
     /**
-     * Start session monitoring
+     * Session timeout durations by user role (in milliseconds)
+     *
+     * Shorter timeouts for privileged roles to minimize exposure window
+     * if a user leaves their workstation unattended.
+     *
+     * @constant {Object.<string, number>}
+     */
+    const SESSION_TIMEOUTS = {
+        /** Admin: 30 minutes - highest privilege, shortest timeout */
+        admin: 30 * 60 * 1000,
+        /** Supervisor: 60 minutes - elevated access */
+        supervisor: 60 * 60 * 1000,
+        /** Booking Agent: 120 minutes - standard operations */
+        booking_agent: 120 * 60 * 1000,
+        /** Driver: 120 minutes - field operations, may have interruptions */
+        driver: 120 * 60 * 1000,
+        /** Client: 120 minutes - external users */
+        client: 120 * 60 * 1000
+    };
+
+    /**
+     * Default timeout when role is not recognized
+     * Uses conservative (shorter) timeout for security
+     * @constant {number}
+     */
+    const DEFAULT_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+    /**
+     * Time before timeout to show warning dialog
+     * Gives user opportunity to extend their session
+     * @constant {number}
+     */
+    const WARNING_BEFORE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+    /**
+     * DOM events that indicate user activity
+     * Using capture phase (true) to detect activity before it's handled
+     * @constant {string[]}
+     */
+    const ACTIVITY_EVENTS = [
+        'mousedown',  // Mouse clicks
+        'mousemove',  // Mouse movement
+        'keypress',   // Keyboard input
+        'scroll',     // Page scrolling
+        'touchstart', // Touch device interaction
+        'click'       // General clicks
+    ];
+
+    // =========================================================================
+    // INTERNAL STATE
+    // =========================================================================
+
+    /** @type {number|null} Timer ID for inactivity logout */
+    let inactivityTimer = null;
+
+    /** @type {number|null} Timer ID for warning dialog */
+    let warningTimer = null;
+
+    /** @type {boolean} Whether session monitoring is active */
+    let isRunning = false;
+
+    /** @type {number} Current timeout duration based on user's role */
+    let currentTimeout = DEFAULT_TIMEOUT_MS;
+
+    // =========================================================================
+    // PUBLIC METHODS
+    // =========================================================================
+
+    /**
+     * Start session monitoring for the current user
+     *
+     * Determines timeout based on user's role and begins monitoring
+     * for inactivity. Safe to call multiple times - will not create
+     * duplicate timers.
+     *
+     * @returns {void}
+     *
+     * @example
+     * // After successful login
+     * SessionManager.start();
      */
     function start() {
         if (isRunning) {
@@ -61,31 +120,41 @@ const SessionManager = (function() {
             return;
         }
 
-        // Get user role to determine timeout
-        const user = JWTManager.getCurrentUser();
+        // Get user role to determine appropriate timeout
+        const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         if (!user) {
             console.warn('[Session] No user found, cannot start session manager');
             return;
         }
 
-        currentTimeout = SESSION_TIMEOUTS[user.role] || DEFAULT_TIMEOUT;
+        // Set timeout based on role, falling back to default for unknown roles
+        currentTimeout = SESSION_TIMEOUTS[user.role] || DEFAULT_TIMEOUT_MS;
 
         console.log(`[Session] Starting for role: ${user.role}`);
         console.log(`[Session] Timeout: ${currentTimeout / 60000} minutes`);
 
         isRunning = true;
 
-        // Set up activity listeners
+        // Register activity listeners on document (capture phase for early detection)
         ACTIVITY_EVENTS.forEach(event => {
             document.addEventListener(event, resetTimer, true);
         });
 
-        // Start timer
+        // Start the initial timer
         resetTimer();
     }
 
     /**
-     * Stop session monitoring
+     * Stop session monitoring and clear all timers
+     *
+     * Call this when user logs out manually to prevent
+     * unnecessary timer callbacks.
+     *
+     * @returns {void}
+     *
+     * @example
+     * // Before redirecting to login
+     * SessionManager.stop();
      */
     function stop() {
         if (!isRunning) {
@@ -96,7 +165,7 @@ const SessionManager = (function() {
 
         isRunning = false;
 
-        // Clear timers
+        // Clear both timers
         if (inactivityTimer) {
             clearTimeout(inactivityTimer);
             inactivityTimer = null;
@@ -107,14 +176,86 @@ const SessionManager = (function() {
             warningTimer = null;
         }
 
-        // Remove activity listeners
+        // Remove all activity listeners
         ACTIVITY_EVENTS.forEach(event => {
             document.removeEventListener(event, resetTimer, true);
         });
     }
 
     /**
+     * Get timeout duration for current user's role
+     *
+     * @returns {number} Timeout in milliseconds
+     *
+     * @example
+     * const timeoutMinutes = SessionManager.getCurrentTimeout() / 60000;
+     * console.log(`Session expires after ${timeoutMinutes} minutes of inactivity`);
+     */
+    function getCurrentTimeout() {
+        return currentTimeout;
+    }
+
+    /**
+     * Get approximate time remaining until timeout
+     *
+     * Note: This is an approximation since JavaScript doesn't expose
+     * exact timer state. For precise tracking, would need to store
+     * the last activity timestamp.
+     *
+     * @returns {number} Milliseconds remaining, or 0 if not running
+     */
+    function getTimeRemaining() {
+        if (!isRunning || !inactivityTimer) {
+            return 0;
+        }
+
+        // Approximation - returns full timeout since we don't track exact start time
+        // TODO: Store lastActivityTime for accurate remaining time calculation
+        return currentTimeout;
+    }
+
+    /**
+     * Check if session monitoring is active
+     *
+     * @returns {boolean} True if monitoring is active
+     */
+    function isActive() {
+        return isRunning;
+    }
+
+    /**
+     * Manually trigger logout (for logout button)
+     *
+     * Stops monitoring and redirects to login page.
+     *
+     * @returns {void}
+     */
+    function manualLogout() {
+        stop();
+        if (typeof logout === 'function') {
+            logout();
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+    }
+
+    // =========================================================================
+    // INTERNAL METHODS
+    // =========================================================================
+
+    /**
      * Reset inactivity timer on user activity
+     *
+     * Called by activity event listeners. Clears existing timers
+     * and starts fresh countdown.
+     *
+     * @private
+     * @listens document#mousedown
+     * @listens document#mousemove
+     * @listens document#keypress
+     * @listens document#scroll
+     * @listens document#touchstart
+     * @listens document#click
      */
     function resetTimer() {
         if (!isRunning) {
@@ -130,32 +271,39 @@ const SessionManager = (function() {
             clearTimeout(warningTimer);
         }
 
-        // Set warning timer (5 minutes before timeout)
-        const warningTime = currentTimeout - WARNING_BEFORE_TIMEOUT;
+        // Set warning timer (fires 5 minutes before logout)
+        const warningTime = currentTimeout - WARNING_BEFORE_TIMEOUT_MS;
         if (warningTime > 0) {
             warningTimer = setTimeout(showWarning, warningTime);
         }
 
-        // Set inactivity timer
+        // Set inactivity timer (fires at timeout to logout)
         inactivityTimer = setTimeout(handleTimeout, currentTimeout);
     }
 
     /**
-     * Show warning before timeout
+     * Show warning dialog before timeout
+     *
+     * Displays a confirmation dialog giving user chance to extend
+     * their session. If user clicks OK, timer resets. If Cancel
+     * or dialog is ignored, logout proceeds.
+     *
+     * @private
      */
     function showWarning() {
-        const minutesRemaining = WARNING_BEFORE_TIMEOUT / 60000;
+        const minutesRemaining = WARNING_BEFORE_TIMEOUT_MS / 60000;
 
         console.warn(`[Session] Inactivity warning: ${minutesRemaining} minutes until logout`);
 
-        // Show modal or notification
+        // Browser confirm dialog - blocks until user responds
+        // Note: Consider replacing with custom modal for better UX
         const shouldContinue = confirm(
             `Your session will expire in ${minutesRemaining} minutes due to inactivity.\n\n` +
             'Click OK to continue your session, or Cancel to logout now.'
         );
 
         if (shouldContinue) {
-            // User wants to continue, reset timer
+            // User wants to continue - reset the timer
             resetTimer();
         } else {
             // User chose to logout
@@ -164,111 +312,109 @@ const SessionManager = (function() {
     }
 
     /**
-     * Handle session timeout
+     * Handle session timeout - logout user
+     *
+     * Stops monitoring, clears authentication, shows message,
+     * and redirects to login page.
+     *
+     * @private
      */
     function handleTimeout() {
         console.log('[Session] Session expired due to inactivity');
 
         stop();
 
-        // Clear tokens
-        JWTManager.clearTokens();
-
-        // Show message
-        alert('Your session has expired due to inactivity. Please log in again.');
-
-        // Redirect to login
-        window.location.href = 'dashboard.html';
-    }
-
-    /**
-     * Get current timeout duration for user's role
-     * @returns {number} Timeout in milliseconds
-     */
-    function getCurrentTimeout() {
-        return currentTimeout;
-    }
-
-    /**
-     * Get time remaining until timeout
-     * @returns {number} Milliseconds remaining, or 0 if not running
-     */
-    function getTimeRemaining() {
-        if (!isRunning || !inactivityTimer) {
-            return 0;
+        // Clear authentication tokens using jwt-auth.js logout
+        if (typeof logout === 'function') {
+            // Show message before logout redirects
+            alert('Your session has expired due to inactivity. Please log in again.');
+            logout();
+        } else {
+            // Fallback if logout function not available
+            alert('Your session has expired due to inactivity. Please log in again.');
+            window.location.href = 'dashboard.html';
         }
-
-        // Note: This is an approximation since we can't get exact timer state
-        // For exact tracking, would need to store start time
-        return currentTimeout;
     }
 
     /**
-     * Check if session is active
-     * @returns {boolean} True if monitoring is active
+     * Update activity timestamp on server (optional)
+     *
+     * For server-side session tracking, call this periodically
+     * to update last_activity timestamp in database.
+     *
+     * @async
+     * @private
+     * @returns {Promise<void>}
      */
-    function isActive() {
-        return isRunning;
-    }
-
-    /**
-     * Manually trigger logout
-     */
-    function logout() {
-        stop();
-        JWTManager.clearTokens();
-        window.location.href = 'dashboard.html';
-    }
-
-    /**
-     * Update activity timestamp (for server-side tracking)
-     * Call this periodically or on activity to update last_activity in database
-     */
-    async function updateActivity() {
+    async function updateServerActivity() {
         try {
-            const token = await JWTManager.getAccessToken();
+            const headers = typeof getAuthHeaders === 'function' ? getAuthHeaders() : {
+                'Content-Type': 'application/json'
+            };
 
-            // Call endpoint to update last_activity timestamp
             await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/update-activity', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
+                    ...headers,
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
 
         } catch (error) {
-            console.error('[Session] Failed to update activity:', error);
-            // Non-critical error, don't interrupt user
+            // Non-critical error - don't interrupt user
+            console.error('[Session] Failed to update server activity:', error);
         }
     }
 
-    // Public API
+    // =========================================================================
+    // PUBLIC API
+    // =========================================================================
+
     return {
         start,
         stop,
         getCurrentTimeout,
         getTimeRemaining,
         isActive,
-        logout
+        logout: manualLogout
     };
 
 })();
 
-// Auto-start session manager if JWTManager is available and user is logged in
-if (typeof JWTManager !== 'undefined' && JWTManager.isAuthenticated()) {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            SessionManager.start();
-        });
-    } else {
-        SessionManager.start();
-    }
-}
+// =============================================================================
+// AUTO-INITIALIZATION
+// =============================================================================
 
-// Export for CommonJS if available
+/**
+ * Auto-start session manager if user is already logged in
+ *
+ * Checks for existing authentication and starts monitoring.
+ * Waits for DOM to be ready to ensure all dependencies are loaded.
+ */
+(function autoInit() {
+    // Check if user is authenticated (jwt-auth.js function)
+    const isAuthenticated = function() {
+        return !!sessionStorage.getItem('rrts_access_token') &&
+               !!sessionStorage.getItem('rrts_user');
+    };
+
+    if (isAuthenticated()) {
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                SessionManager.start();
+            });
+        } else {
+            SessionManager.start();
+        }
+    }
+})();
+
+// =============================================================================
+// MODULE EXPORT
+// =============================================================================
+
+// Export for CommonJS environments (Node.js, bundlers)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = SessionManager;
 }

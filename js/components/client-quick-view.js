@@ -1,19 +1,104 @@
 /**
- * Client Quick View Modal Component
- * Reusable component for displaying client information in a modal
- * Can be used from any page
+ * @fileoverview Client Quick View Modal Component
+ *
+ * @description
+ * Lightweight modal for previewing client information without navigating
+ * away from the current page. Shows key client details and upcoming
+ * appointments with options to view full details, add appointment, or edit.
+ *
+ * @requires Bootstrap 5 - For modal functionality
+ *
+ * @example
+ * // Initialize on page load
+ * const quickView = new ClientQuickView({
+ *     onViewFullDetails: (kNumber) => window.location.href = `client-details.html?knumber=${kNumber}`,
+ *     onAddAppointment: (kNumber) => appointmentModal.open('add', { kNumber })
+ * });
+ *
+ * // Open for a specific client
+ * quickView.open('K12345');
+ *
+ * @version 2.0.0
+ * @since 2024-01-01
  */
 
+'use strict';
+
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
+
+/**
+ * @typedef {Object} ClientQuickViewOptions
+ * @property {Function} [onViewFullDetails] - Called when "View Full Details" clicked, receives kNumber
+ * @property {Function} [onAddAppointment] - Called when "Add Appointment" clicked, receives kNumber
+ * @property {Function} [onEditClient] - Called when "Edit Client" clicked, receives kNumber
+ */
+
+/**
+ * @typedef {Object} ClientData
+ * @property {string} knumber - Client K-number
+ * @property {string} name - Client full name
+ * @property {string} [phone] - Phone number
+ * @property {string} [address] - Street address
+ * @property {string} [city] - City
+ * @property {boolean} [isActive] - Whether client is active
+ */
+
+/**
+ * @typedef {Object} AppointmentData
+ * @property {string} knumber - Client K-number
+ * @property {string} appointmentDateTime - ISO 8601 datetime
+ * @property {string} [locationName] - Appointment location
+ */
+
+// =============================================================================
+// CLIENT QUICK VIEW CLASS
+// =============================================================================
+
+/**
+ * Quick preview modal for client information
+ *
+ * @class
+ */
 class ClientQuickView {
+    /**
+     * Create a ClientQuickView instance
+     *
+     * @param {ClientQuickViewOptions} [options={}] - Configuration options
+     */
     constructor(options = {}) {
+        /**
+         * Callback for viewing full client details
+         * @type {Function|null}
+         * @private
+         */
         this.onViewFullDetails = options.onViewFullDetails || null;
+
+        /**
+         * Callback for adding appointment
+         * @type {Function|null}
+         * @private
+         */
         this.onAddAppointment = options.onAddAppointment || null;
+
+        /**
+         * Callback for editing client
+         * @type {Function|null}
+         * @private
+         */
         this.onEditClient = options.onEditClient || null;
+
         this.init();
     }
 
+    /**
+     * Initialize modal DOM and event listeners
+     *
+     * @private
+     * @returns {void}
+     */
     init() {
-        // Create modal HTML
         const modalHTML = `
             <div class="modal fade" id="clientQuickViewModal" tabindex="-1" data-bs-backdrop="static">
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -40,26 +125,30 @@ class ClientQuickView {
             </div>
         `;
 
-        // Add modal to page if it doesn't exist
+        // Only add modal if not already in DOM
         if (!document.getElementById('clientQuickViewModal')) {
             document.body.insertAdjacentHTML('beforeend', modalHTML);
         }
 
-        // Setup button listeners
         this.setupListeners();
     }
 
+    /**
+     * Setup button click listeners
+     *
+     * @private
+     * @returns {void}
+     */
     setupListeners() {
         const modal = document.getElementById('clientQuickViewModal');
-        
+
         // View Full Details button
         document.getElementById('viewFullDetailsBtn')?.addEventListener('click', () => {
             const kNumber = modal.dataset.kNumber;
             if (this.onViewFullDetails && kNumber) {
                 this.onViewFullDetails(kNumber);
             }
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) bsModal.hide();
+            this._hideModal();
         });
 
         // Add Appointment button
@@ -68,8 +157,7 @@ class ClientQuickView {
             if (this.onAddAppointment && kNumber) {
                 this.onAddAppointment(kNumber);
             }
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) bsModal.hide();
+            this._hideModal();
         });
 
         // Edit Client button
@@ -78,15 +166,32 @@ class ClientQuickView {
             if (this.onEditClient && kNumber) {
                 this.onEditClient(kNumber);
             }
-            const bsModal = bootstrap.Modal.getInstance(modal);
-            if (bsModal) bsModal.hide();
+            this._hideModal();
         });
     }
 
+    /**
+     * Hide the modal
+     *
+     * @private
+     * @returns {void}
+     */
+    _hideModal() {
+        const modal = document.getElementById('clientQuickViewModal');
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) bsModal.hide();
+    }
+
+    /**
+     * Open modal for a specific client
+     *
+     * @param {string} kNumber - Client K-number to display
+     * @returns {Promise<void>}
+     */
     async open(kNumber) {
         const modal = document.getElementById('clientQuickViewModal');
         const body = document.getElementById('clientQuickViewBody');
-        
+
         // Store kNumber for button handlers
         modal.dataset.kNumber = kNumber;
 
@@ -104,11 +209,13 @@ class ClientQuickView {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
 
-        // Load client data
+        // Load and display client data
         try {
-            const clientData = await this.loadClientData(kNumber);
-            const appointments = await this.loadClientAppointments(kNumber);
-            
+            const [clientData, appointments] = await Promise.all([
+                this.loadClientData(kNumber),
+                this.loadClientAppointments(kNumber)
+            ]);
+
             this.render(clientData, appointments);
 
             // Show action buttons
@@ -116,67 +223,91 @@ class ClientQuickView {
             document.getElementById('addAppointmentBtn').style.display = 'inline-block';
             document.getElementById('editClientBtn').style.display = 'inline-block';
         } catch (error) {
-            console.error('Error loading client data:', error);
+            console.error('[ClientQuickView] Error loading client data:', error);
             body.innerHTML = `
                 <div class="alert alert-danger" role="alert">
-                    <i class="bi bi-exclamation-triangle"></i> 
+                    <i class="bi bi-exclamation-triangle"></i>
                     Error loading client information. Please try again.
                 </div>
             `;
         }
     }
 
+    /**
+     * Fetch client data from API
+     *
+     * @param {string} kNumber - Client K-number
+     * @returns {Promise<ClientData>} Client data
+     * @throws {Error} If client not found or API fails
+     * @private
+     */
     async loadClientData(kNumber) {
         const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-clients');
         if (!response.ok) throw new Error('Failed to load clients');
-        
+
         const data = await response.json();
         const client = data.clients?.find(c => c.knumber === kNumber);
-        
+
         if (!client) throw new Error('Client not found');
-        
+
         return client;
     }
 
+    /**
+     * Fetch upcoming appointments for client
+     *
+     * @param {string} kNumber - Client K-number
+     * @returns {Promise<AppointmentData[]>} Next 3 upcoming appointments
+     * @private
+     */
     async loadClientAppointments(kNumber) {
         try {
             const response = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments');
             if (!response.ok) throw new Error('Failed to load appointments');
-            
+
             const data = await response.json();
             const now = new Date();
-            
-            // Filter appointments for this client that are upcoming
+
+            // Filter to this client's future appointments, sorted by date
             const upcoming = (data.appointments || [])
                 .filter(apt => apt.knumber === kNumber && new Date(apt.appointmentDateTime) >= now)
                 .sort((a, b) => new Date(a.appointmentDateTime) - new Date(b.appointmentDateTime))
-                .slice(0, 3); // Show next 3 appointments
-            
+                .slice(0, 3); // Limit to next 3
+
             return upcoming;
         } catch (error) {
-            console.error('Error loading appointments:', error);
+            console.error('[ClientQuickView] Error loading appointments:', error);
             return [];
         }
     }
 
+    /**
+     * Render client data in modal body
+     *
+     * @param {ClientData} client - Client data
+     * @param {AppointmentData[]} appointments - Upcoming appointments
+     * @private
+     * @returns {void}
+     */
     render(client, appointments) {
         const body = document.getElementById('clientQuickViewBody');
-        
-        // Format phone number
-        const phoneFormatted = client.phone ? 
-            `(${client.phone.slice(0, 3)}) ${client.phone.slice(3, 6)}-${client.phone.slice(6)}` : 
-            'Not provided';
 
-        // Status badge
-        const statusBadge = client.isActive 
-            ? '<span class="badge bg-success">Active</span>' 
+        // Format phone number for display
+        const phoneFormatted = client.phone
+            ? `(${client.phone.slice(0, 3)}) ${client.phone.slice(3, 6)}-${client.phone.slice(6)}`
+            : 'Not provided';
+
+        // Status badge HTML
+        const statusBadge = client.isActive
+            ? '<span class="badge bg-success">Active</span>'
             : '<span class="badge bg-secondary">Inactive</span>';
 
-        const appointmentsHTML = appointments.length > 0 
+        // Appointments list HTML
+        const appointmentsHTML = appointments.length > 0
             ? appointments.map(apt => {
                 const date = new Date(apt.appointmentDateTime);
-                const formattedDate = date.toLocaleDateString('en-US', { 
-                    month: 'short', 
+                const formattedDate = date.toLocaleDateString('en-US', {
+                    month: 'short',
                     day: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit'
@@ -238,14 +369,22 @@ class ClientQuickView {
     }
 }
 
-// Create global instance
+// =============================================================================
+// GLOBAL INSTANCE
+// =============================================================================
+
+/**
+ * Global ClientQuickView instance
+ * @type {ClientQuickView|null}
+ */
 let clientQuickViewInstance = null;
 
-// Initialize on page load
+/**
+ * Initialize global instance on page load
+ */
 document.addEventListener('DOMContentLoaded', () => {
     clientQuickViewInstance = new ClientQuickView({
         onViewFullDetails: (kNumber) => {
-            // Navigate to client details page
             window.location.href = `client-details.html?knumber=${kNumber}`;
         },
         onAddAppointment: (kNumber) => {
@@ -255,9 +394,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         onEditClient: (kNumber) => {
-            // Navigate to edit client page or open modal
-            // Implement based on your client editing flow
-            console.log('Edit client:', kNumber);
+            // TODO: Implement client edit modal or navigation
+            console.log('[ClientQuickView] Edit client:', kNumber);
         }
     });
 });
