@@ -4,11 +4,11 @@
  * Handles automatic logout after period of inactivity
  * Timeout duration varies by user role for security
  *
- * Dependencies: jwt-manager.js (for user info and token management)
+ * Dependencies: jwt-auth.js (for JWTManager object and token management)
  *
  * Usage:
- *   <script src="jwt-manager.js"></script>
- *   <script src="session-manager.js"></script>
+ *   <script src="js/auth/jwt-auth.js"></script>
+ *   <script src="js/auth/session-manager.js"></script>
  *   <script>
  *     // Start session monitoring after login
  *     SessionManager.start();
@@ -49,11 +49,15 @@ const SessionManager = (function() {
     // Storage key for last activity timestamp
     const LAST_ACTIVITY_KEY = 'rrts_last_activity';
 
+    // Throttle interval - only process activity events once per second (performance)
+    const THROTTLE_INTERVAL = 1000;
+
     // Internal state
     let inactivityTimer = null;
     let warningTimer = null;
     let isRunning = false;
     let currentTimeout = DEFAULT_TIMEOUT;
+    let lastActivityTime = 0;
 
     /**
      * Start session monitoring
@@ -79,14 +83,35 @@ const SessionManager = (function() {
         isRunning = true;
 
         // Set initial last activity timestamp (user just loaded the page)
-        sessionStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+        lastActivityTime = Date.now();
+        sessionStorage.setItem(LAST_ACTIVITY_KEY, lastActivityTime.toString());
 
-        // Set up activity listeners
+        // Set up activity listeners (throttled)
         ACTIVITY_EVENTS.forEach(event => {
-            document.addEventListener(event, resetTimer, true);
+            document.addEventListener(event, handleActivity, true);
         });
 
         // Start timer
+        resetTimer();
+    }
+
+    /**
+     * Handle activity event (throttled to avoid excessive processing)
+     * Only resets timer if enough time has passed since last activity
+     */
+    function handleActivity() {
+        if (!isRunning) {
+            return;
+        }
+
+        const now = Date.now();
+
+        // Throttle: only reset timer if enough time has passed since last activity
+        if (now - lastActivityTime < THROTTLE_INTERVAL) {
+            return;
+        }
+
+        lastActivityTime = now;
         resetTimer();
     }
 
@@ -115,7 +140,7 @@ const SessionManager = (function() {
 
         // Remove activity listeners
         ACTIVITY_EVENTS.forEach(event => {
-            document.removeEventListener(event, resetTimer, true);
+            document.removeEventListener(event, handleActivity, true);
         });
     }
 
