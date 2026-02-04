@@ -1,14 +1,59 @@
 /**
- * Appointments Page Controller
- * Handles all appointment management functionality with calendar and list views
+ * @fileoverview Appointments Page Controller
+ *
+ * @description
+ * Complete appointment management functionality with calendar and list views.
+ * Handles CRUD operations, filtering, caching, and role-based access control.
+ *
+ * Features:
+ * - Calendar View: Week view (Mon-Fri) and Month view with appointment blocks
+ * - List View: Filterable, sortable table of appointments
+ * - Data Caching: LocalStorage cache with TTL for clients/drivers
+ * - Soft/Hard Delete: Archive appointments or permanently remove
+ * - Cancel Flow: Cancel with reason and driver notification
+ * - Role-Based UI: Different actions for admin/supervisor/booking_agent
+ *
+ * Data Flow:
+ * 1. loadInitialData() fetches amalgamated data from API
+ * 2. Data cached in localStorage with configurable TTL
+ * 3. render() displays data based on currentView (calendar/list)
+ * 4. User actions trigger API calls and data refresh
+ *
+ * @requires jwt-auth.js - authenticatedFetch(), requireAuth(), getCurrentUser()
+ * @requires permissions.js - getUserRole(), getRolePermissions(), hasPageAccess()
+ * @requires api-security.js - logSecurityEvent()
+ * @requires appointment-modal.js - appointmentModalInstance
+ * @requires client-quick-view.js - clientQuickViewInstance
+ * @requires Bootstrap 5 - For modals and UI components
+ *
+ * @example
+ * // Page initializes automatically via DOMContentLoaded
+ * // Access via global appointmentsPage:
+ * appointmentsPage.refreshData();
+ * appointmentsPage.editAppointment('uuid-here');
+ *
+ * @version 2.0.0
+ * @since 2024-01-01
  */
 
+'use strict';
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
 /**
- * Debounce function - delays function execution until after wait time
- * Phase 5 Optimization
+ * Debounce function - delays execution until after wait period
+ *
+ * Used for search inputs to prevent excessive API calls while typing.
+ *
  * @param {Function} func - Function to debounce
- * @param {number} wait - Milliseconds to wait
+ * @param {number} [wait=300] - Milliseconds to wait after last call
  * @returns {Function} Debounced function
+ *
+ * @example
+ * const debouncedSearch = debounce(() => searchAPI(query), 300);
+ * input.addEventListener('input', debouncedSearch);
  */
 function debounce(func, wait = 300) {
     let timeout;
@@ -22,12 +67,28 @@ function debounce(func, wait = 300) {
     };
 }
 
+// =============================================================================
+// DATA CACHE CLASS
+// =============================================================================
+
 /**
- * Simple LocalStorage cache utility for RRTS data
- * Automatically expires cached data after TTL (time to live)
- * Phase 3 Optimization
+ * LocalStorage cache with automatic expiration
+ *
+ * Reduces API calls by caching frequently accessed data (clients, drivers).
+ * Each entry has a TTL (time-to-live) after which it's considered expired.
+ *
+ * @class DataCache
+ *
+ * @example
+ * const cache = new DataCache('myapp_');
+ * cache.set('users', userData, 5 * 60 * 1000); // 5 min TTL
+ * const users = cache.get('users'); // null if expired
  */
 class DataCache {
+    /**
+     * Create a new DataCache instance
+     * @param {string} [prefix='rrts_cache_'] - Key prefix for localStorage items
+     */
     constructor(prefix = 'rrts_cache_') {
         this.prefix = prefix;
     }
@@ -129,42 +190,105 @@ class DataCache {
     }
 }
 
+// =============================================================================
+// APPOINTMENTS PAGE CLASS
+// =============================================================================
+
+/**
+ * @typedef {Object} AppointmentFilters
+ * @property {string} search - Search term for client/location/K-number
+ * @property {string} status - Operation status filter
+ * @property {string} invoiceStatus - Invoice status filter (admin/supervisor only)
+ * @property {string} driver - Driver ID filter
+ * @property {string} dateFrom - Start date filter (YYYY-MM-DD)
+ * @property {string} dateTo - End date filter (YYYY-MM-DD)
+ */
+
+/**
+ * Main controller for the appointments management page
+ *
+ * @class AppointmentsPage
+ */
 class AppointmentsPage {
+    /**
+     * Create the appointments page controller
+     *
+     * Initializes state variables, cache, and debounced functions.
+     * Does NOT load data - that happens in init().
+     */
     constructor() {
-        this.currentView = 'calendar'; // 'calendar' or 'list'
-        this.calendarView = 'week'; // 'week' or 'month'
+        /** @type {'calendar'|'list'} Current view mode */
+        this.currentView = 'calendar';
+
+        /** @type {'week'|'month'} Calendar sub-view mode */
+        this.calendarView = 'week';
+
+        /** @type {Object[]} All loaded appointments */
         this.appointments = [];
+
+        /** @type {Object[]} All loaded clients */
         this.clients = [];
+
+        /** @type {Object[]} Active clients only (for dropdowns) */
+        this.activeClients = [];
+
+        /** @type {Object[]} All loaded drivers */
         this.drivers = [];
+
+        /** @type {AppointmentFilters} Current filter state */
         this.filters = {
-            search: '',      // Phase 5: search filter
+            search: '',
             status: '',
             driver: '',
             dateFrom: '',
             dateTo: ''
         };
-        this.currentWeekStart = this.getCurrentWeekStart();
-        this.currentMonthStart = this.getCurrentMonthStart(); // For month view
-        this.showingHistoricData = false;
-        this.showArchived = false; // Phase 5: show archived appointments
 
-        // Initialize data cache (Phase 3)
+        /** @type {Date} Start of currently displayed week */
+        this.currentWeekStart = this.getCurrentWeekStart();
+
+        /** @type {Date} Start of currently displayed month */
+        this.currentMonthStart = this.getCurrentMonthStart();
+
+        /** @type {boolean} Whether historical data is loaded */
+        this.showingHistoricData = false;
+
+        /** @type {boolean} Whether to show archived appointments */
+        this.showArchived = false;
+
+        /** @type {DataCache} LocalStorage cache instance */
         this.cache = new DataCache('rrts_appointments_');
 
-        // Cache TTL configuration (in milliseconds)
+        /**
+         * Cache TTL configuration (milliseconds)
+         * @type {Object.<string, number>}
+         */
         this.cacheTTL = {
-            clients: 5 * 60 * 1000,    // 5 minutes
-            drivers: 5 * 60 * 1000,    // 5 minutes
+            clients: 5 * 60 * 1000,     // 5 minutes
+            drivers: 5 * 60 * 1000,     // 5 minutes
             appointments: 2 * 60 * 1000 // 2 minutes (more frequently updated)
         };
 
-        // Create debounced render for filter changes (Phase 5)
+        /**
+         * Debounced render function for text input filters
+         * Waits 300ms after last keystroke before rendering
+         * @type {Function}
+         */
         this.debouncedRender = debounce(() => {
             console.log('[Phase 5] Debounced render triggered');
             this.render();
-        }, 300); // Wait 300ms after user stops typing
+        }, 300);
     }
 
+    /**
+     * Initialize the appointments page
+     *
+     * Performs authentication check, sets up UI, and loads data.
+     * Called automatically when page loads.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async init() {
         // Check JWT authentication (redirects if not authenticated)
         if (!(await requireAuth())) {
@@ -177,14 +301,20 @@ class AppointmentsPage {
         this.initHeader();
         this.setupRoleBasedUI();
 
-        // Show skeleton loader immediately (Phase 4)
+        // Show skeleton loader immediately
         this.showSkeletonLoader();
 
         // Load data
         this.loadInitialData();
     }
 
-    // Setup role-based UI elements
+    /**
+     * Configure UI elements based on user's role
+     *
+     * Shows/hides controls that are role-specific (e.g., invoice status filter).
+     *
+     * @private
+     */
     setupRoleBasedUI() {
         const userRole = getUserRole();
 
@@ -197,10 +327,15 @@ class AppointmentsPage {
         }
     }
 
-    // Page Access Control
+    /**
+     * Enforce page access based on user role
+     *
+     * Redirects to dashboard if user doesn't have permission.
+     *
+     * @private
+     */
     enforcePageAccess() {
         const userRole = getUserRole();
-        // Get current page name from URL
         const currentPage = window.location.pathname.split('/').pop().replace('.html', '') || 'dashboard';
 
         if (!userRole || !hasPageAccess(userRole, currentPage)) {
@@ -210,7 +345,10 @@ class AppointmentsPage {
         }
     }
 
-    // Header Initialization
+    /**
+     * Initialize page header with user info and navigation
+     * @private
+     */
     initHeader() {
         this.displayUserInfo();
         this.buildNavigation();
@@ -480,7 +618,14 @@ class AppointmentsPage {
         }
     }
 
-    // Refresh data with loading state - Phase 6
+    /**
+     * Refresh all data with loading state
+     *
+     * Clears cache and reloads from API. Shows loading state on button.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async refreshData() {
         const refreshBtn = document.getElementById('refreshBtn');
 
@@ -507,7 +652,15 @@ class AppointmentsPage {
         }
     }
 
-    // Load initial data - Phase 4: With caching + skeleton loader
+    /**
+     * Load all initial data with caching support
+     *
+     * Checks cache first, fetches from API if cache miss.
+     * Updates UI with skeleton loaders during load.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async loadInitialData() {
         const startTime = performance.now();
 
@@ -1044,7 +1197,12 @@ class AppointmentsPage {
         }
     }
 
-    // Main render method
+    /**
+     * Main render method - displays current view
+     *
+     * Routes to calendar or list render based on currentView.
+     * Updates filter count badge.
+     */
     render() {
         // Update filter count badge (Phase 5)
         this.updateFilterCount();
@@ -1079,7 +1237,14 @@ class AppointmentsPage {
         }
     }
 
-    // Render Calendar Week View
+    /**
+     * Render the calendar week view (Monday-Friday)
+     *
+     * Displays appointments as positioned blocks on a time grid.
+     * Handles overlapping appointments side-by-side.
+     *
+     * @private
+     */
     renderCalendarWeek() {
         const container = document.getElementById('calendarWeekView');
         container.classList.remove('hidden');
@@ -1718,6 +1883,14 @@ class AppointmentsPage {
         return actions;
     }
 
+    /**
+     * Filter appointments based on current filter state
+     *
+     * Applies search, status, driver, date, and archived filters.
+     * Returns sorted array by appointment time.
+     *
+     * @returns {Object[]} Filtered and sorted appointments
+     */
     filterAppointments() {
         let filtered = [...this.appointments];
 
@@ -1788,6 +1961,14 @@ class AppointmentsPage {
         return filtered;
     }
 
+    /**
+     * Open an appointment for editing
+     *
+     * Shows loading overlay/button state, finds appointment data,
+     * and opens the appointment modal.
+     *
+     * @param {string} appointmentId - UUID of appointment to edit
+     */
     editAppointment(appointmentId) {
         const editBtn = document.getElementById(`edit-btn-${appointmentId}`);
 
@@ -1851,6 +2032,14 @@ class AppointmentsPage {
         }
     }
 
+    /**
+     * Show the cancellation modal for an appointment
+     *
+     * Displays modal with appointment details and reason input.
+     * Used for appointments with assigned drivers.
+     *
+     * @param {string} appointmentId - UUID of appointment to cancel
+     */
     showCancelModal(appointmentId) {
         // Find the appointment to get details
         const appointment = this.appointments.find(apt => apt.id === appointmentId);
@@ -1912,6 +2101,16 @@ class AppointmentsPage {
         modal.show();
     }
 
+    /**
+     * Confirm and execute appointment cancellation
+     *
+     * Validates reason, sends cancellation request, notifies driver,
+     * and logs audit trail.
+     *
+     * @async
+     * @param {string} appointmentId - UUID of appointment to cancel
+     * @returns {Promise<void>}
+     */
     async confirmCancellation(appointmentId) {
         const reasonInput = document.getElementById('cancellation-reason');
         const reason = reasonInput.value.trim();
@@ -1990,6 +2189,17 @@ class AppointmentsPage {
         }
     }
 
+    /**
+     * Delete an appointment (soft or hard delete)
+     *
+     * Soft delete: Sets deleted_at, appointment can be restored
+     * Hard delete: Permanently removes from database and calendar
+     *
+     * @async
+     * @param {string} appointmentId - UUID of appointment
+     * @param {'soft'|'hard'} [deleteType='soft'] - Type of deletion
+     * @returns {Promise<void>}
+     */
     async deleteAppointment(appointmentId, deleteType = 'soft') {
         // Different confirmations based on delete type
         const confirmMessage = deleteType === 'hard'
@@ -2075,6 +2285,15 @@ class AppointmentsPage {
         }
     }
 
+    /**
+     * Restore an archived (soft-deleted) appointment
+     *
+     * Clears deleted_at timestamp, making appointment visible again.
+     *
+     * @async
+     * @param {string} appointmentId - UUID of appointment to restore
+     * @returns {Promise<void>}
+     */
     async unarchiveAppointment(appointmentId) {
         if (!confirm('Restore this archived appointment?')) {
             return;
@@ -2177,9 +2396,23 @@ class AppointmentsPage {
     }
 }
 
-// Initialize page when DOM is ready
+// =============================================================================
+// PAGE INITIALIZATION
+// =============================================================================
+
+/**
+ * Global page controller instance
+ * @type {AppointmentsPage|undefined}
+ * @global
+ */
 let appointmentsPage;
 
+/**
+ * Initialize page when DOM is ready
+ *
+ * Creates the page controller, sets up modal callbacks,
+ * and begins data loading.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     appointmentsPage = new AppointmentsPage();
     appointmentsPage.init();
@@ -2271,7 +2504,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setupModalCallback();
 });
 
-// Helper function for logout
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+/**
+ * Handle user logout
+ *
+ * Confirms with user, clears session storage, and redirects to login.
+ *
+ * @global
+ */
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
         sessionStorage.removeItem('rrts_user');

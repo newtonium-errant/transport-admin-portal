@@ -1,50 +1,168 @@
 /**
- * Reusable Appointment Modal Component
- * Can be used on any page to add/edit/view appointments
+ * @fileoverview Reusable Appointment Modal Component
  *
- * Version: v2.6.0
- * Changes:
+ * @description
+ * A comprehensive modal component for creating, editing, and viewing appointments.
+ * Designed to be reused across multiple pages (appointments, finance, dashboard).
+ *
+ * Key Features:
+ * - Add/Edit/View modes with appropriate field states
+ * - Client search with autocomplete
+ * - Auto-populated transit times from client travel data
+ * - Pickup time calculation (appointment time - transit time)
+ * - Auto-generated scheduling notes
+ * - Role-based field visibility (costs, driver assignment)
+ * - Support for primary and secondary client addresses
+ * - Soft delete (archive) and hard delete options
+ * - Cancel and reactivate appointment workflows
+ *
+ * Integration:
+ * The modal creates a global `appointmentModalInstance` on DOMContentLoaded.
+ * Parent pages can override onSave/onDelete callbacks to handle their own logic.
+ *
+ * @requires jwt-auth.js - For authenticatedFetch(), getCurrentUser()
+ * @requires permissions.js - For getUserRole(), getRolePermissions()
+ * @requires Bootstrap 5 - For Modal component
+ *
+ * @example
+ * // Override callbacks for page-specific behavior
+ * appointmentModalInstance.onSave = async (data, mode) => {
+ *     await APIClient.post('/save-appointment', data);
+ *     refreshAppointmentsList();
+ * };
+ *
+ * // Open modal in add mode
+ * appointmentModalInstance.open('add');
+ *
+ * // Open modal in edit mode with existing appointment
+ * appointmentModalInstance.open('edit', appointmentData);
+ *
+ * @version 2.6.0
+ * @since 2024-01-01
+ *
+ * @changelog
  * - v2.6.0: Auto-populate primary clinic when client selected (add mode only)
  * - v2.5.1: Reload clients data in edit mode to show latest secondary addresses
- * - v2.5.0: Auto-populate appointment duration from client.default_appointment_length (client-specific)
- * - v2.5.0: Initialize this.clients array in constructor to prevent filter() errors
+ * - v2.5.0: Auto-populate appointment duration from client.default_appointment_length
  * - v2.4.0: Make all form fields read-only when viewing archived appointments
- * - v2.4.0: Hide "Update Appointment" button for archived appointments (only show Restore)
- * - v2.3.1: Fixed archived detection to check deleted_at field (not status fields)
  * - v2.3.0: Added Restore button for archived/soft-deleted appointments
- * - v2.3.0: Restore button shown in edit mode for archived appointments (yellow button)
- * - v2.3.0: Calls /unarchive-appointment endpoint to restore archived appointments
- * - v2.2.0: Fixed pickup time calculation cascade (call setupPickupTimeCalculation AFTER cloning)
- * - v2.2.0: Simplified scheduling notes format (removed pickup time, just appointment time + clinic)
- * - v2.1.2: Enhanced logging for clinic_travel_times debugging (loadClients, selectClient, populateForm)
- * - v2.1.2: Removed duplicate inline onchange handler from clinic dropdown
- * - v2.1.1: Added detailed logging for transit time auto-population debugging
- * - v2.1.1: Fixed clinic change to auto-populate transit time via dedicated listener
- * - v2.1.0: Fixed scheduling notes to preserve database values unless datetime/transit time changes
- * - v2.1.0: Fixed clinic loading to use authenticatedFetch (JWT required)
- * - v2.0.0: Added driver_instructions field for driver-specific notes
- * - v2.0.0: Transit time now visible and editable in add mode
- * - v2.0.0: Auto-populates transit time from client.clinic_travel_times
- * - v2.0.0: Stores selectedClient with clinic_travel_times for lookups
- * - v2.0.0: Scheduling notes made readonly (auto-generated)
+ * - v2.2.0: Fixed pickup time calculation cascade
+ * - v2.1.0: Fixed scheduling notes to preserve database values unless changed
+ * - v2.0.0: Added driver_instructions, transit time visibility, travel time lookups
  */
 
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
+
+/**
+ * @typedef {Object} AppointmentModalOptions
+ * @property {Function} [onSave] - Callback when appointment is saved (receives appointmentData, mode)
+ * @property {Function} [onDelete] - Callback when appointment is deleted (receives id)
+ */
+
+/**
+ * @typedef {Object} AppointmentData
+ * @property {string} [id] - Appointment UUID (edit mode only)
+ * @property {string} knumber - Client K-number
+ * @property {string} appointmentDateTime - ISO date string
+ * @property {number} appointmentLength - Duration in minutes
+ * @property {string} status - Operation status (pending, assigned, completed, cancelled)
+ * @property {string} [notes] - General notes
+ * @property {string} [driver_instructions] - Instructions for driver
+ * @property {string} [scheduling_notes] - Auto-generated scheduling summary
+ * @property {number} [transitTime] - Travel time in minutes
+ * @property {string} [pickup_address] - Formatted pickup address
+ * @property {string} location - Clinic name
+ * @property {number} [clinic_id] - Clinic ID
+ * @property {string} [locationAddress] - Full clinic address
+ * @property {number} [driver_assigned] - Driver ID if assigned
+ * @property {string} [driver_first_name] - Driver's first name
+ * @property {number} [managed_by] - Booking agent user ID
+ * @property {string} [managed_by_name] - Booking agent name
+ */
+
+/**
+ * @typedef {Object} AddressOption
+ * @property {'primary'|'secondary'} type - Address type
+ * @property {string} full - Complete formatted address with postal code
+ * @property {string} display - Shorter display version without postal code
+ */
+
+// =============================================================================
+// APPOINTMENT MODAL CLASS
+// =============================================================================
+
+/**
+ * Modal component for appointment CRUD operations
+ *
+ * @class AppointmentModal
+ */
 class AppointmentModal {
+    /**
+     * Create a new AppointmentModal instance
+     *
+     * @param {AppointmentModalOptions} [options={}] - Configuration options
+     */
     constructor(options = {}) {
+        /** @type {Function|null} Callback when appointment is saved */
         this.onSave = options.onSave || null;
+
+        /** @type {Function|null} Callback when appointment is deleted */
         this.onDelete = options.onDelete || null;
-        this.mode = 'add'; // 'add', 'edit', or 'view'
+
+        /** @type {'add'|'edit'|'view'} Current modal mode */
+        this.mode = 'add';
+
+        /** @type {Object|null} Current appointment being edited */
         this.currentAppointment = null;
-        this.clients = []; // Store client data
-        this.clinics = []; // Store clinic locations
-        this.selectedClient = null; // Store selected client data including clinic_travel_times
-        // Store original values for edit mode to detect changes
+
+        /** @type {Object[]} Loaded client data for search */
+        this.clients = [];
+
+        /** @type {Object[]} Loaded clinic locations */
+        this.clinics = [];
+
+        /** @type {Object[]} Loaded drivers for assignment */
+        this.drivers = [];
+
+        /** @type {Object|null} Currently selected client with travel times */
+        this.selectedClient = null;
+
+        // Original values for change detection in edit mode
+        /** @type {string|null} Original scheduling notes value */
         this.originalSchedulingNotes = null;
+
+        /** @type {string|null} Original appointment datetime value */
         this.originalAppointmentDateTime = null;
+
+        /** @type {string|null} Original transit time value */
         this.originalTransitTime = null;
+
+        // Data loading flags (lazy loading)
+        /** @type {boolean} Whether drivers have been loaded */
+        this.driversLoaded = false;
+
+        /** @type {boolean} Whether clients have been loaded */
+        this.clientsLoaded = false;
+
+        /** @type {boolean} Whether clinics have been loaded */
+        this.clinicsLoaded = false;
+
+        /** @type {boolean} Whether booking agents have been loaded */
+        this.bookingAgentsLoaded = false;
+
         this.init();
     }
 
+    /**
+     * Initialize the modal component
+     *
+     * Creates modal HTML, injects into DOM, and sets up event listeners.
+     * Data is not loaded here - that happens lazily when modal opens.
+     *
+     * @private
+     */
     init() {
         // Create modal HTML
         const modalHTML = `
@@ -229,23 +347,24 @@ class AppointmentModal {
             document.body.insertAdjacentHTML('beforeend', modalHTML);
         }
 
-        // Don't load data immediately - wait until modal is opened
-        // This prevents duplicate API calls during page initialization
-        this.driversLoaded = false;
-        this.clientsLoaded = false;
-        this.clinicsLoaded = false;
-        this.bookingAgentsLoaded = false;
-
-        // Setup client search
+        // Setup client search autocomplete
         this.setupClientSearch();
 
-        // Apply role-based restrictions
+        // Apply role-based field restrictions
         this.applyRoleRestrictions();
-        
+
         // Setup auto-calculation of pickup time
         this.setupPickupTimeCalculation();
     }
-    
+
+    /**
+     * Set up automatic pickup time calculation
+     *
+     * Recalculates pickup time whenever appointment datetime or
+     * transit time changes: pickup = appointment - transit
+     *
+     * @private
+     */
     setupPickupTimeCalculation() {
         // In edit mode, recalculate pickup time when appointment time or transit time changes
         const appointmentDateField = document.getElementById('appointmentDate');
@@ -273,6 +392,16 @@ class AppointmentModal {
         transitTimeField.addEventListener('input', calculatePickupTime);
     }
 
+    /**
+     * Load drivers for the assignment dropdown
+     *
+     * Accepts pre-loaded drivers array or fetches from parent page/API.
+     * Populates the driver dropdown with active drivers.
+     *
+     * @async
+     * @param {Object[]|null} [drivers=null] - Pre-loaded drivers array
+     * @returns {Promise<void>}
+     */
     async loadDrivers(drivers = null) {
         try {
             // If drivers provided, use them (from parent page's amalgamated data)
@@ -316,6 +445,15 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Load clients for search autocomplete
+     *
+     * Uses pre-loaded clients from parent page or fetches from API.
+     * Includes clinic_travel_times for transit time auto-population.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async loadClients() {
         try {
             // If clients are already loaded (e.g., from finance page), use them
@@ -368,6 +506,14 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Load clinic locations for the dropdown
+     *
+     * Fetches clinic data from API and populates the location dropdown.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async loadClinics() {
         try {
             const response = await authenticatedFetch(
@@ -408,6 +554,14 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Load booking agents for the managing agent dropdown
+     *
+     * Only available to supervisors and admins for reassignment.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async loadBookingAgents() {
         try {
             const response = await authenticatedFetch(
@@ -442,6 +596,14 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Handle clinic selection and populate related fields
+     *
+     * Sets clinic ID, address, and auto-populates transit time
+     * from client's pre-calculated travel times if available.
+     *
+     * @param {string} clinicName - Name of the selected clinic
+     */
     selectClinic(clinicName) {
         if (!clinicName) {
             document.getElementById('appointmentClinicId').value = '';
@@ -518,6 +680,14 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Set up client search autocomplete functionality
+     *
+     * Listens for input in the client field and shows matching
+     * suggestions from loaded clients data.
+     *
+     * @private
+     */
     setupClientSearch() {
         const input = document.getElementById('appointmentClient');
         const suggestions = document.getElementById('clientSuggestions');
@@ -556,6 +726,15 @@ class AppointmentModal {
         });
     }
 
+    /**
+     * Handle client selection from autocomplete
+     *
+     * Stores the selected client, populates form fields, and
+     * auto-populates duration and primary clinic if available.
+     *
+     * @param {string} knumber - Client's K-number
+     * @param {string} fullName - Client's full name for display
+     */
     selectClient(knumber, fullName) {
         document.getElementById('appointmentClient').value = fullName;
         document.getElementById('appointmentClientId').value = knumber;
@@ -901,6 +1080,17 @@ class AppointmentModal {
         });
     }
 
+    /**
+     * Apply role-based access control to form fields
+     *
+     * Hides or disables fields based on user's permissions:
+     * - Driver assignment: visible but disabled for booking agents
+     * - Cost fields: hidden for users without canViewCosts
+     * - Transit time: read-only for booking agents in edit mode
+     * - Status field: read-only for non-admins
+     *
+     * @private
+     */
     applyRoleRestrictions() {
         const userRole = getUserRole();
         const permissions = getRolePermissions(userRole);
@@ -949,6 +1139,25 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Open the modal in the specified mode
+     *
+     * Handles lazy loading of data, configures UI based on mode,
+     * and populates form for edit/view modes.
+     *
+     * @async
+     * @param {'add'|'edit'|'view'} [mode='add'] - Modal mode
+     * @param {Object|null} [appointment=null] - Appointment data for edit/view modes
+     * @returns {Promise<void>}
+     *
+     * @example
+     * // Open in add mode
+     * await appointmentModal.open('add');
+     *
+     * @example
+     * // Open in edit mode with appointment data
+     * await appointmentModal.open('edit', { id: '123', knumber: 'K456', ... });
+     */
     async open(mode = 'add', appointment = null) {
         this.mode = mode;
         this.currentAppointment = appointment;
@@ -1233,6 +1442,14 @@ class AppointmentModal {
         modal.show();
     }
 
+    /**
+     * Set up automatic status sync when driver changes
+     *
+     * Automatically sets status to 'assigned' when driver selected,
+     * reverts to 'pending' when driver removed.
+     *
+     * @private
+     */
     setupDriverStatusSync() {
         // Auto-update status when driver is selected/deselected
         const driverDropdown = document.getElementById('appointmentDriver');
@@ -1269,6 +1486,14 @@ class AppointmentModal {
         });
     }
 
+    /**
+     * Set up automatic transit time population when clinic changes
+     *
+     * When clinic is selected, looks up transit time from client's
+     * pre-calculated clinic_travel_times data.
+     *
+     * @private
+     */
     setupClinicTransitTimeSync() {
         // Auto-populate transit time when clinic changes
         const clinicDropdown = document.getElementById('appointmentClinic');
@@ -1288,6 +1513,15 @@ class AppointmentModal {
         }, { once: false }); // Explicit once: false for clarity
     }
 
+    /**
+     * Set up automatic scheduling notes generation
+     *
+     * Generates scheduling notes in format: "10:30 AM appointment at Clinic Name"
+     * Updates when appointment time or transit time changes.
+     * In edit mode, only regenerates if values differ from original.
+     *
+     * @private
+     */
     setupSchedulingNotesGeneration() {
         // Auto-generate scheduling notes when appointment time changes
         // Note: Clinic changes are handled by setupClinicTransitTimeSync() which updates transit time,
@@ -1358,6 +1592,12 @@ class AppointmentModal {
         document.getElementById('transitTime').addEventListener('input', updateSchedulingNotes);
     }
 
+    /**
+     * Populate form fields with appointment data for edit/view modes
+     *
+     * @param {Object} appointment - Appointment data to populate
+     * @private
+     */
     populateForm(appointment) {
         document.getElementById('appointmentId').value = appointment.id;
         document.getElementById('appointmentClient').value = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim();
@@ -1479,7 +1719,13 @@ class AppointmentModal {
         }
     }
 
-    // Helper function to format date for datetime-local input in Halifax timezone
+    /**
+     * Format a Date object for datetime-local input in Halifax timezone
+     *
+     * @param {Date} date - Date to format
+     * @returns {string} Formatted string in YYYY-MM-DDTHH:mm format
+     * @private
+     */
     formatDateTimeForInput(date) {
         // Get the date/time string in Halifax timezone
         const halifaxString = date.toLocaleString('en-US', {
@@ -1501,6 +1747,16 @@ class AppointmentModal {
         return `${dateParts[2]}-${dateParts[0]}-${dateParts[1]}T${timePart}`;
     }
 
+    /**
+     * Validate and save the appointment
+     *
+     * Gathers form data, applies role-based restrictions,
+     * and calls the onSave callback. Handles loading state
+     * and error display.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async saveAppointment() {
         const form = document.getElementById('appointmentForm');
         if (!form.checkValidity()) {
@@ -1675,6 +1931,13 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Delete the current appointment (soft delete)
+     *
+     * @async
+     * @returns {Promise<void>}
+     * @deprecated Use archiveAppointment() instead
+     */
     async deleteAppointment() {
         const id = document.getElementById('appointmentId').value;
 
@@ -1703,6 +1966,14 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Permanently delete the appointment (hard delete - admin only)
+     *
+     * Closes modal and delegates to parent page's deleteAppointment method.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async hardDeleteAppointment() {
         const id = document.getElementById('appointmentId').value;
 
@@ -1715,6 +1986,14 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Enable or disable all form fields
+     *
+     * Used to make form read-only for archived/cancelled appointments.
+     *
+     * @param {boolean} disabled - True to disable fields, false to enable
+     * @private
+     */
     setFormFieldsDisabled(disabled) {
         // Disable/enable all form input fields
         const fields = [
@@ -1758,6 +2037,15 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Archive (soft delete) the appointment
+     *
+     * Sets deleted_at timestamp. Used for appointments without driver.
+     * Can be restored later.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async archiveAppointment() {
         const id = document.getElementById('appointmentId').value;
 
@@ -1770,6 +2058,15 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Cancel the appointment
+     *
+     * Sets operation_status to 'cancelled'. Used for appointments with driver.
+     * Opens cancellation reason modal via parent page.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async cancelAppointment() {
         const id = document.getElementById('appointmentId').value;
 
@@ -1782,6 +2079,14 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Restore an archived (soft-deleted) appointment
+     *
+     * Clears deleted_at timestamp. Appointment returns to previous status.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async restoreAppointment() {
         const id = document.getElementById('appointmentId').value;
 
@@ -1870,6 +2175,15 @@ class AppointmentModal {
         }
     }
 
+    /**
+     * Reactivate a cancelled appointment
+     *
+     * Sets operation_status back to 'pending' and removes driver assignment.
+     * Appointment can then be reassigned.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async reactivateAppointment() {
         const id = document.getElementById('appointmentId').value;
 
@@ -1995,10 +2309,23 @@ class AppointmentModal {
     }
 }
 
-// Create global instance
+// =============================================================================
+// GLOBAL INSTANCE
+// =============================================================================
+
+/**
+ * Global modal instance, created on DOMContentLoaded
+ * @type {AppointmentModal|null}
+ * @global
+ */
 let appointmentModalInstance = null;
 
-// Initialize on page load
+/**
+ * Initialize global modal instance on page load
+ *
+ * Creates a default instance with placeholder callbacks.
+ * Parent pages should override onSave/onDelete for their specific behavior.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     appointmentModalInstance = new AppointmentModal({
         onSave: async (appointmentData, mode) => {

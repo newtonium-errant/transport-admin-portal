@@ -1,30 +1,38 @@
 /**
- * Finance Dashboard v5 - Complete Controller
- * Merges ALL features from v3 (payroll) and v4 (invoice management):
+ * @fileoverview Finance Dashboard v5 - Complete Controller
  *
- * FROM v4:
- * - Invoice lifecycle: not_ready → ready → created → sent → paid
- * - Proper invoices table with grouping
- * - Human-in-the-loop review (Pending Review section)
- * - Invoice creation with line items
- * - QuickBooks sync status tracking
+ * @description
+ * Comprehensive finance management module merging payroll (v3) and invoice (v4) features.
  *
- * FROM v3:
- * - Driver payroll with tiered pay (Tier 1/2/3)
- * - CRA-compliant mileage (under/over 5000km rates)
- * - YTD mileage tracking per driver
- * - Booking agent commissions (5%)
- * - Expandable trip details
- * - Skeleton loaders
- * - RBAC enforcement
- * - Date picker for status changes
+ * Invoice Lifecycle:
+ * 1. not_ready - Appointment completed, needs human review
+ * 2. ready - Reviewed, queued for invoice creation
+ * 3. created - Invoice generated, waiting to send
+ * 4. sent - Invoice sent to client, awaiting payment
+ * 5. paid - Payment received, cycle complete
  *
- * NEW in v5:
- * - Appointment modal integration for editing in Pending Review
- * - Tabbed Invoices section (All, Created, Sent, Paid)
- * - Sortable invoice columns
+ * Driver Payroll System:
+ * - Three pay tiers with configurable hourly rates and percentages
+ * - CRA-compliant mileage reimbursement (different rates under/over 5000km YTD)
+ * - Per-driver YTD mileage tracking for accurate rate application
  *
- * Version: 5.0.0
+ * Booking Agent Commissions:
+ * - Configurable percentage of invoice amount (default 5%)
+ * - Per-agent tracking and payment status
+ *
+ * @requires APIClient - For authenticated API requests
+ * @requires AppointmentModal - For editing appointments in pending review
+ * @requires jwt-auth.js - For requireAuth(), getCurrentUser()
+ * @requires permissions.js - For hasPageAccess()
+ *
+ * @example
+ * // Finance page initializes automatically on DOMContentLoaded
+ * // Access public API via window.financeApp:
+ * window.financeApp.markDriverPaid('driver-uuid');
+ * window.financeApp.openCreateInvoiceModal('K12345', 'John Doe', ['apt-1', 'apt-2']);
+ *
+ * @version 5.0.0
+ * @since 2024-01-01
  */
 
 (function() {
@@ -35,6 +43,26 @@
     // =========================================================================
     // AUDIT LOGGING
     // =========================================================================
+
+    /**
+     * Log an audit event for compliance and security tracking
+     *
+     * Records financial actions (invoice creation, payment marking, etc.)
+     * to the audit log for compliance and accountability.
+     *
+     * @async
+     * @param {string} action - The action being performed (e.g., 'create_invoice', 'mark_driver_paid')
+     * @param {string} resourceType - Type of resource affected ('invoice', 'driver', 'appointment')
+     * @param {string} resourceId - Unique identifier of the affected resource
+     * @param {Object} [details={}] - Additional context about the action
+     * @returns {Promise<void>}
+     *
+     * @example
+     * await logAuditEvent('mark_invoice_paid', 'invoice', 'inv-123', {
+     *     payment_date: '2024-01-15',
+     *     amount: 500.00
+     * });
+     */
     async function logAuditEvent(action, resourceType, resourceId, details = {}) {
         try {
             const savedUser = sessionStorage.getItem('rrts_user');
@@ -71,11 +99,36 @@
     // =========================================================================
     // DATA CACHE (Performance Optimization)
     // =========================================================================
+
+    /**
+     * Simple localStorage cache with TTL (Time-To-Live) support
+     *
+     * Reduces API calls by caching frequently accessed data like app config.
+     * Automatically expires entries and handles localStorage quota errors.
+     *
+     * @class DataCache
+     *
+     * @example
+     * const cache = new DataCache('myapp_');
+     * cache.set('config', { rate: 0.05 }, 10 * 60 * 1000); // 10 minute TTL
+     * const config = cache.get('config'); // Returns null if expired
+     */
     class DataCache {
+        /**
+         * Create a new DataCache instance
+         * @param {string} [prefix='rrts_finance_v5_'] - Key prefix for localStorage items
+         */
         constructor(prefix = 'rrts_finance_v5_') {
             this.prefix = prefix;
         }
 
+        /**
+         * Store data in cache with expiration
+         *
+         * @param {string} key - Cache key (will be prefixed)
+         * @param {*} data - Data to cache (must be JSON-serializable)
+         * @param {number} [ttlMs=300000] - Time-to-live in milliseconds (default 5 minutes)
+         */
         set(key, data, ttlMs = 5 * 60 * 1000) {
             const item = {
                 data: data,
@@ -89,6 +142,12 @@
             }
         }
 
+        /**
+         * Retrieve data from cache if not expired
+         *
+         * @param {string} key - Cache key (will be prefixed)
+         * @returns {*|null} Cached data, or null if not found/expired
+         */
         get(key) {
             try {
                 const item = localStorage.getItem(this.prefix + key);
@@ -105,10 +164,18 @@
             }
         }
 
+        /**
+         * Remove a specific item from cache
+         * @param {string} key - Cache key to remove
+         */
         remove(key) {
             localStorage.removeItem(this.prefix + key);
         }
 
+        /**
+         * Clear all items with this cache's prefix
+         * Used when localStorage quota is exceeded
+         */
         clear() {
             Object.keys(localStorage)
                 .filter(k => k.startsWith(this.prefix))
@@ -117,20 +184,81 @@
     }
 
     // =========================================================================
+    // TYPE DEFINITIONS
+    // =========================================================================
+
+    /**
+     * @typedef {Object} PayPeriod
+     * @property {Date} start - Period start date (midnight local time)
+     * @property {Date} end - Period end date (23:59:59 local time)
+     */
+
+    /**
+     * @typedef {Object} TripTypeResult
+     * @property {string} type - Trip type ('Standard', 'One-Way', 'Overtime')
+     * @property {number} billedHours - Hours to bill for this trip
+     * @property {string} badge - CSS class for badge styling
+     */
+
+    /**
+     * @typedef {Object} PayrollCalculation
+     * @property {number} invoiceAmount - Total invoice amount for the trip
+     * @property {number} totalPay - Driver's total pay for this trip
+     * @property {number} driverMileage - Kilometers driven
+     * @property {number} mileageReimbursement - Mileage reimbursement amount
+     * @property {number} kmUnder - Kilometers at under-5000km rate
+     * @property {number} kmOver - Kilometers at over-5000km rate
+     * @property {number} hoursToPay - Calculated hours to pay
+     * @property {string} tripType - Type of trip
+     * @property {number} billedHours - Billed hours for the trip
+     * @property {string} tripBadge - CSS class for styling
+     * @property {Object} tierConfig - Driver's pay tier configuration
+     */
+
+    /**
+     * @typedef {Object} InvoiceSortState
+     * @property {string} column - Column to sort by
+     * @property {'asc'|'desc'} direction - Sort direction
+     */
+
+    // =========================================================================
     // STATE
     // =========================================================================
+
+    /** @type {DataCache} */
     const cache = new DataCache();
+
+    /** @type {Object|null} Current authenticated user */
     let currentUser = null;
+
+    /** @type {PayPeriod|null} Currently selected pay period date range */
     let currentPayPeriod = null;
+
+    /** @type {Object[]} All loaded appointments */
     let allAppointments = [];
+
+    /** @type {Object[]} All loaded invoices */
     let allInvoices = [];
+
+    /** @type {Object[]} All drivers for payroll calculations */
     let drivers = [];
+
+    /** @type {Object[]} All system users (for agent name lookup) */
     let users = [];
+
+    /** @type {Object[]} All clients (for display purposes) */
     let clients = [];
+
+    /** @type {Object} Application configuration from database */
     let appConfig = {};
+
+    /** @type {Set<string>} IDs of appointments selected in pending review */
     let selectedPendingAppointments = new Set();
 
-    // Sorting state for invoice tabs
+    /**
+     * Sort state for each invoice tab
+     * @type {Object.<string, InvoiceSortState>}
+     */
     const invoiceSortState = {
         all: { column: 'invoiceNumber', direction: 'asc' },
         created: { column: 'invoiceNumber', direction: 'asc' },
@@ -139,30 +267,63 @@
         void: { column: 'invoiceNumber', direction: 'asc' }
     };
 
-    // Appointment modal instance
+    /** @type {AppointmentModal|null} Modal instance for editing appointments */
     let appointmentModal = null;
 
-    // Default config values (overridden by app_config)
+    // =========================================================================
+    // CONFIGURATION CONSTANTS
+    // =========================================================================
+
+    /**
+     * Default configuration values
+     * These are overridden by values from app_config table in database
+     * @constant {Object}
+     */
     const DEFAULT_CONFIG = {
+        /** CRA mileage rate for first 5000km YTD ($/km) */
         cra_mileage_rate_under_5000: 0.72,
+        /** CRA mileage rate after 5000km YTD ($/km) */
         cra_mileage_rate_over_5000: 0.66,
+        /** YTD mileage threshold for rate change */
         cra_mileage_threshold: 5000,
+        /** Tier 1 driver hourly rate ($) - highest tier */
         pay_tier_1_hourly: 112.50,
+        /** Tier 1 driver percentage of invoice */
         pay_tier_1_percentage: 0.50,
+        /** Tier 2 driver hourly rate ($) - standard tier */
         pay_tier_2_hourly: 75.00,
+        /** Tier 2 driver percentage of invoice */
         pay_tier_2_percentage: 0.33,
+        /** Tier 3 driver hourly rate ($) - entry tier */
         pay_tier_3_hourly: 56.25,
+        /** Tier 3 driver percentage of invoice */
         pay_tier_3_percentage: 0.25,
+        /** Pay period anchor date for calculations */
         pay_period_start_date: '2025-10-26',
+        /** Number of days in each pay period */
         pay_period_days: 14,
+        /** Booking agent commission rate (5% = 0.05) */
         agent_commission_percentage: 0.05,
+        /** HST rate for Ontario (14% = 0.14) */
         hst_rate: 0.14,
+        /** Template for invoice line item descriptions */
         invoice_line_format: '{knumber} {clientName}\n{date} - Round trip from Client\'s home to {clinic}'
     };
 
     // =========================================================================
     // INITIALIZATION
     // =========================================================================
+
+    /**
+     * Initialize the Finance Dashboard
+     *
+     * Performs authentication check, loads configuration and data,
+     * and sets up event listeners. Called automatically on DOMContentLoaded.
+     *
+     * @async
+     * @returns {Promise<void>}
+     * @throws {Error} Redirects to dashboard if user lacks permission
+     */
     async function init() {
         console.log('[Finance] Initializing...');
 
@@ -209,6 +370,11 @@
     // =========================================================================
     // USER DISPLAY
     // =========================================================================
+
+    /**
+     * Update header with current user's name, initials, and role
+     * @private
+     */
     function updateUserDisplay() {
         const userName = currentUser.fullName || currentUser.full_name || currentUser.username;
         const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -221,6 +387,13 @@
     // =========================================================================
     // APPOINTMENT MODAL INTEGRATION
     // =========================================================================
+
+    /**
+     * Initialize the AppointmentModal component for editing in Pending Review
+     *
+     * Sets up callbacks for save/delete actions that refresh data.
+     * @private
+     */
     function initAppointmentModal() {
         // Initialize the appointment modal component
         appointmentModal = new AppointmentModal({
@@ -238,6 +411,16 @@
         window.appointmentModalInstance = appointmentModal;
     }
 
+    /**
+     * Open an appointment in the modal for editing
+     *
+     * Loads appointment data and opens the AppointmentModal in edit mode.
+     * Used from the Pending Review section to fix data issues.
+     *
+     * @async
+     * @param {string} appointmentId - UUID of the appointment to edit
+     * @returns {Promise<void>}
+     */
     async function openAppointmentForEdit(appointmentId) {
         console.log('[Finance v5] Opening appointment for edit:', appointmentId);
 
@@ -300,6 +483,17 @@
     // =========================================================================
     // APP CONFIG LOADING
     // =========================================================================
+
+    /**
+     * Load application configuration from API with caching
+     *
+     * Fetches config values (pay rates, HST, mileage rates) from database.
+     * Uses 10-minute cache to reduce API calls. Falls back to DEFAULT_CONFIG
+     * if API fails.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async function loadAppConfig() {
         try {
             // Try cache first
@@ -332,6 +526,10 @@
         }
     }
 
+    /**
+     * Update the CRA mileage rates display in the UI
+     * @private
+     */
     function updateCRADisplay() {
         const rateUnder = appConfig.cra_mileage_rate_under_5000 || DEFAULT_CONFIG.cra_mileage_rate_under_5000;
         const rateOver = appConfig.cra_mileage_rate_over_5000 || DEFAULT_CONFIG.cra_mileage_rate_over_5000;
@@ -345,11 +543,29 @@
     // =========================================================================
     // PAY PERIOD MANAGEMENT (Timezone-aware)
     // =========================================================================
+
+    /**
+     * Parse a date string as local time (not UTC)
+     *
+     * Prevents timezone offset issues when working with pay period dates.
+     *
+     * @param {string} dateStr - Date in YYYY-MM-DD format
+     * @returns {Date} Date object at midnight local time
+     * @private
+     */
     function parseLocalDate(dateStr) {
         const [year, month, day] = dateStr.split('-').map(Number);
         return new Date(year, month - 1, day, 0, 0, 0, 0);
     }
 
+    /**
+     * Calculate the current pay period based on anchor date
+     *
+     * Pay periods are rolling 14-day windows starting from the configured
+     * anchor date. This calculates which period includes today.
+     *
+     * @returns {PayPeriod} Current pay period start and end dates
+     */
     function getCurrentPayPeriod() {
         const startDate = parseLocalDate(appConfig.pay_period_start_date || '2025-10-26');
         const periodDays = appConfig.pay_period_days || 14;
@@ -368,6 +584,11 @@
         return { start: periodStart, end: periodEnd };
     }
 
+    /**
+     * Calculate the previous (most recently completed) pay period
+     *
+     * @returns {PayPeriod} Previous pay period start and end dates
+     */
     function getPreviousPayPeriod() {
         const periodDays = appConfig.pay_period_days || 14;
         const current = getCurrentPayPeriod();
@@ -382,6 +603,11 @@
         return { start: prevStart, end: prevEnd };
     }
 
+    /**
+     * Get year-to-date period (January 1 to today)
+     *
+     * @returns {PayPeriod} YTD period with start at Jan 1 and end at now
+     */
     function getYearToDatePeriod() {
         const year = new Date().getFullYear();
         return {
@@ -390,6 +616,10 @@
         };
     }
 
+    /**
+     * Update the date range display in the UI header
+     * @private
+     */
     function updateDateRangeDisplay() {
         const options = { month: 'short', day: 'numeric', year: 'numeric' };
         const startStr = currentPayPeriod.start.toLocaleDateString('en-US', options);
@@ -397,6 +627,16 @@
         document.getElementById('dateRangeDisplay').textContent = `${startStr} - ${endStr}`;
     }
 
+    /**
+     * Handle pay period dropdown change
+     *
+     * Updates currentPayPeriod and reloads all data for the new period.
+     *
+     * @async
+     * @param {Event} e - Change event from the dropdown
+     * @returns {Promise<void>}
+     * @listens change
+     */
     async function handlePayPeriodChange(e) {
         const value = e.target.value;
         const dropdown = e.target;
@@ -420,6 +660,16 @@
     // =========================================================================
     // DATA LOADING
     // =========================================================================
+
+    /**
+     * Load all data required for the finance dashboard
+     *
+     * Fetches appointments, invoices, drivers, users, and clients in parallel.
+     * Gracefully handles individual API failures and renders all sections.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async function loadAllData() {
         try {
             showSkeletons(true);
@@ -500,6 +750,12 @@
         }
     }
 
+    /**
+     * Toggle skeleton loading indicators for all sections
+     *
+     * @param {boolean} show - True to show skeletons, false to show content
+     * @private
+     */
     function showSkeletons(show) {
         const skeletons = [
             'pendingReviewSkeleton',
@@ -529,8 +785,19 @@
     }
 
     // =========================================================================
-    // CALCULATION HELPERS (Tiered Pay + CRA Mileage from v3)
+    // CALCULATION HELPERS (Tiered Pay + CRA Mileage)
     // =========================================================================
+
+    /**
+     * Get a driver's year-to-date mileage up to a specific date
+     *
+     * Used to determine which CRA mileage rate applies for each trip.
+     * After 5000km YTD, the rate drops from $0.72/km to $0.66/km.
+     *
+     * @param {string} driverId - Driver's UUID
+     * @param {Date} upToDate - Calculate YTD up to this date
+     * @returns {number} Total kilometers driven YTD before the given date
+     */
     function getDriverYTDMileageUpTo(driverId, upToDate) {
         const driver = drivers.find(d => d.id === driverId);
         if (!driver || !driver.mileage_ytd) return 0;
@@ -550,6 +817,17 @@
         return ytdMileage;
     }
 
+    /**
+     * Calculate CRA-compliant mileage reimbursement
+     *
+     * Applies the correct rate based on YTD mileage threshold.
+     * First 5000km: $0.72/km, after 5000km: $0.66/km
+     *
+     * @param {number} driverMileage - Kilometers for this trip
+     * @param {number} ytdBefore - Driver's YTD mileage before this trip
+     * @returns {{kmUnder: number, kmOver: number, reimbursement: number}}
+     *          Breakdown of km at each rate and total reimbursement
+     */
     function calculateMileageReimbursement(driverMileage, ytdBefore) {
         const threshold = appConfig.cra_mileage_threshold || DEFAULT_CONFIG.cra_mileage_threshold;
         const rateUnder = appConfig.cra_mileage_rate_under_5000 || DEFAULT_CONFIG.cra_mileage_rate_under_5000;
@@ -564,6 +842,13 @@
         return { kmUnder, kmOver, reimbursement };
     }
 
+    /**
+     * Get pay configuration for a driver's tier
+     *
+     * @param {number} payTier - Driver's pay tier (1, 2, or 3)
+     * @returns {{hourlyRate: number, percentage: number, label: string}}
+     *          Tier configuration with hourly rate and invoice percentage
+     */
     function getTierConfig(payTier) {
         const tier = payTier || 2;
         return {
@@ -573,6 +858,17 @@
         };
     }
 
+    /**
+     * Determine trip type based on appointment data
+     *
+     * Trip types:
+     * - One-Way: $250 custom rate (1 hour billed)
+     * - Overtime: Actual duration > 4 hours (actual hours billed)
+     * - Standard: Default (4 hours billed)
+     *
+     * @param {Object} appointment - Appointment data
+     * @returns {TripTypeResult} Trip type, billed hours, and CSS badge class
+     */
     function getTripType(appointment) {
         const customRate = parseFloat(appointment.customRate || appointment.custom_rate) || 0;
 
@@ -600,6 +896,17 @@
         return { type: 'Standard', billedHours: 4, badge: 'trip-standard' };
     }
 
+    /**
+     * Calculate complete payroll for a single appointment
+     *
+     * Combines tier percentage, trip type, and mileage reimbursement
+     * to determine total driver pay and hours to record.
+     *
+     * @param {Object} appointment - Appointment with rate and mileage data
+     * @param {Object} driver - Driver with pay_tier
+     * @param {number} ytdBefore - Driver's YTD mileage before this trip
+     * @returns {PayrollCalculation} Complete payroll breakdown
+     */
     function calculateAppointmentPayroll(appointment, driver, ytdBefore) {
         const tierConfig = getTierConfig(driver.pay_tier);
         const tripType = getTripType(appointment);
@@ -628,6 +935,12 @@
         };
     }
 
+    /**
+     * Calculate booking agent commission for an appointment
+     *
+     * @param {number|string} customRate - Invoice amount for the appointment
+     * @returns {number} Commission amount (default 5% of invoice)
+     */
     function calculateAgentCommission(customRate) {
         const rate = appConfig.agent_commission_percentage || DEFAULT_CONFIG.agent_commission_percentage;
         return (parseFloat(customRate) || 0) * rate;
@@ -636,6 +949,15 @@
     // =========================================================================
     // SECTION 0: PENDING REVIEW RENDERING
     // =========================================================================
+
+    /**
+     * Render the Pending Review section
+     *
+     * Shows completed appointments with invoice_status='not_ready' that
+     * need human review before invoicing. Supports bulk selection.
+     *
+     * @private
+     */
     function renderPendingReview() {
         const tbody = document.getElementById('pendingReviewTableBody');
 
@@ -713,6 +1035,12 @@
         }).join('');
     }
 
+    /**
+     * Toggle selection state for a pending appointment
+     *
+     * @param {string} appointmentId - UUID of the appointment
+     * @param {boolean} isChecked - New selection state
+     */
     function togglePendingSelection(appointmentId, isChecked) {
         if (isChecked) {
             selectedPendingAppointments.add(appointmentId);
@@ -725,6 +1053,11 @@
             selectedPendingAppointments.size > 0 ? 'inline-block' : 'none';
     }
 
+    /**
+     * Select or deselect all pending appointments
+     *
+     * @param {HTMLInputElement} checkbox - The "select all" checkbox
+     */
     function toggleSelectAllPending(checkbox) {
         const checkboxes = document.querySelectorAll('.pending-checkbox');
         checkboxes.forEach(cb => {
@@ -741,6 +1074,13 @@
             selectedPendingAppointments.size > 0 ? 'inline-block' : 'none';
     }
 
+    /**
+     * Mark a single appointment as ready for invoicing
+     *
+     * @async
+     * @param {string} appointmentId - UUID of the appointment
+     * @returns {Promise<void>}
+     */
     async function markAppointmentReady(appointmentId) {
         try {
             await APIClient.post('/mark-appointment-ready', {
@@ -760,6 +1100,12 @@
         }
     }
 
+    /**
+     * Mark all selected appointments as ready for invoicing
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async function bulkMarkReady() {
         if (selectedPendingAppointments.size === 0) return;
 
@@ -796,6 +1142,15 @@
     // =========================================================================
     // SECTION 1: READY TO INVOICE RENDERING
     // =========================================================================
+
+    /**
+     * Render the Ready to Invoice section
+     *
+     * Groups reviewed appointments by client for batch invoice creation.
+     * Shows subtotals with HST calculations.
+     *
+     * @private
+     */
     function renderReadyToInvoice() {
         const tbody = document.getElementById('readyInvoicesTableBody');
 
@@ -909,6 +1264,11 @@
         `;
     }
 
+    /**
+     * Expand/collapse a client's appointment group in Ready to Invoice
+     *
+     * @param {string} groupId - DOM ID of the group to toggle
+     */
     function toggleClientGroup(groupId) {
         const rows = document.querySelectorAll(`tr[data-group="${groupId}"]`);
         const icon = document.getElementById(`icon-${groupId}`);
@@ -921,8 +1281,19 @@
     }
 
     // =========================================================================
-    // SECTION 2: DRIVER PAYROLL RENDERING (from v3)
+    // SECTION 2: DRIVER PAYROLL RENDERING
     // =========================================================================
+
+    /**
+     * Render the Driver Payroll section
+     *
+     * Calculates and displays pay for each driver based on:
+     * - Pay tier percentage of invoice
+     * - CRA mileage reimbursement with YTD tracking
+     * - Trip type (standard, one-way, overtime)
+     *
+     * @private
+     */
     function renderDriverPayroll() {
         const tbody = document.getElementById('driverTableBody');
 
@@ -1077,8 +1448,17 @@
     }
 
     // =========================================================================
-    // SECTION 3: BOOKING AGENT STATS RENDERING (from v3)
+    // SECTION 3: BOOKING AGENT STATS RENDERING
     // =========================================================================
+
+    /**
+     * Render the Booking Agent Statistics section
+     *
+     * Shows appointments managed by each agent and their commissions.
+     * Supports payment tracking per agent.
+     *
+     * @private
+     */
     function renderAgentStats() {
         const tbody = document.getElementById('agentStatsTableBody');
 
@@ -1191,6 +1571,14 @@
     // =========================================================================
     // SECTION 4: INVOICES TABS RENDERING
     // =========================================================================
+
+    /**
+     * Render all invoice tabs (All, Created, Sent, Paid, Void)
+     *
+     * Updates tab badges and renders invoice tables for each status.
+     *
+     * @private
+     */
     function renderInvoicesTabs() {
         renderInvoicesTab('all');
         renderInvoicesTab('created');
@@ -1212,6 +1600,12 @@
         document.getElementById('totalInvoicesCount').textContent = allInvoices.length;
     }
 
+    /**
+     * Render a single invoice tab's table
+     *
+     * @param {string} tabName - Tab identifier ('all', 'created', 'sent', 'paid', 'void')
+     * @private
+     */
     function renderInvoicesTab(tabName) {
         let invoices = [];
 
@@ -1306,6 +1700,15 @@
         updateSortIndicators(tabName);
     }
 
+    /**
+     * Sort invoices array by column and direction
+     *
+     * @param {Object[]} invoices - Array of invoice objects
+     * @param {string} column - Column name to sort by
+     * @param {'asc'|'desc'} direction - Sort direction
+     * @returns {Object[]} Sorted invoices array
+     * @private
+     */
     function sortInvoices(invoices, column, direction) {
         return invoices.sort((a, b) => {
             let valA, valB;
@@ -1341,6 +1744,14 @@
         });
     }
 
+    /**
+     * Get the relevant date for an invoice based on its status
+     *
+     * @param {Object} invoice - Invoice object
+     * @param {string} status - Invoice status
+     * @returns {string|null} ISO date string
+     * @private
+     */
     function getInvoiceDateForStatus(invoice, status) {
         if (status === 'paid') {
             return invoice.paymentReceivedAt || invoice.payment_received_at;
@@ -1351,6 +1762,10 @@
         }
     }
 
+    /**
+     * Set up click handlers for sortable table headers
+     * @private
+     */
     function setupSortableHeaders() {
         document.querySelectorAll('.sortable').forEach(header => {
             header.addEventListener('click', () => {
@@ -1371,6 +1786,12 @@
         });
     }
 
+    /**
+     * Update sort indicator classes on table headers
+     *
+     * @param {string} tabName - Tab to update indicators for
+     * @private
+     */
     function updateSortIndicators(tabName) {
         const sortState = invoiceSortState[tabName];
 
@@ -1386,6 +1807,13 @@
         }
     }
 
+    /**
+     * Generate action buttons HTML for an invoice row
+     *
+     * @param {Object} invoice - Invoice object
+     * @returns {string} HTML string with action buttons
+     * @private
+     */
     function getInvoiceActions(invoice) {
         const status = invoice.invoiceStatus || invoice.invoice_status;
         const invId = invoice.id;
@@ -1418,6 +1846,15 @@
     // =========================================================================
     // SUMMARY CARDS RENDERING
     // =========================================================================
+
+    /**
+     * Render summary cards with period totals
+     *
+     * Calculates revenue, driver payments, agent commissions,
+     * mileage costs, and net profit for the current period.
+     *
+     * @private
+     */
     function renderSummaryCards() {
         const periodAppointments = allAppointments.filter(apt => {
             const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime || apt.appointment_time);
@@ -1475,6 +1912,14 @@
     // =========================================================================
     // INVOICE ACTIONS
     // =========================================================================
+
+    /**
+     * Open the invoice creation modal for a client
+     *
+     * @param {string} knumber - Client's K-number
+     * @param {string} clientName - Client's full name
+     * @param {string[]} appointmentIds - UUIDs of appointments to include
+     */
     function openCreateInvoiceModal(knumber, clientName, appointmentIds) {
         const modal = document.getElementById('createInvoiceModal');
         const bsModal = new bootstrap.Modal(modal);
@@ -1537,6 +1982,15 @@
         bsModal.show();
     }
 
+    /**
+     * Create a new invoice via API
+     *
+     * @async
+     * @param {string} knumber - Client's K-number
+     * @param {string[]} appointmentIds - UUIDs of appointments to include
+     * @returns {Promise<void>}
+     * @private
+     */
     async function createInvoice(knumber, appointmentIds) {
         const invoiceDate = document.getElementById('invoiceDate').value;
         const notes = document.getElementById('invoiceNotes').value;
@@ -1567,6 +2021,15 @@
         await loadAllData();
     }
 
+    /**
+     * Mark an invoice as sent to the client
+     *
+     * Opens date picker to record when invoice was sent.
+     *
+     * @async
+     * @param {string} invoiceId - UUID of the invoice
+     * @returns {Promise<void>}
+     */
     async function markInvoiceSent(invoiceId) {
         const selectedDate = await showDatePickerModal(
             'Mark Invoice as Sent',
@@ -1595,6 +2058,15 @@
         }
     }
 
+    /**
+     * Mark an invoice as paid
+     *
+     * Opens date picker to record payment date.
+     *
+     * @async
+     * @param {string} invoiceId - UUID of the invoice
+     * @returns {Promise<void>}
+     */
     async function markInvoicePaid(invoiceId) {
         const selectedDate = await showDatePickerModal(
             'Mark Invoice as Paid',
@@ -1623,6 +2095,15 @@
         }
     }
 
+    /**
+     * Void an invoice and return appointments to ready status
+     *
+     * Requires confirmation. Appointments can be re-invoiced after voiding.
+     *
+     * @async
+     * @param {string} invoiceId - UUID of the invoice to void
+     * @returns {Promise<void>}
+     */
     async function voidInvoice(invoiceId) {
         if (!confirm('Are you sure you want to void this invoice? Appointments will return to "ready" status.')) {
             return;
@@ -1645,8 +2126,18 @@
     }
 
     // =========================================================================
-    // PAYMENT TRACKING ACTIONS (from v3)
+    // PAYMENT TRACKING ACTIONS
     // =========================================================================
+
+    /**
+     * Mark all unpaid appointments for a driver as paid
+     *
+     * Opens date picker and updates all unpaid trips in the current period.
+     *
+     * @async
+     * @param {string} driverId - UUID of the driver
+     * @returns {Promise<void>}
+     */
     async function markDriverPaid(driverId) {
         const selectedDate = await showDatePickerModal(
             'Mark Driver as Paid',
@@ -1695,6 +2186,15 @@
         }
     }
 
+    /**
+     * Mark all unpaid appointments for a booking agent as paid
+     *
+     * Opens date picker and updates all unpaid commissions in the current period.
+     *
+     * @async
+     * @param {string} agentId - UUID of the booking agent
+     * @returns {Promise<void>}
+     */
     async function markAgentPaid(agentId) {
         const selectedDate = await showDatePickerModal(
             'Mark Agent as Paid',
@@ -1746,6 +2246,13 @@
     // =========================================================================
     // HELPERS
     // =========================================================================
+
+    /**
+     * Get display name for a driver
+     *
+     * @param {string} driverId - Driver UUID
+     * @returns {string} Driver name or 'Unassigned'
+     */
     function getDriverName(driverId) {
         if (!driverId) return 'Unassigned';
         const driver = drivers.find(d => d.id === driverId);
@@ -1753,6 +2260,12 @@
         return driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || `Driver ${driverId}`;
     }
 
+    /**
+     * Get display name for a booking agent
+     *
+     * @param {string} agentId - Agent user UUID
+     * @returns {string} Agent name or 'Unknown'
+     */
     function getAgentName(agentId) {
         if (!agentId) return 'Unknown';
         const agent = users.find(u => u.id === agentId);
@@ -1760,6 +2273,12 @@
         return agent.full_name || agent.username || `Agent ${agentId}`;
     }
 
+    /**
+     * Get formatted display for a client (K-number + name)
+     *
+     * @param {string} knumber - Client's K-number
+     * @returns {string} HTML string with bold K-number and name
+     */
     function getClientDisplay(knumber) {
         if (!knumber) return 'Unknown';
         const client = clients.find(c => (c.knumber || c.k_number) === knumber);
@@ -1768,6 +2287,12 @@
         return `<strong>${knumber}</strong> ${name}`;
     }
 
+    /**
+     * Format a number as Canadian currency
+     *
+     * @param {number} amount - Amount to format
+     * @returns {string} Formatted currency string (e.g., '$1,234.56')
+     */
     function formatCurrency(amount) {
         return new Intl.NumberFormat('en-CA', {
             style: 'currency',
@@ -1775,11 +2300,23 @@
         }).format(amount || 0);
     }
 
+    /**
+     * Format a date string for display
+     *
+     * @param {string} dateStr - ISO date string
+     * @returns {string} Formatted date or '-' if empty
+     */
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         return new Date(dateStr).toLocaleDateString('en-CA');
     }
 
+    /**
+     * Toggle expansion of a detail row in a table
+     *
+     * @param {string} rowId - DOM ID of the detail row
+     * @param {HTMLElement} clickedRow - The clicked row element
+     */
     function toggleRow(rowId, clickedRow) {
         const detailRow = document.getElementById(rowId);
         if (detailRow) {
@@ -1788,6 +2325,12 @@
         }
     }
 
+    /**
+     * Show a toast notification
+     *
+     * @param {string} message - Message to display
+     * @param {'info'|'success'|'error'} [type='info'] - Toast type for styling
+     */
     function showToast(message, type = 'info') {
         const container = document.getElementById('toastContainer');
         const toastId = `toast-${Date.now()}`;
@@ -1810,6 +2353,13 @@
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     }
 
+    /**
+     * Show a date picker modal and return the selected date
+     *
+     * @param {string} title - Modal title
+     * @param {string} description - Description/instructions
+     * @returns {Promise<string|null>} ISO date string or null if cancelled
+     */
     function showDatePickerModal(title, description) {
         return new Promise((resolve) => {
             const today = new Date();
@@ -1845,6 +2395,11 @@
     // =========================================================================
     // LOGOUT
     // =========================================================================
+
+    /**
+     * Handle logout button click
+     * @global
+     */
     window.handleLogout = function() {
         logout();
     };
@@ -1852,6 +2407,15 @@
     // =========================================================================
     // PUBLIC API
     // =========================================================================
+
+    /**
+     * Public API exposed on window.financeApp
+     *
+     * These functions are called from HTML onclick handlers.
+     *
+     * @namespace financeApp
+     * @global
+     */
     window.financeApp = {
         toggleRow,
         toggleClientGroup,

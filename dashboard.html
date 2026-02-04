@@ -1071,26 +1071,80 @@
     </div>
 
     <script>
-	// API Configuration for RRTS Dashboard
-	const API_ENDPOINTS = {
-    	LOGIN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login',
-   	 DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management',
-   	 CHANGE_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/change-password',
-   	 REFRESH_TOKEN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/refresh-token',
-   	 FORGOT_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/forgot-password'
-	};
+    /**
+     * @fileoverview RRTS Dashboard - Main Entry Point and Login Handler
+     *
+     * @description
+     * Primary dashboard page that handles:
+     * - User authentication (login/logout)
+     * - Password change flows (first login, forgot password)
+     * - Dashboard metrics display
+     * - Today's appointments list with time filtering
+     * - Role-based navigation building
+     *
+     * Authentication Flow:
+     * 1. User enters credentials on login form
+     * 2. Credentials verified via JWT auth endpoint
+     * 3. If must_change_password flag set, show password change modal
+     * 4. On success, store tokens and show dashboard
+     * 5. Automatic token refresh every 45 minutes
+     *
+     * @requires permissions.js - RBAC functions (enforcePageAccess, filterNavigationByRole)
+     * @requires Bootstrap 5 - For modal components
+     *
+     * @version 2.0.0
+     * @since 2024-01-01
+     */
 
-	// Session and user management
-	let isLoggedIn = false;
-	let currentUser = null;
+    'use strict';
 
-		// Initialize the dashboard
-	document.addEventListener('DOMContentLoaded', function() {
-    	console.log('RRTS Dashboard loaded');
-    	console.log('API Endpoints configured:', API_ENDPOINTS);
+    // =========================================================================
+    // API CONFIGURATION
+    // =========================================================================
 
-    	// Initialize header (will show guest/default if not logged in)
-    	initializeHeader();
+    /**
+     * API endpoint URLs for dashboard operations
+     * @constant {Object.<string, string>}
+     */
+    const API_ENDPOINTS = {
+        /** User login endpoint - returns JWT tokens */
+        LOGIN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/user-login',
+        /** Dashboard data endpoint (legacy, not currently used) */
+        DASHBOARD_DATA: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/driver-management',
+        /** Password change endpoint */
+        CHANGE_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/change-password',
+        /** JWT token refresh endpoint */
+        REFRESH_TOKEN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/refresh-token',
+        /** Forgot password reset endpoint */
+        FORGOT_PASSWORD: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/forgot-password'
+    };
+
+    // =========================================================================
+    // STATE VARIABLES
+    // =========================================================================
+
+    /** @type {boolean} Whether user is currently authenticated */
+    let isLoggedIn = false;
+
+    /** @type {Object|null} Current authenticated user data */
+    let currentUser = null;
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+
+    /**
+     * Initialize the dashboard when DOM is ready
+     *
+     * Checks for existing session, handles password reset redirects,
+     * sets up event listeners, and loads dashboard data if authenticated.
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('RRTS Dashboard loaded');
+        console.log('API Endpoints configured:', API_ENDPOINTS);
+
+        // Initialize header (will show guest/default if not logged in)
+        initializeHeader();
 
     	// Check for password reset parameter
     	const urlParams = new URLSearchParams(window.location.search);
@@ -1191,14 +1245,27 @@
             }
         }
 
-        async function login() {
-            const username = document.getElementById('username').value.trim().toLowerCase();
-            const password = document.getElementById('password').value.trim();
+    // =========================================================================
+    // AUTHENTICATION
+    // =========================================================================
 
-            if (!username || !password) {
-                showError('Please enter both username and password');
-                return;
-            }
+    /**
+     * Handle user login
+     *
+     * Validates credentials, calls login API, handles password change
+     * requirement, and stores JWT tokens on success.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function login() {
+        const username = document.getElementById('username').value.trim().toLowerCase();
+        const password = document.getElementById('password').value.trim();
+
+        if (!username || !password) {
+            showError('Please enter both username and password');
+            return;
+        }
 
             try {
                 const response = await fetch(API_ENDPOINTS.LOGIN, {
@@ -1302,10 +1369,23 @@
    	 }
 	}
 
-	async function loadDashboardData() {
-	    try {
-	        // Load appointments from the appointments API
-	        const appointmentsResponse = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments');
+    // =========================================================================
+    // DASHBOARD DATA LOADING
+    // =========================================================================
+
+    /**
+     * Load and display dashboard data
+     *
+     * Fetches today's appointments, calculates metrics, and renders
+     * the various dashboard sections (appointments list, flagged items, activity).
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function loadDashboardData() {
+        try {
+            // Load appointments from the appointments API
+            const appointmentsResponse = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments');
 	        
 	        if (!appointmentsResponse.ok) {
 	            throw new Error(`HTTP ${appointmentsResponse.status}: ${appointmentsResponse.statusText}`);
@@ -1424,14 +1504,32 @@
  	   document.getElementById('activeClients').textContent = '--';
  	   document.getElementById('availableDrivers').textContent = '--';
 	}
-        function updateDashboardMetrics(data) {
-            document.getElementById('todaysAppointments').textContent = data.todaysAppointments;
-            document.getElementById('pendingApprovals').textContent = data.pendingApprovals;
-            document.getElementById('activeClients').textContent = data.activeClients;
-            document.getElementById('availableDrivers').textContent = data.availableDrivers;
-        }
+    // =========================================================================
+    // DASHBOARD RENDERING
+    // =========================================================================
 
-        function renderTodaysAppointments(appointments) {
+    /**
+     * Update the dashboard metrics cards
+     *
+     * @param {Object} data - Metrics data
+     * @param {number} data.todaysAppointments - Count of today's appointments
+     * @param {number} data.pendingApprovals - Count needing review
+     * @param {number} data.activeClients - Active clients count
+     * @param {number} data.availableDrivers - Available drivers count
+     */
+    function updateDashboardMetrics(data) {
+        document.getElementById('todaysAppointments').textContent = data.todaysAppointments;
+        document.getElementById('pendingApprovals').textContent = data.pendingApprovals;
+        document.getElementById('activeClients').textContent = data.activeClients;
+        document.getElementById('availableDrivers').textContent = data.availableDrivers;
+    }
+
+    /**
+     * Render today's appointments list
+     *
+     * @param {Object[]} appointments - Array of appointment objects
+     */
+    function renderTodaysAppointments(appointments) {
             const container = document.getElementById('todaysAppointmentsList');
             
             if (!appointments || appointments.length === 0) {
@@ -1588,12 +1686,18 @@
             errorDiv.classList.remove('hidden');
         }
 
-        function logout() {
-            isLoggedIn = false;
-            currentUser = null;
+    /**
+     * Log out the current user
+     *
+     * Clears all session data, tokens, and form fields.
+     * Returns to login screen.
+     */
+    function logout() {
+        isLoggedIn = false;
+        currentUser = null;
 
-            // Clear all session storage (user data and JWT tokens)
-            sessionStorage.removeItem('rrts_user');
+        // Clear all session storage (user data and JWT tokens)
+        sessionStorage.removeItem('rrts_user');
             sessionStorage.removeItem('rrts_access_token');
             sessionStorage.removeItem('rrts_refresh_token');
             sessionStorage.removeItem('rrts_token_expiry');
@@ -1614,8 +1718,17 @@
             showLogin();
         }
 
-        // Show password change modal
-        function showPasswordChangeModal() {
+    // =========================================================================
+    // PASSWORD CHANGE FLOW
+    // =========================================================================
+
+    /**
+     * Show the password change modal
+     *
+     * Used when must_change_password flag is set on login.
+     * Pre-fills current password from temp storage.
+     */
+    function showPasswordChangeModal() {
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('passwordChangeSection').classList.remove('hidden');
             document.getElementById('dashboardSection').classList.add('hidden');
@@ -1630,8 +1743,15 @@
             document.getElementById('passwordChangeError').classList.add('hidden');
         }
 
-        // Change password function
-        async function changePassword() {
+    /**
+     * Handle password change submission
+     *
+     * Validates new password, sends to API, and logs user in on success.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
+    async function changePassword() {
             const currentPassword = document.getElementById('currentPassword').value.trim();
             const newPassword = document.getElementById('newPassword').value.trim();
             const confirmPassword = document.getElementById('confirmPassword').value.trim();
@@ -1817,8 +1937,16 @@
             messageDiv.classList.remove('hidden');
         }
 
-        // Token refresh functions
-        function startTokenRefreshTimer() {
+    // =========================================================================
+    // TOKEN MANAGEMENT
+    // =========================================================================
+
+    /**
+     * Start automatic token refresh timer
+     *
+     * Refreshes JWT access token every 45 minutes (tokens expire in 1 hour).
+     */
+    function startTokenRefreshTimer() {
             // Clear existing timer if any
             if (window.tokenRefreshInterval) {
                 clearInterval(window.tokenRefreshInterval);
@@ -1889,8 +2017,17 @@
             };
         }
 
-        // Time filter functionality
-        function setupTimeFilters() {
+    // =========================================================================
+    // TIME FILTER FUNCTIONALITY
+    // =========================================================================
+
+    /**
+     * Set up time filter buttons for appointments list
+     *
+     * Adds click handlers to filter buttons that re-render
+     * appointments based on selected time range.
+     */
+    function setupTimeFilters() {
             const filterButtons = document.querySelectorAll('.filter-btn');
             
             filterButtons.forEach(button => {
@@ -1958,8 +2095,17 @@
             }
         }
 
-        // Initialize header
-        function initializeHeader() {
+    // =========================================================================
+    // HEADER AND NAVIGATION
+    // =========================================================================
+
+    /**
+     * Initialize the page header and navigation
+     *
+     * Builds navigation links based on user role (RBAC),
+     * updates user display info, and sets up mobile menu toggle.
+     */
+    function initializeHeader() {
             // Populate navigation based on RBAC
             const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
             const role = user.role || 'guest';
