@@ -407,17 +407,68 @@ Design each async step so it can be safely re-run:
 | Send notification | Check `notifications_sent` in result before sending |
 | Generate report | Overwrite existing report file |
 
-**Example: Idempotent Drive Times**
+#### n8n Upsert Limitation
+
+**Important:** The n8n Supabase node does NOT support upsert natively. Use one of these alternatives:
+
+**Option 1: Postgres Node (Recommended)**
+- Add a Postgres node instead of Supabase node
+- Use the same Supabase connection string
+- The Postgres node has built-in "Upsert" operation
+- Requires the conflict column(s) to have UNIQUE constraint
+
+**Option 2: Execute Raw SQL via Supabase RPC**
+- Create a Postgres function in Supabase
+- Call it via Supabase node's "Call Function" operation
+
+**Option 3: Check-then-Insert/Update Pattern**
+```
+[Get Existing Record]
+    ├─► Found → [Update Record]
+    └─► Not Found → [Insert Record]
+```
+Less efficient but works with native Supabase node.
+
+#### Example: Idempotent Drive Times (using Postgres node)
+
+First, ensure the table has a unique constraint:
 ```sql
--- Use ON CONFLICT to upsert
+-- Run once in Supabase SQL Editor
+ALTER TABLE client_drive_times
+ADD CONSTRAINT client_drive_times_unique UNIQUE (client_id, driver_id);
+```
+
+Then in n8n, use the **Postgres node** with Upsert operation:
+- Operation: Upsert
+- Table: client_drive_times
+- Columns to Match On: client_id, driver_id
+
+Or use raw SQL in an **Execute Query** node:
+```sql
 INSERT INTO client_drive_times (client_id, driver_id, duration_seconds, distance_meters)
-VALUES (:client_id, :driver_id, :duration, :distance)
+VALUES ($1, $2, $3, $4)
 ON CONFLICT (client_id, driver_id)
 DO UPDATE SET
     duration_seconds = EXCLUDED.duration_seconds,
     distance_meters = EXCLUDED.distance_meters,
     updated_at = NOW();
 ```
+
+#### Example: Idempotent via Check-then-Update (native Supabase node)
+
+If you must use the Supabase node:
+
+```
+[Supabase: Get Row]
+    Filter: client_id = X AND driver_id = Y
+        │
+        ├─► Row exists → [Supabase: Update Row]
+        │                 Filter: id = existing_row.id
+        │
+        └─► No row → [Supabase: Insert Row]
+```
+
+This is more nodes but works without Postgres node.
 
 ### Updated Workflow Pattern with Step Tracking
 
