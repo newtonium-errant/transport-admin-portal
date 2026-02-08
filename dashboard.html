@@ -1015,7 +1015,7 @@
 
                 <!-- Quick Actions -->
                 <div class="quick-actions">
-                    <a href="clients-sl.html" class="action-btn">
+                    <a href="clients.html" class="action-btn">
                         <span class="icon">👤</span>
                         Manage Clients
                     </a>
@@ -1072,6 +1072,7 @@
         </div>
     </div>
 
+    <script src="js/components/navigation.js"></script>
     <script>
 	// API Configuration for RRTS Dashboard
 	const API_ENDPOINTS = {
@@ -1092,7 +1093,7 @@
     	console.log('API Endpoints configured:', API_ENDPOINTS);
 
     	// Initialize header (will show guest/default if not logged in)
-    	initializeHeader();
+    	initializeNavigation();
 
     	// Check for password reset parameter
     	const urlParams = new URLSearchParams(window.location.search);
@@ -1251,7 +1252,7 @@
                     console.log('Login successful - tokens stored');
 
                     // Update header with user info
-                    initializeHeader();
+                    initializeNavigation();
 
                     showDashboard();
                     loadDashboardData();
@@ -1727,7 +1728,7 @@
                     document.getElementById('confirmPassword').value = '';
 
                     // Update header with user info
-                    initializeHeader();
+                    initializeNavigation();
 
                     // Show dashboard
                     showDashboard();
@@ -2052,10 +2053,15 @@
         }
 
     </script>
+
+    <!-- Background Task Monitoring -->
+    <script src="js/core/task-monitor.js"></script>
+    <script src="js/components/task-notifications.js"></script>
+    <script src="js/components/failed-tasks-widget.js"></script>
 </body>
 </html>
-<!-- 
-Version: v2.0.0 - RRTS Dashboard with Daily Schedule
+<!--
+Version: v2.1.0 - RRTS Dashboard with Daily Schedule and Background Task Monitoring
 - v2.0.0: Added daily schedule view with time filtering from operations page
 - v1.1.2: fixes missing functions
 - v1.1.1: Uses actual data, updated endpoints

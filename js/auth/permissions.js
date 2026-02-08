@@ -6,7 +6,7 @@
 
 const ROLE_PERMISSIONS = {
     'admin': {
-        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management', 'admin', 'finance'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'admin', 'finance'],
         features: ['all'],
         canDeleteClients: true,
         canDeleteAppointments: true,
@@ -20,7 +20,7 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'supervisor': {
-        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments', 'operations', 'driver-management', 'finance'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'finance'],
         features: ['view_clients', 'edit_clients', 'delete_clients', 'view_appointments', 'edit_appointments', 'assign_drivers', 'view_drivers', 'view_reports'],
         canDeleteClients: true,
         canDeleteAppointments: true,
@@ -34,7 +34,7 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'booking_agent': {
-        pages: ['dashboard', 'client-management', 'clients-sl', 'appointment-management', 'appointments-new', 'appointments-sl', 'appointments-bulk-add', 'add-appointments'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add'],
         features: ['view_clients', 'edit_clients', 'view_appointments', 'edit_appointments', 'create_appointments', 'view_drivers'],
         canDeleteClients: false,
         canDeleteAppointments: true,
@@ -189,6 +189,11 @@ function enforcePageAccess() {
     // Strip TEST- prefix if present (for TEST environment pages)
     if (currentPage.startsWith('TEST-')) {
         currentPage = currentPage.substring(5); // Remove 'TEST-' prefix
+    }
+
+    // Strip -sl suffix if present (legacy page names)
+    if (currentPage.endsWith('-sl')) {
+        currentPage = currentPage.slice(0, -3); // Remove '-sl' suffix
     }
 
     const userRole = getUserRole();

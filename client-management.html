@@ -1023,7 +1023,9 @@
         // Enhanced logout function
         function logout() {
             sessionStorage.removeItem('rrts_user');
-            window.location.href = 'admin-portal_v3_2_3.html';
+            sessionStorage.removeItem('rrts_access_token');
+            sessionStorage.removeItem('rrts_refresh_token');
+            window.location.href = 'dashboard.html';
         }
     </script>
 </body>

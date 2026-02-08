@@ -1,12 +1,16 @@
 # Documentation and instruction files
 *.md
 !README.md
+!CLAUDE.md
+!docs/**/*.md
 Instructions/
 Implementation-Guide/
 n8n-updates/
 cloudflare-setup/
 frontend-updates/
 google-oauth/
+
+# Developing folder - local work in progress (use wip branch instead)
 developing/
 
 # Workflow files

@@ -1056,7 +1056,7 @@
 
     <!-- JWT Authentication Helper -->
     <script src="js/auth/jwt-auth.js"></script>
-    <script src="js/auth/session-manager.js"></script>
+    <script src="js/components/navigation.js"></script>
     <script>
         // API Configuration
         const API_ENDPOINTS = {
@@ -1794,6 +1794,8 @@
 
         function logout() {
             sessionStorage.removeItem('rrts_user');
+            sessionStorage.removeItem('rrts_access_token');
+            sessionStorage.removeItem('rrts_refresh_token');
             window.location.href = 'dashboard.html';
         }
 
@@ -1811,69 +1813,6 @@
             }
         `;
         document.head.appendChild(style);
-
-        // Initialize header
-        (function initializeHeader() {
-            // Populate navigation based on RBAC
-            const user = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
-            const role = user.role || 'guest';
-
-            const navItems = [
-                { label: 'Dashboard', page: 'dashboard.html', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Appointments', page: 'appointments-sl.html', icon: 'bi-calendar-check', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Bulk Add', page: 'appointments-bulk-add.html', icon: 'bi-calendar-plus', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Clients', page: 'clients-sl.html', icon: 'bi-people', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Drivers', page: 'driver-management.html', icon: 'bi-truck', roles: ['admin', 'supervisor'] },
-                { label: 'Operations', page: 'operations.html', icon: 'bi-clipboard-data', roles: ['admin', 'supervisor'] },
-                { label: 'Admin', page: 'admin.html', icon: 'bi-gear', roles: ['admin'] }
-            ];
-
-            const navContainer = document.getElementById('mainNav');
-            if (!navContainer) return; // Exit if nav not found
-
-            const currentPage = window.location.pathname.split('/').pop();
-
-            navItems.forEach(item => {
-                if (item.roles.includes(role)) {
-                    const link = document.createElement('a');
-                    link.href = item.page;
-                    link.className = 'nav-link';
-                    if (item.page === currentPage) {
-                        link.classList.add('active');
-                    }
-                    link.innerHTML = `<i class="bi ${item.icon}"></i> ${item.label}`;
-                    navContainer.appendChild(link);
-                }
-            });
-
-            // Set user info
-            const userNameEl = document.getElementById('userName');
-            const userRoleBadgeEl = document.getElementById('userRoleBadge');
-            const userAvatarEl = document.getElementById('userAvatar');
-
-            if (userNameEl) userNameEl.textContent = user.fullName || user.full_name || user.username || 'User';
-            if (userRoleBadgeEl) userRoleBadgeEl.textContent = role;
-            if (userAvatarEl) {
-                const initials = (user.fullName || user.full_name || user.username || 'U').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                userAvatarEl.textContent = initials;
-            }
-
-            // Mobile menu toggle
-            const toggleBtn = document.getElementById('mobileMenuToggle');
-            const nav = document.getElementById('mainNav');
-
-            if (toggleBtn && nav) {
-                toggleBtn.addEventListener('click', () => {
-                    nav.classList.toggle('mobile-open');
-                    const icon = toggleBtn.querySelector('i');
-                    if (nav.classList.contains('mobile-open')) {
-                        icon.className = 'bi bi-x';
-                    } else {
-                        icon.className = 'bi bi-list';
-                    }
-                });
-            }
-        })();
 
     </script>
 </body>
