@@ -9,6 +9,48 @@ const JWT_API_ENDPOINTS = {
     REFRESH_TOKEN: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/refresh-token'
 };
 
+// Role-based session timeout durations (must match session-manager.js)
+const SESSION_TIMEOUTS = {
+    admin: 30 * 60 * 1000,           // 30 minutes
+    supervisor: 60 * 60 * 1000,       // 60 minutes (1 hour)
+    booking_agent: 120 * 60 * 1000,   // 120 minutes (2 hours)
+    driver: 120 * 60 * 1000,          // 120 minutes (2 hours)
+    client: 120 * 60 * 1000           // 120 minutes (2 hours)
+};
+const DEFAULT_SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const LAST_ACTIVITY_KEY = 'rrts_last_activity';
+
+// Check if user has been inactive too long (prevents token refresh after extended absence)
+function checkInactivityTimeout() {
+    const lastActivity = sessionStorage.getItem(LAST_ACTIVITY_KEY);
+    const userJson = sessionStorage.getItem('rrts_user');
+
+    // If no last activity recorded, this is first login - allow
+    if (!lastActivity) {
+        return false; // Not inactive too long
+    }
+
+    // Get user role to determine timeout
+    let userRole = 'admin'; // Default to strictest timeout
+    if (userJson) {
+        try {
+            const user = JSON.parse(userJson);
+            userRole = user.role || 'admin';
+        } catch (e) {
+            console.error('Error parsing user for inactivity check:', e);
+        }
+    }
+
+    const lastActivityTime = parseInt(lastActivity);
+    const now = Date.now();
+    const inactiveTime = now - lastActivityTime;
+    const timeout = SESSION_TIMEOUTS[userRole] || DEFAULT_SESSION_TIMEOUT;
+
+    console.log(`[Auth] Inactivity check: ${Math.round(inactiveTime / 60000)} min inactive, ${timeout / 60000} min timeout for ${userRole}`);
+
+    return inactiveTime > timeout;
+}
+
 // Check if user is authenticated (call this on page load)
 async function requireAuth(redirectUrl = 'dashboard.html') {
     const accessToken = sessionStorage.getItem('rrts_access_token');
@@ -17,6 +59,15 @@ async function requireAuth(redirectUrl = 'dashboard.html') {
     if (!accessToken || !user) {
         console.log('No authentication found - redirecting to login');
         window.location.href = redirectUrl;
+        return false;
+    }
+
+    // SECURITY: Check if user has been inactive too long BEFORE attempting token refresh
+    // This prevents token renewal after extended absence (e.g., returning next day)
+    if (checkInactivityTimeout()) {
+        console.log('Session expired due to inactivity - forcing logout');
+        alert('Your session has expired due to inactivity. Please log in again.');
+        logout();
         return false;
     }
 
@@ -144,6 +195,7 @@ function logout() {
     sessionStorage.removeItem('rrts_limited_token');
     sessionStorage.removeItem('rrts_temp_username');
     sessionStorage.removeItem('rrts_temp_password');
+    sessionStorage.removeItem(LAST_ACTIVITY_KEY); // Clear last activity timestamp
 
     // Clear token refresh timer if exists
     if (window.tokenRefreshInterval) {
@@ -232,6 +284,7 @@ const JWTManager = {
         sessionStorage.removeItem('rrts_limited_token');
         sessionStorage.removeItem('rrts_temp_username');
         sessionStorage.removeItem('rrts_temp_password');
+        sessionStorage.removeItem(LAST_ACTIVITY_KEY);
 
         // Clear token refresh timer if exists
         if (window.tokenRefreshInterval) {

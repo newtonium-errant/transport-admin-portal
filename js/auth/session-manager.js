@@ -46,6 +46,9 @@ const SessionManager = (function() {
         'click'
     ];
 
+    // Storage key for last activity timestamp (shared with jwt-auth.js)
+    const LAST_ACTIVITY_KEY = 'rrts_last_activity';
+
     // Internal state
     let inactivityTimer = null;
     let warningTimer = null;
@@ -77,13 +80,16 @@ const SessionManager = (function() {
 
         isRunning = true;
 
-        // Set up activity listeners
+        // Set initial last activity timestamp (user just loaded the page)
+        lastActivityTime = Date.now();
+        sessionStorage.setItem(LAST_ACTIVITY_KEY, lastActivityTime.toString());
+
+        // Set up activity listeners (throttled)
         ACTIVITY_EVENTS.forEach(event => {
             document.addEventListener(event, handleActivity, true);
         });
 
-        // Start timer (initial start, not from activity)
-        lastActivityTime = Date.now();
+        // Start timer
         resetTimer();
     }
 
@@ -118,6 +124,7 @@ const SessionManager = (function() {
 
     /**
      * Handle activity event (throttled wrapper for resetTimer)
+     * Updates sessionStorage timestamp for cross-page inactivity tracking
      */
     function handleActivity() {
         if (!isRunning) {
@@ -132,6 +139,8 @@ const SessionManager = (function() {
         }
 
         lastActivityTime = now;
+        // Update sessionStorage so jwt-auth.js can check inactivity on page reload
+        sessionStorage.setItem(LAST_ACTIVITY_KEY, lastActivityTime.toString());
         resetTimer();
     }
 
@@ -196,6 +205,9 @@ const SessionManager = (function() {
 
         stop();
 
+        // Clear activity timestamp
+        sessionStorage.removeItem(LAST_ACTIVITY_KEY);
+
         // Clear tokens
         JWTManager.clearTokens();
 
@@ -241,8 +253,36 @@ const SessionManager = (function() {
      */
     function logout() {
         stop();
+        sessionStorage.removeItem(LAST_ACTIVITY_KEY);
         JWTManager.clearTokens();
         window.location.href = 'dashboard.html';
+    }
+
+    /**
+     * Check if user has been inactive for longer than their role's timeout
+     * Can be called externally (e.g., by jwt-auth.js)
+     * @param {string} userRole - The user's role
+     * @returns {boolean} True if inactive too long
+     */
+    function isInactiveForTooLong(userRole) {
+        const lastActivity = sessionStorage.getItem(LAST_ACTIVITY_KEY);
+        if (!lastActivity) {
+            return false; // No activity recorded, likely first login
+        }
+
+        const lastActivityTime = parseInt(lastActivity);
+        const now = Date.now();
+        const inactiveTime = now - lastActivityTime;
+        const timeout = SESSION_TIMEOUTS[userRole] || DEFAULT_TIMEOUT;
+
+        return inactiveTime > timeout;
+    }
+
+    /**
+     * Clear the last activity timestamp
+     */
+    function clearLastActivity() {
+        sessionStorage.removeItem(LAST_ACTIVITY_KEY);
     }
 
     /**
@@ -276,7 +316,9 @@ const SessionManager = (function() {
         getCurrentTimeout,
         getTimeRemaining,
         isActive,
-        logout
+        logout,
+        isInactiveForTooLong,
+        clearLastActivity
     };
 
 })();
