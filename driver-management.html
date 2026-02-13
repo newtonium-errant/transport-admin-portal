@@ -1218,6 +1218,72 @@
                             </div>
                         </div>
 
+                        <!-- Calendar Links Section -->
+                        <div class="mb-4" id="calendarLinksSection" style="display: none;">
+                            <h5 style="margin-bottom: 15px; color: #34495e; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;">
+                                <i class="bi bi-calendar3"></i> Calendar Links
+                            </h5>
+
+                            <!-- No Calendar Warning -->
+                            <div id="noCalendarWarning" class="alert alert-warning d-none">
+                                <i class="bi bi-exclamation-triangle"></i> This driver does not have a Google Calendar linked. A calendar is created automatically when a driver is added via the system.
+                            </div>
+
+                            <div id="calendarLinksContent">
+                                <!-- Google Calendar ID -->
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Google Calendar ID</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" id="editCalendarId" readonly style="background-color: #f8f9fa; font-family: monospace; font-size: 0.85em;">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyToClipboard('editCalendarId', this)" title="Copy to clipboard">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Shareable Calendar Link -->
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Shareable Calendar Link</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" id="editShareableLink" readonly style="background-color: #f8f9fa;">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyToClipboard('editShareableLink', this)" title="Copy to clipboard">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Public iCal URL -->
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Public iCal URL</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" id="editPublicIcalUrl" readonly style="background-color: #f8f9fa;">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyToClipboard('editPublicIcalUrl', this)" title="Copy to clipboard">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Secret iCal URL (editable, stored in DB) -->
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Secret iCal URL <span class="text-primary">(editable)</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" id="editSecretIcalUrl" placeholder="Paste from Google Calendar Settings > Integrate calendar > Secret address in iCal format">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="copyToClipboard('editSecretIcalUrl', this)" title="Copy to clipboard">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Link to Google Calendar Settings -->
+                                <div>
+                                    <a id="calendarSettingsLink" href="#" target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-box-arrow-up-right"></i> Open Google Calendar Settings
+                                    </a>
+                                    <small class="text-muted ms-2">Find the secret iCal URL under "Integrate calendar"</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <input type="hidden" id="editDriverId">
                     </form>
                 </div>
@@ -1266,6 +1332,25 @@
             loadDrivers();
             loadPerformanceMetrics();
         });
+
+        // Copy to clipboard with visual feedback
+        function copyToClipboard(inputId, button) {
+            const input = document.getElementById(inputId);
+            if (!input || !input.value) return;
+
+            navigator.clipboard.writeText(input.value).then(() => {
+                const icon = button.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'bi bi-check-lg';
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-success');
+                setTimeout(() => {
+                    icon.className = originalClass;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-secondary');
+                }, 2000);
+            });
+        }
 
         // Toggle day availability for add form
         function toggleDayAvailability(day) {
@@ -1651,6 +1736,28 @@
             document.getElementById('editDriverWorkPhone').value = driver.work_phone || '';
             document.getElementById('editDriverVehicle').value = driver.vehicle_description || '';
 
+            // Populate Calendar Links section
+            const calendarSection = document.getElementById('calendarLinksSection');
+            const noCalendarWarning = document.getElementById('noCalendarWarning');
+            const calendarLinksContent = document.getElementById('calendarLinksContent');
+
+            calendarSection.style.display = 'block';
+
+            if (driver.google_calendar_id) {
+                noCalendarWarning.classList.add('d-none');
+                calendarLinksContent.style.display = 'block';
+
+                const encodedCalId = encodeURIComponent(driver.google_calendar_id);
+                document.getElementById('editCalendarId').value = driver.google_calendar_id;
+                document.getElementById('editShareableLink').value = `https://calendar.google.com/calendar/embed?src=${encodedCalId}`;
+                document.getElementById('editPublicIcalUrl').value = `https://calendar.google.com/calendar/ical/${encodedCalId}/public/basic.ics`;
+                document.getElementById('editSecretIcalUrl').value = driver.calendar_ical_url || '';
+                document.getElementById('calendarSettingsLink').href = `https://calendar.google.com/calendar/r/settings/calendar/${encodedCalId}`;
+            } else {
+                noCalendarWarning.classList.remove('d-none');
+                calendarLinksContent.style.display = 'none';
+            }
+
             // Populate weekly schedule
             if (driver.weekly_hours) {
                 setWeeklyHoursData(driver.weekly_hours, 'edit-');
@@ -1702,6 +1809,7 @@
                     active: document.getElementById('editDriverActive').value === 'true',
                     work_phone: document.getElementById('editDriverWorkPhone').value,
                     vehicle_description: document.getElementById('editDriverVehicle').value,
+                    calendar_ical_url: document.getElementById('editSecretIcalUrl').value || null,
                     weekly_hours: getWeeklyHoursData('edit-')
                 };
 
@@ -1867,7 +1975,8 @@
 </body>
 </html>
 
-<!-- Version: 1.5.7 - RRTS Driver Management Portal
+<!-- Version: 1.5.8 - RRTS Driver Management Portal
+- v1.5.8: Added Calendar Links section to edit driver modal (shareable link, public iCal, secret iCal URL, Google Calendar settings link)
 - v1.5.7: Added work phone as editable field in edit driver modal
 - v1.5.6: Replaced alert() popups with toast notifications for better UX
 - v1.5.5: Removed toggle button since driver status is automatically calculated from active state, assignments, and time-off
