@@ -845,8 +845,10 @@
                     <input type="password" id="password" required>
                 </div>
                 <div class="form-group" style="text-align: center; margin-top: 30px;">
-                    <button type="button" class="action-btn brand" onclick="login()" style="width: 100%; font-size: 18px; padding: 15px;">
-                        <span class="icon">🔐</span> Login
+                    <button type="button" id="loginBtn" class="action-btn brand" onclick="login()" style="width: 100%; font-size: 18px; padding: 15px;">
+                        <span id="loginBtnText"><span class="icon">🔐</span> Login</span>
+                        <span id="loginBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+                        <span id="loginBtnLoading" style="display: none;"> Logging in...</span>
                     </button>
                 </div>
                 <div id="loginError" class="hidden"></div>
@@ -916,8 +918,10 @@
                     <input type="password" id="confirmPassword" required>
                 </div>
                 <div class="form-group" style="text-align: center; margin-top: 30px;">
-                    <button type="button" class="action-btn brand" onclick="changePassword()" style="width: 100%; font-size: 18px; padding: 15px;">
-                        <span class="icon">🔐</span> Change Password
+                    <button type="button" id="changePasswordBtn" class="action-btn brand" onclick="changePassword()" style="width: 100%; font-size: 18px; padding: 15px;">
+                        <span id="changePasswordBtnText"><span class="icon">🔐</span> Change Password</span>
+                        <span id="changePasswordBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+                        <span id="changePasswordBtnLoading" style="display: none;"> Changing password...</span>
                     </button>
                 </div>
                 <div id="passwordChangeError" class="hidden"></div>
@@ -1208,6 +1212,16 @@
                 return;
             }
 
+            // Show loading state
+            const loginBtn = document.getElementById('loginBtn');
+            const loginBtnText = document.getElementById('loginBtnText');
+            const loginBtnSpinner = document.getElementById('loginBtnSpinner');
+            const loginBtnLoading = document.getElementById('loginBtnLoading');
+            loginBtn.disabled = true;
+            loginBtnText.style.display = 'none';
+            loginBtnSpinner.style.display = 'inline-block';
+            loginBtnLoading.style.display = 'inline';
+
             try {
                 const response = await fetch(API_ENDPOINTS.LOGIN, {
                     method: 'POST',
@@ -1229,6 +1243,12 @@
                         sessionStorage.setItem('rrts_limited_token', result.limited_token);
                         sessionStorage.setItem('rrts_temp_username', username);
                         sessionStorage.setItem('rrts_temp_password', password);
+
+                        // Restore login button before switching view
+                        loginBtn.disabled = false;
+                        loginBtnText.style.display = 'inline';
+                        loginBtnSpinner.style.display = 'none';
+                        loginBtnLoading.style.display = 'none';
 
                         // Show password change modal
                         showPasswordChangeModal();
@@ -1266,10 +1286,20 @@
                     }
                 } else {
                     showError(result.message || 'Invalid username or password');
+                    // Restore login button
+                    loginBtn.disabled = false;
+                    loginBtnText.style.display = 'inline';
+                    loginBtnSpinner.style.display = 'none';
+                    loginBtnLoading.style.display = 'none';
                 }
             } catch (error) {
                 console.error('Login error:', error);
                 showError('Login failed - please try again');
+                // Restore login button
+                loginBtn.disabled = false;
+                loginBtnText.style.display = 'inline';
+                loginBtnSpinner.style.display = 'none';
+                loginBtnLoading.style.display = 'none';
             }
         }
 
@@ -1684,6 +1714,16 @@
                 return;
             }
 
+            // Show loading state
+            const changePwBtn = document.getElementById('changePasswordBtn');
+            const changePwBtnText = document.getElementById('changePasswordBtnText');
+            const changePwBtnSpinner = document.getElementById('changePasswordBtnSpinner');
+            const changePwBtnLoading = document.getElementById('changePasswordBtnLoading');
+            changePwBtn.disabled = true;
+            changePwBtnText.style.display = 'none';
+            changePwBtnSpinner.style.display = 'inline-block';
+            changePwBtnLoading.style.display = 'inline';
+
             try {
                 const response = await fetch(API_ENDPOINTS.CHANGE_PASSWORD, {
                     method: 'POST',
@@ -1743,10 +1783,20 @@
                     }
                 } else {
                     showPasswordChangeError(result.message || 'Password change failed');
+                    // Restore button
+                    changePwBtn.disabled = false;
+                    changePwBtnText.style.display = 'inline';
+                    changePwBtnSpinner.style.display = 'none';
+                    changePwBtnLoading.style.display = 'none';
                 }
             } catch (error) {
                 console.error('Password change error:', error);
                 showPasswordChangeError('An error occurred. Please try again.');
+                // Restore button
+                changePwBtn.disabled = false;
+                changePwBtnText.style.display = 'inline';
+                changePwBtnSpinner.style.display = 'none';
+                changePwBtnLoading.style.display = 'none';
             }
         }
 
