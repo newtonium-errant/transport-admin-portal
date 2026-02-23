@@ -266,10 +266,13 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 25px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
+
+        .metric.success-text { color: #27ae60; }
+        .metric.danger-text { color: #e74c3c; }
 
         .card {
             background: white;
@@ -319,6 +322,28 @@
         .metric.success { color: #27ae60; }
         .metric.warning { color: #f39c12; }
         .metric.danger { color: #e74c3c; }
+
+        .metric-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .metric-row .metric {
+            margin-bottom: 0;
+        }
+
+        .unassigned-badge {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #e67e22;
+            background: #fef3e2;
+            border: 1px solid #f0d0a0;
+            border-radius: 6px;
+            padding: 3px 10px;
+            white-space: nowrap;
+        }
 
         .quick-actions {
             display: grid;
@@ -788,6 +813,12 @@
             font-weight: 600;
         }
 
+        @media (max-width: 992px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -967,74 +998,92 @@
             <div class="content">
                 <!-- System Status -->
                 <div class="system-status">
-                    <div class="status-indicator status-operational">
-                        ✅ System Operational
+                    <div class="status-indicator" id="statusApi">
+                        Checking API...
                     </div>
-                    <div class="status-indicator status-operational">
-                        ✅ Database Connected
+                    <div class="status-indicator" id="statusDatabase">
+                        Checking Database...
                     </div>
-                    <div class="status-indicator status-operational">
-                        ✅ API Services Online
+                    <div class="status-indicator" id="statusTasks">
+                        Checking Services...
                     </div>
                 </div>
 
-                <!-- Metrics Dashboard -->
+                <!-- Appointment Metrics (Row 1) -->
                 <div class="dashboard-grid">
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">📅</div>
                             <div class="card-title">Today's Appointments</div>
                         </div>
-                        <div class="metric" id="todaysAppointments">--</div>
+                        <div class="metric-row">
+                            <div class="metric" id="todaysAppointments">--</div>
+                            <span class="unassigned-badge" id="todayUnassigned" style="display:none;"></span>
+                        </div>
                         <div class="metric-label">Scheduled Today</div>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-icon">⚠️</div>
-                            <div class="card-title">Pending Approval</div>
+                            <div class="card-icon">📆</div>
+                            <div class="card-title">This Week</div>
                         </div>
-                        <div class="metric warning" id="pendingApprovals">--</div>
-                        <div class="metric-label">Need Review</div>
+                        <div class="metric-row">
+                            <div class="metric" id="weeklyAppointments">--</div>
+                            <span class="unassigned-badge" id="weekUnassigned" style="display:none;"></span>
+                        </div>
+                        <div class="metric-label">Mon - Sun</div>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-icon">👥</div>
-                            <div class="card-title">Active Clients</div>
+                            <div class="card-icon">📆</div>
+                            <div class="card-title">Next Week</div>
                         </div>
-                        <div class="metric success" id="activeClients">--</div>
-                        <div class="metric-label">This Month</div>
+                        <div class="metric-row">
+                            <div class="metric" id="nextWeekAppointments">--</div>
+                            <span class="unassigned-badge" id="nextWeekUnassigned" style="display:none;"></span>
+                        </div>
+                        <div class="metric-label">Mon - Sun</div>
+                    </div>
+                </div>
+
+                <!-- Secondary Metrics (Row 2) -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon">💬</div>
+                            <div class="card-title">Client Reminders</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric" id="remindersSent">--</div>
+                            <span class="unassigned-badge" id="remindersPending" style="display:none;"></span>
+                        </div>
+                        <div class="metric-label">Sent for Today & Tomorrow</div>
+                    </div>
+
+                    <div class="card" style="cursor:pointer;" onclick="if(typeof TaskNotifications!=='undefined')TaskNotifications.togglePanel();" title="Click to view details">
+                        <div class="card-header">
+                            <div class="card-icon">⚠️</div>
+                            <div class="card-title">Failed Tasks</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric" id="failedTasks">--</div>
+                        </div>
+                        <div class="metric-label">Requires Attention</div>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
                             <div class="card-icon">🚗</div>
-                            <div class="card-title">Driver Status</div>
+                            <div class="card-title">Available Drivers</div>
                         </div>
-                        <div class="metric" id="availableDrivers">--</div>
-                        <div class="metric-label">Available Today</div>
+                        <div class="metric-row">
+                            <div class="metric" id="availableDrivers">--</div>
+                            <span class="unassigned-badge" id="driversUnavailable" style="display:none;"></span>
+                        </div>
+                        <div class="metric-label">Scheduled Today</div>
                     </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="quick-actions">
-                    <a href="clients.html" class="action-btn">
-                        <span class="icon">👤</span>
-                        Manage Clients
-                    </a>
-                    <a href="operations.html" class="action-btn success">
-                        <span class="icon">📋</span>
-                        Today's Operations
-                    </a>
-                    <a href="driver-management.html" class="action-btn secondary">
-                        <span class="icon">🚗</span>
-                        Driver Schedules
-                    </a>
-                    <button class="action-btn warning" onclick="viewPendingApprovals()">
-                        <span class="icon">⚠️</span>
-                        Review Approvals
-                    </button>
                 </div>
 
                 <!-- Today's Schedule -->
@@ -1054,14 +1103,6 @@
                     <!-- Appointments List -->
                     <div id="todaysAppointmentsList">
                         <div class="loading">Loading today's appointments...</div>
-                    </div>
-                </div>
-
-                <!-- Upcoming Flagged Appointments -->
-                <div class="appointments-section">
-                    <h3 class="section-title">⚠️ Appointments Requiring Attention</h3>
-                    <div id="flaggedAppointmentsList">
-                        <div class="loading">Loading flagged appointments...</div>
                     </div>
                 </div>
 
@@ -1346,17 +1387,31 @@
 	}
 
 	async function loadDashboardData() {
+	    const BASE_URL = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
 	    try {
-	        // Load appointments from the appointments API
-	        const appointmentsResponse = await fetch('https://webhook-processor-production-3bb8.up.railway.app/webhook/get-active-present-future-appointments');
-	        
+	        // Parallel fetch: appointments, drivers, and failed tasks
+	        const userRole = currentUser?.role || 'admin';
+	        const failedTasksEndpoint = (userRole === 'admin' || userRole === 'supervisor')
+	            ? 'get-all-failed-tasks' : 'get-failed-tasks';
+
+	        const [appointmentsResponse, driversResponse, failedTasksResponse] = await Promise.all([
+	            fetch(`${BASE_URL}/get-active-present-future-appointments`, { headers: getAuthHeaders() }),
+	            fetch(`${BASE_URL}/get-all-drivers`, { headers: getAuthHeaders() }),
+	            fetch(`${BASE_URL}/${failedTasksEndpoint}`, { headers: getAuthHeaders() }).catch(() => null)
+	        ]);
+
+	        // Update status indicators based on API responses
+	        updateStatusIndicator('statusApi', appointmentsResponse.ok, 'API Connected', 'API Unreachable');
+	        updateStatusIndicator('statusDatabase', appointmentsResponse.ok && driversResponse.ok, 'Database Connected', 'Database Error');
+	        updateStatusIndicator('statusTasks', failedTasksResponse && failedTasksResponse.ok, 'Task Services Online', 'Task Services Unavailable');
+
 	        if (!appointmentsResponse.ok) {
-	            throw new Error(`HTTP ${appointmentsResponse.status}: ${appointmentsResponse.statusText}`);
+	            throw new Error(`Appointments HTTP ${appointmentsResponse.status}: ${appointmentsResponse.statusText}`);
 	        }
 
-        	const appointmentsData = await appointmentsResponse.json();
+	        const appointmentsData = await appointmentsResponse.json();
 	        console.log('Appointments data loaded:', appointmentsData);
-	        
+
 	        // Extract appointments from the response
 	        let appointments = [];
 	        if (Array.isArray(appointmentsData) && appointmentsData.length > 0 && appointmentsData[0].appointments) {
@@ -1364,7 +1419,82 @@
 	        } else if (appointmentsData.appointments && Array.isArray(appointmentsData.appointments)) {
 	            appointments = appointmentsData.appointments;
 	        }
-	        
+
+	        // Parse failed tasks count
+	        let failedTaskCount = 0;
+	        try {
+	            if (failedTasksResponse && failedTasksResponse.ok) {
+	                const failedData = await failedTasksResponse.json();
+	                let tasks = [];
+	                if (Array.isArray(failedData)) {
+	                    tasks = failedData;
+	                } else if (failedData.data && Array.isArray(failedData.data)) {
+	                    tasks = failedData.data;
+	                } else if (failedData.tasks && Array.isArray(failedData.tasks)) {
+	                    tasks = failedData.tasks;
+	                }
+	                failedTaskCount = tasks.filter(t => t && !t.dismissed_at).length;
+	            }
+	        } catch (e) {
+	            console.error('Error parsing failed tasks:', e);
+	        }
+
+	        // Parse drivers and calculate today's availability
+	        let availableToday = 0;
+	        let driversUnavailable = 0;
+	        try {
+	            if (driversResponse.ok) {
+	                const driversData = await driversResponse.json();
+	                let drivers = [];
+	                if (Array.isArray(driversData)) {
+	                    drivers = driversData;
+	                } else if (driversData.data && Array.isArray(driversData.data)) {
+	                    drivers = driversData.data;
+	                } else if (driversData.drivers && Array.isArray(driversData.drivers)) {
+	                    drivers = driversData.drivers;
+	                }
+
+	                const activeDrivers = drivers.filter(d => d.active !== false && d.is_active !== false && d.status !== 'inactive');
+	                const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Halifax' }).toLowerCase();
+	                const todayDateStr = new Date().toISOString().split('T')[0];
+
+	                activeDrivers.forEach(driver => {
+	                    // Check time off
+	                    const timeOff = driver.time_off || [];
+	                    const onLeave = timeOff.some(to =>
+	                        todayDateStr >= to.start_date && todayDateStr <= to.end_date && to.all_day
+	                    );
+	                    if (onLeave) {
+	                        driversUnavailable++;
+	                        return;
+	                    }
+
+	                    // Check weekly schedule
+	                    const weeklyHours = driver.weekly_hours || {};
+	                    const daySchedule = weeklyHours[todayName];
+	                    if (daySchedule && daySchedule.available) {
+	                        availableToday++;
+	                    } else {
+	                        driversUnavailable++;
+	                    }
+	                });
+	            }
+	        } catch (e) {
+	            console.error('Error parsing drivers data:', e);
+	        }
+
+	        // Helper: check if appointment is archived
+	        function isArchived(apt) {
+	            if (apt.is_archived || apt.isArchived || apt.archived) return true;
+	            if (apt.status === 'archived' || apt.appointmentstatus === 'archived') return true;
+	            return false;
+	        }
+
+	        // Helper: check if appointment has no driver assigned
+	        function isUnassigned(apt) {
+	            return !apt.driver_assigned && !apt.driverAssigned && !apt.driver_first_name;
+	        }
+
 	        // Filter for today's appointments (exclude archived)
 	        const today = new Date();
 	        today.setHours(0, 0, 0, 0);
@@ -1372,110 +1502,225 @@
 	        tomorrow.setDate(tomorrow.getDate() + 1);
 
 	        const todaysAppointments = appointments.filter(apt => {
-	            // Exclude archived appointments
-	            if (apt.is_archived || apt.isArchived || apt.archived) return false;
-	            if (apt.status === 'archived' || apt.appointmentstatus === 'archived') return false;
-
+	            if (isArchived(apt)) return false;
 	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
 	            return aptDate >= today && aptDate < tomorrow;
 	        });
 
-        	// Transform the appointments data into dashboard metrics
+	        const todayUnassigned = todaysAppointments.filter(isUnassigned).length;
+
+	        // Calculate weekly appointments (current Mon-Sun)
+	        const now = new Date();
+	        const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...6=Sat
+	        const monday = new Date(now);
+	        monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+	        monday.setHours(0, 0, 0, 0);
+	        const nextMonday = new Date(monday);
+	        nextMonday.setDate(monday.getDate() + 7);
+
+	        const thisWeekAppointments = appointments.filter(apt => {
+	            if (isArchived(apt)) return false;
+	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
+	            return aptDate >= monday && aptDate < nextMonday;
+	        });
+
+	        const weekUnassigned = thisWeekAppointments.filter(isUnassigned).length;
+
+	        // Calculate next week's appointments (next Mon-Sun)
+	        const nextNextMonday = new Date(nextMonday);
+	        nextNextMonday.setDate(nextMonday.getDate() + 7);
+
+	        const nextWeekAppointments = appointments.filter(apt => {
+	            if (isArchived(apt)) return false;
+	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
+	            return aptDate >= nextMonday && aptDate < nextNextMonday;
+	        });
+
+	        const nextWeekUnassigned = nextWeekAppointments.filter(isUnassigned).length;
+
+	        // Calculate client reminder stats (today + tomorrow)
+	        const tomorrowEnd = new Date(tomorrow);
+	        tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+
+	        const todayTomorrowAppts = appointments.filter(apt => {
+	            if (isArchived(apt)) return false;
+	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
+	            return aptDate >= today && aptDate < tomorrowEnd;
+	        });
+
+	        const remindersSent = todayTomorrowAppts.filter(apt =>
+	            apt.client_notification_sent || apt.clientNotificationSent ||
+	            apt.reminder_night_before_sent || apt.reminderNightBeforeSent
+	        ).length;
+
+	        const remindersPending = todayTomorrowAppts.length - remindersSent;
+
+	        // Build dashboard metrics
 	        const dashboardMetrics = {
-        	    todaysAppointments: todaysAppointments.length,
-	            pendingApprovals: todaysAppointments.filter(apt =>
-	                (apt.operation_status || apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
-        	    ).length,
-	            activeClients: appointments.length, // Total appointments as proxy for activity
-        	    availableDrivers: 3 // This would come from a drivers API
+	            todaysAppointments: todaysAppointments.length,
+	            todayUnassigned: todayUnassigned,
+	            weeklyAppointments: thisWeekAppointments.length,
+	            weekUnassigned: weekUnassigned,
+	            nextWeekAppointments: nextWeekAppointments.length,
+	            nextWeekUnassigned: nextWeekUnassigned,
+	            remindersSent: remindersSent,
+	            remindersPending: remindersPending,
+	            failedTasks: failedTaskCount,
+	            availableDrivers: availableToday,
+	            driversUnavailable: driversUnavailable
 	        };
 
-        	// Update the metrics display
 	        updateDashboardMetrics(dashboardMetrics);
 
-        	// Store appointments globally for filtering
+	        // Store appointments globally for filtering
 	        window.todaysAppointments = todaysAppointments;
-	        
+
 	        // Render today's appointments
 	        renderTodaysAppointments(todaysAppointments);
-	        
+
 	        // Set up time filters
 	        setupTimeFilters();
 
-	        // Render flagged appointments (those needing review)
-  	      const flaggedAppointments = todaysAppointments.filter(apt =>
-  	          (apt.operation_status || apt.appointmentstatus || apt.status) === 'pending' || !apt.driverAssigned
-  	      ).map(apt => ({
-   	         id: apt.id || apt.appointment_id,
-   	         client: `${apt.firstname || apt.clientFirstName || ''} ${apt.lastname || apt.clientLastName || ''}`.trim(),
-            	date: 'Today',
-         	   time: new Date(apt.appointmenttime || apt.appointmentDateTime).toLocaleTimeString('en-US', { 
-         	       hour: 'numeric', 
-         	       minute: '2-digit',
-         	       hour12: true 
-         	   }),
-        	    location: apt.locationname || apt.location || 'No location',
-         	   reason: !apt.driverAssigned ? 'No driver assigned' : 'Requires approval',
-        	    hoursNotice: 24 // Default value
-      	  }));
+	        // Build recent activity from actual appointment data
+	        const recentActivity = appointments
+	            .filter(apt => !isArchived(apt) && (apt.created_at || apt.appointmentStatusUpdated))
+	            .map(apt => {
+	                const status = apt.operation_status || apt.appointmentstatus || apt.status || '';
+	                const clientName = `${apt.firstname || apt.clientFirstName || ''} ${apt.lastname || apt.clientLastName || ''}`.trim() || apt.knumber || 'Unknown';
+	                const user = apt.managed_by_name || apt.managedByName || 'System';
 
-     	   renderFlaggedAppointments(flaggedAppointments);
+	                // Use the most recent timestamp for sorting
+	                const statusUpdated = apt.appointmentStatusUpdated ? new Date(apt.appointmentStatusUpdated) : null;
+	                const createdAt = apt.created_at ? new Date(apt.created_at) : null;
+	                const activityDate = statusUpdated || createdAt || new Date(0);
 
-       	 // Create recent activity from today's appointments
-     	   const recentActivity = todaysAppointments.slice(0, 5).map((apt, index) => {
-     	       const status = apt.operation_status || apt.appointmentstatus || apt.status;
-     	       const isAssigned = status === 'assigned' || status === 'confirmed';
-     	       return {
-     	       type: isAssigned ? 'appointment_confirmed' : 'appointment_created',
-       	     message: `${isAssigned ? 'Assigned' : 'Created'} appointment for ${(apt.firstname || apt.clientFirstName || '')} ${(apt.lastname || apt.clientLastName || '')}`.trim(),
-      	      time: `${index + 1} hour${index + 1 > 1 ? 's' : ''} ago`,
-      	      user: 'admin'
-      	  };
-      	  }).concat([
-         	   {
-         	       type: 'system_start',
-         	       message: 'Dashboard loaded successfully',
-         	       time: 'Just now',
-         	       user: 'system'
-         	   }
-      	  ]);
+	                let type, message;
+	                if (status === 'cancelled') {
+	                    type = 'appointment_deleted';
+	                    message = `Cancelled appointment for ${clientName}`;
+	                } else if (apt.driver_assigned || apt.driverAssigned) {
+	                    type = 'driver_assigned';
+	                    const driverName = apt.driver_first_name || apt.driverFirstName || '';
+	                    message = driverName
+	                        ? `Assigned ${driverName} to ${clientName}`
+	                        : `Assigned driver to ${clientName}`;
+	                } else if (status === 'scheduled' || status === 'confirmed' || status === 'assigned') {
+	                    type = 'appointment_confirmed';
+	                    message = `Scheduled appointment for ${clientName}`;
+	                } else {
+	                    type = 'appointment_created';
+	                    message = `Created appointment for ${clientName}`;
+	                }
 
-      	  renderRecentActivity(recentActivity);
+	                return { type, message, time: activityDate, user };
+	            })
+	            .sort((a, b) => b.time - a.time)
+	            .slice(0, 8)
+	            .map(item => ({
+	                ...item,
+	                time: formatTimeAgo(item.time)
+	            }));
 
-  	  } catch (error) {
-   	     console.error('Failed to load dashboard data:', error);
-        
-    	    // Show specific error message
-     	   const errorMessage = error.message.includes('Failed to fetch') 
-      	      ? 'Unable to connect to backend services' 
-      	      : `Backend error: ${error.message}`;
-            
-    	    showDashboardError(errorMessage);
-    	}
+	        renderRecentActivity(recentActivity);
+
+	    } catch (error) {
+	        console.error('Failed to load dashboard data:', error);
+	        const isNetworkError = error.message.includes('Failed to fetch');
+	        const errorMessage = isNetworkError
+	            ? 'Unable to connect to backend services'
+	            : `Backend error: ${error.message}`;
+
+	        // Set status indicators to error
+	        updateStatusIndicator('statusApi', false, 'API Connected', isNetworkError ? 'API Unreachable' : 'API Error');
+	        updateStatusIndicator('statusDatabase', false, 'Database Connected', 'Database Unknown');
+	        updateStatusIndicator('statusTasks', false, 'Task Services Online', 'Services Unknown');
+
+	        showDashboardError(errorMessage);
+	    }
 	}
 
 	// Enhanced error display function
 	function showDashboardError(customMessage) {
-  	  const errorMsg = customMessage || 'Failed to load dashboard data';
-    
-  	  document.getElementById('todaysAppointmentsList').innerHTML = 
-  	      `<div class="error">⚠️ ${errorMsg}</div>`;
- 	   document.getElementById('flaggedAppointmentsList').innerHTML = 
-  	      `<div class="error">⚠️ ${errorMsg}</div>`;
- 	   document.getElementById('recentActivityList').innerHTML = 
-  	      `<div class="error">⚠️ ${errorMsg}</div>`;
-        
- 	   // Set metrics to show error state
- 	   document.getElementById('todaysAppointments').textContent = '--';
-  	  document.getElementById('pendingApprovals').textContent = '--';
- 	   document.getElementById('activeClients').textContent = '--';
- 	   document.getElementById('availableDrivers').textContent = '--';
+	    const errorMsg = customMessage || 'Failed to load dashboard data';
+
+	    document.getElementById('todaysAppointmentsList').innerHTML =
+	        `<div class="error">⚠️ ${errorMsg}</div>`;
+	    document.getElementById('recentActivityList').innerHTML =
+	        `<div class="error">⚠️ ${errorMsg}</div>`;
+
+	    // Set metrics to show error state
+	    document.getElementById('todaysAppointments').textContent = '--';
+	    document.getElementById('weeklyAppointments').textContent = '--';
+	    document.getElementById('nextWeekAppointments').textContent = '--';
+	    document.getElementById('remindersSent').textContent = '--';
+	    document.getElementById('failedTasks').textContent = '--';
+	    document.getElementById('availableDrivers').textContent = '--';
 	}
+
+	function formatTimeAgo(date) {
+	    if (!date || isNaN(date.getTime())) return 'Unknown';
+	    const now = new Date();
+	    const diffMs = now - date;
+	    const diffMins = Math.floor(diffMs / 60000);
+	    const diffHours = Math.floor(diffMs / 3600000);
+	    const diffDays = Math.floor(diffMs / 86400000);
+
+	    if (diffMins < 1) return 'Just now';
+	    if (diffMins < 60) return `${diffMins} min ago`;
+	    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+	    if (diffDays === 1) return 'Yesterday';
+	    if (diffDays < 7) return `${diffDays} days ago`;
+	    return date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+	}
+
+	function updateStatusIndicator(elementId, isOk, successText, errorText) {
+	    const el = document.getElementById(elementId);
+	    if (!el) return;
+	    if (isOk) {
+	        el.className = 'status-indicator status-operational';
+	        el.textContent = '✅ ' + successText;
+	    } else {
+	        el.className = 'status-indicator status-error';
+	        el.textContent = '❌ ' + errorText;
+	    }
+	}
+
         function updateDashboardMetrics(data) {
+            // Row 1: Appointment counts
             document.getElementById('todaysAppointments').textContent = data.todaysAppointments;
-            document.getElementById('pendingApprovals').textContent = data.pendingApprovals;
-            document.getElementById('activeClients').textContent = data.activeClients;
+            document.getElementById('weeklyAppointments').textContent = data.weeklyAppointments;
+            document.getElementById('nextWeekAppointments').textContent = data.nextWeekAppointments;
+
+            showUnassignedBadge('todayUnassigned', data.todayUnassigned);
+            showUnassignedBadge('weekUnassigned', data.weekUnassigned);
+            showUnassignedBadge('nextWeekUnassigned', data.nextWeekUnassigned);
+
+            // Row 2: Reminders
+            document.getElementById('remindersSent').textContent = data.remindersSent;
+            showUnassignedBadge('remindersPending', data.remindersPending, 'pending');
+
+            // Row 2: Failed tasks
+            const failedEl = document.getElementById('failedTasks');
+            failedEl.textContent = data.failedTasks;
+            if (data.failedTasks === 0) {
+                failedEl.className = 'metric success-text';
+            } else {
+                failedEl.className = 'metric danger-text';
+            }
+
+            // Row 2: Available drivers
             document.getElementById('availableDrivers').textContent = data.availableDrivers;
+            showUnassignedBadge('driversUnavailable', data.driversUnavailable, 'off today');
+        }
+
+        function showUnassignedBadge(elementId, count, label) {
+            const badge = document.getElementById(elementId);
+            if (badge && count > 0) {
+                badge.textContent = `${count} ${label || 'unassigned'}`;
+                badge.style.display = 'inline-block';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
         }
 
         function renderTodaysAppointments(appointments) {
@@ -1544,36 +1789,6 @@
             }).join('');
         }
 
-        function renderFlaggedAppointments(flaggedAppointments) {
-            const container = document.getElementById('flaggedAppointmentsList');
-            
-            if (!flaggedAppointments || flaggedAppointments.length === 0) {
-                container.innerHTML = '<div class="empty-state">No appointments requiring attention</div>';
-                return;
-            }
-
-            container.innerHTML = '';
-            flaggedAppointments.forEach(appointment => {
-                const appointmentDiv = document.createElement('div');
-                appointmentDiv.className = 'appointment-item flagged';
-                
-                appointmentDiv.innerHTML = `
-                    <div class="appointment-info">
-                        <div class="appointment-client">${appointment.client}</div>
-                        <div class="appointment-details">
-                            ${appointment.date} at ${appointment.time} • ${appointment.location}<br>
-                            <strong>⚠️ ${appointment.reason}</strong> (${appointment.hoursNotice} hours notice)
-                        </div>
-                    </div>
-                    <div class="appointment-status status-flagged">
-                        Needs Review
-                    </div>
-                `;
-                
-                container.appendChild(appointmentDiv);
-            });
-        }
-
         function renderRecentActivity(activities) {
             const container = document.getElementById('recentActivityList');
             
@@ -1615,19 +1830,6 @@
             return icons[type] || '📋';
         }
 
-        function viewPendingApprovals() {
-            // TODO: Navigate to approval management page or show modal
-            alert('Pending approvals functionality will be implemented in the operations module');
-        }
-
-        function showDashboardError() {
-            document.getElementById('todaysAppointmentsList').innerHTML = 
-                '<div class="error">Failed to load appointment data</div>';
-            document.getElementById('flaggedAppointmentsList').innerHTML = 
-                '<div class="error">Failed to load flagged appointments</div>';
-            document.getElementById('recentActivityList').innerHTML = 
-                '<div class="error">Failed to load activity data</div>';
-        }
 
         function showError(message) {
             const errorDiv = document.getElementById('loginError');
@@ -2043,9 +2245,9 @@
 
             const navItems = [
                 { label: 'Dashboard', page: 'dashboard.html', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Appointments', page: 'appointments-sl.html', icon: 'bi-calendar-check', roles: ['admin', 'supervisor', 'booking_agent'] },
+                { label: 'Appointments', page: 'appointments.html', icon: 'bi-calendar-check', roles: ['admin', 'supervisor', 'booking_agent'] },
                 { label: 'Bulk Add', page: 'appointments-bulk-add.html', icon: 'bi-calendar-plus', roles: ['admin', 'supervisor', 'booking_agent'] },
-                { label: 'Clients', page: 'clients-sl.html', icon: 'bi-people', roles: ['admin', 'supervisor', 'booking_agent'] },
+                { label: 'Clients', page: 'clients.html', icon: 'bi-people', roles: ['admin', 'supervisor', 'booking_agent'] },
                 { label: 'Drivers', page: 'driver-management.html', icon: 'bi-truck', roles: ['admin', 'supervisor'] },
                 { label: 'Operations', page: 'operations.html', icon: 'bi-clipboard-data', roles: ['admin', 'supervisor'] },
                 { label: 'Admin', page: 'admin.html', icon: 'bi-gear', roles: ['admin'] }
@@ -2107,7 +2309,6 @@
     <!-- Background Task Monitoring -->
     <script src="js/core/task-monitor.js"></script>
     <script src="js/components/task-notifications.js"></script>
-    <script src="js/components/failed-tasks-widget.js"></script>
 </body>
 </html>
 <!--

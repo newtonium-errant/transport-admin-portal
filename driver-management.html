@@ -247,9 +247,18 @@
         
         .dashboard-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-bottom: 30px;
+        }
+
+        .available-drivers-list {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.85em;
+            color: #2c3e50;
+            line-height: 1.6;
         }
         
         .stat-card {
@@ -290,7 +299,7 @@
         
         .driver-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr;
             gap: 30px;
         }
         
@@ -512,26 +521,6 @@
             margin-top: 8px;
         }
         
-        .performance-item {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
-            border-left: 3px solid #3498db;
-        }
-        
-        .performance-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        
-        .performance-value {
-            font-size: 1.2em;
-            color: #3498db;
-            font-weight: bold;
-        }
-
         /* Weekly Schedule Styles */
         .form-section {
             margin-top: 25px;
@@ -621,7 +610,7 @@
             }
 
             .dashboard-stats {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
             }
 
             .nav-links {
@@ -794,27 +783,22 @@
     <div class="container-fluid mt-4">
         <!-- Dashboard Stats -->
         <div class="dashboard-stats">
-            <div class="stat-card success">
-                <div class="stat-value success" id="availableDrivers">0</div>
-                <div class="stat-label">Available Drivers</div>
+            <div class="stat-card primary">
+                <div class="stat-value primary" id="activeDrivers">0</div>
+                <div class="stat-label">Active Drivers</div>
             </div>
             <div class="stat-card warning">
-                <div class="stat-value warning" id="busyDrivers">0</div>
-                <div class="stat-label">Busy Drivers</div>
+                <div class="stat-value warning" id="assignedDrivers">0</div>
+                <div class="stat-label">Assigned Today</div>
             </div>
-            <div class="stat-card danger">
-                <div class="stat-value danger" id="offlineDrivers">0</div>
-                <div class="stat-label">Offline Drivers</div>
-            </div>
-            <div class="stat-card primary">
-                <div class="stat-value primary" id="totalDrivers">0</div>
-                <div class="stat-label">Total Drivers</div>
+            <div class="stat-card success" id="availableDriversCard" style="cursor: pointer;" title="Click to see names">
+                <div class="stat-value success" id="availableDrivers">0</div>
+                <div class="stat-label">Available Drivers</div>
+                <div id="availableDriversList" class="available-drivers-list" style="display: none;"></div>
             </div>
         </div>
 
         <div class="driver-grid">
-            <!-- Main Content -->
-            <div class="main-content">
                 <!-- Add New Driver - Now Collapsible -->
                 <div class="card">
                     <div class="card-header" onclick="toggleAddDriverForm()">
@@ -1006,20 +990,7 @@
                         <div class="loading">Loading drivers...</div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <!-- Performance Metrics -->
-                <div class="card">
-                    <div class="card-header" style="cursor: default;">
-                        <h3>📊 Performance Metrics</h3>
-                    </div>
-                    <div id="performanceMetrics">
-                        <div class="loading">Loading performance data...</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1120,7 +1091,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="editDriverWorkPhone" class="form-label">Work Phone</label>
-                                <input type="tel" class="form-control" id="editDriverWorkPhone" placeholder="e.g., +1 (902) 555-1234">
+                                <input type="tel" class="form-control" id="editDriverWorkPhone" placeholder="###-###-####">
                             </div>
                             <div class="col-md-4">
                                 <label for="editDriverVehicle" class="form-label">Vehicle Description</label>
@@ -1330,7 +1301,6 @@
             }
 
             loadDrivers();
-            loadPerformanceMetrics();
         });
 
         // Copy to clipboard with visual feedback
@@ -1513,92 +1483,84 @@
         async function loadDrivers() {
             try {
                 console.log('Loading drivers from API...');
-                const response = await authenticatedFetch(API_ENDPOINTS.DRIVERS);
+                const [driversResponse, appointmentsResponse] = await Promise.all([
+                    authenticatedFetch(API_ENDPOINTS.DRIVERS),
+                    authenticatedFetch(API_ENDPOINTS.GET_ASSIGNMENTS)
+                ]);
 
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+                if (!driversResponse.ok) {
+                    throw new Error(`Drivers API Error: ${driversResponse.status}`);
                 }
 
-                const result = await response.json();
-                console.log('API Response:', result);
-                
-                // Handle response structure - the API returns drivers array directly
-                driversData = result.drivers || [];
-                
+                const driversResult = await driversResponse.json();
+                driversData = driversResult.drivers || [];
                 displayDrivers(driversData);
-                
-                // Use stats from API if available, otherwise calculate
-                if (result.stats) {
-                    updateDriverStatsFromAPI(result.stats);
-                } else {
-                    updateDriverStats(driversData);
+
+                // Parse today's appointments to find assigned drivers
+                let todaysAssignedDriverIds = new Set();
+                if (appointmentsResponse.ok) {
+                    const aptsResult = await appointmentsResponse.json();
+                    const allApts = aptsResult.appointments || aptsResult.data || aptsResult || [];
+                    const todayHalifax = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
+
+                    (Array.isArray(allApts) ? allApts : []).forEach(apt => {
+                        const aptDate = apt.appointmenttime || apt.appointmentDateTime;
+                        if (!aptDate) return;
+                        const aptDayHalifax = new Date(aptDate).toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
+                        if (aptDayHalifax === todayHalifax && (apt.driver_assigned || apt.driverAssigned)) {
+                            todaysAssignedDriverIds.add(apt.driver_assigned || apt.driverAssigned);
+                        }
+                    });
                 }
 
-                // Update performance metrics from API if available
-                if (result.performance) {
-                    updatePerformanceMetricsFromAPI(result.performance);
-                }
+                updateDriverStats(driversData, todaysAssignedDriverIds);
 
             } catch (error) {
                 console.error('Error loading drivers:', error);
-                document.getElementById('driversList').innerHTML = 
+                document.getElementById('driversList').innerHTML =
                     `<div class="error">Error loading drivers: ${error.message}</div>`;
             }
         }
 
-        // Update dashboard stats from API response
-        function updateDriverStatsFromAPI(apiStats) {
-            document.getElementById('availableDrivers').textContent = apiStats.available || 0;
-            document.getElementById('busyDrivers').textContent = apiStats.busy || 0;
-            document.getElementById('offlineDrivers').textContent = apiStats.offline || 0;
-            document.getElementById('totalDrivers').textContent = apiStats.total || 0;
-        }
+        // Update dashboard stats
+        function updateDriverStats(drivers, assignedDriverIds) {
+            const activeDrivers = drivers.filter(d => d.active);
+            const assignedCount = activeDrivers.filter(d => assignedDriverIds.has(d.id)).length;
 
-        // Update dashboard stats (fallback method)
-        function updateDriverStats(drivers) {
-            const stats = {
-                available: 0,
-                busy: 0,
-                offline: 0,
-                total: drivers.length
-            };
+            // Check which active drivers are scheduled today but not assigned
+            const todayHalifax = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
+            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const todayDayName = dayNames[new Date(todayHalifax).getUTCDay()];
 
-            drivers.forEach(driver => {
-                const status = driver.active ? 'available' : 'offline';
-                if (stats.hasOwnProperty(status)) {
-                    stats[status]++;
+            const availableNames = [];
+            activeDrivers.forEach(driver => {
+                if (assignedDriverIds.has(driver.id)) return;
+                const schedule = driver.weekly_hours;
+                if (schedule && schedule[todayDayName] && schedule[todayDayName].available) {
+                    const name = `${driver.first_name || ''} ${driver.last_name || ''}`.trim() || 'Unknown';
+                    availableNames.push(name);
                 }
             });
 
-            document.getElementById('availableDrivers').textContent = stats.available;
-            document.getElementById('busyDrivers').textContent = stats.busy;
-            document.getElementById('offlineDrivers').textContent = stats.offline;
-            document.getElementById('totalDrivers').textContent = stats.total;
+            document.getElementById('activeDrivers').textContent = activeDrivers.length;
+            document.getElementById('assignedDrivers').textContent = assignedCount;
+            document.getElementById('availableDrivers').textContent = availableNames.length;
+
+            // Store names for click handler
+            const listEl = document.getElementById('availableDriversList');
+            if (availableNames.length > 0) {
+                listEl.innerHTML = availableNames.map(n => `<div>${n}</div>`).join('');
+            } else {
+                listEl.innerHTML = '<div style="color: #7f8c8d;">None</div>';
+            }
+
+            // Toggle list on click
+            document.getElementById('availableDriversCard').onclick = function() {
+                listEl.style.display = listEl.style.display === 'none' ? 'block' : 'none';
+            };
         }
 
-        // Update performance metrics from API
-        function updatePerformanceMetricsFromAPI(performance) {
-            const performanceMetrics = document.getElementById('performanceMetrics');
-            
-            performanceMetrics.innerHTML = `
-                <div class="performance-item">
-                    <div class="performance-title">Average Rating</div>
-                    <div class="performance-value">${performance.avgRating || 0} ⭐</div>
-                </div>
-                <div class="performance-item">
-                    <div class="performance-title">Completed Trips</div>
-                    <div class="performance-value">${performance.totalTrips || 0}</div>
-                </div>
-                <div class="performance-item">
-                    <div class="performance-title">On-Time Rate</div>
-                    <div class="performance-value">${performance.onTimePercentage || 0}%</div>
-                </div>
-                <div class="performance-item">
-                    <div class="performance-title">Top Performer</div>
-                    <div class="performance-value">${performance.topPerformer || 'N/A'}</div>
-                </div>
-            `;
-        }
+
 
         // Display drivers list
         function displayDrivers(drivers) {
@@ -1648,13 +1610,6 @@
                     </div>
                 `;
             }).join('');
-        }
-
-        // Load performance metrics (fallback for when not provided by API)
-        async function loadPerformanceMetrics() {
-            // This is called only if performance metrics weren't provided by the main API
-            // The main loadDrivers() function now handles performance metrics from API
-            console.log('Performance metrics loaded from main API or using fallback');
         }
 
         // Save driver (add new only)
