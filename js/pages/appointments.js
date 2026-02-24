@@ -140,6 +140,7 @@ class AppointmentsPage {
             search: '',      // Phase 5: search filter
             status: '',
             driver: '',
+            appointmentType: '', // Appointment type filter
             dateFrom: '',
             dateTo: ''
         };
@@ -455,6 +456,15 @@ class AppointmentsPage {
             this.filters.driver = e.target.value;
             this.render(); // Refresh current view
         });
+
+        // Appointment type filter - INSTANT (dropdown, no typing)
+        const typeFilter = document.getElementById('typeFilter');
+        if (typeFilter) {
+            typeFilter.addEventListener('change', (e) => {
+                this.filters.appointmentType = e.target.value;
+                this.render(); // Refresh current view
+            });
+        }
 
         // Date filters - DEBOUNCED (in case of manual typing)
         document.getElementById('dateFromFilter').addEventListener('change', (e) => {
@@ -805,6 +815,7 @@ class AppointmentsPage {
             search: '',
             status: '',
             driver: '',
+            appointmentType: '',
             dateFrom: '',
             dateTo: ''
         };
@@ -813,12 +824,14 @@ class AppointmentsPage {
         const searchInput = document.getElementById('searchFilter');
         const statusSelect = document.getElementById('statusFilter');
         const driverSelect = document.getElementById('driverFilter');
+        const typeSelect = document.getElementById('typeFilter');
         const dateFromInput = document.getElementById('dateFromFilter');
         const dateToInput = document.getElementById('dateToFilter');
 
         if (searchInput) searchInput.value = '';
         if (statusSelect) statusSelect.value = '';
         if (driverSelect) driverSelect.value = '';
+        if (typeSelect) typeSelect.value = '';
         if (dateFromInput) dateFromInput.value = '';
         if (dateToInput) dateToInput.value = '';
 
@@ -1217,15 +1230,19 @@ class AppointmentsPage {
             hour12: true
         });
 
-        // Use client data from appointment (already enriched by webhook)
-        const clientName = appointment.clientName || 
-                          (appointment.clientFirstName && appointment.clientLastName 
-                            ? `${appointment.clientFirstName} ${appointment.clientLastName}` 
-                            : 'Unknown Client');
+        // Use display name (event_name for support, client name for others)
+        const displayName = this.escapeHtml(this.getAppointmentDisplayName(appointment));
+        const aptType = appointment.appointment_type || 'round_trip';
+        const typeIcon = this.getTypeBadge(aptType, 'sm');
 
-        const locationName = appointment.locationName || appointment.location || 'No location';
+        // One-way direction indicator
+        const directionInfo = aptType === 'one_way' && appointment.trip_direction
+            ? `<span class="text-info" style="font-size: 0.75em;">${appointment.trip_direction === 'to_clinic' ? '&rarr; Clinic' : '&rarr; Home'}</span>`
+            : '';
+
+        const locationName = this.escapeHtml(appointment.locationName || appointment.location || 'No location');
         const driver = this.drivers.find(d => d.id === appointment.driverAssigned);
-        const driverName = driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : (appointment.driverAssigned ? 'Unassigned' : 'No Driver');
+        const driverName = this.escapeHtml(driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : (appointment.driverAssigned ? 'Unassigned' : 'No Driver'));
 
         const status = appointment.operation_status || appointment.appointmentstatus || appointment.status || 'pending';
         const isArchived = appointment.deleted_at;
@@ -1237,17 +1254,23 @@ class AppointmentsPage {
         const isPast = appointmentTime < new Date();
         const pastClass = isPast ? 'past-appointment' : '';
 
+        // For support events, don't link to client
+        const safeKnumber = this.escapeHtml(appointment.knumber);
+        const clientHtml = aptType === 'support'
+            ? `<div class="appointment-client">${displayName}</div>`
+            : `<div class="appointment-client client-link" style="cursor: pointer; text-decoration: underline;"
+                     onclick="event.stopPropagation(); appointmentsPage.viewClient('${safeKnumber}');">
+                    ${displayName}
+                </div>`;
+
         return `
             <div class="appointment-block status-${status} ${pastClass}"
                  style="top: ${topPosition}px; height: ${height}px; left: ${leftOffset}%; width: ${width}%; ${archivedStyle}"
                  data-appointment-id="${appointment.id}"
-                 data-knumber="${appointment.knumber}"
-                 title="${clientName} - ${locationName} - ${driverName}${isArchived ? ' (ARCHIVED)' : ''}">
-                <div class="appointment-time">${timeStr} ${archivedBadge}</div>
-                <div class="appointment-client client-link" style="cursor: pointer; text-decoration: underline;"
-                     onclick="event.stopPropagation(); appointmentsPage.viewClient('${appointment.knumber}');">
-                    ${clientName}
-                </div>
+                 data-knumber="${safeKnumber}"
+                 title="${displayName} - ${locationName} - ${driverName}${isArchived ? ' (ARCHIVED)' : ''}">
+                <div class="appointment-time">${typeIcon} ${timeStr} ${directionInfo} ${archivedBadge}</div>
+                ${clientHtml}
                 <div class="appointment-location">${locationName}</div>
                 <div class="appointment-driver">${driverName}</div>
             </div>
@@ -1401,17 +1424,16 @@ class AppointmentsPage {
                 hour12: true
             });
 
-            const clientName = apt.clientName ||
-                (apt.clientFirstName && apt.clientLastName
-                    ? `${apt.clientFirstName} ${apt.clientLastName}`
-                    : 'Unknown');
+            const displayName = this.escapeHtml(this.getAppointmentDisplayName(apt));
+            const aptType = apt.appointment_type || 'round_trip';
+            const typeIcon = this.getTypeBadge(aptType, 'sm');
 
             // Check if appointment is in the past
             const isPast = aptTime < new Date();
             const pastClass = isPast ? 'past-appointment' : '';
 
             html += `<div class="month-appointment-mini status-${status} ${pastClass}" data-appointment-id="${apt.id}" style="${archivedStyle}">
-                <span class="month-appointment-time">${timeStr}</span> ${clientName} ${archivedBadge}
+                <span class="month-appointment-time">${typeIcon} ${timeStr}</span> ${displayName} ${archivedBadge}
             </div>`;
         });
 
@@ -1507,14 +1529,14 @@ class AppointmentsPage {
                 hour12: true
             });
 
-            const clientName = apt.clientName ||
+            const clientName = this.escapeHtml(apt.clientName ||
                 (apt.clientFirstName && apt.clientLastName
                     ? `${apt.clientFirstName} ${apt.clientLastName}`
-                    : 'Unknown');
+                    : 'Unknown'));
 
-            const location = apt.locationName || apt.location || 'No location';
+            const location = this.escapeHtml(apt.locationName || apt.location || 'No location');
             const driver = this.drivers.find(d => d.id === apt.driverAssigned);
-            const driverName = driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : 'Unassigned';
+            const driverName = this.escapeHtml(driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : 'Unassigned');
 
             html += `<div class="day-popover-appointment status-${status}" data-appointment-id="${apt.id}"
                 style="border-color: ${status === 'confirmed' ? '#28a745' : status === 'cancelled' ? '#dc3545' : '#ffc107'}; ${archivedOpacity}">
@@ -1577,6 +1599,7 @@ class AppointmentsPage {
                 <table class="table table-hover">
                     <thead>
                         <tr>
+                            <th>Type</th>
                             <th>Date/Time</th>
                             <th>Client</th>
                             <th>Location</th>
@@ -1606,30 +1629,37 @@ class AppointmentsPage {
             minute: '2-digit'
         });
 
-        // Use client data from appointment (already enriched by webhook)
-        const clientNameFromAppt = appointment.clientName || 
-                                   (appointment.clientFirstName && appointment.clientLastName 
-                                     ? `${appointment.clientFirstName} ${appointment.clientLastName}` 
-                                     : appointment.knumber);
-        
+        // Use display name (event_name for support, client name for others)
+        const aptType = appointment.appointment_type || 'round_trip';
+        const displayName = this.escapeHtml(this.getAppointmentDisplayName(appointment));
+
         const driver = this.drivers.find(d => d.id === appointment.driverAssigned);
-        const driverName = driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : 'Unassigned';
+        const driverName = this.escapeHtml(driver ? (driver.name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim()) : 'Unassigned');
 
-        const clientName = `
-            <a href="#" class="text-decoration-none" onclick="appointmentsPage.viewClient('${appointment.knumber}'); return false;">
-                ${clientNameFromAppt}
-            </a>
-        `;
+        // For support events, don't link to client
+        const safeKnumber = this.escapeHtml(appointment.knumber);
+        const clientCell = aptType === 'support'
+            ? displayName
+            : `<a href="#" class="text-decoration-none" onclick="appointmentsPage.viewClient('${safeKnumber}'); return false;">
+                ${displayName}
+            </a>`;
 
+        // One-way direction indicator
+        const directionInfo = aptType === 'one_way' && appointment.trip_direction
+            ? ` <small class="text-info">${appointment.trip_direction === 'to_clinic' ? '&rarr; Clinic' : '&rarr; Home'}</small>`
+            : '';
+
+        const typeBadge = this.getTypeBadge(aptType);
         const statusBadge = this.getStatusBadge(appointment.operation_status || appointment.appointmentstatus || appointment.status);
         const archivedBadge = appointment.deleted_at ? '<span class="badge bg-danger ms-1">ARCHIVED</span>' : '';
         const actions = this.getAppointmentActions(appointment);
 
         return `
             <tr ${appointment.deleted_at ? 'style="opacity: 0.7; background-color: #fff3cd;"' : ''}>
+                <td>${typeBadge}${directionInfo}</td>
                 <td>${formattedDate}</td>
-                <td>${clientName}</td>
-                <td>${appointment.locationName || appointment.location || 'TBD'}</td>
+                <td>${clientCell}</td>
+                <td>${this.escapeHtml(appointment.locationName || appointment.location || 'TBD')}</td>
                 <td>${driverName}</td>
                 <td>${statusBadge}${archivedBadge}</td>
                 <td>${actions}</td>
@@ -1645,7 +1675,50 @@ class AppointmentsPage {
             'cancelled': '<span class="badge bg-danger">Cancelled</span>',
             'completed': '<span class="badge bg-primary">Completed</span>'
         };
-        return badges[status] || `<span class="badge bg-light text-dark">${status}</span>`;
+        return badges[status] || `<span class="badge bg-light text-dark">${this.escapeHtml(status)}</span>`;
+    }
+
+    /**
+     * Escape HTML special characters to prevent XSS
+     */
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /**
+     * Returns an icon + badge HTML for appointment type.
+     * @param {string} type - 'round_trip', 'one_way', or 'support'
+     * @param {string} size - 'sm' for small inline icon, 'badge' for full badge
+     * @returns {string} HTML string
+     */
+    getTypeBadge(type, size = 'badge') {
+        const config = {
+            'round_trip': { icon: 'bi-arrow-repeat', bg: 'bg-primary', label: 'Round Trip' },
+            'one_way':    { icon: 'bi-arrow-right',  bg: 'bg-info',    label: 'One Way' },
+            'support':    { icon: 'bi-people-fill',   bg: 'bg-secondary', label: 'Support' }
+        };
+        const c = config[type] || config['round_trip'];
+        if (size === 'sm') {
+            return `<i class="bi ${c.icon}" title="${c.label}"></i>`;
+        }
+        return `<span class="badge ${c.bg}"><i class="bi ${c.icon}"></i> ${c.label}</span>`;
+    }
+
+    /**
+     * Returns display name for an appointment, considering type.
+     * Support events show event_name, others show client name.
+     */
+    getAppointmentDisplayName(appointment) {
+        if ((appointment.appointment_type || 'round_trip') === 'support' && appointment.event_name) {
+            return appointment.event_name;
+        }
+        return appointment.clientName ||
+            (appointment.clientFirstName && appointment.clientLastName
+                ? `${appointment.clientFirstName} ${appointment.clientLastName}`
+                : appointment.knumber || 'Unknown');
     }
 
     getAppointmentActions(appointment) {
@@ -1730,7 +1803,7 @@ class AppointmentsPage {
     filterAppointments() {
         let filtered = [...this.appointments];
 
-        // Phase 5: Search filter (client name, location, K-number, notes)
+        // Phase 5: Search filter (client name, location, K-number, notes, event_name)
         if (this.filters.search) {
             const searchTerm = this.filters.search;
             filtered = filtered.filter(apt => {
@@ -1738,12 +1811,14 @@ class AppointmentsPage {
                 const location = (apt.location || apt.locationName || '').toLowerCase();
                 const knumber = (apt.knumber || '').toLowerCase();
                 const notes = (apt.notes || '').toLowerCase();
+                const eventName = (apt.event_name || '').toLowerCase();
 
                 return (
                     clientName.includes(searchTerm) ||
                     location.includes(searchTerm) ||
                     knumber.includes(searchTerm) ||
-                    notes.includes(searchTerm)
+                    notes.includes(searchTerm) ||
+                    eventName.includes(searchTerm)
                 );
             });
         }
@@ -1779,6 +1854,13 @@ class AppointmentsPage {
 
         if (this.filters.driver) {
             filtered = filtered.filter(apt => apt.driverAssigned === this.filters.driver);
+        }
+
+        if (this.filters.appointmentType) {
+            filtered = filtered.filter(apt => {
+                const type = apt.appointment_type || 'round_trip';
+                return type === this.filters.appointmentType;
+            });
         }
 
         if (this.filters.dateFrom) {
@@ -1875,9 +1957,9 @@ class AppointmentsPage {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <p><strong>Client:</strong> ${appointment.clientName || appointment.knumber}</p>
+                            <p><strong>Client:</strong> ${this.escapeHtml(appointment.clientName || appointment.knumber)}</p>
                             <p><strong>Time:</strong> ${new Date(appointment.appointmentDateTime).toLocaleString()}</p>
-                            <p><strong>Location:</strong> ${appointment.locationName || appointment.location || 'TBD'}</p>
+                            <p><strong>Location:</strong> ${this.escapeHtml(appointment.locationName || appointment.location || 'TBD')}</p>
                             <div class="alert alert-warning">
                                 <i class="bi bi-exclamation-triangle"></i>
                                 Driver will be notified via SMS and calendar update.

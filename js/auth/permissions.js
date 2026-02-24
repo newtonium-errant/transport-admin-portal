@@ -6,7 +6,7 @@
 
 const ROLE_PERMISSIONS = {
     'admin': {
-        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'admin', 'finance'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'admin', 'finance', 'profile'],
         features: ['all'],
         canDeleteClients: true,
         canDeleteAppointments: true,
@@ -20,7 +20,7 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'supervisor': {
-        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'finance'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'finance', 'profile'],
         features: ['view_clients', 'edit_clients', 'delete_clients', 'view_appointments', 'edit_appointments', 'assign_drivers', 'view_drivers', 'view_reports'],
         canDeleteClients: true,
         canDeleteAppointments: true,
@@ -34,7 +34,7 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'booking_agent': {
-        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'profile'],
         features: ['view_clients', 'edit_clients', 'view_appointments', 'edit_appointments', 'create_appointments', 'view_drivers'],
         canDeleteClients: false,
         canDeleteAppointments: true,
@@ -47,8 +47,8 @@ const ROLE_PERMISSIONS = {
         canViewCosts: false
     },
     'driver': {
-        pages: ['dashboard', 'appointment-management'],
-        features: ['view_own_appointments'],
+        pages: ['dashboard', 'appointment-management', 'profile'],
+        features: ['view_own_appointments', 'manage_own_schedule'],
         canDeleteClients: false,
         canDeleteAppointments: false,
         canManageDrivers: false,
@@ -60,7 +60,7 @@ const ROLE_PERMISSIONS = {
         canViewCosts: false
     },
     'client': {
-        pages: ['dashboard'],
+        pages: ['dashboard', 'profile'],
         features: ['view_own_appointments'],
         canDeleteClients: false,
         canDeleteAppointments: false,

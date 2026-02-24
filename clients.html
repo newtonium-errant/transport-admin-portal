@@ -812,10 +812,6 @@
                         <i class="bi bi-x-circle me-1"></i>
                         Clear
                     </button>
-                    <button class="btn-load-all" id="loadAllBtn" onclick="toggleLoadAllClients()" style="margin-left: 0.5rem; background: #6c757d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;">
-                        <i class="bi bi-database me-1"></i>
-                        <span id="loadAllBtnText">Load All Clients</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -865,7 +861,7 @@
                     <button type="button" class="btn-close" onclick="closeAddClientModal()"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addClientForm">
+                    <form id="addClientForm" onsubmit="event.preventDefault(); saveNewClient();">
                         <!-- Basic Information -->
                         <div class="row mb-4">
                             <div class="col-12">
@@ -1025,15 +1021,15 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" onclick="closeAddClientModal()">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i>Create Client
+                            </button>
+                        </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeAddClientModal()">
-                        <i class="bi bi-x-circle me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-success" onclick="saveNewClient()">
-                        <i class="bi bi-check-circle me-1"></i>Create Client
-                    </button>
                 </div>
             </div>
         </div>
@@ -1049,7 +1045,6 @@
         // Global variables
         let allClients = [];
         let filteredClients = [];
-        let allClientsLoaded = false; // Track if all clients (including inactive) are loaded
 
         // API Configuration
         const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
@@ -1246,7 +1241,7 @@
         // Load clients from API
         async function loadClients() {
             try {
-                const response = await authenticatedFetch(`${apiBaseUrl}/getActiveClients`);
+                const response = await authenticatedFetch(`${apiBaseUrl}/getAllClients`);
                 const data = await response.json();
 
                 allClients = data.clients || data || [];
@@ -1283,86 +1278,6 @@
             }
         }
 
-        // Load ALL clients (including inactive)
-        async function loadAllClients() {
-            try {
-                const loadBtn = document.getElementById('loadAllBtn');
-                const btnText = document.getElementById('loadAllBtnText');
-
-                // Show loading state
-                loadBtn.disabled = true;
-                btnText.textContent = 'Loading...';
-
-                const response = await authenticatedFetch(`${apiBaseUrl}/getAllClients`);
-                const data = await response.json();
-
-                allClients = data.clients || data || [];
-
-                // Sort by last name, first name
-                allClients.sort((a, b) => {
-                    const lastNameA = (a.lastname || '').toLowerCase();
-                    const lastNameB = (b.lastname || '').toLowerCase();
-                    if (lastNameA !== lastNameB) return lastNameA.localeCompare(lastNameB);
-
-                    const firstNameA = (a.firstname || '').toLowerCase();
-                    const firstNameB = (b.firstname || '').toLowerCase();
-                    return firstNameA.localeCompare(firstNameB);
-                });
-
-                updateStats();
-                filterClients();
-
-                // Update appointment modal with clients data
-                if (appointmentModalInstance) {
-                    appointmentModalInstance.clients = allClients;
-                    appointmentModalInstance.clientsLoaded = true;
-                }
-
-                // Mark that all clients are loaded
-                allClientsLoaded = true;
-
-                // Update button appearance
-                loadBtn.disabled = false;
-                loadBtn.style.background = '#28a745'; // Green to indicate all loaded
-                btnText.textContent = 'All Clients Loaded';
-
-                showToast(`Loaded ${allClients.length} clients (including inactive)`, 'success');
-
-            } catch (error) {
-                console.error('Error loading all clients:', error);
-                showToast('Failed to load all clients', 'error');
-
-                // Reset button
-                const loadBtn = document.getElementById('loadAllBtn');
-                const btnText = document.getElementById('loadAllBtnText');
-                loadBtn.disabled = false;
-                btnText.textContent = 'Load All Clients';
-            }
-        }
-
-        // Toggle between active-only and all clients
-        async function toggleLoadAllClients() {
-            if (allClientsLoaded) {
-                // Already loaded all clients, reload active only
-                allClientsLoaded = false;
-
-                const loadBtn = document.getElementById('loadAllBtn');
-                const btnText = document.getElementById('loadAllBtnText');
-
-                loadBtn.style.background = '#6c757d';
-                btnText.textContent = 'Loading...';
-
-                await loadClients();
-
-                loadBtn.disabled = false;
-                btnText.textContent = 'Load All Clients';
-
-                showToast('Showing active clients only', 'info');
-            } else {
-                // Load all clients
-                await loadAllClients();
-            }
-        }
 
         // Toggle filters collapse/expand
         function toggleFilters() {

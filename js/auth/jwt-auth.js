@@ -83,6 +83,9 @@ async function requireAuth(redirectUrl = 'dashboard.html') {
         }
     }
 
+    // Reset activity timestamp — user is actively navigating to a protected page
+    sessionStorage.setItem('rrts_last_activity', Date.now().toString());
+
     // Start token refresh timer
     startTokenRefreshTimer();
 

@@ -1073,6 +1073,7 @@
         let appointments = [];
         let drivers = [];
         let driverAssignments = new Map(); // appointmentId -> driverId
+        let clinicLocations = []; // clinic_locations for ID resolution
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1086,8 +1087,8 @@
             // Initialize to current week (Sunday start)
             currentWeekStart = getWeekStart(new Date());
 
-            // Load data sequentially to ensure drivers are loaded before rendering
-            await loadDrivers();
+            // Load clinic locations and drivers in parallel, then appointments
+            await Promise.all([loadDrivers(), loadClinicLocations()]);
             await loadAppointments();
         });
 
@@ -1135,6 +1136,52 @@
             }
         }
 
+        async function loadClinicLocations() {
+            try {
+                const response = await authenticatedFetch(
+                    'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-clinic-locations'
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    clinicLocations = data.data || data || [];
+                } else {
+                    console.warn('Failed to load clinic locations: HTTP', response.status);
+                    clinicLocations = [];
+                }
+            } catch (error) {
+                console.warn('Error loading clinic locations:', error);
+                clinicLocations = [];
+            }
+        }
+
+        function resolveClinicId(locationName) {
+            if (!locationName || !clinicLocations.length) return null;
+            const normalized = locationName.trim().toLowerCase();
+            const match = clinicLocations.find(c =>
+                (c.clinic_name || '').trim().toLowerCase() === normalized
+            );
+            return match ? match.id : null;
+        }
+
+        function driverServesClinic(driver, clinicId) {
+            if (!clinicId) return { serves: true, hasPreferences: false };
+            const prefs = driver.clinic_preferences;
+            if (!prefs || !prefs.preferred_clinic_ids || prefs.preferred_clinic_ids.length === 0) {
+                return { serves: true, hasPreferences: false };
+            }
+            return {
+                serves: prefs.preferred_clinic_ids.includes(clinicId),
+                hasPreferences: true
+            };
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         async function loadAppointments() {
             try {
                 const response = await authenticatedFetch(API_ENDPOINTS.APPOINTMENTS);
@@ -1157,6 +1204,7 @@
                             pickupTime: apt.pickuptime || apt.pickupTime,
                             dropOffTime: apt.dropOffTime || apt.dropofftime,
                             location: apt.locationname || apt.location,
+                            clinic_id: apt.clinic_id || apt.clinicId || resolveClinicId(apt.locationname || apt.location),
                             status: apt.operation_status || apt.appointmentstatus || apt.status,
                             clientFirstName: apt.firstname || apt.clientFirstName,
                             clientLastName: apt.lastname || apt.clientLastName,
@@ -1193,24 +1241,21 @@
         function calculateDriverAvailability(driver, appointmentDateTime, pickupTime, dropOffTime, appointmentLength = 120) {
             const appointmentDate = new Date(appointmentDateTime);
             const pickupDate = new Date(pickupTime);
-            
-            // ✅ FIX: Calculate dropOffTime if not provided
+
+            // Calculate dropOffTime if not provided
             let dropOffDate;
             if (dropOffTime && dropOffTime !== 'undefined' && dropOffTime !== 'null') {
                 dropOffDate = new Date(dropOffTime);
             } else {
-                // Fallback: Calculate dropOffTime from appointment time + appointment length
                 dropOffDate = new Date(appointmentDate.getTime() + (appointmentLength * 60000));
-                console.log(`⚠️ dropOffTime not provided, calculated fallback: ${dropOffDate.toISOString()} (${appointmentLength} min)`);
             }
-            
-            // ✅ FIX: Convert UTC times to Halifax time (AST/ADT) for comparison with driver work hours
+
             const halifaxTimeZone = 'America/Halifax';
-            const dayOfWeek = appointmentDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                timeZone: halifaxTimeZone 
+            const dayOfWeek = appointmentDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                timeZone: halifaxTimeZone
             }).toLowerCase();
-            
+
             // Check if driver is on leave or offline
             if (driver.status === 'on-leave' || driver.status === 'offline') {
                 return {
@@ -1219,61 +1264,110 @@
                     canAssign: false
                 };
             }
-            
-            // ✅ NEW: Check time off data first
+
+            // Helper: get pickup/dropoff times in Halifax timezone
+            const pickupTimeString = pickupDate.toLocaleTimeString('en-CA', {
+                hour: '2-digit', minute: '2-digit', timeZone: halifaxTimeZone, hour12: false
+            });
+            const dropOffTimeString = dropOffDate.toLocaleTimeString('en-CA', {
+                hour: '2-digit', minute: '2-digit', timeZone: halifaxTimeZone, hour12: false
+            });
+
+            const appointmentDateOnly = appointmentDate.toISOString().split('T')[0];
+
+            // === LAYER 1: Check manual entries (driver_time_off) ===
             const timeOff = driver.time_off || [];
-            const appointmentDateOnly = appointmentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-            
-            for (const timeOffRecord of timeOff) {
-                const startDate = timeOffRecord.start_date;
-                const endDate = timeOffRecord.end_date;
-                
-                // Check if appointment date falls within time off period
-                if (appointmentDateOnly >= startDate && appointmentDateOnly <= endDate) {
-                    // If it's an all-day time off, driver is unavailable
-                    if (timeOffRecord.all_day) {
+
+            for (const entry of timeOff) {
+                if (appointmentDateOnly < entry.start_date || appointmentDateOnly > entry.end_date) continue;
+
+                // Override available: driver IS available on this date despite schedule
+                if (entry.entry_type === 'override_available') {
+                    const overrideStart = entry.all_day ? '00:00' : (entry.start_time || '00:00');
+                    const overrideEnd = entry.all_day ? '23:59' : (entry.end_time || '23:59');
+
+                    const isWithinOverride = pickupTimeString >= overrideStart && dropOffTimeString <= overrideEnd;
+                    if (isWithinOverride) {
+                        return {
+                            status: 'available',
+                            reason: `Override: ${entry.reason || 'Extra availability'}`,
+                            canAssign: true
+                        };
+                    } else {
+                        return {
+                            status: 'outside-hours',
+                            reason: `Override hours (${overrideStart}-${overrideEnd})`,
+                            canAssign: true,
+                            warning: `Appointment ${pickupTimeString}-${dropOffTimeString}, override ${overrideStart}-${overrideEnd}`
+                        };
+                    }
+                }
+
+                // Time off: driver is NOT available
+                if (!entry.entry_type || entry.entry_type === 'time_off') {
+                    if (entry.all_day) {
                         return {
                             status: 'unavailable',
-                            reason: `Time off: ${timeOffRecord.reason}`,
+                            reason: `Time off: ${entry.reason || 'Blocked'}`,
                             canAssign: false
                         };
                     }
-                    
-                    // If it's partial day time off, check if appointment times conflict
-                    if (timeOffRecord.start_time && timeOffRecord.end_time) {
-                        const pickupTimeString = pickupDate.toLocaleTimeString('en-CA', { 
-                            hour: '2-digit', 
-                            minute: '2-digit', 
-                            timeZone: halifaxTimeZone,
-                            hour12: false 
-                        });
-                        const dropOffTimeString = dropOffDate.toLocaleTimeString('en-CA', { 
-                            hour: '2-digit', 
-                            minute: '2-digit', 
-                            timeZone: halifaxTimeZone,
-                            hour12: false 
-                        });
-                        
-                        // Check if appointment times overlap with time off
-                        const timeOffStart = timeOffRecord.start_time;
-                        const timeOffEnd = timeOffRecord.end_time;
-                        
-                        if ((pickupTimeString < timeOffEnd && dropOffTimeString > timeOffStart)) {
+
+                    if (entry.start_time && entry.end_time) {
+                        if (pickupTimeString < entry.end_time && dropOffTimeString > entry.start_time) {
                             return {
                                 status: 'unavailable',
-                                reason: `Time off: ${timeOffRecord.reason} (${timeOffStart}-${timeOffEnd})`,
+                                reason: `Time off: ${entry.reason || 'Blocked'} (${entry.start_time}-${entry.end_time})`,
                                 canAssign: false
                             };
                         }
                     }
                 }
             }
-            
-            // Get driver's weekly schedule
+
+            // === LAYER 2: Check schedule_pattern (rotating schedules) ===
+            const pattern = driver.schedule_pattern;
+            if (pattern && pattern.type && pattern.anchor_date && pattern.cycle_days) {
+                const anchor = new Date(pattern.anchor_date + 'T00:00:00');
+                const targetDate = new Date(appointmentDateOnly + 'T00:00:00');
+                const daysSinceAnchor = Math.floor((targetDate - anchor) / 86400000);
+                const cycleDays = pattern.cycle_days;
+                const positionInCycle = ((daysSinceAnchor % cycleDays) + cycleDays) % cycleDays + 1;
+                const isWorkDay = (pattern.work_days || []).includes(positionInCycle);
+
+                if (!isWorkDay) {
+                    return {
+                        status: 'unavailable',
+                        reason: `Off day (day ${positionInCycle} of ${cycleDays}-day cycle)`,
+                        canAssign: false
+                    };
+                }
+
+                // Work day in rotation - check against pattern hours
+                const workStart = pattern.default_start || '08:00';
+                const workEnd = pattern.default_end || '16:00';
+                const isWithinWorkHours = pickupTimeString >= workStart && dropOffTimeString <= workEnd;
+
+                if (isWithinWorkHours) {
+                    return {
+                        status: 'available',
+                        reason: `Within rotation hours (day ${positionInCycle})`,
+                        canAssign: true
+                    };
+                } else {
+                    return {
+                        status: 'outside-hours',
+                        reason: `Outside rotation hours (${workStart}-${workEnd})`,
+                        canAssign: true,
+                        warning: `Appointment ${pickupTimeString}-${dropOffTimeString}, rotation schedule ${workStart}-${workEnd}`
+                    };
+                }
+            }
+
+            // === LAYER 3: Fall back to weekly_hours ===
             const weeklyHours = driver.weekly_hours || {};
             const daySchedule = weeklyHours[dayOfWeek];
-            
-            // Check if driver is available on this day
+
             if (!daySchedule || !daySchedule.available) {
                 return {
                     status: 'unavailable',
@@ -1281,11 +1375,10 @@
                     canAssign: false
                 };
             }
-            
-            // Get driver's work hours for this day
+
             const workStart = daySchedule.start;
             const workEnd = daySchedule.end;
-            
+
             if (!workStart || !workEnd) {
                 return {
                     status: 'unavailable',
@@ -1293,24 +1386,9 @@
                     canAssign: false
                 };
             }
-            
-            // ✅ FIX: Convert UTC times to Halifax time (AST/ADT) for comparison
-            const pickupTimeString = pickupDate.toLocaleTimeString('en-CA', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                timeZone: halifaxTimeZone,
-                hour12: false 
-            });
-            const dropOffTimeString = dropOffDate.toLocaleTimeString('en-CA', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                timeZone: halifaxTimeZone,
-                hour12: false 
-            });
-            
-            // Check if entire appointment duration (pickup to dropoff) is within work hours
+
             const isWithinWorkHours = pickupTimeString >= workStart && dropOffTimeString <= workEnd;
-            
+
             if (isWithinWorkHours) {
                 return {
                     status: 'available',
@@ -1406,59 +1484,88 @@
             });
         }
 
+        function getAppointmentTypeIcon(type) {
+            const config = {
+                'round_trip': { icon: 'bi-arrow-repeat', title: 'Round Trip' },
+                'one_way':    { icon: 'bi-arrow-right',  title: 'One Way' },
+                'support':    { icon: 'bi-people-fill',   title: 'Support Event' }
+            };
+            const c = config[type] || config['round_trip'];
+            return `<i class="bi ${c.icon}" title="${c.title}"></i>`;
+        }
+
         function renderDayAppointments(dayAppointments) {
             if (dayAppointments.length === 0) {
                 return '<div class="no-appointments">No appointments</div>';
             }
-            
+
             return dayAppointments.map(apt => {
                 const appointmentTime = new Date(apt.appointmentDateTime);
-                const timeString = appointmentTime.toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
+                const timeString = appointmentTime.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
                     minute: '2-digit',
                     hour12: true,
                     timeZone: 'America/Halifax'
                 });
-                
-                const clientName = `${apt.clientFirstName || ''} ${apt.clientLastName || ''}`.trim() || 'Unknown Client';
-                const kNumber = apt.knumber ? ` (${apt.knumber})` : '';
-                
+
+                const aptType = apt.appointment_type || 'round_trip';
+                const typeIcon = getAppointmentTypeIcon(aptType);
+
+                // Support events show event_name instead of client name
+                let displayName;
+                let kNumber;
+                if (aptType === 'support' && apt.event_name) {
+                    displayName = escapeHtml(apt.event_name);
+                    kNumber = '';
+                } else {
+                    displayName = escapeHtml(`${apt.clientFirstName || ''} ${apt.clientLastName || ''}`.trim() || 'Unknown Client');
+                    kNumber = apt.knumber ? ` (${escapeHtml(apt.knumber)})` : '';
+                }
+
+                // One-way direction indicator
+                const directionInfo = aptType === 'one_way' && apt.trip_direction
+                    ? ` <small class="text-info">${apt.trip_direction === 'to_clinic' ? '&rarr; Clinic' : '&rarr; Home'}</small>`
+                    : '';
+
                 return `
                     <div class="appointment-slot" data-appointment-id="${apt.id}">
-                        <div class="appointment-time">${timeString}</div>
-                        <div class="appointment-client">${clientName}${kNumber}</div>
-                        <div class="appointment-location">${apt.location || 'No location'}</div>
-                        ${renderDriverDropdown(apt.id, apt.appointmentDateTime, apt.pickupTime, apt.dropOffTime, apt.appointmentLength, apt.driverAssigned)}
+                        <div class="appointment-time">${typeIcon} ${timeString}${directionInfo}</div>
+                        <div class="appointment-client">${displayName}${kNumber}</div>
+                        <div class="appointment-location">${escapeHtml(apt.location || 'No location')}</div>
+                        ${renderDriverDropdown(apt.id, apt.appointmentDateTime, apt.pickupTime, apt.dropOffTime, apt.appointmentLength, apt.driverAssigned, apt.clinic_id)}
                     </div>
                 `;
             }).join('');
         }
 
-        function renderDriverDropdown(appointmentId, appointmentDateTime, pickupTime, dropOffTime, appointmentLength, currentDriverId = null) {
+        function renderDriverDropdown(appointmentId, appointmentDateTime, pickupTime, dropOffTime, appointmentLength, currentDriverId = null, clinicId = null) {
             if (drivers.length === 0) {
                 return '<select class="driver-assignment-dropdown" disabled><option>Loading drivers...</option></select>';
             }
-            
+
             // Get the current driver assignment from the Map (this reflects the most current state)
             const assignedDriverId = driverAssignments.get(appointmentId) || currentDriverId;
-            
+
             let html = '<select class="driver-assignment-dropdown" onchange="updateDriverAssignment(this, \'' + appointmentId + '\')">';
             html += '<option value="">-- Select Driver --</option>';
-            
+
             // Group drivers by availability
             const availableDrivers = [];
             const outsideHoursDrivers = [];
             const unavailableDrivers = [];
-            
+
             drivers.forEach(driver => {
                 const availability = calculateDriverAvailability(driver, appointmentDateTime, pickupTime, dropOffTime, appointmentLength);
-                
+                const clinicPref = driverServesClinic(driver, clinicId);
+
                 const driverOption = {
                     id: driver.id || driver.driver_id,
                     name: driver.name || driver.driver_name,
-                    availability: availability
+                    availability: availability,
+                    servesClinic: clinicPref.serves,
+                    hasClinicPrefs: clinicPref.hasPreferences
                 };
-                
+
                 switch (availability.status) {
                     case 'available':
                         availableDrivers.push(driverOption);
@@ -1471,47 +1578,69 @@
                         break;
                 }
             });
-            
+
+            // Sort available drivers: preferred clinic first, then non-preferred
+            availableDrivers.sort((a, b) => {
+                if (a.servesClinic === b.servesClinic) return 0;
+                return a.servesClinic ? -1 : 1;
+            });
+
+            // Sort outside-hours drivers the same way
+            outsideHoursDrivers.sort((a, b) => {
+                if (a.servesClinic === b.servesClinic) return 0;
+                return a.servesClinic ? -1 : 1;
+            });
+
             // Render available drivers
             if (availableDrivers.length > 0) {
                 html += '<optgroup label="Available (Scheduled Hours)">';
                 availableDrivers.forEach(driver => {
                     const selected = driver.id === assignedDriverId ? 'selected' : '';
+                    let icon = '\u2705';
+                    let suffix = '';
+                    if (driver.hasClinicPrefs && !driver.servesClinic) {
+                        icon = '\u2705\u26A0\uFE0F';
+                        suffix = ' (not preferred clinic)';
+                    }
                     html += `<option value="${driver.id}" class="available-driver" ${selected}>
-                        ✅ ${driver.name}
+                        ${icon} ${escapeHtml(driver.name)}${suffix}
                     </option>`;
                 });
                 html += '</optgroup>';
             }
-            
+
             // Render outside hours drivers
             if (outsideHoursDrivers.length > 0) {
                 html += '<optgroup label="Outside Scheduled Hours">';
                 outsideHoursDrivers.forEach(driver => {
                     const selected = driver.id === assignedDriverId ? 'selected' : '';
+                    let suffix = '';
+                    if (driver.hasClinicPrefs && !driver.servesClinic) {
+                        suffix = ' (not preferred clinic)';
+                    }
                     html += `<option value="${driver.id}" class="outside-hours-driver" ${selected}>
-                        ⚠️ ${driver.name}
+                        \u26A0\uFE0F ${escapeHtml(driver.name)}${suffix}
                     </option>`;
                 });
                 html += '</optgroup>';
             }
-            
+
             // Render unavailable drivers
             if (unavailableDrivers.length > 0) {
                 html += '<optgroup label="Unavailable">';
                 unavailableDrivers.forEach(driver => {
                     const selected = driver.id === assignedDriverId ? 'selected' : '';
                     // If it's the assigned driver but unavailable, show as selected but with warning
-                    const optionText = driver.id === assignedDriverId ? 
-                        `⚠️ ${driver.name} (${driver.availability.reason}) - ASSIGNED` :
-                        `❌ ${driver.name} (${driver.availability.reason})`;
+                    const optionText = driver.id === assignedDriverId ?
+                        `\u26A0\uFE0F ${escapeHtml(driver.name)} (${escapeHtml(driver.availability.reason)}) - ASSIGNED` :
+                        `\u274C ${escapeHtml(driver.name)} (${escapeHtml(driver.availability.reason)})`;
                     html += `<option value="${driver.id}" class="unavailable-driver" ${selected}>
                         ${optionText}
                     </option>`;
                 });
                 html += '</optgroup>';
             }
-            
+
             html += '</select>';
             return html;
         }
@@ -1519,7 +1648,7 @@
         // Refresh driver dropdowns when drivers become available
         function refreshDriverDropdowns() {
             const weekAppointments = getWeekAppointments();
-            
+
             weekAppointments.forEach(appointment => {
                 const appointmentElement = document.querySelector(`[data-appointment-id="${appointment.id}"]`);
                 if (appointmentElement) {
@@ -1531,7 +1660,8 @@
                             appointment.pickupTime,
                             appointment.dropOffTime,
                             appointment.appointmentLength,
-                            appointment.driverAssigned
+                            appointment.driverAssigned,
+                            appointment.clinic_id
                         );
                         dropdownElement.outerHTML = newDropdown;
                     }
@@ -1577,11 +1707,20 @@
                     const driver = drivers.find(d => (d.id || d.driver_id) === assignedDriverId);
                     if (driver) {
                         const availability = calculateDriverAvailability(driver, appointment.appointmentDateTime, appointment.pickupTime, appointment.dropOffTime, appointment.appointmentLength);
-                        
+
                         if (availability.status === 'outside-hours') {
                             warnings.push({
                                 type: 'warning',
                                 message: `${driver.name} assigned outside scheduled hours (${availability.warning})`
+                            });
+                        }
+
+                        // Check clinic preference
+                        const clinicPref = driverServesClinic(driver, appointment.clinic_id);
+                        if (clinicPref.hasPreferences && !clinicPref.serves) {
+                            warnings.push({
+                                type: 'warning',
+                                message: `${driver.name || driver.driver_name} assigned to ${appointment.location || 'a clinic'} which is not in their preferred clinics`
                             });
                         }
                     }
@@ -1619,8 +1758,8 @@
             }
             
             container.innerHTML = warnings.map(warning => `
-                <div class="warning-item ${warning.type}">
-                    ${warning.message}
+                <div class="warning-item ${escapeHtml(warning.type)}">
+                    ${escapeHtml(warning.message)}
                 </div>
             `).join('');
         }
