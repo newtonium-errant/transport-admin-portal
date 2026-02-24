@@ -349,9 +349,17 @@ class AppointmentsPage {
 
     setupButtons() {
         // Add Appointment button
-        document.getElementById('addAppointmentBtn').addEventListener('click', () => {
+        document.getElementById('addAppointmentBtn').addEventListener('click', async () => {
             if (typeof appointmentModalInstance !== 'undefined') {
-                appointmentModalInstance.open('add');
+                const btn = document.getElementById('addAppointmentBtn');
+                this.setButtonLoading(btn, true, 'Loading...');
+                try {
+                    await appointmentModalInstance.open('add');
+                } catch (err) {
+                    console.error('Error opening appointment modal:', err);
+                } finally {
+                    this.setButtonLoading(btn, false);
+                }
             }
         });
 
