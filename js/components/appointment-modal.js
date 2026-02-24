@@ -2,8 +2,12 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v3.0.0
+ * Version: v3.1.0
  * Changes:
+ * - v3.1.0: Replaced client search-only input with searchable dropdown list
+ * - v3.1.0: Search filter input above dropdown for type-to-filter behavior
+ * - v3.1.0: Dropdown pre-populated with all active clients on modal open
+ * - v3.1.0: Client selection from dropdown triggers same auto-population as before
  * - v3.0.0: Added appointment type support (round_trip, one_way, support)
  * - v3.0.0: Bootstrap btn-group type selector with conditional field visibility
  * - v3.0.0: One-way: trip_direction (to_clinic/to_home), adjusted labels
@@ -111,11 +115,14 @@ class AppointmentModal {
 
                                 <!-- Client Selection -->
                                 <div class="mb-3" id="clientSelectionRow">
-                                    <label for="appointmentClient" class="form-label">Client <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="appointmentClient"
-                                           placeholder="Search by name or K number..." required>
+                                    <label for="appointmentClientDropdown" class="form-label">Client <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control mb-1" id="clientSearchFilter"
+                                           placeholder="Type to filter clients..." autocomplete="off">
+                                    <select class="form-select" id="appointmentClientDropdown" required>
+                                        <option value="">Choose a client...</option>
+                                    </select>
+                                    <input type="hidden" id="appointmentClient" value="">
                                     <input type="hidden" id="appointmentClientId">
-                                    <div id="clientSuggestions" class="list-group mt-2" style="display: none;"></div>
                                 </div>
 
                                 <!-- Appointment Details -->
@@ -362,11 +369,12 @@ class AppointmentModal {
         }
 
         if (type === 'support') {
-            // Support: hide client search, auto-set K0000
+            // Support: hide client selection, auto-set K0000
             if (clientSelectionRow) clientSelectionRow.style.display = 'none';
             document.getElementById('appointmentClientId').value = 'K0000';
             document.getElementById('appointmentClient').value = 'Support Event';
-            document.getElementById('appointmentClient').removeAttribute('required');
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            if (clientDropdown) clientDropdown.removeAttribute('required');
 
             // Hide transit time row in support mode
             if (transitTimeRow) transitTimeRow.style.display = 'none';
@@ -380,9 +388,10 @@ class AppointmentModal {
             // Clear selected client
             this.selectedClient = null;
         } else {
-            // Round trip or one way: show client search
+            // Round trip or one way: show client selection
             if (clientSelectionRow) clientSelectionRow.style.display = 'block';
-            document.getElementById('appointmentClient').setAttribute('required', '');
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            if (clientDropdown) clientDropdown.setAttribute('required', '');
 
             // Restore clinic label
             if (clinicLabel) clinicLabel.innerHTML = 'Clinic Location <span class="text-danger">*</span>';
@@ -397,6 +406,7 @@ class AppointmentModal {
             if (currentClientId === 'K0000' && this.mode === 'add') {
                 document.getElementById('appointmentClient').value = '';
                 document.getElementById('appointmentClientId').value = '';
+                if (clientDropdown) clientDropdown.value = '';
             }
         }
     }
@@ -678,65 +688,116 @@ class AppointmentModal {
     }
 
     setupClientSearch() {
-        const input = document.getElementById('appointmentClient');
-        const suggestions = document.getElementById('clientSuggestions');
+        const filterInput = document.getElementById('clientSearchFilter');
+        const dropdown = document.getElementById('appointmentClientDropdown');
 
-        input.addEventListener('input', () => {
-            const searchTerm = input.value.toLowerCase();
-            if (searchTerm.length < 2) {
-                suggestions.style.display = 'none';
+        if (!filterInput || !dropdown) return;
+
+        // Filter dropdown options as user types
+        filterInput.addEventListener('input', () => {
+            const searchTerm = filterInput.value.toLowerCase().trim();
+            const options = dropdown.querySelectorAll('option');
+
+            options.forEach(option => {
+                if (!option.value) {
+                    // Always show the placeholder option
+                    option.style.display = '';
+                    return;
+                }
+                const text = option.textContent.toLowerCase();
+                option.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+
+            // If search narrows to exactly one visible option (besides placeholder), auto-select it
+            const visibleOptions = Array.from(options).filter(o => o.value && o.style.display !== 'none');
+            if (visibleOptions.length === 1 && searchTerm.length >= 2) {
+                dropdown.value = visibleOptions[0].value;
+                // Do NOT auto-trigger change here; let user confirm by clicking
+            }
+        });
+
+        // When a client is selected from dropdown, trigger selectClient
+        dropdown.addEventListener('change', () => {
+            const knumber = dropdown.value;
+            if (!knumber) {
+                // Reset client selection
+                document.getElementById('appointmentClient').value = '';
+                document.getElementById('appointmentClientId').value = '';
+                this.selectedClient = null;
                 return;
             }
 
-            const matches = this.clients.filter(client => {
-                // Filter out K0000 sentinel client in non-support mode
-                const knum = client.knumber || client.k_number || '';
-                if (knum === 'K0000' && this.appointmentType !== 'support') return false;
+            const selectedOption = dropdown.selectedOptions[0];
+            const fullName = selectedOption ? selectedOption.dataset.fullname : '';
+            this.selectClient(knumber, fullName);
 
-                return (client.firstname && client.firstname.toLowerCase().includes(searchTerm)) ||
-                    (client.lastname && client.lastname.toLowerCase().includes(searchTerm)) ||
-                    (knum && knum.toLowerCase().includes(searchTerm));
-            }).slice(0, 5);
+            // Clear the search filter after selection
+            filterInput.value = '';
+            // Show all options again
+            dropdown.querySelectorAll('option').forEach(o => o.style.display = '');
+        });
+    }
 
-            if (matches.length > 0) {
-                suggestions.innerHTML = matches.map(client => {
-                    const safeKnumber = escapeHtml(client.knumber || client.k_number || '');
-                    const safeFirst = escapeHtml(client.firstname || client.first_name || '');
-                    const safeLast = escapeHtml(client.lastname || client.last_name || '');
-                    // Use data attributes to avoid inline JS with unescaped values
-                    return `<a href="#" class="list-group-item list-group-item-action client-suggestion"
-                        data-knumber="${safeKnumber}" data-fullname="${safeFirst} ${safeLast}">
-                        <strong>${safeKnumber}</strong> - ${safeFirst} ${safeLast}
-                    </a>`;
-                }).join('');
-                suggestions.style.display = 'block';
+    /**
+     * Populates the client dropdown with all active clients.
+     * Called after clients are loaded (in open() method).
+     */
+    populateClientDropdown() {
+        const dropdown = document.getElementById('appointmentClientDropdown');
+        if (!dropdown) return;
 
-                // Attach click handlers via delegation
-                suggestions.querySelectorAll('.client-suggestion').forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const knumber = item.dataset.knumber;
-                        const fullname = item.dataset.fullname;
-                        appointmentModalInstance.selectClient(knumber, fullname);
-                    });
-                });
-            } else {
-                suggestions.style.display = 'none';
-            }
+        // Preserve current selection if any
+        const currentValue = dropdown.value;
+
+        dropdown.innerHTML = '<option value="">Choose a client...</option>';
+
+        // Filter to active clients only, exclude K0000 sentinel in non-support mode
+        const clientsToShow = this.clients.filter(client => {
+            const knum = client.knumber || client.k_number || '';
+            if (knum === 'K0000' && this.appointmentType !== 'support') return false;
+            // Only show active clients (match bulk-add page pattern)
+            if (client.active === false || client.status === 'inactive') return false;
+            return true;
         });
 
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!input.contains(e.target) && !suggestions.contains(e.target)) {
-                suggestions.style.display = 'none';
-            }
+        // Sort by last name, first name for easy browsing
+        clientsToShow.sort((a, b) => {
+            const lastA = (a.lastname || a.last_name || '').toLowerCase();
+            const lastB = (b.lastname || b.last_name || '').toLowerCase();
+            if (lastA !== lastB) return lastA.localeCompare(lastB);
+            const firstA = (a.firstname || a.first_name || '').toLowerCase();
+            const firstB = (b.firstname || b.first_name || '').toLowerCase();
+            return firstA.localeCompare(firstB);
         });
+
+        clientsToShow.forEach(client => {
+            const knum = client.knumber || client.k_number || '';
+            const firstName = client.firstname || client.first_name || '';
+            const lastName = client.lastname || client.last_name || '';
+            const option = document.createElement('option');
+            option.value = knum;
+            option.textContent = `${lastName}, ${firstName} - ${knum}`;
+            option.dataset.fullname = `${firstName} ${lastName}`;
+            dropdown.appendChild(option);
+        });
+
+        // Restore previous selection if it still exists
+        if (currentValue) {
+            dropdown.value = currentValue;
+        }
+
+        console.log(`[Modal] Populated client dropdown with ${clientsToShow.length} clients`);
     }
 
     selectClient(knumber, fullName) {
         document.getElementById('appointmentClient').value = fullName;
         document.getElementById('appointmentClientId').value = knumber;
-        document.getElementById('clientSuggestions').style.display = 'none';
+
+        // Sync dropdown selection if it exists
+        const dropdown = document.getElementById('appointmentClientDropdown');
+        if (dropdown && dropdown.value !== knumber) {
+            dropdown.value = knumber;
+        }
 
         // Store the full client object including clinic_travel_times
         // Check both knumber and k_number field names for compatibility
@@ -1140,6 +1201,9 @@ class AppointmentModal {
             await this.loadClients();
             this.clientsLoaded = true;
         }
+        // Populate client dropdown with loaded clients
+        this.populateClientDropdown();
+
         if (!this.clinicsLoaded) {
             await this.loadClinics();
             this.clinicsLoaded = true;
@@ -1365,11 +1429,17 @@ class AppointmentModal {
         if (mode === 'edit' && appointment) {
             this.populateForm(appointment);
 
-            // Lock client field in edit mode - cannot change appointment's client
-            const clientField = document.getElementById('appointmentClient');
-            clientField.disabled = true;
-            clientField.style.backgroundColor = '#e9ecef';
-            clientField.title = 'Cannot change client for existing appointment. Archive this appointment and create a new one if needed.';
+            // Lock client dropdown in edit mode - cannot change appointment's client
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            const clientSearchFilter = document.getElementById('clientSearchFilter');
+            if (clientDropdown) {
+                clientDropdown.disabled = true;
+                clientDropdown.style.backgroundColor = '#e9ecef';
+                clientDropdown.title = 'Cannot change client for existing appointment. Archive this appointment and create a new one if needed.';
+            }
+            if (clientSearchFilter) {
+                clientSearchFilter.style.display = 'none';
+            }
         } else {
             document.getElementById('appointmentForm').reset();
             // Clear hidden fields
@@ -1390,11 +1460,21 @@ class AppointmentModal {
             this.originalAppointmentDateTime = null;
             this.originalTransitTime = null;
 
-            // Ensure client field is enabled in add mode
-            const clientField = document.getElementById('appointmentClient');
-            clientField.disabled = false;
-            clientField.style.backgroundColor = '';
-            clientField.title = '';
+            // Ensure client dropdown is enabled in add mode
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            const clientSearchFilter = document.getElementById('clientSearchFilter');
+            if (clientDropdown) {
+                clientDropdown.disabled = false;
+                clientDropdown.style.backgroundColor = '';
+                clientDropdown.title = '';
+                clientDropdown.value = '';
+            }
+            if (clientSearchFilter) {
+                clientSearchFilter.style.display = '';
+                clientSearchFilter.value = '';
+            }
+            // Clear hidden client field
+            document.getElementById('appointmentClient').value = '';
         }
 
         // Initialize appointment type for this open
@@ -1425,14 +1505,20 @@ class AppointmentModal {
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
 
-        // Ensure client field state is correct after modal is shown
+        // Ensure client dropdown state is correct after modal is shown
         document.getElementById('appointmentModal').addEventListener('shown.bs.modal', () => {
-            const clientField = document.getElementById('appointmentClient');
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            const clientSearchFilter = document.getElementById('clientSearchFilter');
             if (mode === 'add' && this.appointmentType !== 'support') {
-                clientField.disabled = false;
-                clientField.style.backgroundColor = '';
-                clientField.title = '';
-                clientField.focus(); // Also focus it for convenience
+                if (clientDropdown) {
+                    clientDropdown.disabled = false;
+                    clientDropdown.style.backgroundColor = '';
+                    clientDropdown.title = '';
+                }
+                if (clientSearchFilter) {
+                    clientSearchFilter.style.display = '';
+                    clientSearchFilter.focus(); // Focus the search filter for convenience
+                }
             }
         }, { once: true }); // Use once: true to prevent duplicate listeners
 
@@ -1540,11 +1626,27 @@ class AppointmentModal {
 
     populateForm(appointment) {
         document.getElementById('appointmentId').value = appointment.id;
-        document.getElementById('appointmentClient').value = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim();
+        const clientFullName = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim();
+        document.getElementById('appointmentClient').value = clientFullName;
 
         // Check both knumber and k_number field names for compatibility
         const aptKnumber = appointment.knumber || appointment.k_number;
         document.getElementById('appointmentClientId').value = aptKnumber;
+
+        // Set the client dropdown to the correct client
+        const clientDropdown = document.getElementById('appointmentClientDropdown');
+        if (clientDropdown) {
+            clientDropdown.value = aptKnumber;
+            // If the client is not in the dropdown (e.g., inactive), add a temporary option
+            if (clientDropdown.value !== aptKnumber) {
+                const tempOption = document.createElement('option');
+                tempOption.value = aptKnumber;
+                tempOption.textContent = `${appointment.clientLastName || ''}, ${appointment.clientFirstName || ''} - ${aptKnumber}`;
+                tempOption.dataset.fullname = clientFullName;
+                clientDropdown.appendChild(tempOption);
+                clientDropdown.value = aptKnumber;
+            }
+        }
 
         // Populate appointment type fields (default to round_trip for backward compat)
         this.appointmentType = appointment.appointment_type || 'round_trip';
@@ -1950,7 +2052,8 @@ class AppointmentModal {
     setFormFieldsDisabled(disabled) {
         // Disable/enable all form input fields
         const fields = [
-            'appointmentClient',
+            'appointmentClientDropdown',
+            'clientSearchFilter',
             'appointmentDate',
             'transitTime',
             'appointmentClinic',
@@ -1959,7 +2062,8 @@ class AppointmentModal {
             'appointmentNotes',
             'driverInstructions',
             'appointmentCost',
-            'driverAssigned',
+            'appointmentDriver',
+            'appointmentPickupAddress',
             'managingAgent',
             'tripDirection',
             'eventName'

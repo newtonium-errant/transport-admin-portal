@@ -40,7 +40,7 @@ const SessionManager = (function() {
     const ACTIVITY_EVENTS = [
         'mousedown',
         'mousemove',
-        'keypress',
+        'keydown',
         'scroll',
         'touchstart',
         'click'
@@ -52,6 +52,8 @@ const SessionManager = (function() {
     // Internal state
     let inactivityTimer = null;
     let warningTimer = null;
+    let warningCountdownTimer = null;
+    let warningModalInstance = null;
     let isRunning = false;
     let currentTimeout = DEFAULT_TIMEOUT;
     let lastActivityTime = 0;
@@ -116,6 +118,9 @@ const SessionManager = (function() {
             warningTimer = null;
         }
 
+        // Clean up warning modal and countdown
+        dismissWarningModal();
+
         // Remove activity listeners
         ACTIVITY_EVENTS.forEach(event => {
             document.removeEventListener(event, handleActivity, true);
@@ -169,31 +174,124 @@ const SessionManager = (function() {
 
         // Set inactivity timer
         inactivityTimer = setTimeout(handleTimeout, currentTimeout);
-
-        // Update last activity time
-        lastActivityTime = Date.now();
     }
 
     /**
-     * Show warning before timeout
+     * Show non-blocking warning modal before timeout.
+     * The inactivity timer continues running — if the user doesn't
+     * interact within the remaining time, handleTimeout() fires and
+     * dismisses this modal automatically.
      */
     function showWarning() {
-        const minutesRemaining = WARNING_BEFORE_TIMEOUT / 60000;
+        console.warn(`[Session] Inactivity warning: ${WARNING_BEFORE_TIMEOUT / 60000} minutes until logout`);
 
-        console.warn(`[Session] Inactivity warning: ${minutesRemaining} minutes until logout`);
+        // Build or reuse the warning modal element
+        let modalEl = document.getElementById('sessionWarningModal');
+        if (!modalEl) {
+            modalEl = document.createElement('div');
+            modalEl.id = 'sessionWarningModal';
+            modalEl.className = 'modal fade';
+            modalEl.tabIndex = -1;
+            modalEl.setAttribute('aria-labelledby', 'sessionWarningModalLabel');
+            modalEl.setAttribute('data-bs-backdrop', 'static');
+            modalEl.setAttribute('data-bs-keyboard', 'false');
+            modalEl.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: #f39c12; color: white; padding: 12px 16px;">
+                            <h6 class="modal-title" id="sessionWarningModalLabel" style="margin:0; font-weight:600;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Session Expiring
+                            </h6>
+                        </div>
+                        <div class="modal-body text-center" style="padding: 20px 16px;">
+                            <p style="margin: 0 0 8px 0; font-size: 0.95em; color: #333;">
+                                Your session will expire due to inactivity in
+                            </p>
+                            <div id="sessionWarningCountdown" style="font-size: 1.8em; font-weight: 700; color: #e74c3c; margin-bottom: 12px;">
+                                5:00
+                            </div>
+                            <p style="margin: 0; font-size: 0.85em; color: #666;">
+                                Click below to stay logged in.
+                            </p>
+                        </div>
+                        <div class="modal-footer" style="padding: 10px 16px; justify-content: center; gap: 10px;">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="sessionWarningLogoutBtn">
+                                Logout
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm" id="sessionWarningStayBtn">
+                                <i class="bi bi-check-lg me-1"></i>Stay Logged In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalEl);
 
-        // Show modal or notification
-        const shouldContinue = confirm(
-            `Your session will expire in ${minutesRemaining} minutes due to inactivity.\n\n` +
-            'Click OK to continue your session, or Cancel to logout now.'
-        );
+            // Bind button handlers
+            document.getElementById('sessionWarningStayBtn').addEventListener('click', function() {
+                dismissWarningModal();
+                // Record activity and reset timer
+                lastActivityTime = Date.now();
+                sessionStorage.setItem(LAST_ACTIVITY_KEY, lastActivityTime.toString());
+                resetTimer();
+            });
 
-        if (shouldContinue) {
-            // User wants to continue, reset timer
-            resetTimer();
+            document.getElementById('sessionWarningLogoutBtn').addEventListener('click', function() {
+                dismissWarningModal();
+                handleTimeout();
+            });
+        }
+
+        // Start countdown display
+        let secondsLeft = Math.round(WARNING_BEFORE_TIMEOUT / 1000);
+        const countdownEl = document.getElementById('sessionWarningCountdown');
+
+        function updateCountdown() {
+            if (secondsLeft <= 0) {
+                // Time's up — handleTimeout() will be fired by the inactivityTimer
+                return;
+            }
+            const mins = Math.floor(secondsLeft / 60);
+            const secs = secondsLeft % 60;
+            countdownEl.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+            secondsLeft--;
+        }
+
+        updateCountdown();
+        if (warningCountdownTimer) clearInterval(warningCountdownTimer);
+        warningCountdownTimer = setInterval(updateCountdown, 1000);
+
+        // Show the modal
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            warningModalInstance = new bootstrap.Modal(modalEl);
+            warningModalInstance.show();
         } else {
-            // User chose to logout
-            handleTimeout();
+            // Fallback if Bootstrap JS not loaded: use basic confirm
+            const shouldContinue = confirm(
+                'Your session will expire in 5 minutes due to inactivity.\n\n' +
+                'Click OK to continue your session, or Cancel to logout now.'
+            );
+            if (shouldContinue) {
+                lastActivityTime = Date.now();
+                sessionStorage.setItem(LAST_ACTIVITY_KEY, lastActivityTime.toString());
+                resetTimer();
+            } else {
+                handleTimeout();
+            }
+        }
+    }
+
+    /**
+     * Dismiss the warning modal and clear countdown timer
+     */
+    function dismissWarningModal() {
+        if (warningCountdownTimer) {
+            clearInterval(warningCountdownTimer);
+            warningCountdownTimer = null;
+        }
+        if (warningModalInstance) {
+            try { warningModalInstance.hide(); } catch(e) { /* modal may already be hidden */ }
+            warningModalInstance = null;
         }
     }
 
@@ -202,6 +300,9 @@ const SessionManager = (function() {
      */
     function handleTimeout() {
         console.log('[Session] Session expired due to inactivity');
+
+        // Dismiss warning modal if it's showing
+        dismissWarningModal();
 
         stop();
 

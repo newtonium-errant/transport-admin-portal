@@ -244,10 +244,94 @@
             }
         }
 
+        /* Page Header */
+        .page-header {
+            background-color: var(--color-white);
+            padding: 20px 0;
+            border-bottom: 1px solid var(--color-gray-light);
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-black);
+            margin: 0;
+        }
+
+        .page-subtitle {
+            color: var(--color-gray-dark);
+            margin: 5px 0 0 0;
+            font-size: 0.95rem;
+        }
+
         /* Profile Page Specific Styles */
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
+        }
+
+        /* Tab Navigation */
+        .profile-tabs {
+            margin-bottom: 24px;
+        }
+
+        .profile-tabs .nav-tabs {
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .profile-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 12px 20px;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.2s, border-color 0.2s;
+            background: none;
+        }
+
+        .profile-tabs .nav-link:hover {
+            color: var(--color-primary);
+            border-bottom-color: #ccc;
+            background: none;
+        }
+
+        .profile-tabs .nav-link.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            background: none;
+        }
+
+        /* Two-column grid for Profile & Security tab */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .profile-grid-right {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        @media (max-width: 992px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Tab content fade */
+        .tab-pane {
+            animation: tabFadeIn 0.25s ease-out;
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .profile-card {
@@ -391,44 +475,6 @@
             margin-bottom: 2px;
         }
 
-        .profile-avatar-large {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background-color: var(--color-primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 600;
-            margin: 0 auto 20px;
-        }
-
-        .profile-header {
-            text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e5e5e5;
-            margin-bottom: 20px;
-        }
-
-        .profile-header h1 {
-            margin: 0 0 4px 0;
-            font-size: 1.5rem;
-            color: var(--color-gray-dark);
-        }
-
-        .profile-header .role {
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-
-        .section-divider {
-            height: 1px;
-            background-color: #e5e5e5;
-            margin: 24px 0;
-        }
-
         /* ========== Driver Schedule Styles ========== */
         .schedule-card {
             background: var(--color-white);
@@ -440,9 +486,8 @@
         }
 
         .schedule-card-header {
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-            color: var(--color-white);
-            padding: 16px 20px;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -450,8 +495,17 @@
 
         .schedule-card-header h3 {
             margin: 0;
-            font-size: 1.1em;
+            font-size: 1.25rem;
             font-weight: 600;
+            color: var(--color-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .schedule-card-header h3 i {
+            font-size: 1.4rem;
+            color: var(--color-primary);
         }
 
         .schedule-card-body {
@@ -733,15 +787,23 @@
         }
 
         .appointments-card-header {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: var(--color-white);
-            padding: 16px 20px;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
         }
 
         .appointments-card-header h3 {
             margin: 0;
-            font-size: 1.1em;
+            font-size: 1.25rem;
             font-weight: 600;
+            color: var(--color-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .appointments-card-header h3 i {
+            font-size: 1.4rem;
+            color: #3498db;
         }
 
         .appointment-card {
@@ -1016,9 +1078,8 @@
 
         /* ========== Clinic Preferences Styles ========== */
         .clinic-prefs-header {
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-            color: var(--color-white);
-            padding: 16px 20px;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1026,8 +1087,17 @@
 
         .clinic-prefs-header h3 {
             margin: 0;
-            font-size: 1.1em;
+            font-size: 1.25rem;
             font-weight: 600;
+            color: var(--color-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clinic-prefs-header h3 i {
+            font-size: 1.4rem;
+            color: var(--color-primary);
         }
 
         .clinic-prefs-toolbar {
@@ -1119,31 +1189,11 @@
 
         .distance-badge {
             padding: 4px 10px;
-            border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
             white-space: nowrap;
             flex-shrink: 0;
-        }
-
-        .distance-badge.dist-near {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .distance-badge.dist-mid {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .distance-badge.dist-far {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        .distance-badge.dist-unknown {
-            background-color: #e2e3e5;
-            color: #6c757d;
+            color: #666;
         }
 
         .clinic-prefs-footer {
@@ -1223,6 +1273,171 @@
                 text-align: center;
             }
         }
+        /* Clickable calendar days */
+        .cal-day.cal-day-clickable {
+            cursor: pointer;
+        }
+
+        .cal-day.cal-day-clickable:hover {
+            background-color: #eef6f0;
+            box-shadow: inset 0 0 0 2px var(--color-accent);
+        }
+
+        .cal-day.cal-day-clickable.today:hover {
+            background-color: #d0eed5;
+        }
+
+        /* Day Detail Modal */
+        .day-detail-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .day-detail-status.status-available {
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+        }
+
+        .day-detail-status.status-off {
+            background-color: #f5f5f5;
+            border: 1px solid #e0e0e0;
+        }
+
+        .day-detail-status.status-blocked {
+            background-color: #ffebee;
+            border: 1px solid #ef9a9a;
+        }
+
+        .day-detail-status.status-override {
+            background-color: #e3f2fd;
+            border: 1px solid #90caf9;
+        }
+
+        .day-detail-status-icon {
+            font-size: 1.5em;
+            line-height: 1;
+        }
+
+        .day-detail-status-text {
+            flex: 1;
+        }
+
+        .day-detail-status-label {
+            font-weight: 600;
+            font-size: 1em;
+            color: var(--color-gray-dark);
+        }
+
+        .day-detail-status-source {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .day-detail-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .day-detail-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            width: 100%;
+            font-size: 0.95em;
+        }
+
+        .day-detail-action-btn:hover:not(:disabled) {
+            background: #e8f5e9;
+            border-color: var(--color-accent);
+        }
+
+        .day-detail-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .day-detail-action-btn i {
+            font-size: 1.2em;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .day-detail-action-btn .action-label {
+            font-weight: 600;
+            color: var(--color-gray-dark);
+        }
+
+        .day-detail-action-btn .action-desc {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .day-detail-action-btn.btn-danger-outline {
+            border-color: #ef9a9a;
+        }
+
+        .day-detail-action-btn.btn-danger-outline:hover:not(:disabled) {
+            background: #ffebee;
+            border-color: var(--color-danger);
+        }
+
+        .day-detail-appointments {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .day-detail-appointments h6 {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .day-detail-apt {
+            padding: 8px 12px;
+            background: #fff8f0;
+            border-radius: 6px;
+            border-left: 3px solid #e65100;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+
+        .day-detail-apt:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Day Detail inline edit form */
+        .day-detail-edit-form {
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .day-detail-edit-form .row {
+            margin-bottom: 12px;
+        }
+
+        .day-detail-edit-form .row:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -1258,6 +1473,44 @@
 
     <!-- Main Content -->
     <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="bi bi-person-gear me-2"></i>My Profile
+            </h1>
+            <p class="page-subtitle" id="pageSubtitle">Manage your account settings</p>
+        </div>
+
+        <!-- Tab Navigation (drivers only) -->
+        <div class="profile-tabs" id="driverTabs" style="display: none;">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-profile" data-bs-toggle="tab" data-bs-target="#pane-profile" type="button" role="tab" aria-controls="pane-profile" aria-selected="true">
+                        <i class="bi bi-person-circle me-1"></i>Profile & Security
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-schedule" data-bs-toggle="tab" data-bs-target="#pane-schedule" type="button" role="tab" aria-controls="pane-schedule" aria-selected="false">
+                        <i class="bi bi-calendar-week me-1"></i>Schedule
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-appointments" data-bs-toggle="tab" data-bs-target="#pane-appointments" type="button" role="tab" aria-controls="pane-appointments" aria-selected="false">
+                        <i class="bi bi-clock-history me-1"></i>Upcoming Drives
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab Content wrapper (for drivers, content lives in tab panes; for non-drivers, pane-profile shows directly) -->
+        <div class="tab-content" id="profileTabContent">
+
+        <!-- Tab 1: Profile & Security -->
+        <div class="tab-pane fade show active" id="pane-profile" role="tabpanel" aria-labelledby="tab-profile">
+        <div class="profile-grid" id="profileGrid">
+
+        <!-- Left Column: Profile Info -->
+        <div>
         <!-- Profile Info Card -->
         <div class="profile-card">
             <div class="profile-card-header">
@@ -1266,12 +1519,6 @@
             </div>
             <div class="profile-card-body">
                 <div id="profileAlert"></div>
-
-                <div class="profile-header">
-                    <div class="profile-avatar-large" id="profileAvatar">--</div>
-                    <h1 id="profileFullName">Loading...</h1>
-                    <div class="role" id="profileRole">-</div>
-                </div>
 
                 <form id="profileForm">
                     <div class="form-group">
@@ -1307,6 +1554,10 @@
                 </form>
             </div>
         </div>
+        </div><!-- /Left Column -->
+
+        <!-- Right Column: Home Address + Change Password -->
+        <div class="profile-grid-right">
 
         <!-- Home Address Card (drivers only) -->
         <div id="driverAddressSection" style="display: none;">
@@ -1366,225 +1617,6 @@
             </div>
         </div>
 
-        <!-- Driver Schedule Section (rendered only for drivers) -->
-        <div id="driverScheduleSection" style="display: none;">
-            <!-- Month Calendar View -->
-            <div class="schedule-card">
-                <div class="schedule-card-header">
-                    <h3><i class="bi bi-calendar-week"></i> My Schedule</h3>
-                    <button class="btn btn-sm btn-outline-light" onclick="openEditScheduleModal()">
-                        <i class="bi bi-pencil-square"></i> Edit Schedule
-                    </button>
-                </div>
-                <div class="calendar-nav">
-                    <button class="calendar-nav-btn" onclick="prevMonth()" aria-label="Previous month">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <span class="calendar-month-label" id="calendarMonthLabel" onclick="goToCurrentMonth()" style="cursor:pointer;" title="Click to return to current month"></span>
-                    <button class="calendar-nav-btn" onclick="nextMonth()" aria-label="Next month">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="schedule-card-body" id="calendarBody"></div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="schedule-action-buttons">
-                <button class="action-btn btn-block-time" onclick="openBlockTimeModal()">
-                    <i class="bi bi-calendar-x"></i> Block Time Off
-                </button>
-                <button class="action-btn btn-add-availability" onclick="openOverrideModal()">
-                    <i class="bi bi-calendar-plus"></i> Add Availability
-                </button>
-            </div>
-
-            <!-- Clinic Preferences -->
-            <div class="schedule-card">
-                <div class="clinic-prefs-header">
-                    <h3><i class="bi bi-geo-alt"></i> Clinic Preferences</h3>
-                    <span class="clinic-prefs-summary" id="clinicPrefsSummary"></span>
-                </div>
-                <div class="clinic-prefs-toolbar">
-                    <div class="bulk-actions">
-                        <button type="button" onclick="toggleAllClinics(true)">Select All</button>
-                        <button type="button" onclick="toggleAllClinics(false)">Deselect All</button>
-                    </div>
-                    <span style="font-size: 0.8em; color: #999;">Sorted by distance</span>
-                </div>
-                <div class="clinic-prefs-validation" id="clinicPrefsValidation">
-                    <i class="bi bi-exclamation-triangle"></i> At least one clinic must be selected.
-                </div>
-                <div class="schedule-card-body" id="clinicPrefsList"></div>
-                <div class="clinic-prefs-footer">
-                    <span class="save-status" id="clinicPrefsSaveStatus"></span>
-                    <button type="button" class="btn-save-prefs" id="saveClinicPrefsBtn" onclick="saveClinicPreferences()">
-                        <span class="btn-text"><i class="bi bi-check-lg"></i> Save Preferences</span>
-                        <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Upcoming Appointments -->
-            <div class="schedule-card">
-                <div class="appointments-card-header">
-                    <h3><i class="bi bi-clock-history"></i> Upcoming Appointments</h3>
-                </div>
-                <div class="schedule-card-body" id="appointmentsList"></div>
-            </div>
-        </div>
-
-        <!-- Block Time Off Modal -->
-        <div class="modal fade" id="blockTimeModal" tabindex="-1" aria-labelledby="blockTimeModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header modal-header-danger">
-                        <h5 class="modal-title" id="blockTimeModalLabel"><i class="bi bi-calendar-x"></i> Block Time Off</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="blockTimeForm" onsubmit="event.preventDefault(); submitBlockTime();">
-                            <div id="timeOffCutoffNotice" class="alert alert-info py-2 px-3 mb-3 small" style="display: none;">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Time off requests for next week must be submitted by <strong>Wednesday 11:59 PM AST</strong>. After the cutoff, contact your supervisor for changes.
-                            </div>
-                            <div class="mb-3">
-                                <label for="blockStartDate" class="form-label form-label-required">Start Date</label>
-                                <input type="date" class="form-control" id="blockStartDate" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="blockEndDate" class="form-label form-label-required">End Date</label>
-                                <input type="date" class="form-control" id="blockEndDate" required>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="blockAllDay" checked>
-                                    <label class="form-check-label" for="blockAllDay">All Day</label>
-                                </div>
-                            </div>
-                            <div id="blockTimeFields" style="display: none;">
-                                <div class="row mb-3">
-                                    <div class="col-6">
-                                        <label for="blockStartTime" class="form-label">Start Time</label>
-                                        <input type="time" class="form-control" id="blockStartTime" value="08:00">
-                                    </div>
-                                    <div class="col-6">
-                                        <label for="blockEndTime" class="form-label">End Time</label>
-                                        <input type="time" class="form-control" id="blockEndTime" value="16:00">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="blockReason" class="form-label form-label-required">Reason</label>
-                                <input type="text" class="form-control" id="blockReason" placeholder="e.g., Vacation, Personal day" maxlength="200" required>
-                            </div>
-                            <div class="modal-footer px-0 pb-0">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-danger" id="blockTimeSubmitBtn">
-                                    <span class="btn-text"><i class="bi bi-calendar-x"></i> Block Time</span>
-                                    <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add Availability Override Modal -->
-        <div class="modal fade" id="overrideModal" tabindex="-1" aria-labelledby="overrideModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header modal-header-info">
-                        <h5 class="modal-title" id="overrideModalLabel"><i class="bi bi-calendar-plus"></i> Add Availability</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-muted" style="font-size:0.9em;">Add availability on a day you would normally be off.</p>
-                        <form id="overrideForm" onsubmit="event.preventDefault(); submitOverride();">
-                            <div class="mb-3">
-                                <label for="overrideDate" class="form-label form-label-required">Date</label>
-                                <input type="date" class="form-control" id="overrideDate" required>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <label for="overrideStartTime" class="form-label form-label-required">Start Time</label>
-                                    <input type="time" class="form-control" id="overrideStartTime" value="08:00" required>
-                                </div>
-                                <div class="col-6">
-                                    <label for="overrideEndTime" class="form-label form-label-required">End Time</label>
-                                    <input type="time" class="form-control" id="overrideEndTime" value="16:00" required>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="overrideReason" class="form-label">Note (optional)</label>
-                                <input type="text" class="form-control" id="overrideReason" placeholder="e.g., Available for extra shift" maxlength="200">
-                            </div>
-                            <div class="modal-footer px-0 pb-0">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-primary" id="overrideSubmitBtn" style="background-color: #1976d2; border-color: #1976d2;">
-                                    <span class="btn-text"><i class="bi bi-calendar-plus"></i> Add Availability</span>
-                                    <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Edit Schedule Modal -->
-        <div class="modal fade" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%); color: white;">
-                        <h5 class="modal-title" id="editScheduleModalLabel"><i class="bi bi-calendar-gear"></i> Edit Schedule</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="editScheduleForm" onsubmit="submitEditSchedule(event)">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Schedule Type</label>
-                                <select class="form-select" id="esScheduleType" onchange="onEsTypeChange()">
-                                    <option value="weekly">Standard Weekly</option>
-                                    <option value="rotating">Rotating Pattern</option>
-                                </select>
-                            </div>
-
-                            <!-- Weekly Schedule Section -->
-                            <div id="esWeeklySection">
-                                <div class="es-schedule-grid" id="esWeeklyGrid"></div>
-                            </div>
-
-                            <!-- Rotating Pattern Section -->
-                            <div id="esRotatingSection" style="display: none;">
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Anchor Date</label>
-                                        <input type="date" class="form-control" id="esAnchorDate">
-                                        <small class="text-muted">A known "Day 1" of the cycle</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Cycle Length (days)</label>
-                                        <input type="number" class="form-control" id="esCycleLength" min="2" max="30" value="4" onchange="onEsCycleLengthChange()">
-                                    </div>
-                                </div>
-                                <label class="form-label fw-bold">Cycle Day Schedule</label>
-                                <div class="es-schedule-grid" id="esRotatingGrid"></div>
-                            </div>
-
-                            <div class="modal-footer px-0 pb-0">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-primary" id="esSubmitBtn">
-                                    <span class="btn-text"><i class="bi bi-save"></i> Save Schedule</span>
-                                    <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Change Password Card -->
         <div class="profile-card">
             <div class="profile-card-header">
@@ -1621,6 +1653,249 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        </div><!-- /profile-grid-right (Right Column) -->
+        </div><!-- /profile-grid -->
+        </div><!-- /pane-profile (Tab 1) -->
+
+        <!-- Tab 2: Schedule (drivers only) -->
+        <div class="tab-pane fade" id="pane-schedule" role="tabpanel" aria-labelledby="tab-schedule">
+            <!-- Month Calendar View -->
+            <div class="schedule-card">
+                <div class="schedule-card-header">
+                    <h3><i class="bi bi-calendar-week"></i> My Schedule</h3>
+                    <button class="btn btn-sm btn-outline-success" onclick="openEditScheduleModal()">
+                        <i class="bi bi-pencil-square"></i> Edit Schedule
+                    </button>
+                </div>
+                <div class="calendar-nav">
+                    <button class="calendar-nav-btn" onclick="prevMonth()" aria-label="Previous month">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <span class="calendar-month-label" id="calendarMonthLabel" onclick="goToCurrentMonth()" style="cursor:pointer;" title="Click to return to current month"></span>
+                    <button class="calendar-nav-btn" onclick="nextMonth()" aria-label="Next month">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="schedule-card-body" id="calendarBody"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="schedule-action-buttons">
+                <button class="action-btn btn-block-time" onclick="openBlockTimeModal()">
+                    <i class="bi bi-calendar-x"></i> Block Time Off
+                </button>
+                <button class="action-btn btn-add-availability" onclick="openOverrideModal()">
+                    <i class="bi bi-calendar-plus"></i> Add Availability
+                </button>
+            </div>
+
+            <!-- Clinic Preferences -->
+            <div class="schedule-card">
+                <div class="clinic-prefs-header">
+                    <h3><i class="bi bi-geo-alt"></i> Clinic Preferences</h3>
+                    <span class="clinic-prefs-summary" id="clinicPrefsSummary"></span>
+                </div>
+                <div class="clinic-prefs-toolbar">
+                    <div class="bulk-actions">
+                        <button type="button" onclick="toggleAllClinics(true)">Select All</button>
+                    </div>
+                    <span style="font-size: 0.8em; color: #999;">Sorted by distance</span>
+                </div>
+                <div class="clinic-prefs-validation" id="clinicPrefsValidation">
+                    <i class="bi bi-exclamation-triangle"></i> At least one clinic must be selected.
+                </div>
+                <div class="schedule-card-body" id="clinicPrefsList"></div>
+                <div class="clinic-prefs-footer">
+                    <span class="save-status" id="clinicPrefsSaveStatus"></span>
+                    <button type="button" class="btn-save-prefs" id="saveClinicPrefsBtn" onclick="saveClinicPreferences()">
+                        <span class="btn-text"><i class="bi bi-check-lg"></i> Save Preferences</span>
+                        <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                    </button>
+                </div>
+            </div>
+        </div><!-- /pane-schedule (Tab 2) -->
+
+        <!-- Tab 3: Appointments (drivers only) -->
+        <div class="tab-pane fade" id="pane-appointments" role="tabpanel" aria-labelledby="tab-appointments">
+            <div class="schedule-card">
+                <div class="appointments-card-header">
+                    <h3><i class="bi bi-clock-history"></i> Upcoming Drives</h3>
+                </div>
+                <div class="schedule-card-body" id="appointmentsList"></div>
+            </div>
+        </div><!-- /pane-appointments (Tab 3) -->
+
+        </div><!-- /tab-content -->
+    </div><!-- /container -->
+
+    <!-- Modals (outside tab content to avoid z-index issues) -->
+
+    <!-- Block Time Off Modal -->
+    <div class="modal fade" id="blockTimeModal" tabindex="-1" aria-labelledby="blockTimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-danger">
+                    <h5 class="modal-title" id="blockTimeModalLabel"><i class="bi bi-calendar-x"></i> Block Time Off</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="blockTimeForm" onsubmit="event.preventDefault(); submitBlockTime();">
+                        <div id="timeOffCutoffNotice" class="alert alert-info py-2 px-3 mb-3 small" style="display: none;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Time off requests for next week must be submitted by <strong>Wednesday 11:59 PM AST</strong>. After the cutoff, contact your supervisor for changes.
+                        </div>
+                        <div class="mb-3">
+                            <label for="blockStartDate" class="form-label form-label-required">Start Date</label>
+                            <input type="date" class="form-control" id="blockStartDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="blockEndDate" class="form-label form-label-required">End Date</label>
+                            <input type="date" class="form-control" id="blockEndDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="blockAllDay" checked>
+                                <label class="form-check-label" for="blockAllDay">All Day</label>
+                            </div>
+                        </div>
+                        <div id="blockTimeFields" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label for="blockStartTime" class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="blockStartTime" value="08:00">
+                                </div>
+                                <div class="col-6">
+                                    <label for="blockEndTime" class="form-label">End Time</label>
+                                    <input type="time" class="form-control" id="blockEndTime" value="16:00">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="blockReason" class="form-label form-label-required">Reason</label>
+                            <input type="text" class="form-control" id="blockReason" placeholder="e.g., Vacation, Personal day" maxlength="200" required>
+                        </div>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger" id="blockTimeSubmitBtn">
+                                <span class="btn-text"><i class="bi bi-calendar-x"></i> Block Time</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Availability Override Modal -->
+    <div class="modal fade" id="overrideModal" tabindex="-1" aria-labelledby="overrideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-info">
+                    <h5 class="modal-title" id="overrideModalLabel"><i class="bi bi-calendar-plus"></i> Add Availability</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted" style="font-size:0.9em;">Add availability on a day you would normally be off.</p>
+                    <form id="overrideForm" onsubmit="event.preventDefault(); submitOverride();">
+                        <div class="mb-3">
+                            <label for="overrideDate" class="form-label form-label-required">Date</label>
+                            <input type="date" class="form-control" id="overrideDate" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="overrideStartTime" class="form-label form-label-required">Start Time</label>
+                                <input type="time" class="form-control" id="overrideStartTime" value="08:00" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="overrideEndTime" class="form-label form-label-required">End Time</label>
+                                <input type="time" class="form-control" id="overrideEndTime" value="16:00" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="overrideReason" class="form-label">Note (optional)</label>
+                            <input type="text" class="form-control" id="overrideReason" placeholder="e.g., Available for extra shift" maxlength="200">
+                        </div>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="overrideSubmitBtn" style="background-color: #1976d2; border-color: #1976d2;">
+                                <span class="btn-text"><i class="bi bi-calendar-plus"></i> Add Availability</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Schedule Modal -->
+    <div class="modal fade" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%); color: white;">
+                    <h5 class="modal-title" id="editScheduleModalLabel"><i class="bi bi-calendar-gear"></i> Edit Schedule</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editScheduleForm" onsubmit="submitEditSchedule(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Schedule Type</label>
+                            <select class="form-select" id="esScheduleType" onchange="onEsTypeChange()">
+                                <option value="weekly">Standard Weekly</option>
+                                <option value="rotating">Rotating Pattern</option>
+                            </select>
+                        </div>
+
+                        <!-- Weekly Schedule Section -->
+                        <div id="esWeeklySection">
+                            <div class="es-schedule-grid" id="esWeeklyGrid"></div>
+                        </div>
+
+                        <!-- Rotating Pattern Section -->
+                        <div id="esRotatingSection" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Anchor Date</label>
+                                    <input type="date" class="form-control" id="esAnchorDate">
+                                    <small class="text-muted">A known "Day 1" of the cycle</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Cycle Length (days)</label>
+                                    <input type="number" class="form-control" id="esCycleLength" min="2" max="30" value="4" onchange="onEsCycleLengthChange()">
+                                </div>
+                            </div>
+                            <label class="form-label fw-bold">Cycle Day Schedule</label>
+                            <div class="es-schedule-grid" id="esRotatingGrid"></div>
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="esSubmitBtn">
+                                <span class="btn-text"><i class="bi bi-save"></i> Save Schedule</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Detail Modal -->
+    <div class="modal fade" id="dayDetailModal" tabindex="-1" aria-labelledby="dayDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%); color: white;">
+                    <h5 class="modal-title" id="dayDetailModalLabel"><i class="bi bi-calendar-day"></i> <span id="dayDetailTitle">Day Details</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="dayDetailBody">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
         </div>
     </div>
@@ -1671,12 +1946,16 @@
             document.getElementById('profileForm').addEventListener('submit', handleProfileSubmit);
             document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
 
-            // Initialize driver schedule section if user is linked to a driver record
+            // Initialize driver sections if user is linked to a driver record
             if (currentUser.driver_id) {
+                document.getElementById('driverTabs').style.display = 'block';
                 document.getElementById('driverAddressSection').style.display = 'block';
-                document.getElementById('driverScheduleSection').style.display = 'block';
+                document.getElementById('pageSubtitle').textContent = 'Manage your profile, schedule, and preferences';
                 initDriverSchedule();
                 loadClinicPreferences();
+            } else {
+                // Non-drivers: keep 2-column layout (Profile Info + Change Password side by side)
+                document.getElementById('profileGrid').style.gridTemplateColumns = '1fr 1fr';
             }
         });
 
@@ -1686,11 +1965,6 @@
 
             const fullName = currentUser.fullName || currentUser.full_name || currentUser.username || 'User';
             const role = currentUser.role || currentUser.user_role || 'user';
-
-            // Update profile display
-            document.getElementById('profileFullName').textContent = fullName;
-            document.getElementById('profileRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
-            document.getElementById('profileAvatar').textContent = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
             // Populate form fields
             document.getElementById('fullName').value = currentUser.fullName || currentUser.full_name || '';
@@ -1921,8 +2195,11 @@
                 if (!isCurrentMonth) classes.push('outside-month');
                 if (isPast && isCurrentMonth) classes.push('past');
                 if (isToday) classes.push('today');
+                const isClickable = isCurrentMonth && !isPast;
+                if (isClickable) classes.push('cal-day-clickable');
 
                 const dayNum = current.getDate();
+                const cellDateStr = formatDateISO(current);
                 let indicatorHtml = '';
 
                 if (!isPast) {
@@ -1937,13 +2214,18 @@
                             indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
                             break;
                         case 'blocked':
-                            indicatorHtml += `<div class="cal-day-indicator blocked" title="${escapeHtml(availability.reason || '')}">BLOCKED</div>`;
+                            if (availability.hours) {
+                                // Partial-day block: show blocked hours
+                                indicatorHtml += `<div class="cal-day-indicator blocked" title="Blocked: ${escapeHtml(availability.hours)}${availability.reason ? ' - ' + escapeHtml(availability.reason) : ''}">BLOCKED ${escapeHtml(availability.hours)}</div>`;
+                            } else {
+                                indicatorHtml += `<div class="cal-day-indicator blocked" title="${escapeHtml(availability.reason || '')}">BLOCKED</div>`;
+                            }
                             if (availability.reason) {
                                 indicatorHtml += `<div class="cal-day-reason" title="${escapeHtml(availability.reason)}">${escapeHtml(availability.reason)}</div>`;
                             }
                             break;
                         case 'override':
-                            indicatorHtml += `<div class="cal-day-indicator override" title="${escapeHtml(availability.hours || 'Override')}">${escapeHtml(availability.hours || 'AVAIL')}</div>`;
+                            indicatorHtml += `<div class="cal-day-indicator override" title="${escapeHtml(availability.hours || 'Available')}">${escapeHtml(availability.hours || 'AVAIL')}</div>`;
                             break;
                         default:
                             indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
@@ -1962,7 +2244,7 @@
                     }
                 }
 
-                html += `<div class="${classes.join(' ')}">
+                html += `<div class="${classes.join(' ')}"${isClickable ? ` data-date="${cellDateStr}" onclick="openDayDetail('${cellDateStr}')"` : ''}>
                     <div class="cal-day-number">${dayNum}</div>
                     ${indicatorHtml}
                 </div>`;
@@ -1993,10 +2275,12 @@
                                 return {
                                     type: 'blocked',
                                     hours: `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`,
-                                    reason: reason
+                                    reason: reason,
+                                    entry_id: entry.id,
+                                    source: 'Time off blocked'
                                 };
                             }
-                            return { type: 'blocked', reason: reason };
+                            return { type: 'blocked', reason: reason, entry_id: entry.id, source: 'Time off blocked' };
                         }
 
                         if (entry.entry_type === 'override_available') {
@@ -2004,7 +2288,7 @@
                             if (entry.start_time && entry.end_time) {
                                 hours = `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`;
                             }
-                            return { type: 'override', hours: hours, reason: entry.reason || '' };
+                            return { type: 'override', hours: hours, reason: entry.reason || '', entry_id: entry.id, source: 'Custom hours' };
                         }
                     }
                 }
@@ -2025,9 +2309,9 @@
                     if (dayData && dayData.available) {
                         const start = dayData.start || '08:00';
                         const end = dayData.end || '16:00';
-                        return { type: 'available', hours: `${formatTime12(start)} - ${formatTime12(end)}` };
+                        return { type: 'available', hours: `${formatTime12(start)} - ${formatTime12(end)}`, source: 'From rotating pattern' };
                     } else {
-                        return { type: 'off' };
+                        return { type: 'off', source: 'From rotating pattern' };
                     }
                 }
             }
@@ -2037,19 +2321,19 @@
                 const dayHours = driverData.weekly_hours[dayName];
 
                 if (dayHours.available === false) {
-                    return { type: 'off' };
+                    return { type: 'off', source: 'From weekly schedule' };
                 }
 
                 const startTime = dayHours.start || '08:00';
                 const endTime = dayHours.end || '16:00';
-                return { type: 'available', hours: `${formatTime12(startTime)} - ${formatTime12(endTime)}` };
+                return { type: 'available', hours: `${formatTime12(startTime)} - ${formatTime12(endTime)}`, source: 'From weekly schedule' };
             }
 
             // Default: weekdays available, weekends off
             if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-                return { type: 'available', hours: '8:00 AM - 4:00 PM' };
+                return { type: 'available', hours: '8:00 AM - 4:00 PM', source: 'From weekly schedule' };
             }
-            return { type: 'off' };
+            return { type: 'off', source: 'From weekly schedule' };
         }
 
         // ========== Calendar Navigation ==========
@@ -2110,7 +2394,7 @@
                 renderEsRotatingGrid(4, null);
             }
 
-            const modal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editScheduleModal'));
             modal.show();
         }
 
@@ -2413,7 +2697,7 @@
                 container.innerHTML =
                     '<div class="empty-state">' +
                     '<i class="bi bi-calendar-check"></i>' +
-                    '<p>No upcoming appointments</p>' +
+                    '<p>No upcoming drives</p>' +
                     '</div>';
                 return;
             }
@@ -2436,7 +2720,7 @@
                 container.innerHTML =
                     '<div class="empty-state">' +
                     '<i class="bi bi-calendar-check"></i>' +
-                    '<p>No appointments in the next 2 weeks</p>' +
+                    '<p>No drives in the next 2 weeks</p>' +
                     '</div>';
                 return;
             }
@@ -2566,7 +2850,7 @@
             const isRestricted = (role === 'driver' || role === 'client');
             notice.style.display = (isRestricted && minDate > today) ? 'block' : 'none';
 
-            const modal = new bootstrap.Modal(document.getElementById('blockTimeModal'));
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('blockTimeModal'));
             modal.show();
         }
 
@@ -2610,6 +2894,18 @@
 
             if (!allDay && startTime >= endTime) {
                 showToast('End time must be after start time.', 'warning');
+                return;
+            }
+
+            // Conflict check: ensure no assigned drives fall within the blocked period
+            const blockConflicts = getConflictingDrivesInRange(
+                startDate, endDate,
+                allDay ? null : startTime,
+                allDay ? null : endTime,
+                'block'
+            );
+            if (blockConflicts.length > 0) {
+                alert(formatConflictMessage(blockConflicts));
                 return;
             }
 
@@ -2660,7 +2956,7 @@
             document.getElementById('overrideStartTime').value = '08:00';
             document.getElementById('overrideEndTime').value = '16:00';
 
-            const modal = new bootstrap.Modal(document.getElementById('overrideModal'));
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('overrideModal'));
             modal.show();
         }
 
@@ -2708,7 +3004,7 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    showToast('Availability override added successfully.', 'success');
+                    showToast('Custom availability added successfully.', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('overrideModal')).hide();
                     await loadScheduleData();
                 } else {
@@ -2831,18 +3127,10 @@
 
         function getDistanceBadgeHtml(distanceKm) {
             if (distanceKm == null) {
-                return '<span class="distance-badge dist-unknown">-- km</span>';
+                return '<span class="distance-badge">-- km</span>';
             }
-
             const rounded = Math.round(distanceKm);
-            let badgeClass = 'dist-near';
-            if (rounded >= 60) {
-                badgeClass = 'dist-far';
-            } else if (rounded >= 30) {
-                badgeClass = 'dist-mid';
-            }
-
-            return `<span class="distance-badge ${badgeClass}">${rounded} km</span>`;
+            return `<span class="distance-badge">${rounded} km</span>`;
         }
 
         function onClinicToggle() {
@@ -3033,6 +3321,115 @@
             return formatDateISO(followingMonday);
         }
 
+        // ========== Drive Conflict Check ==========
+        /**
+         * Find drives that conflict with a proposed availability change.
+         * @param {string} dateStr - Date to check (YYYY-MM-DD)
+         * @param {string|null} startTime - Start of available window (HH:MM 24h) or null for all-day block
+         * @param {string|null} endTime - End of available window (HH:MM 24h) or null for all-day block
+         * @param {string} mode - 'block' (any drive on this date conflicts),
+         *                        'hours' (drives outside the new hours conflict),
+         *                        'remove' (drives during the entry window conflict)
+         * @returns {Array} Array of { time, date, client, location } conflict objects
+         */
+        function getConflictingDrives(dateStr, startTime, endTime, mode) {
+            if (!driverAppointments || !driverAppointments.length) return [];
+
+            // Only check dates within the short-term cutoff window.
+            // Dates further out don't need conflict checks — supervisors can adjust.
+            const cutoffDate = getTimeOffMinDate();
+            if (dateStr >= cutoffDate) return [];
+
+            const conflicts = [];
+            const dayDrives = driverAppointments.filter(apt => {
+                const aptDate = (apt.appointment_datetime || apt.appointmentDateTime || apt.appointmenttime || '').substring(0, 10);
+                return aptDate === dateStr && (apt.status || 'scheduled') !== 'cancelled';
+            });
+
+            for (const apt of dayDrives) {
+                const dt = new Date(apt.appointment_datetime || apt.appointmentDateTime || apt.appointmenttime);
+                const aptHour = dt.getHours();
+                const aptMin = dt.getMinutes();
+                const aptTimeStr = `${String(aptHour).padStart(2, '0')}:${String(aptMin).padStart(2, '0')}`;
+
+                const timeDisplay = dt.toLocaleTimeString('en-US', {
+                    hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax'
+                });
+                const dateDisplay = dt.toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Halifax'
+                });
+                const aptType = apt.appointment_type || 'round_trip';
+                const client = (aptType === 'support' && apt.event_name)
+                    ? apt.event_name
+                    : (apt.client_name || apt.clientName || 'Client');
+
+                let isConflict = false;
+
+                if (mode === 'block') {
+                    if (startTime && endTime) {
+                        // Partial-day block: conflict if drive falls within blocked window
+                        isConflict = aptTimeStr >= startTime && aptTimeStr < endTime;
+                    } else {
+                        // All-day block: any drive is a conflict
+                        isConflict = true;
+                    }
+                } else if (mode === 'hours') {
+                    // Drive falls outside the new available hours
+                    isConflict = aptTimeStr < startTime || aptTimeStr >= endTime;
+                } else if (mode === 'remove') {
+                    // Removing availability: any drive during that window conflicts
+                    if (startTime && endTime) {
+                        isConflict = aptTimeStr >= startTime && aptTimeStr < endTime;
+                    } else {
+                        isConflict = true;
+                    }
+                }
+
+                if (isConflict) {
+                    conflicts.push({
+                        time: timeDisplay,
+                        date: dateDisplay,
+                        client: client,
+                        location: apt.location || 'TBD'
+                    });
+                }
+            }
+
+            return conflicts;
+        }
+
+        /**
+         * Check conflicts across a date range (for Block Time Off modal).
+         */
+        function getConflictingDrivesInRange(startDate, endDate, startTime, endTime, mode) {
+            const allConflicts = [];
+            const current = new Date(startDate + 'T00:00:00');
+            const end = new Date(endDate + 'T00:00:00');
+
+            while (current <= end) {
+                const dateStr = formatDateISO(current);
+                const dayConflicts = getConflictingDrives(dateStr, startTime, endTime, mode);
+                allConflicts.push(...dayConflicts);
+                current.setDate(current.getDate() + 1);
+            }
+
+            return allConflicts;
+        }
+
+        /**
+         * Format conflict list into a user-facing message.
+         */
+        function formatConflictMessage(conflicts) {
+            const lines = conflicts.map(c =>
+                `${c.date} at ${c.time} — ${c.client} (${c.location})`
+            );
+            const header = conflicts.length === 1
+                ? 'You have a drive that conflicts with this change:'
+                : `You have ${conflicts.length} drives that conflict with this change:`;
+            return header + '\n\n' + lines.join('\n') +
+                '\n\nContact your supervisor to reschedule before changing your availability.';
+        }
+
         function formatDateISO(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -3128,6 +3525,382 @@
                     toast.classList.add('hiding');
                     setTimeout(() => toast.remove(), 300);
                 }, duration);
+            }
+        }
+        // ========== Day Detail Modal ==========
+        function openDayDetail(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const availability = resolveAvailability(date);
+
+            // Format the day header
+            const dayLabel = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('dayDetailTitle').textContent = dayLabel;
+
+            // Build modal body
+            let html = '';
+
+            // Status section
+            const statusConfig = {
+                available: { icon: 'bi-check-circle-fill', color: '#2e7d32', label: 'Available', cssClass: 'status-available' },
+                off: { icon: 'bi-dash-circle-fill', color: '#9e9e9e', label: 'Day Off', cssClass: 'status-off' },
+                blocked: { icon: 'bi-x-circle-fill', color: '#c62828', label: 'Blocked', cssClass: 'status-blocked' },
+                override: { icon: 'bi-plus-circle-fill', color: '#1565c0', label: 'Custom Availability', cssClass: 'status-override' }
+            };
+            const cfg = statusConfig[availability.type] || statusConfig.off;
+
+            let statusDetail = '';
+            if (availability.hours) {
+                statusDetail = availability.hours;
+            }
+            if (availability.type === 'blocked' && availability.reason) {
+                statusDetail += statusDetail ? ` — ${availability.reason}` : availability.reason;
+            }
+
+            html += `<div class="day-detail-status ${cfg.cssClass}">
+                <div class="day-detail-status-icon" style="color: ${cfg.color};">
+                    <i class="bi ${cfg.icon}"></i>
+                </div>
+                <div class="day-detail-status-text">
+                    <div class="day-detail-status-label">${escapeHtml(cfg.label)}${statusDetail ? ': ' + escapeHtml(statusDetail) : ''}</div>
+                    <div class="day-detail-status-source">${escapeHtml(availability.source || '')}</div>
+                </div>
+            </div>`;
+
+            // Actions section
+            html += '<div class="day-detail-actions">';
+
+            // Cutoff check — shared by Edit hours and Block time off
+            const role = currentUser.role || currentUser.user_role || 'user';
+            const isRestricted = (role === 'driver' || role === 'client');
+            const minDate = getTimeOffMinDate();
+            const withinCutoff = isRestricted && dateStr < minDate;
+
+            // Edit hours for this day (creates override)
+            html += `<button class="day-detail-action-btn" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailEditHours('${dateStr}')">
+                <i class="bi bi-pencil-square" style="color: var(--color-primary);"></i>
+                <div>
+                    <div class="action-label">Edit hours for this day</div>
+                    <div class="action-desc">${withinCutoff ? 'Past the Wednesday cutoff — contact your supervisor' : 'Set custom start/end time for this day'}</div>
+                </div>
+            </button>`;
+
+            html += `<button class="day-detail-action-btn" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailBlockTime('${dateStr}')">
+                <i class="bi bi-calendar-x" style="color: var(--color-danger);"></i>
+                <div>
+                    <div class="action-label">Block time off</div>
+                    <div class="action-desc">${withinCutoff ? 'Past the Wednesday cutoff — contact your supervisor' : 'Mark this day as unavailable'}</div>
+                </div>
+            </button>`;
+
+            // Add availability (always shown — drivers may extend hours or add on blocked/off days)
+            html += `<button class="day-detail-action-btn" onclick="dayDetailAddAvailability('${dateStr}')">
+                <i class="bi bi-calendar-plus" style="color: #1976d2;"></i>
+                <div>
+                    <div class="action-label">Add availability</div>
+                    <div class="action-desc">Add or extend your available hours for this day</div>
+                </div>
+            </button>`;
+
+            // Remove override/block (if there's an existing entry for this day)
+            if (availability.entry_id) {
+                const removeLabel = availability.type === 'blocked' ? 'Remove time off block' : 'Remove custom hours';
+                const removeDesc = availability.type === 'blocked'
+                    ? 'Delete this blocked time entry'
+                    : 'Revert to your normal schedule for this day';
+
+                html += `<button class="day-detail-action-btn btn-danger-outline" onclick="dayDetailRemoveEntry(${availability.entry_id}, '${dateStr}')">
+                    <i class="bi bi-trash" style="color: var(--color-danger);"></i>
+                    <div>
+                        <div class="action-label">${escapeHtml(removeLabel)}</div>
+                        <div class="action-desc">${escapeHtml(removeDesc)}</div>
+                    </div>
+                </button>`;
+            }
+
+            html += '</div>';
+
+            // Appointments on this day
+            const dayAppointments = driverAppointments.filter(apt => {
+                const aptDate = (apt.appointment_datetime || apt.appointmentDateTime || '').substring(0, 10);
+                return aptDate === dateStr;
+            });
+
+            if (dayAppointments.length > 0) {
+                html += '<div class="day-detail-appointments">';
+                html += `<h6><i class="bi bi-clock-history me-1"></i> Appointments (${dayAppointments.length})</h6>`;
+
+                dayAppointments.forEach(apt => {
+                    const dt = new Date(apt.appointment_datetime || apt.appointmentDateTime);
+                    const timeStr = dt.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        timeZone: 'America/Halifax'
+                    });
+                    const clientName = apt.client_name || apt.clientName || 'Client';
+                    const location = apt.location || 'TBD';
+                    const aptType = apt.appointment_type || 'round_trip';
+                    const displayName = (aptType === 'support' && apt.event_name) ? apt.event_name : clientName;
+
+                    html += `<div class="day-detail-apt">
+                        <strong>${escapeHtml(timeStr)}</strong> — ${escapeHtml(displayName)}
+                        <div style="font-size: 0.85em; color: #666;"><i class="bi bi-geo-alt"></i> ${escapeHtml(location)}</div>
+                    </div>`;
+                });
+
+                html += '</div>';
+            }
+
+            document.getElementById('dayDetailBody').innerHTML = html;
+
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal'));
+            modal.show();
+        }
+
+        function dayDetailEditHours(dateStr) {
+            // Close Day Detail modal
+            const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
+            if (dayModal) dayModal.hide();
+
+            // Show inline form inside a fresh Day Detail modal after close animation
+            document.getElementById('dayDetailModal').addEventListener('hidden.bs.modal', function onHidden() {
+                document.getElementById('dayDetailModal').removeEventListener('hidden.bs.modal', onHidden);
+                showEditHoursForm(dateStr);
+            }, { once: true });
+        }
+
+        function showEditHoursForm(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const availability = resolveAvailability(date);
+
+            const dayLabel = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('dayDetailTitle').textContent = `Edit Hours — ${dayLabel}`;
+
+            // Pre-fill times from current availability
+            let startVal = '08:00';
+            let endVal = '16:00';
+            if (availability.hours) {
+                const parsed = parseHoursToTimes(availability);
+                if (parsed) { startVal = parsed.start; endVal = parsed.end; }
+            }
+
+            const html = `
+                <div class="day-detail-edit-form">
+                    <p class="text-muted" style="font-size: 0.9em; margin-bottom: 12px;">Set custom hours for this day.</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="form-label form-label-required">Start Time</label>
+                            <input type="time" class="form-control" id="ddEditStart" value="${startVal}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-required">End Time</label>
+                            <input type="time" class="form-control" id="ddEditEnd" value="${endVal}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label class="form-label">Note (optional)</label>
+                            <input type="text" class="form-control" id="ddEditNote" placeholder="e.g., Adjusted hours" maxlength="200">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="ddEditSaveBtn" onclick="submitDayDetailEditHours('${dateStr}')">
+                            <span class="btn-text"><i class="bi bi-save me-1"></i>Save Hours</span>
+                            <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('dayDetailBody').innerHTML = html;
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal'));
+            modal.show();
+        }
+
+        function parseHoursToTimes(availability) {
+            // Try to extract 24h times from the availability data
+            // Look for matching time_off entry first
+            if (availability.entry_id && timeOffEntries) {
+                const entry = timeOffEntries.find(e => e.id === availability.entry_id);
+                if (entry && entry.start_time && entry.end_time) {
+                    return { start: entry.start_time, end: entry.end_time };
+                }
+            }
+            // Try parsing from the hours string "H:MM AM - H:MM PM"
+            if (availability.hours) {
+                const match = availability.hours.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+                if (match) {
+                    const startH = to24h(parseInt(match[1]), match[3]);
+                    const endH = to24h(parseInt(match[4]), match[6]);
+                    return {
+                        start: `${String(startH).padStart(2, '0')}:${match[2]}`,
+                        end: `${String(endH).padStart(2, '0')}:${match[5]}`
+                    };
+                }
+            }
+            return null;
+        }
+
+        function to24h(hour, ampm) {
+            if (ampm.toUpperCase() === 'AM') return hour === 12 ? 0 : hour;
+            return hour === 12 ? 12 : hour + 12;
+        }
+
+        async function submitDayDetailEditHours(dateStr) {
+            const startTime = document.getElementById('ddEditStart').value;
+            const endTime = document.getElementById('ddEditEnd').value;
+            const note = document.getElementById('ddEditNote').value.trim();
+
+            if (!startTime || !endTime) {
+                showToast('Please enter start and end times.', 'warning');
+                return;
+            }
+            if (startTime >= endTime) {
+                showToast('End time must be after start time.', 'warning');
+                return;
+            }
+
+            // Conflict check: ensure no assigned drives fall outside the new hours
+            const hoursConflicts = getConflictingDrives(dateStr, startTime, endTime, 'hours');
+            if (hoursConflicts.length > 0) {
+                alert(formatConflictMessage(hoursConflicts));
+                return;
+            }
+
+            const payload = {
+                driver_id: currentUser.driver_id,
+                entry_type: 'override_available',
+                start_date: dateStr,
+                end_date: dateStr,
+                all_day: false,
+                start_time: startTime,
+                end_time: endTime,
+                reason: note || null
+            };
+
+            setButtonLoading('ddEditSaveBtn', true);
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/create-driver-time-off`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Hours updated for this day.', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('dayDetailModal')).hide();
+                    await loadScheduleData();
+                } else {
+                    showToast(result.message || 'Failed to update hours.', 'error');
+                }
+            } catch (err) {
+                console.error('Error updating day hours:', err);
+                showToast('An error occurred while saving.', 'error');
+            } finally {
+                setButtonLoading('ddEditSaveBtn', false);
+            }
+        }
+
+        function dayDetailBlockTime(dateStr) {
+            // Close Day Detail modal and open Block Time Off modal pre-populated
+            const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
+            if (dayModal) dayModal.hide();
+
+            document.getElementById('dayDetailModal').addEventListener('hidden.bs.modal', function onHidden() {
+                document.getElementById('dayDetailModal').removeEventListener('hidden.bs.modal', onHidden);
+
+                // Reset and pre-populate the Block Time Off modal
+                const form = document.getElementById('blockTimeForm');
+                form.reset();
+                document.getElementById('blockAllDay').checked = true;
+                document.getElementById('blockTimeFields').style.display = 'none';
+
+                const minDate = getTimeOffMinDate();
+                const effectiveDate = dateStr >= minDate ? dateStr : minDate;
+                document.getElementById('blockStartDate').value = effectiveDate;
+                document.getElementById('blockStartDate').min = minDate;
+                document.getElementById('blockEndDate').value = effectiveDate;
+                document.getElementById('blockEndDate').min = effectiveDate;
+
+                // Show cutoff notice
+                const notice = document.getElementById('timeOffCutoffNotice');
+                const role = currentUser.role || currentUser.user_role || 'user';
+                const today = formatDateISO(new Date());
+                const isRestricted = (role === 'driver' || role === 'client');
+                notice.style.display = (isRestricted && minDate > today) ? 'block' : 'none';
+
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('blockTimeModal'));
+                modal.show();
+            }, { once: true });
+        }
+
+        function dayDetailAddAvailability(dateStr) {
+            // Close Day Detail modal and open Add Availability modal pre-populated
+            const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
+            if (dayModal) dayModal.hide();
+
+            document.getElementById('dayDetailModal').addEventListener('hidden.bs.modal', function onHidden() {
+                document.getElementById('dayDetailModal').removeEventListener('hidden.bs.modal', onHidden);
+
+                const form = document.getElementById('overrideForm');
+                form.reset();
+                document.getElementById('overrideDate').value = dateStr;
+                document.getElementById('overrideStartTime').value = '08:00';
+                document.getElementById('overrideEndTime').value = '16:00';
+
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('overrideModal'));
+                modal.show();
+            }, { once: true });
+        }
+
+        async function dayDetailRemoveEntry(entryId, dateStr) {
+            // If removing an override_available entry, check for drives that depend on it
+            const entry = timeOffEntries.find(e => e.id === entryId);
+            if (entry && entry.entry_type === 'override_available') {
+                const removeConflicts = getConflictingDrives(
+                    dateStr,
+                    entry.start_time || null,
+                    entry.end_time || null,
+                    'remove'
+                );
+                if (removeConflicts.length > 0) {
+                    alert(formatConflictMessage(removeConflicts));
+                    return;
+                }
+            }
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/delete-driver-time-off`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: entryId, driver_id: currentUser.driver_id })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Entry removed successfully.', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('dayDetailModal')).hide();
+                    await loadScheduleData();
+                } else {
+                    showToast(result.message || 'Failed to remove entry.', 'error');
+                }
+            } catch (err) {
+                console.error('Error removing entry:', err);
+                showToast('An error occurred. Please try again.', 'error');
             }
         }
     </script>
