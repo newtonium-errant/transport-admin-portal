@@ -38,6 +38,7 @@ class ClientModal {
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
+                          <form id="clientQuickEditForm" onsubmit="event.preventDefault(); clientModalInstance.save();">
                             <!-- Client Name (Read-only in quick edit) -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Client Name</label>
@@ -250,16 +251,17 @@ class ClientModal {
 
                             <!-- Error Messages -->
                             <div id="modalErrorMessages"></div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="bi bi-x-circle me-1"></i>
-                                Cancel
-                            </button>
-                            <button type="button" class="btn btn-primary" id="saveClientBtn" onclick="clientModalInstance.save()">
-                                <i class="bi bi-check-circle me-1"></i>
-                                Save Changes
-                            </button>
+                            <div class="modal-footer px-0 pb-0">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Cancel
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="saveClientBtn">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Save Changes
+                                </button>
+                            </div>
+                          </form>
                         </div>
                     </div>
                 </div>

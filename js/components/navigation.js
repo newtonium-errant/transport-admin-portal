@@ -6,7 +6,7 @@
 
 // Standard navigation items with RBAC roles
 const NAV_ITEMS = [
-    { page: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent'] },
+    { page: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent', 'driver'] },
     { page: 'appointments', label: 'Appointments', icon: 'bi-calendar-check', roles: ['admin', 'supervisor', 'booking_agent'] },
     { page: 'appointments-bulk-add', label: 'Bulk Add', icon: 'bi-calendar-plus', roles: ['admin', 'supervisor', 'booking_agent'] },
     { page: 'clients', label: 'Clients', icon: 'bi-people', roles: ['admin', 'supervisor', 'booking_agent'] },
@@ -46,6 +46,9 @@ function initializeNavigation(options = {}) {
 
     if (userName) {
         userName.textContent = user.fullName || user.full_name || user.username || 'User';
+        userName.style.cursor = 'pointer';
+        userName.onclick = () => window.location.href = 'profile.html';
+        userName.title = 'View Profile';
     }
 
     if (userRole) {

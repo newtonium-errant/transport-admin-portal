@@ -6,8 +6,8 @@
     <title>RRTS - My Profile</title>
     <link href="css/shared-styles.css" rel="stylesheet">
     <script src="js/auth/permissions.js"></script>
+    <script src="js/auth/session-manager.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         * {
@@ -138,17 +138,10 @@
             font-size: 0.9em;
         }
 
-        .user-name-link {
-            color: var(--color-white);
-            text-decoration: none;
+        .user-name {
             font-weight: 500;
             margin-right: 8px;
-            transition: opacity 0.2s;
-        }
-
-        .user-name-link:hover {
-            opacity: 0.8;
-            text-decoration: underline;
+            color: var(--color-white);
         }
 
         .user-role-badge {
@@ -195,7 +188,7 @@
                 padding: 0 20px;
             }
 
-            .user-name-link {
+            .user-name {
                 display: none;
             }
 
@@ -251,10 +244,94 @@
             }
         }
 
+        /* Page Header */
+        .page-header {
+            background-color: var(--color-white);
+            padding: 20px 0;
+            border-bottom: 1px solid var(--color-gray-light);
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-black);
+            margin: 0;
+        }
+
+        .page-subtitle {
+            color: var(--color-gray-dark);
+            margin: 5px 0 0 0;
+            font-size: 0.95rem;
+        }
+
         /* Profile Page Specific Styles */
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
+        }
+
+        /* Tab Navigation */
+        .profile-tabs {
+            margin-bottom: 24px;
+        }
+
+        .profile-tabs .nav-tabs {
+            border-bottom: 2px solid #e5e5e5;
+        }
+
+        .profile-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 12px 20px;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.2s, border-color 0.2s;
+            background: none;
+        }
+
+        .profile-tabs .nav-link:hover {
+            color: var(--color-primary);
+            border-bottom-color: #ccc;
+            background: none;
+        }
+
+        .profile-tabs .nav-link.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            background: none;
+        }
+
+        /* Two-column grid for Profile & Security tab */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .profile-grid-right {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        @media (max-width: 992px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Tab content fade */
+        .tab-pane {
+            animation: tabFadeIn 0.25s ease-out;
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .profile-card {
@@ -331,16 +408,6 @@
             margin-top: 4px;
         }
 
-        .btn {
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-
         .btn-primary {
             background-color: var(--color-primary);
             color: white;
@@ -408,42 +475,1001 @@
             margin-bottom: 2px;
         }
 
-        .profile-avatar-large {
-            width: 80px;
-            height: 80px;
+        /* ========== Driver Schedule Styles ========== */
+        .schedule-card {
+            background: var(--color-white);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid #ecf0f1;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .schedule-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .schedule-card-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .schedule-card-header h3 i {
+            font-size: 1.4rem;
+            color: var(--color-primary);
+        }
+
+        .schedule-card-body {
+            padding: 0;
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .calendar-nav-btn {
+            background: none;
+            border: 1px solid #dee2e6;
+            color: var(--color-primary);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .calendar-nav-btn:hover {
+            background: var(--color-primary);
+            color: var(--color-white);
+            border-color: var(--color-primary);
+        }
+
+        .calendar-nav-btn.current-btn {
+            background: var(--color-accent);
+            color: var(--color-white);
+            border-color: var(--color-accent);
+        }
+
+        .calendar-nav-btn.current-btn:hover {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        /* Month Calendar Grid */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .calendar-grid-header {
+            display: contents;
+        }
+
+        .calendar-grid-header .cal-header-cell {
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #6c757d;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ecf0f1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cal-day {
+            min-height: 72px;
+            padding: 4px;
+            border-bottom: 1px solid #f0f0f0;
+            border-right: 1px solid #f0f0f0;
+            position: relative;
+            cursor: default;
+            transition: background-color 0.15s;
+        }
+
+        .cal-day:nth-child(7n) {
+            border-right: none;
+        }
+
+        .cal-day:hover {
+            background-color: #fafbfc;
+        }
+
+        .cal-day.outside-month {
+            background-color: #fafafa;
+            opacity: 0.45;
+        }
+
+        .cal-day.past {
+            background-color: #fafafa;
+            opacity: 0.5;
+        }
+
+        .cal-day.past .cal-day-number {
+            color: #aaa;
+        }
+
+        .cal-day.today {
+            background-color: #e8f5e9;
+        }
+
+        .cal-day.today .cal-day-number {
+            background: var(--color-primary);
+            color: var(--color-white);
             border-radius: 50%;
-            background-color: var(--color-primary);
-            color: white;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cal-day-number {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--color-gray-dark);
+            margin-bottom: 2px;
+        }
+
+        .cal-day.outside-month .cal-day-number {
+            color: #bbb;
+        }
+
+        .cal-day-indicator {
+            font-size: 0.65em;
+            font-weight: 600;
+            padding: 1px 4px;
+            border-radius: 3px;
+            display: inline-block;
+            line-height: 1.3;
+            margin-top: 1px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cal-day-indicator.available {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .cal-day-indicator.off {
+            background-color: #f5f5f5;
+            color: #9e9e9e;
+        }
+
+        .cal-day-indicator.blocked {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .cal-day-indicator.override {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .cal-day-indicator.appointment {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+
+        .cal-day-reason {
+            font-size: 0.6em;
+            color: #999;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .calendar-month-label {
+            font-weight: 600;
+            font-size: 1em;
+            color: var(--color-gray-dark);
+            text-align: center;
+            user-select: none;
+        }
+
+        /* Edit Schedule Modal */
+        .es-schedule-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .es-schedule-day {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #ecf0f1;
+        }
+
+        .es-day-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 110px;
+        }
+
+        .es-day-header label {
+            font-weight: 600;
+            margin: 0;
+            font-size: 0.9em;
+        }
+
+        .es-time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .es-time-inputs.disabled {
+            opacity: 0.4;
+        }
+
+        .es-time-inputs input[type="time"] {
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100px;
+            font-size: 0.85em;
+        }
+
+        .es-time-inputs span {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .schedule-action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            font-weight: 600;
-            margin: 0 auto 20px;
+            gap: 8px;
+            border: 2px solid;
         }
 
-        .profile-header {
-            text-align: center;
-            padding-bottom: 20px;
+        .action-btn.btn-block-time {
+            background: transparent;
+            color: var(--color-danger);
+            border-color: var(--color-danger);
+        }
+
+        .action-btn.btn-block-time:hover {
+            background: var(--color-danger);
+            color: var(--color-white);
+        }
+
+        .action-btn.btn-add-availability {
+            background: transparent;
+            color: #1976d2;
+            border-color: #1976d2;
+        }
+
+        .action-btn.btn-add-availability:hover {
+            background: #1976d2;
+            color: var(--color-white);
+        }
+
+        .appointments-card-header {
+            padding: 20px 24px;
             border-bottom: 1px solid #e5e5e5;
-            margin-bottom: 20px;
         }
 
-        .profile-header h1 {
-            margin: 0 0 4px 0;
-            font-size: 1.5rem;
+        .appointments-card-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .appointments-card-header h3 i {
+            font-size: 1.4rem;
+            color: #3498db;
+        }
+
+        .appointment-card {
+            background: var(--color-white);
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .appointment-card:last-child {
+            border-bottom: none;
+        }
+
+        .appointment-card:hover {
+            background-color: #fafbfc;
+        }
+
+        .appointment-date {
+            font-weight: 600;
+            font-size: 0.95em;
             color: var(--color-gray-dark);
         }
 
-        .profile-header .role {
-            color: #6b7280;
-            font-size: 0.9rem;
+        .appointment-time {
+            font-size: 0.85em;
+            color: #6c757d;
         }
 
-        .section-divider {
-            height: 1px;
-            background-color: #e5e5e5;
-            margin: 24px 0;
+        .appointment-detail {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 2px;
+        }
+
+        .appointment-detail i {
+            width: 18px;
+            color: #999;
+            margin-right: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 2.5em;
+            display: block;
+            margin-bottom: 12px;
+            color: #bdc3c7;
+        }
+
+        .empty-state p {
+            margin: 0;
+            font-size: 0.95em;
+        }
+
+        /* Skeleton loading */
+        .skeleton-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            min-height: 52px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .skeleton-block {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        .skeleton-text {
+            height: 14px;
+            width: 80px;
+        }
+
+        .skeleton-badge {
+            height: 28px;
+            width: 100px;
+            border-radius: 14px;
+        }
+
+        .skeleton-appointment {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Modal styles */
+        .modal-header-danger {
+            background: linear-gradient(135deg, var(--color-danger) 0%, #c0392b 100%);
+            color: var(--color-white);
+        }
+
+        .modal-header-danger .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-header-info {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            color: var(--color-white);
+        }
+
+        .modal-header-info .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .form-label-required::after {
+            content: ' *';
+            color: var(--color-danger);
+        }
+
+        .modal .form-control,
+        .modal .form-select {
+            padding: 10px 14px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+        }
+
+        .modal .form-control:focus,
+        .modal .form-select:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+        }
+
+        /* Toast styles */
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .custom-toast {
+            min-width: 300px;
+            max-width: 400px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid;
+        }
+
+        .custom-toast.toast-success { border-left-color: #28a745; }
+        .custom-toast.toast-error { border-left-color: #dc3545; }
+        .custom-toast.toast-warning { border-left-color: #ffc107; }
+        .custom-toast.toast-info { border-left-color: #17a2b8; }
+
+        .toast-icon { font-size: 1.5em; flex-shrink: 0; }
+        .custom-toast.toast-success .toast-icon { color: #28a745; }
+        .custom-toast.toast-error .toast-icon { color: #dc3545; }
+        .custom-toast.toast-warning .toast-icon { color: #ffc107; }
+        .custom-toast.toast-info .toast-icon { color: #17a2b8; }
+
+        .toast-content { flex: 1; }
+        .toast-title { font-weight: 600; margin-bottom: 4px; color: #333; }
+        .toast-message { font-size: 0.9em; color: #666; }
+
+        .toast-close {
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2em;
+            line-height: 1;
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        .toast-close:hover { color: #333; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .custom-toast.hiding {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+
+        @media (max-width: 576px) {
+            .schedule-action-buttons {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+
+            .calendar-nav {
+                padding: 10px 12px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .calendar-nav-btn {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+
+            .calendar-month-label {
+                font-size: 0.85em;
+            }
+
+            .cal-day {
+                min-height: 56px;
+                padding: 2px;
+            }
+
+            .cal-day-number {
+                font-size: 0.7em;
+            }
+
+            .cal-day-indicator {
+                font-size: 0.55em;
+                padding: 1px 2px;
+            }
+
+            .cal-day-reason {
+                display: none;
+            }
+
+            .es-schedule-day {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .appointment-card {
+                padding: 12px 14px;
+            }
+
+            .toast-container {
+                right: 10px;
+                left: 10px;
+            }
+
+            .custom-toast {
+                min-width: auto;
+                max-width: 100%;
+            }
+        }
+
+        /* ========== Clinic Preferences Styles ========== */
+        .clinic-prefs-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clinic-prefs-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clinic-prefs-header h3 i {
+            font-size: 1.4rem;
+            color: var(--color-primary);
+        }
+
+        .clinic-prefs-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ecf0f1;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .clinic-prefs-toolbar .bulk-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .clinic-prefs-toolbar .bulk-actions button {
+            background: none;
+            border: none;
+            color: var(--color-accent);
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .clinic-prefs-toolbar .bulk-actions button:hover {
+            background-color: #e8f5e9;
+        }
+
+        .clinic-prefs-summary {
+            font-size: 0.85em;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .clinic-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .clinic-row:last-child {
+            border-bottom: none;
+        }
+
+        .clinic-row:hover {
+            background-color: #fafbfc;
+        }
+
+        .clinic-row .form-check-input {
+            width: 2.8em;
+            height: 1.4em;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .clinic-row .form-check-input:checked {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .clinic-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .clinic-name {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: var(--color-gray-dark);
+        }
+
+        .clinic-address {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .distance-badge {
+            padding: 4px 10px;
+            font-size: 0.8em;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+            color: #666;
+        }
+
+        .clinic-prefs-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #ecf0f1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .clinic-prefs-footer .save-status {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+
+        .clinic-prefs-footer .btn-save-prefs {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            border: none;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .clinic-prefs-footer .btn-save-prefs:hover {
+            background-color: var(--color-accent);
+        }
+
+        .clinic-prefs-footer .btn-save-prefs:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .clinic-prefs-validation {
+            padding: 8px 20px;
+            background-color: #fff3cd;
+            color: #856404;
+            font-size: 0.85em;
+            font-weight: 500;
+            display: none;
+        }
+
+        @media (max-width: 576px) {
+            .clinic-row {
+                padding: 12px 14px;
+                gap: 10px;
+            }
+
+            .clinic-address {
+                white-space: normal;
+            }
+
+            .clinic-prefs-toolbar {
+                padding: 10px 14px;
+            }
+
+            .clinic-prefs-footer {
+                padding: 14px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .clinic-prefs-footer .btn-save-prefs {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .clinic-prefs-footer .save-status {
+                text-align: center;
+            }
+        }
+        /* Clickable calendar days */
+        .cal-day.cal-day-clickable {
+            cursor: pointer;
+        }
+
+        .cal-day.cal-day-clickable:hover {
+            background-color: #eef6f0;
+            box-shadow: inset 0 0 0 2px var(--color-accent);
+        }
+
+        .cal-day.cal-day-clickable.today:hover {
+            background-color: #d0eed5;
+        }
+
+        /* Day Detail Modal */
+
+        .day-detail-base-schedule {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+
+        .day-detail-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .day-detail-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        .day-detail-entry.status-available {
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+        }
+
+        .day-detail-entry.status-off {
+            background-color: #f5f5f5;
+            border: 1px solid #e0e0e0;
+        }
+
+        .day-detail-entry.status-blocked {
+            background-color: #ffebee;
+            border: 1px solid #ef9a9a;
+        }
+
+        .day-detail-entry.status-override {
+            background-color: #e3f2fd;
+            border: 1px solid #90caf9;
+        }
+
+        .day-detail-entry-icon {
+            font-size: 1.2em;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .day-detail-entry-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .day-detail-entry-label {
+            font-weight: 600;
+            font-size: 0.92em;
+            color: var(--color-gray-dark);
+        }
+
+        .day-detail-entry-source {
+            font-size: 0.78em;
+            color: #6c757d;
+            margin-top: 1px;
+        }
+
+        .day-detail-entry-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .day-detail-entry-actions .btn {
+            padding: 2px 6px;
+            font-size: 0.8em;
+        }
+
+        .day-detail-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .day-detail-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            width: 100%;
+            font-size: 0.95em;
+        }
+
+        .day-detail-action-btn:hover:not(:disabled) {
+            background: #e8f5e9;
+            border-color: var(--color-accent);
+        }
+
+        .day-detail-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .day-detail-action-btn i {
+            font-size: 1.2em;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .day-detail-action-btn .action-label {
+            font-weight: 600;
+            color: var(--color-gray-dark);
+        }
+
+        .day-detail-action-btn .action-desc {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .day-detail-action-btn.btn-danger-outline {
+            border-color: #ef9a9a;
+        }
+
+        .day-detail-action-btn.btn-danger-outline:hover:not(:disabled) {
+            background: #ffebee;
+            border-color: var(--color-danger);
+        }
+
+        .day-detail-appointments {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .day-detail-appointments h6 {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .day-detail-apt {
+            padding: 8px 12px;
+            background: #fff8f0;
+            border-radius: 6px;
+            border-left: 3px solid #e65100;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+
+        .day-detail-apt:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Day Detail inline edit form */
+        .day-detail-edit-form {
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .day-detail-edit-form .row {
+            margin-bottom: 12px;
+        }
+
+        .day-detail-edit-form .row:last-child {
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -451,23 +1477,23 @@
     <!-- Header -->
     <header class="app-header">
         <div class="header-container">
-            <a href="dashboard.html" class="header-brand">
-                <span class="brand-icon">🚗</span>
-                <span class="brand-text">RRTS Admin</span>
-            </a>
+            <div class="header-brand" onclick="window.location.href='dashboard.html'">
+                <span class="brand-icon">&#x1F690;</span>
+                <span class="brand-text">RRTS</span>
+            </div>
 
-            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
                 <i class="bi bi-list"></i>
             </button>
 
             <nav class="header-nav" id="mainNav">
-                <!-- Navigation links populated by JavaScript -->
+                <!-- Navigation links populated by navigation.js -->
             </nav>
 
             <div class="header-user">
                 <div class="user-info">
                     <span class="user-avatar" id="userAvatar">--</span>
-                    <a href="profile.html" class="user-name-link" id="userName">User</a>
+                    <span class="user-name" id="userName">User</span>
                     <span class="user-role-badge" id="userRoleBadge">Guest</span>
                 </div>
                 <button class="logout-btn" onclick="logout()" title="Logout">
@@ -480,6 +1506,44 @@
 
     <!-- Main Content -->
     <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="bi bi-person-gear me-2"></i>My Profile
+            </h1>
+            <p class="page-subtitle" id="pageSubtitle">Manage your account settings</p>
+        </div>
+
+        <!-- Tab Navigation (drivers only) -->
+        <div class="profile-tabs" id="driverTabs" style="display: none;">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-profile" data-bs-toggle="tab" data-bs-target="#pane-profile" type="button" role="tab" aria-controls="pane-profile" aria-selected="true">
+                        <i class="bi bi-person-circle me-1"></i>Profile & Security
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-schedule" data-bs-toggle="tab" data-bs-target="#pane-schedule" type="button" role="tab" aria-controls="pane-schedule" aria-selected="false">
+                        <i class="bi bi-calendar-week me-1"></i>Availability
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-appointments" data-bs-toggle="tab" data-bs-target="#pane-appointments" type="button" role="tab" aria-controls="pane-appointments" aria-selected="false">
+                        <i class="bi bi-clock-history me-1"></i>Upcoming Drives
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Tab Content wrapper (for drivers, content lives in tab panes; for non-drivers, pane-profile shows directly) -->
+        <div class="tab-content" id="profileTabContent">
+
+        <!-- Tab 1: Profile & Security -->
+        <div class="tab-pane fade show active" id="pane-profile" role="tabpanel" aria-labelledby="tab-profile">
+        <div class="profile-grid" id="profileGrid">
+
+        <!-- Left Column: Profile Info -->
+        <div>
         <!-- Profile Info Card -->
         <div class="profile-card">
             <div class="profile-card-header">
@@ -489,12 +1553,13 @@
             <div class="profile-card-body">
                 <div id="profileAlert"></div>
 
-                <div class="profile-header">
-                    <div class="profile-avatar-large" id="profileAvatar">--</div>
-                    <h1 id="profileFullName">Loading...</h1>
-                    <div class="role" id="profileRole">-</div>
+                <!-- Skeleton loader for driver data -->
+                <div id="profileFormSkeleton" style="display: none;">
+                    <div class="form-group"><div class="skeleton-block" style="width: 70px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                    <div class="form-group"><div class="skeleton-block" style="width: 90px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                    <div class="form-group"><div class="skeleton-block" style="width: 85px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                    <div class="form-group"><div class="skeleton-block" style="width: 65px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
                 </div>
-
                 <form id="profileForm">
                     <div class="form-group">
                         <label class="form-label" for="fullName">Full Name</label>
@@ -527,6 +1592,77 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+        </div><!-- /Left Column -->
+
+        <!-- Right Column: Home Address + Change Password -->
+        <div class="profile-grid-right">
+
+        <!-- Home Address Card (drivers only) -->
+        <div id="driverAddressSection" style="display: none;">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <i class="bi bi-house-door"></i>
+                    <h2>Home Address</h2>
+                </div>
+                <div class="profile-card-body">
+                    <!-- Skeleton loader for driver data -->
+                    <div id="addressFormSkeleton" style="display: none;">
+                        <div class="form-group"><div class="skeleton-block" style="width: 90px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                        <div class="row">
+                            <div class="col-md-5"><div class="form-group"><div class="skeleton-block" style="width: 30px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div></div>
+                            <div class="col-md-4"><div class="form-group"><div class="skeleton-block" style="width: 55px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div></div>
+                            <div class="col-md-3"><div class="form-group"><div class="skeleton-block" style="width: 70px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div></div>
+                        </div>
+                    </div>
+                    <form id="addressForm" onsubmit="handleAddressSubmit(event)">
+                        <div class="form-group">
+                            <label class="form-label" for="homeAddress">Street Address</label>
+                            <input type="text" class="form-control" id="homeAddress" placeholder="e.g., 123 Main Street">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label class="form-label" for="homeCity">City</label>
+                                    <input type="text" class="form-control" id="homeCity" placeholder="e.g., Halifax">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="homeProvince">Province</label>
+                                    <select class="form-select" id="homeProvince">
+                                        <option value="AB">Alberta</option>
+                                        <option value="BC">British Columbia</option>
+                                        <option value="MB">Manitoba</option>
+                                        <option value="NB">New Brunswick</option>
+                                        <option value="NL">Newfoundland and Labrador</option>
+                                        <option value="NS" selected>Nova Scotia</option>
+                                        <option value="NT">Northwest Territories</option>
+                                        <option value="NU">Nunavut</option>
+                                        <option value="ON">Ontario</option>
+                                        <option value="PE">Prince Edward Island</option>
+                                        <option value="QC">Quebec</option>
+                                        <option value="SK">Saskatchewan</option>
+                                        <option value="YT">Yukon</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label" for="homePostalCode">Postal Code</label>
+                                    <input type="text" class="form-control" id="homePostalCode" placeholder="A1B 2C3" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="profile-actions">
+                            <button type="submit" class="btn btn-primary" id="saveAddressBtn">
+                                <span class="btn-text">Save Address</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -568,72 +1704,338 @@
                 </form>
             </div>
         </div>
+
+        </div><!-- /profile-grid-right (Right Column) -->
+        </div><!-- /profile-grid -->
+        </div><!-- /pane-profile (Tab 1) -->
+
+        <!-- Tab 2: Schedule (drivers only) -->
+        <div class="tab-pane fade" id="pane-schedule" role="tabpanel" aria-labelledby="tab-schedule">
+            <!-- Month Calendar View -->
+            <div class="schedule-card">
+                <div class="schedule-card-header">
+                    <h3><i class="bi bi-calendar-week"></i> My Schedule</h3>
+                    <button class="btn btn-sm btn-outline-success" onclick="openEditScheduleModal()">
+                        <i class="bi bi-pencil-square"></i> Edit Schedule
+                    </button>
+                </div>
+                <div class="calendar-nav">
+                    <button class="calendar-nav-btn" onclick="prevMonth()" aria-label="Previous month">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <span class="calendar-month-label" id="calendarMonthLabel" onclick="goToCurrentMonth()" style="cursor:pointer;" title="Click to return to current month"></span>
+                    <button class="calendar-nav-btn" onclick="nextMonth()" aria-label="Next month">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="schedule-card-body" id="calendarBody"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="schedule-action-buttons">
+                <button class="action-btn btn-block-time" onclick="openBlockTimeModal()">
+                    <i class="bi bi-calendar-x"></i> Block Time Off
+                </button>
+                <button class="action-btn btn-add-availability" onclick="openOverrideModal()">
+                    <i class="bi bi-calendar-plus"></i> Add Availability
+                </button>
+            </div>
+
+            <!-- Clinic Preferences -->
+            <div class="schedule-card">
+                <div class="clinic-prefs-header">
+                    <h3><i class="bi bi-geo-alt"></i> Clinic Preferences</h3>
+                    <span class="clinic-prefs-summary" id="clinicPrefsSummary"></span>
+                </div>
+                <div class="clinic-prefs-toolbar">
+                    <div class="bulk-actions">
+                        <button type="button" onclick="toggleAllClinics(true)">Select All</button>
+                    </div>
+                    <span style="font-size: 0.8em; color: #999;">Sorted by distance</span>
+                </div>
+                <div class="clinic-prefs-validation" id="clinicPrefsValidation">
+                    <i class="bi bi-exclamation-triangle"></i> At least one clinic must be selected.
+                </div>
+                <div class="schedule-card-body" id="clinicPrefsList"></div>
+                <div class="clinic-prefs-footer">
+                    <span class="save-status" id="clinicPrefsSaveStatus"></span>
+                    <button type="button" class="btn-save-prefs" id="saveClinicPrefsBtn" onclick="saveClinicPreferences()">
+                        <span class="btn-text"><i class="bi bi-check-lg"></i> Save Preferences</span>
+                        <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                    </button>
+                </div>
+            </div>
+        </div><!-- /pane-schedule (Tab 2) -->
+
+        <!-- Tab 3: Appointments (drivers only) -->
+        <div class="tab-pane fade" id="pane-appointments" role="tabpanel" aria-labelledby="tab-appointments">
+            <div class="schedule-card">
+                <div class="appointments-card-header">
+                    <h3><i class="bi bi-clock-history"></i> Upcoming Drives</h3>
+                </div>
+                <div class="schedule-card-body" id="appointmentsList"></div>
+            </div>
+        </div><!-- /pane-appointments (Tab 3) -->
+
+        </div><!-- /tab-content -->
+    </div><!-- /container -->
+
+    <!-- Modals (outside tab content to avoid z-index issues) -->
+
+    <!-- Block Time Off Modal -->
+    <div class="modal fade" id="blockTimeModal" tabindex="-1" aria-labelledby="blockTimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-danger">
+                    <h5 class="modal-title" id="blockTimeModalLabel"><i class="bi bi-calendar-x"></i> Block Time Off</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="blockTimeForm" onsubmit="event.preventDefault(); submitBlockTime();">
+                        <div id="timeOffCutoffNotice" class="alert alert-info py-2 px-3 mb-3 small" style="display: none;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Time off requests for next week must be submitted by <strong>Wednesday 11:59 PM AST</strong>. After the cutoff, contact your supervisor for changes.
+                        </div>
+                        <div class="mb-3">
+                            <label for="blockStartDate" class="form-label form-label-required">Start Date</label>
+                            <input type="date" class="form-control" id="blockStartDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="blockEndDate" class="form-label form-label-required">End Date</label>
+                            <input type="date" class="form-control" id="blockEndDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="blockAllDay" checked>
+                                <label class="form-check-label" for="blockAllDay">All Day</label>
+                            </div>
+                        </div>
+                        <div id="blockTimeFields" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label for="blockStartTime" class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="blockStartTime" value="08:00">
+                                </div>
+                                <div class="col-6">
+                                    <label for="blockEndTime" class="form-label">End Time</label>
+                                    <input type="time" class="form-control" id="blockEndTime" value="16:00">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="blockReason" class="form-label form-label-required">Reason</label>
+                            <input type="text" class="form-control" id="blockReason" placeholder="e.g., Vacation, Personal day" maxlength="200" required>
+                        </div>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger" id="blockTimeSubmitBtn">
+                                <span class="btn-text"><i class="bi bi-calendar-x"></i> Block Time</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Add Availability Override Modal -->
+    <div class="modal fade" id="overrideModal" tabindex="-1" aria-labelledby="overrideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header-info">
+                    <h5 class="modal-title" id="overrideModalLabel"><i class="bi bi-calendar-plus"></i> Add Availability</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted" style="font-size:0.9em;">Add availability on a day you would normally be off.</p>
+                    <form id="overrideForm" onsubmit="event.preventDefault(); submitOverride();">
+                        <div class="mb-3">
+                            <label for="overrideDate" class="form-label form-label-required">Date</label>
+                            <input type="date" class="form-control" id="overrideDate" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="overrideStartTime" class="form-label form-label-required">Start Time</label>
+                                <input type="time" class="form-control" id="overrideStartTime" value="08:00" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="overrideEndTime" class="form-label form-label-required">End Time</label>
+                                <input type="time" class="form-control" id="overrideEndTime" value="16:00" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="overrideReason" class="form-label">Note (optional)</label>
+                            <input type="text" class="form-control" id="overrideReason" placeholder="e.g., Available for extra shift" maxlength="200">
+                        </div>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="overrideSubmitBtn" style="background-color: #1976d2; border-color: #1976d2;">
+                                <span class="btn-text"><i class="bi bi-calendar-plus"></i> Add Availability</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Schedule Modal -->
+    <div class="modal fade" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%); color: white;">
+                    <h5 class="modal-title" id="editScheduleModalLabel"><i class="bi bi-calendar-gear"></i> Edit Schedule</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editScheduleForm" onsubmit="submitEditSchedule(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Schedule Type</label>
+                            <select class="form-select" id="esScheduleType" onchange="onEsTypeChange()">
+                                <option value="weekly">Standard Weekly</option>
+                                <option value="rotating">Rotating Pattern</option>
+                            </select>
+                        </div>
+
+                        <!-- Weekly Schedule Section -->
+                        <div id="esWeeklySection">
+                            <div class="es-schedule-grid" id="esWeeklyGrid"></div>
+                        </div>
+
+                        <!-- Rotating Pattern Section -->
+                        <div id="esRotatingSection" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Anchor Date</label>
+                                    <input type="date" class="form-control" id="esAnchorDate">
+                                    <small class="text-muted">A known "Day 1" of the cycle</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Cycle Length (days)</label>
+                                    <input type="number" class="form-control" id="esCycleLength" min="2" max="30" value="4" onchange="onEsCycleLengthChange()">
+                                </div>
+                            </div>
+                            <label class="form-label fw-bold">Cycle Day Schedule</label>
+                            <div class="es-schedule-grid" id="esRotatingGrid"></div>
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="esSubmitBtn">
+                                <span class="btn-text"><i class="bi bi-save"></i> Save Schedule</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Detail Modal -->
+    <div class="modal fade" id="dayDetailModal" tabindex="-1" aria-labelledby="dayDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%); color: white;">
+                    <h5 class="modal-title" id="dayDetailModalLabel"><i class="bi bi-calendar-day"></i> <span id="dayDetailTitle">Day Details</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="dayDetailBody">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- Scripts -->
     <script src="js/auth/jwt-auth.js"></script>
     <script src="js/core/api-client.js"></script>
+    <script src="js/components/navigation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Page initialization
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Check authentication
-            const isAuthenticated = await requireAuth('index.html');
-            if (!isAuthenticated) return;
+        // ========== Constants & State ==========
+        const API_BASE = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
+        const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-            // Load user data
-            loadUserProfile();
-
-            // Set up form handlers
-            document.getElementById('profileForm').addEventListener('submit', handleProfileSubmit);
-            document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
-
-            // Set up navigation
-            setupNavigation();
-        });
-
-        // Original user data for reset
+        let currentUser = null;
         let originalUserData = null;
 
-        // Load user profile data
-        function loadUserProfile() {
-            const user = getCurrentUser();
-            if (!user) {
-                showAlert('profileAlert', 'error', 'Unable to load user data');
+        // Driver schedule state
+        let driverData = null;
+        let timeOffEntries = [];
+        let driverAppointments = [];
+        let calendarMonth = null;
+        let calendarYear = null;
+
+        // Clinic preferences state
+        let allClinics = [];
+        let clinicPreferences = {};
+
+        // ========== Initialization ==========
+        document.addEventListener('DOMContentLoaded', async function() {
+            const isAuthenticated = await requireAuth();
+            if (!isAuthenticated) return;
+            enforcePageAccess();
+
+            const savedUser = sessionStorage.getItem('rrts_user');
+            currentUser = savedUser ? JSON.parse(savedUser) : null;
+
+            if (!currentUser) {
+                showProfileAlert('profileAlert', 'error', 'Unable to load user data');
                 return;
             }
 
-            originalUserData = { ...user };
+            loadUserProfile();
 
-            // Update header
-            const userNameEl = document.getElementById('userName');
-            const userRoleBadgeEl = document.getElementById('userRoleBadge');
-            const userAvatarEl = document.getElementById('userAvatar');
+            document.getElementById('profileForm').addEventListener('submit', handleProfileSubmit);
+            document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
 
-            const fullName = user.fullName || user.full_name || user.username || 'User';
-            const role = user.role || user.user_role || 'user';
-
-            if (userNameEl) userNameEl.textContent = fullName;
-            if (userRoleBadgeEl) userRoleBadgeEl.textContent = role;
-            if (userAvatarEl) {
-                const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                userAvatarEl.textContent = initials;
+            // Initialize driver sections if user is linked to a driver record
+            if (currentUser.driver_id) {
+                document.getElementById('driverTabs').style.display = 'block';
+                document.getElementById('driverAddressSection').style.display = 'block';
+                document.getElementById('pageSubtitle').textContent = 'Manage your profile, schedule, and preferences';
+                // Show skeletons, hide forms until driver data loads
+                document.getElementById('profileFormSkeleton').style.display = 'block';
+                document.getElementById('profileForm').style.display = 'none';
+                document.getElementById('addressFormSkeleton').style.display = 'block';
+                document.getElementById('addressForm').style.display = 'none';
+                initDriverSchedule();
+                loadClinicPreferences();
+            } else {
+                // Non-drivers: keep 2-column layout (Profile Info + Change Password side by side)
+                document.getElementById('profileGrid').style.gridTemplateColumns = '1fr 1fr';
             }
+        });
 
-            // Update profile display
-            document.getElementById('profileFullName').textContent = fullName;
-            document.getElementById('profileRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
-            document.getElementById('profileAvatar').textContent = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        // ========== Profile Functions ==========
+        function loadUserProfile() {
+            originalUserData = { ...currentUser };
 
-            // Populate form fields
-            document.getElementById('fullName').value = user.fullName || user.full_name || '';
-            document.getElementById('email').value = user.email || '';
-            document.getElementById('phone').value = user.phone || user.phone_number || '';
-            document.getElementById('username').value = user.username || '';
+            // For drivers, prefer driver data if available
+            if (currentUser.driver_id && driverData) {
+                document.getElementById('fullName').value = driverData.name || '';
+                document.getElementById('email').value = driverData.email || '';
+                document.getElementById('phone').value = driverData.phone || '';
+            } else {
+                document.getElementById('fullName').value = currentUser.fullName || currentUser.full_name || '';
+                document.getElementById('email').value = currentUser.email || '';
+                document.getElementById('phone').value = currentUser.phone || currentUser.phone_number || '';
+            }
+            document.getElementById('username').value = currentUser.username || '';
         }
 
-        // Reset profile form to original values
         function resetProfileForm() {
-            if (originalUserData) {
+            if (currentUser.driver_id && driverData) {
+                document.getElementById('fullName').value = driverData.name || '';
+                document.getElementById('email').value = driverData.email || '';
+                document.getElementById('phone').value = driverData.phone || '';
+            } else if (originalUserData) {
                 document.getElementById('fullName').value = originalUserData.fullName || originalUserData.full_name || '';
                 document.getElementById('email').value = originalUserData.email || '';
                 document.getElementById('phone').value = originalUserData.phone || originalUserData.phone_number || '';
@@ -641,7 +2043,6 @@
             hideAlert('profileAlert');
         }
 
-        // Handle profile form submission
         async function handleProfileSubmit(e) {
             e.preventDefault();
 
@@ -651,50 +2052,76 @@
             btn.disabled = true;
 
             try {
-                const formData = {
-                    fullName: document.getElementById('fullName').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    phone: document.getElementById('phone').value.trim()
-                };
+                const fullName = document.getElementById('fullName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
 
-                // Validate
-                if (!formData.fullName) {
+                if (!fullName) {
                     throw new Error('Full name is required');
                 }
-                if (!formData.email || !isValidEmail(formData.email)) {
+                if (!email || !isValidEmail(email)) {
                     throw new Error('Valid email address is required');
                 }
 
-                // Call API to update profile
-                const response = await APIClient.post('/update-user-profile', formData);
-
-                if (response.success) {
-                    // Update session storage with new data
-                    const user = getCurrentUser();
-                    user.fullName = formData.fullName;
-                    user.full_name = formData.fullName;
-                    user.email = formData.email;
-                    user.phone = formData.phone;
-                    sessionStorage.setItem('rrts_user', JSON.stringify(user));
-
-                    // Update display
-                    loadUserProfile();
-
-                    showAlert('profileAlert', 'success', 'Profile updated successfully');
+                // Drivers save to drivers table via update-driver
+                if (currentUser.driver_id) {
+                    const payload = {
+                        id: (driverData && driverData.id) || currentUser.driver_id,
+                        name: fullName,
+                        email: email,
+                        phone: phone
+                    };
+                    const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        // Update local driver data
+                        if (driverData) {
+                            driverData.name = fullName;
+                            driverData.email = email;
+                            driverData.phone = phone;
+                        }
+                        // Keep session in sync
+                        const user = getCurrentUser();
+                        user.fullName = fullName;
+                        user.full_name = fullName;
+                        user.email = email;
+                        user.phone = phone;
+                        sessionStorage.setItem('rrts_user', JSON.stringify(user));
+                        currentUser = user;
+                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                    } else {
+                        throw new Error(result.message || 'Failed to update profile');
+                    }
                 } else {
-                    throw new Error(response.message || 'Failed to update profile');
+                    // Non-drivers save to users table
+                    const formData = { fullName, email, phone };
+                    const response = await APIClient.post('/update-user-profile', formData);
+                    if (response.success) {
+                        const user = getCurrentUser();
+                        user.fullName = fullName;
+                        user.full_name = fullName;
+                        user.email = email;
+                        user.phone = phone;
+                        sessionStorage.setItem('rrts_user', JSON.stringify(user));
+                        currentUser = user;
+                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                    } else {
+                        throw new Error(response.message || 'Failed to update profile');
+                    }
                 }
-
             } catch (error) {
                 console.error('Profile update error:', error);
-                showAlert('profileAlert', 'error', error.message || 'Failed to update profile');
+                showProfileAlert('profileAlert', 'error', error.message || 'Failed to update profile');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
             }
         }
 
-        // Handle password form submission
         async function handlePasswordSubmit(e) {
             e.preventDefault();
 
@@ -708,7 +2135,6 @@
                 const newPassword = document.getElementById('newPassword').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
 
-                // Validate
                 if (!currentPassword) {
                     throw new Error('Current password is required');
                 }
@@ -722,7 +2148,6 @@
                     throw new Error('New password must be different from current password');
                 }
 
-                // Call change password API
                 const user = getCurrentUser();
                 const response = await fetch(JWT_API_ENDPOINTS.CHANGE_PASSWORD, {
                     method: 'POST',
@@ -737,87 +2162,1941 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showAlert('passwordAlert', 'success', 'Password changed successfully');
-                    // Clear form
+                    showProfileAlert('passwordAlert', 'success', 'Password changed successfully');
                     document.getElementById('passwordForm').reset();
                 } else {
                     throw new Error(data.message || 'Failed to change password');
                 }
-
             } catch (error) {
                 console.error('Password change error:', error);
-                showAlert('passwordAlert', 'error', error.message || 'Failed to change password');
+                showProfileAlert('passwordAlert', 'error', error.message || 'Failed to change password');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
             }
         }
 
-        // Email validation
-        function isValidEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        // ========== Driver Schedule ==========
+        function initDriverSchedule() {
+            const today = new Date();
+            calendarMonth = today.getMonth();
+            calendarYear = today.getFullYear();
+
+            const todayStr = formatDateISO(today);
+            document.getElementById('blockStartDate').min = todayStr;
+            document.getElementById('blockEndDate').min = todayStr;
+            document.getElementById('overrideDate').min = todayStr;
+
+            document.getElementById('blockAllDay').addEventListener('change', function() {
+                document.getElementById('blockTimeFields').style.display = this.checked ? 'none' : 'block';
+            });
+
+            document.getElementById('blockStartDate').addEventListener('change', function() {
+                const endDate = document.getElementById('blockEndDate');
+                const minDate = getTimeOffMinDate();
+                const effectiveMin = this.value > minDate ? this.value : minDate;
+                if (!endDate.value || endDate.value < this.value) {
+                    endDate.value = this.value;
+                }
+                endDate.min = effectiveMin;
+            });
+
+            loadScheduleData();
         }
 
-        // Show alert message
-        function showAlert(containerId, type, message) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `<div class="alert alert-${type}">${escapeHtml(message)}</div>`;
+        async function loadScheduleData() {
+            showCalendarLoading();
+            showAppointmentsLoading();
+
+            try {
+                const [scheduleRes, appointmentsRes] = await Promise.all([
+                    authenticatedFetch(`${API_BASE}/get-driver-schedule?driver_id=${currentUser.driver_id}`),
+                    authenticatedFetch(`${API_BASE}/get-driver-appointments?driver_id=${currentUser.driver_id}`)
+                ]);
+
+                if (scheduleRes.ok) {
+                    const schedResult = await scheduleRes.json();
+                    driverData = schedResult.data?.driver || {};
+                    timeOffEntries = schedResult.data?.time_off || [];
+                } else {
+                    driverData = { weekly_hours: {}, schedule_pattern: null };
+                    timeOffEntries = [];
+                }
+
+                if (appointmentsRes.ok) {
+                    const aptsResult = await appointmentsRes.json();
+                    const rawApts = aptsResult.data || aptsResult.appointments || [];
+                    // Normalize field names from API (appt_date/appt_time) to what the UI expects
+                    driverAppointments = rawApts.map(apt => {
+                        if (!apt.appointment_datetime && !apt.appointmentDateTime && !apt.appointmenttime) {
+                            // Build a combined datetime from appt_date + appt_time
+                            if (apt.appt_date) {
+                                const time = apt.appt_time || apt.pickup_time || '08:00';
+                                apt.appointment_datetime = `${apt.appt_date}T${time}`;
+                            }
+                        }
+                        if (!apt.location && apt.destination) {
+                            apt.location = apt.destination;
+                        }
+                        return apt;
+                    });
+                } else {
+                    driverAppointments = [];
+                }
+            } catch (err) {
+                console.warn('Error loading schedule data:', err);
+                driverData = { weekly_hours: {}, schedule_pattern: null };
+                timeOffEntries = [];
+                driverAppointments = [];
+            }
+
+            renderCalendar();
+            renderAppointments();
+            populateAddressForm();
+            // Re-populate profile form now that driverData is available
+            loadUserProfile();
+            // Swap skeletons for real forms
+            document.getElementById('profileFormSkeleton').style.display = 'none';
+            document.getElementById('profileForm').style.display = '';
+            document.getElementById('addressFormSkeleton').style.display = 'none';
+            document.getElementById('addressForm').style.display = '';
         }
 
-        // Hide alert message
-        function hideAlert(containerId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
+        // ========== Calendar Rendering ==========
+        function renderCalendar() {
+            const container = document.getElementById('calendarBody');
+            const labelEl = document.getElementById('calendarMonthLabel');
+
+            const monthNames = ['January','February','March','April','May','June',
+                                'July','August','September','October','November','December'];
+            labelEl.textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // First and last day of the displayed month
+            const firstDay = new Date(calendarYear, calendarMonth, 1);
+            const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+
+            // Grid starts on Sunday before (or on) the 1st
+            const gridStart = new Date(firstDay);
+            gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+
+            // Grid ends on Saturday after (or on) the last day
+            const gridEnd = new Date(lastDay);
+            if (gridEnd.getDay() < 6) {
+                gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+            }
+
+            let html = '<div class="calendar-grid">';
+
+            // Header row
+            html += '<div class="calendar-grid-header">';
+            const dayHeaders = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            for (const dh of dayHeaders) {
+                html += `<div class="cal-header-cell">${dh}</div>`;
+            }
+            html += '</div>';
+
+            // Day cells
+            const current = new Date(gridStart);
+            while (current <= gridEnd) {
+                const isCurrentMonth = current.getMonth() === calendarMonth && current.getFullYear() === calendarYear;
+                const isToday = current.getTime() === today.getTime();
+                const isPast = current.getTime() < today.getTime();
+
+                const classes = ['cal-day'];
+                if (!isCurrentMonth) classes.push('outside-month');
+                if (isPast && isCurrentMonth) classes.push('past');
+                if (isToday) classes.push('today');
+                const isClickable = isCurrentMonth && !isPast;
+                if (isClickable) classes.push('cal-day-clickable');
+
+                const dayNum = current.getDate();
+                const cellDateStr = formatDateISO(current);
+                let indicatorHtml = '';
+
+                if (!isPast) {
+                    // Show availability indicators for today and future days only
+                    const entries = resolveAvailability(current);
+
+                    for (const entry of entries) {
+                        switch (entry.type) {
+                            case 'available':
+                                indicatorHtml += `<div class="cal-day-indicator available" title="${escapeHtml(entry.hours || '8:00 AM - 4:00 PM')}">${escapeHtml(entry.hours || '8-4')}</div>`;
+                                break;
+                            case 'off':
+                                indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
+                                break;
+                            case 'blocked':
+                                if (entry.hours) {
+                                    indicatorHtml += `<div class="cal-day-indicator blocked" title="Blocked: ${escapeHtml(entry.hours)}${entry.reason ? ' - ' + escapeHtml(entry.reason) : ''}">BLOCKED ${escapeHtml(entry.hours)}</div>`;
+                                } else {
+                                    indicatorHtml += `<div class="cal-day-indicator blocked" title="${escapeHtml(entry.reason || '')}">BLOCKED</div>`;
+                                }
+                                break;
+                            case 'override':
+                                indicatorHtml += `<div class="cal-day-indicator override" title="${escapeHtml(entry.hours || 'Available')}">${escapeHtml(entry.hours || 'AVAIL')}</div>`;
+                                break;
+                            default:
+                                indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
+                        }
+                    }
+
+                    // Check for appointments on this date
+                    const dateStr = formatDateISO(current);
+                    const dayAppointments = driverAppointments.filter(apt => {
+                        const aptDate = (apt.appointment_datetime || apt.appointmentDateTime || '').substring(0, 10);
+                        return aptDate === dateStr;
+                    });
+
+                    if (dayAppointments.length > 0) {
+                        const aptLabel = dayAppointments.length === 1 ? '1 appt' : `${dayAppointments.length} appts`;
+                        indicatorHtml += `<div class="cal-day-indicator appointment">${aptLabel}</div>`;
+                    }
+                }
+
+                html += `<div class="${classes.join(' ')}"${isClickable ? ` data-date="${cellDateStr}" onclick="openDayDetail('${cellDateStr}')"` : ''}>
+                    <div class="cal-day-number">${dayNum}</div>
+                    ${indicatorHtml}
+                </div>`;
+
+                current.setDate(current.getDate() + 1);
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
         }
 
-        // Escape HTML to prevent XSS
+        // ========== Three-Layer Availability Resolution ==========
+
+        /**
+         * Returns the base schedule entry for a date (rotating pattern or weekly hours).
+         * Does NOT include manual entries (time_off / override_available).
+         * Always returns a single { type, hours, source } object.
+         */
+        function getBaseSchedule(date) {
+            const dayOfWeek = date.getDay();
+            const dayName = DAY_NAMES[dayOfWeek];
+
+            // Check schedule_pattern (rotating schedules)
+            if (driverData && driverData.schedule_pattern) {
+                const pattern = driverData.schedule_pattern;
+                if (pattern.type === 'rotating' && pattern.anchor_date && pattern.cycle_days && pattern.days) {
+                    const patternStart = new Date(pattern.anchor_date + 'T00:00:00');
+                    const cycleDays = pattern.cycle_days;
+                    const diffDays = Math.floor((date - patternStart) / (1000 * 60 * 60 * 24));
+                    const cyclePosition = ((diffDays % cycleDays) + cycleDays) % cycleDays;
+                    const dayNum = String(cyclePosition + 1);
+                    const dayData = pattern.days[dayNum];
+                    if (dayData && dayData.available) {
+                        const start = dayData.start || '08:00';
+                        const end = dayData.end || '16:00';
+                        return { type: 'available', hours: `${formatTime12(start)} - ${formatTime12(end)}`, source: 'From rotating pattern' };
+                    } else {
+                        return { type: 'off', source: 'From rotating pattern' };
+                    }
+                }
+            }
+
+            // Fall back to weekly_hours
+            if (driverData && driverData.weekly_hours && driverData.weekly_hours[dayName]) {
+                const dayHours = driverData.weekly_hours[dayName];
+                if (dayHours.available === false) {
+                    return { type: 'off', source: 'From weekly schedule' };
+                }
+                const startTime = dayHours.start || '08:00';
+                const endTime = dayHours.end || '16:00';
+                return { type: 'available', hours: `${formatTime12(startTime)} - ${formatTime12(endTime)}`, source: 'From weekly schedule' };
+            }
+
+            // Default: weekdays available, weekends off
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                return { type: 'available', hours: '8:00 AM - 4:00 PM', source: 'From weekly schedule' };
+            }
+            return { type: 'off', source: 'From weekly schedule' };
+        }
+
+        /**
+         * Returns ALL availability entries for a date as an array.
+         * If manual entries (time_off / override_available) exist, returns all of them.
+         * If no manual entries, falls back to the base schedule as a single-element array.
+         * Each entry: { type, hours, reason, entry_id, source }
+         * Sorted by start time.
+         */
+        function resolveAvailability(date) {
+            const dateStr = formatDateISO(date);
+            const entries = [];
+
+            // Collect ALL manual entries for this date
+            if (timeOffEntries && timeOffEntries.length > 0) {
+                for (const entry of timeOffEntries) {
+                    const entryStart = entry.start_date ? entry.start_date.substring(0, 10) : null;
+                    const entryEnd = entry.end_date ? entry.end_date.substring(0, 10) : entryStart;
+
+                    if (entryStart && dateStr >= entryStart && dateStr <= entryEnd) {
+                        if (entry.entry_type === 'time_off') {
+                            const reason = entry.reason || '';
+                            if (!entry.all_day && entry.start_time && entry.end_time) {
+                                entries.push({
+                                    type: 'blocked',
+                                    hours: `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`,
+                                    reason: reason,
+                                    entry_id: entry.id,
+                                    source: 'Time off blocked',
+                                    _startTime: entry.start_time
+                                });
+                            } else {
+                                entries.push({
+                                    type: 'blocked',
+                                    reason: reason,
+                                    entry_id: entry.id,
+                                    source: 'Time off blocked',
+                                    _startTime: '00:00'
+                                });
+                            }
+                        } else if (entry.entry_type === 'override_available') {
+                            let hours = '8:00 AM - 4:00 PM';
+                            if (entry.start_time && entry.end_time) {
+                                hours = `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`;
+                            }
+                            entries.push({
+                                type: 'override',
+                                hours: hours,
+                                reason: entry.reason || '',
+                                entry_id: entry.id,
+                                source: 'Custom hours',
+                                _startTime: entry.start_time || '08:00'
+                            });
+                        }
+                    }
+                }
+            }
+
+            // If manual entries exist, sort by start time and return
+            if (entries.length > 0) {
+                entries.sort((a, b) => (a._startTime || '').localeCompare(b._startTime || ''));
+                return entries;
+            }
+
+            // No manual entries — fall back to base schedule
+            return [getBaseSchedule(date)];
+        }
+
+        // ========== Calendar Navigation ==========
+        function prevMonth() {
+            calendarMonth--;
+            if (calendarMonth < 0) {
+                calendarMonth = 11;
+                calendarYear--;
+            }
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            calendarMonth++;
+            if (calendarMonth > 11) {
+                calendarMonth = 0;
+                calendarYear++;
+            }
+            renderCalendar();
+        }
+
+        function goToCurrentMonth() {
+            const today = new Date();
+            calendarMonth = today.getMonth();
+            calendarYear = today.getFullYear();
+            renderCalendar();
+        }
+
+        // ========== Edit Schedule ==========
+        const ES_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        const ES_DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const ES_WEEKDAY_DEFAULTS = { available: true, start: '08:00', end: '16:00' };
+        const ES_WEEKEND_DEFAULTS = { available: false, start: '08:00', end: '16:00' };
+
+        function openEditScheduleModal() {
+            const pattern = driverData && driverData.schedule_pattern;
+            const typeSelect = document.getElementById('esScheduleType');
+
+            // Set active type and toggle visibility
+            if (pattern && pattern.type === 'rotating') {
+                typeSelect.value = 'rotating';
+            } else {
+                typeSelect.value = 'weekly';
+            }
+            onEsTypeChange();
+
+            // Always populate weekly grid from saved data (or defaults)
+            populateEsWeeklyGrid(driverData && driverData.weekly_hours ? driverData.weekly_hours : null);
+
+            // Always populate rotating fields from saved data (or defaults)
+            if (pattern && pattern.type === 'rotating') {
+                document.getElementById('esAnchorDate').value = pattern.anchor_date || '';
+                document.getElementById('esCycleLength').value = pattern.cycle_days || 4;
+                renderEsRotatingGrid(pattern.cycle_days || 4, pattern.days || null);
+            } else {
+                document.getElementById('esAnchorDate').value = '';
+                document.getElementById('esCycleLength').value = 4;
+                renderEsRotatingGrid(4, null);
+            }
+
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editScheduleModal'));
+            modal.show();
+        }
+
+        function populateEsWeeklyGrid(weeklyHours) {
+            const container = document.getElementById('esWeeklyGrid');
+            let html = '';
+
+            ES_DAYS.forEach((day, idx) => {
+                const isWeekend = idx >= 5;
+                const defaults = isWeekend ? ES_WEEKEND_DEFAULTS : ES_WEEKDAY_DEFAULTS;
+                const dayData = (weeklyHours && weeklyHours[day]) ? weeklyHours[day] : defaults;
+                const isAvailable = dayData.available !== false;
+                const startVal = dayData.start || '08:00';
+                const endVal = dayData.end || '16:00';
+
+                html += `
+                    <div class="es-schedule-day">
+                        <div class="es-day-header">
+                            <input type="checkbox" id="es-avail-${day}" onchange="toggleEsDayAvailability('${day}')" ${isAvailable ? 'checked' : ''}>
+                            <label for="es-avail-${day}">${ES_DAY_LABELS[idx]}</label>
+                        </div>
+                        <div class="es-time-inputs ${isAvailable ? '' : 'disabled'}" id="es-times-${day}">
+                            <input type="time" id="es-start-${day}" value="${startVal}" ${isAvailable ? '' : 'disabled'}>
+                            <span>to</span>
+                            <input type="time" id="es-end-${day}" value="${endVal}" ${isAvailable ? '' : 'disabled'}>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleEsDayAvailability(day) {
+            const checkbox = document.getElementById(`es-avail-${day}`);
+            const timeInputs = document.getElementById(`es-times-${day}`);
+            const startTime = document.getElementById(`es-start-${day}`);
+            const endTime = document.getElementById(`es-end-${day}`);
+
+            if (checkbox.checked) {
+                timeInputs.classList.remove('disabled');
+                startTime.disabled = false;
+                endTime.disabled = false;
+            } else {
+                timeInputs.classList.add('disabled');
+                startTime.disabled = true;
+                endTime.disabled = true;
+            }
+        }
+
+        function onEsTypeChange() {
+            const isRotating = document.getElementById('esScheduleType').value === 'rotating';
+            document.getElementById('esWeeklySection').style.display = isRotating ? 'none' : 'block';
+            document.getElementById('esRotatingSection').style.display = isRotating ? 'block' : 'none';
+        }
+
+        function onEsCycleLengthChange() {
+            const cycleLen = parseInt(document.getElementById('esCycleLength').value) || 4;
+            if (cycleLen < 2 || cycleLen > 30) return;
+            const existingDays = getEsRotatingDaysData();
+            renderEsRotatingGrid(cycleLen, existingDays);
+        }
+
+        function renderEsRotatingGrid(cycleLength, existingDays) {
+            const container = document.getElementById('esRotatingGrid');
+            let html = '';
+            for (let i = 1; i <= cycleLength; i++) {
+                const dayData = (existingDays && existingDays[String(i)]) || { available: true, start: '08:00', end: '16:00' };
+                const isAvailable = dayData.available !== false;
+                const startVal = dayData.start || '08:00';
+                const endVal = dayData.end || '16:00';
+                html += `
+                    <div class="es-schedule-day">
+                        <div class="es-day-header">
+                            <input type="checkbox" id="esr-avail-${i}" onchange="toggleEsrDayAvailability(${i})" ${isAvailable ? 'checked' : ''}>
+                            <label for="esr-avail-${i}">Day ${i}</label>
+                        </div>
+                        <div class="es-time-inputs ${isAvailable ? '' : 'disabled'}" id="esr-times-${i}">
+                            <input type="time" id="esr-start-${i}" value="${startVal}" ${isAvailable ? '' : 'disabled'}>
+                            <span>to</span>
+                            <input type="time" id="esr-end-${i}" value="${endVal}" ${isAvailable ? '' : 'disabled'}>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function toggleEsrDayAvailability(dayNum) {
+            const checkbox = document.getElementById(`esr-avail-${dayNum}`);
+            const timeInputs = document.getElementById(`esr-times-${dayNum}`);
+            const startTime = document.getElementById(`esr-start-${dayNum}`);
+            const endTime = document.getElementById(`esr-end-${dayNum}`);
+            if (checkbox.checked) {
+                timeInputs.classList.remove('disabled');
+                startTime.disabled = false;
+                endTime.disabled = false;
+            } else {
+                timeInputs.classList.add('disabled');
+                startTime.disabled = true;
+                endTime.disabled = true;
+            }
+        }
+
+        function getEsRotatingDaysData() {
+            const days = {};
+            let i = 1;
+            while (document.getElementById(`esr-avail-${i}`)) {
+                const cb = document.getElementById(`esr-avail-${i}`);
+                const start = document.getElementById(`esr-start-${i}`);
+                const end = document.getElementById(`esr-end-${i}`);
+                days[String(i)] = {
+                    available: cb.checked,
+                    start: cb.checked ? (start.value || '08:00') : null,
+                    end: cb.checked ? (end.value || '16:00') : null
+                };
+                i++;
+            }
+            return Object.keys(days).length > 0 ? days : null;
+        }
+
+        function getEsWeeklyHoursData() {
+            const weeklyHours = {};
+            ES_DAYS.forEach(day => {
+                const checkbox = document.getElementById(`es-avail-${day}`);
+                const startTime = document.getElementById(`es-start-${day}`);
+                const endTime = document.getElementById(`es-end-${day}`);
+                weeklyHours[day] = {
+                    available: checkbox ? checkbox.checked : false,
+                    start: (checkbox && checkbox.checked && startTime) ? startTime.value : null,
+                    end: (checkbox && checkbox.checked && endTime) ? endTime.value : null
+                };
+            });
+            return weeklyHours;
+        }
+
+        async function submitEditSchedule(event) {
+            event.preventDefault();
+
+            const scheduleType = document.getElementById('esScheduleType').value;
+            const driverId = (driverData && driverData.id) || currentUser.driver_id;
+            if (!driverId) {
+                showToast('Driver record not found. Please refresh and try again.', 'error');
+                return;
+            }
+            let payload = { id: driverId };
+
+            if (scheduleType === 'weekly') {
+                const weeklyHours = getEsWeeklyHoursData();
+
+                // Validate at least one day is available
+                const hasAvailableDay = ES_DAYS.some(day => weeklyHours[day].available);
+                if (!hasAvailableDay) {
+                    showToast('Please mark at least one day as available.', 'warning');
+                    return;
+                }
+
+                // Validate times for available days
+                for (const day of ES_DAYS) {
+                    if (weeklyHours[day].available) {
+                        if (!weeklyHours[day].start || !weeklyHours[day].end) {
+                            showToast(`Please set start and end times for ${day}.`, 'warning');
+                            return;
+                        }
+                        if (weeklyHours[day].start >= weeklyHours[day].end) {
+                            showToast(`End time must be after start time for ${day}.`, 'warning');
+                            return;
+                        }
+                    }
+                }
+
+                payload.weekly_hours = weeklyHours;
+                payload.schedule_pattern = null;
+            } else {
+                // Rotating pattern
+                const cycleLength = parseInt(document.getElementById('esCycleLength').value);
+                const anchorDate = document.getElementById('esAnchorDate').value;
+
+                if (!anchorDate) {
+                    showToast('Please set an anchor date for the rotating pattern.', 'warning');
+                    return;
+                }
+
+                const days = getEsRotatingDaysData();
+
+                // Validate at least one day is available
+                const hasAvailable = days && Object.values(days).some(d => d.available);
+                if (!hasAvailable) {
+                    showToast('Please mark at least one day as available in the cycle.', 'warning');
+                    return;
+                }
+
+                // Validate times for available days
+                for (const [dayNum, d] of Object.entries(days)) {
+                    if (d.available) {
+                        if (!d.start || !d.end) {
+                            showToast(`Please set start and end times for Day ${dayNum}.`, 'warning');
+                            return;
+                        }
+                        if (d.start >= d.end) {
+                            showToast(`End time must be after start time for Day ${dayNum}.`, 'warning');
+                            return;
+                        }
+                    }
+                }
+
+                payload.schedule_pattern = {
+                    type: 'rotating',
+                    anchor_date: anchorDate,
+                    cycle_days: cycleLength,
+                    days: days
+                };
+                payload.weekly_hours = null;
+            }
+
+            setButtonLoading('esSubmitBtn', true);
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Schedule updated successfully.', 'success');
+
+                    // Update local data
+                    if (payload.weekly_hours) {
+                        driverData.weekly_hours = payload.weekly_hours;
+                        driverData.schedule_pattern = null;
+                    } else {
+                        driverData.schedule_pattern = payload.schedule_pattern;
+                        driverData.weekly_hours = null;
+                    }
+
+                    bootstrap.Modal.getInstance(document.getElementById('editScheduleModal')).hide();
+                    renderCalendar();
+                } else {
+                    showToast(result.message || 'Failed to update schedule. Please try again.', 'error');
+                }
+            } catch (err) {
+                console.error('Error updating schedule:', err);
+                showToast('An error occurred while saving. Please try again.', 'error');
+            } finally {
+                setButtonLoading('esSubmitBtn', false);
+            }
+        }
+
+        // ========== Home Address ==========
+        function populateAddressForm() {
+            if (!driverData) return;
+            document.getElementById('homeAddress').value = driverData.home_address || '';
+            document.getElementById('homeCity').value = driverData.home_city || '';
+            document.getElementById('homeProvince').value = driverData.home_province || 'NS';
+            document.getElementById('homePostalCode').value = driverData.home_postal_code || '';
+        }
+
+        async function handleAddressSubmit(event) {
+            event.preventDefault();
+            const payload = {
+                id: (driverData && driverData.id) || currentUser.driver_id,
+                home_address: document.getElementById('homeAddress').value.trim(),
+                home_city: document.getElementById('homeCity').value.trim(),
+                home_province: document.getElementById('homeProvince').value,
+                home_postal_code: document.getElementById('homePostalCode').value.trim().toUpperCase()
+            };
+            setButtonLoading('saveAddressBtn', true);
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showToast('Home address updated successfully.', 'success');
+                    driverData.home_address = payload.home_address;
+                    driverData.home_city = payload.home_city;
+                    driverData.home_province = payload.home_province;
+                    driverData.home_postal_code = payload.home_postal_code;
+
+                    // Fire-and-forget: recalculate clinic distances from new address
+                    showToast('Recalculating clinic distances...', 'info');
+                    authenticatedFetch(`${API_BASE}/recalculate-my-clinic-distances`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ driver_id: currentUser.driver_id })
+                    }).then(r => r.json()).then(res => {
+                        if (res.success) {
+                            showToast('Clinic distances updated.', 'success');
+                            loadClinicPreferences();
+                        } else {
+                            showToast('Could not recalculate clinic distances. Try again later.', 'warning');
+                        }
+                    }).catch(() => {
+                        showToast('Could not recalculate clinic distances. Try again later.', 'warning');
+                    });
+                } else {
+                    showToast(result.message || 'Failed to update address.', 'error');
+                }
+            } catch (err) {
+                console.error('Error updating address:', err);
+                showToast('An error occurred while saving.', 'error');
+            } finally {
+                setButtonLoading('saveAddressBtn', false);
+            }
+        }
+
+        // ========== Appointments Rendering ==========
+        function renderAppointments() {
+            const container = document.getElementById('appointmentsList');
+
+            if (!driverAppointments || !driverAppointments.length) {
+                container.innerHTML =
+                    '<div class="empty-state">' +
+                    '<i class="bi bi-calendar-check"></i>' +
+                    '<p>No upcoming drives</p>' +
+                    '</div>';
+                return;
+            }
+
+            const now = new Date();
+            const twoWeeksOut = new Date(now);
+            twoWeeksOut.setDate(twoWeeksOut.getDate() + 14);
+
+            const upcoming = driverAppointments
+                .filter(a => {
+                    const dt = new Date(a.appointment_datetime || a.appointmentDateTime || a.appointmenttime);
+                    return dt >= now && dt <= twoWeeksOut;
+                })
+                .sort((a, b) => {
+                    return new Date(a.appointment_datetime || a.appointmentDateTime || a.appointmenttime) -
+                           new Date(b.appointment_datetime || b.appointmentDateTime || b.appointmenttime);
+                });
+
+            if (!upcoming.length) {
+                container.innerHTML =
+                    '<div class="empty-state">' +
+                    '<i class="bi bi-calendar-check"></i>' +
+                    '<p>No drives in the next 2 weeks</p>' +
+                    '</div>';
+                return;
+            }
+
+            const statusColors = {
+                scheduled: '#3498db',
+                completed: '#27ae60',
+                cancelled: '#e74c3c',
+                no_show: '#f39c12'
+            };
+
+            container.innerHTML = upcoming.map(apt => {
+                const dt = new Date(apt.appointment_datetime || apt.appointmentDateTime || apt.appointmenttime);
+                const dateStr = dt.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    timeZone: 'America/Halifax'
+                });
+                const timeStr = dt.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    timeZone: 'America/Halifax'
+                });
+
+                // Appointment type handling
+                const aptType = apt.appointment_type || 'round_trip';
+                const typeIcons = {
+                    'round_trip': '<i class="bi bi-arrow-repeat text-primary" title="Round Trip"></i>',
+                    'one_way': '<i class="bi bi-arrow-right text-info" title="One Way"></i>',
+                    'support': '<i class="bi bi-people-fill text-secondary" title="Support Event"></i>'
+                };
+                const typeIcon = typeIcons[aptType] || typeIcons['round_trip'];
+
+                // Support events show event_name, others show client name
+                const displayName = (aptType === 'support' && apt.event_name)
+                    ? apt.event_name
+                    : (apt.client_name || apt.clientName || 'Client');
+
+                // One-way direction indicator
+                const directionInfo = aptType === 'one_way' && apt.trip_direction
+                    ? ` <small class="text-info">${apt.trip_direction === 'to_clinic' ? '&rarr; Clinic' : '&rarr; Home'}</small>`
+                    : '';
+
+                const location = apt.location || 'TBD';
+                const status = apt.status || 'scheduled';
+                const statusLabel = status.replace('_', ' ');
+
+                // Person icon or people icon based on type
+                const personIcon = aptType === 'support' ? 'bi-people-fill' : 'bi-person';
+
+                return `
+                    <div class="appointment-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="appointment-date">${typeIcon} ${dateStr}</div>
+                                <div class="appointment-time">${timeStr}${directionInfo}</div>
+                            </div>
+                            <span class="badge" style="background-color: ${statusColors[status] || '#6c757d'}; font-size: 0.78em;">${escapeHtml(statusLabel)}</span>
+                        </div>
+                        <div class="mt-2">
+                            <div class="appointment-detail"><i class="bi ${personIcon}"></i> ${escapeHtml(displayName)}</div>
+                            <div class="appointment-detail"><i class="bi bi-geo-alt"></i> ${escapeHtml(location)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ========== Loading Skeletons ==========
+        function showCalendarLoading() {
+            const container = document.getElementById('calendarBody');
+            let html = '<div class="calendar-grid">';
+            html += '<div class="calendar-grid-header">';
+            for (const dh of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']) {
+                html += `<div class="cal-header-cell">${dh}</div>`;
+            }
+            html += '</div>';
+            for (let i = 0; i < 35; i++) {
+                html += `<div class="cal-day" style="opacity:0.5;">
+                    <div class="skeleton-block" style="width:18px; height:14px; border-radius:3px; margin-bottom:4px;"></div>
+                    <div class="skeleton-block" style="width:80%; height:12px; border-radius:3px;"></div>
+                </div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function showAppointmentsLoading() {
+            const container = document.getElementById('appointmentsList');
+            let html = '';
+            for (let i = 0; i < 3; i++) {
+                html += `
+                    <div class="skeleton-appointment">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <div class="skeleton-block skeleton-line" style="width: 100px;"></div>
+                                <div class="skeleton-block skeleton-line" style="width: 60px;"></div>
+                            </div>
+                            <div class="skeleton-block skeleton-badge" style="width: 70px; height: 22px;"></div>
+                        </div>
+                        <div class="skeleton-block skeleton-line" style="width: 140px;"></div>
+                        <div class="skeleton-block skeleton-line" style="width: 180px;"></div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        // ========== Block Time Off ==========
+        function openBlockTimeModal() {
+            const form = document.getElementById('blockTimeForm');
+            form.reset();
+            document.getElementById('blockAllDay').checked = true;
+            document.getElementById('blockTimeFields').style.display = 'none';
+
+            const minDate = getTimeOffMinDate();
+            document.getElementById('blockStartDate').value = minDate;
+            document.getElementById('blockStartDate').min = minDate;
+            document.getElementById('blockEndDate').value = minDate;
+            document.getElementById('blockEndDate').min = minDate;
+
+            // Show cutoff notice for restricted roles when cutoff is active
+            const notice = document.getElementById('timeOffCutoffNotice');
+            const role = currentUser.role || currentUser.user_role || 'user';
+            const today = formatDateISO(new Date());
+            const isRestricted = (role === 'driver' || role === 'client');
+            notice.style.display = (isRestricted && minDate > today) ? 'block' : 'none';
+
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('blockTimeModal'));
+            modal.show();
+        }
+
+        async function submitBlockTime() {
+            const startDate = document.getElementById('blockStartDate').value;
+            const endDate = document.getElementById('blockEndDate').value;
+            const allDay = document.getElementById('blockAllDay').checked;
+            const startTime = document.getElementById('blockStartTime').value;
+            const endTime = document.getElementById('blockEndTime').value;
+            const reason = document.getElementById('blockReason').value.trim();
+
+            if (!startDate || !endDate) {
+                showToast('Please select start and end dates.', 'warning');
+                return;
+            }
+
+            if (!reason) {
+                showToast('Please provide a reason for the time off request.', 'warning');
+                return;
+            }
+
+            if (startDate > endDate) {
+                showToast('End date must be on or after start date.', 'warning');
+                return;
+            }
+
+            // Cutoff validation safety check
+            const role = currentUser.role || currentUser.user_role || 'user';
+            if (role === 'driver' || role === 'client') {
+                const minDate = getTimeOffMinDate();
+                if (startDate < minDate || endDate < minDate) {
+                    showToast('Time off for next week must be submitted by Wednesday. Please contact your supervisor for changes.', 'warning');
+                    return;
+                }
+            }
+
+            if (!allDay && (!startTime || !endTime)) {
+                showToast('Please enter start and end times.', 'warning');
+                return;
+            }
+
+            if (!allDay && startTime >= endTime) {
+                showToast('End time must be after start time.', 'warning');
+                return;
+            }
+
+            // Conflict check: ensure no assigned drives fall within the blocked period
+            const blockConflicts = getConflictingDrivesInRange(
+                startDate, endDate,
+                allDay ? null : startTime,
+                allDay ? null : endTime,
+                'block'
+            );
+            if (blockConflicts.length > 0) {
+                alert(formatConflictMessage(blockConflicts));
+                return;
+            }
+
+            const payload = {
+                driver_id: currentUser.driver_id,
+                entry_type: 'time_off',
+                start_date: startDate,
+                end_date: endDate,
+                all_day: allDay,
+                start_time: allDay ? null : startTime,
+                end_time: allDay ? null : endTime,
+                reason: reason || null
+            };
+
+            setButtonLoading('blockTimeSubmitBtn', true);
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/create-driver-time-off`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Time off has been blocked successfully.', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('blockTimeModal')).hide();
+                    await loadScheduleData();
+                } else {
+                    showToast(result.message || 'Failed to block time off. Please try again.', 'error');
+                }
+            } catch (err) {
+                console.error('Error blocking time off:', err);
+                showToast('An error occurred while saving. Please try again.', 'error');
+            } finally {
+                setButtonLoading('blockTimeSubmitBtn', false);
+            }
+        }
+
+        // ========== Add Availability Override ==========
+        function openOverrideModal() {
+            const form = document.getElementById('overrideForm');
+            form.reset();
+
+            const today = formatDateISO(new Date());
+            document.getElementById('overrideDate').value = today;
+            document.getElementById('overrideStartTime').value = '08:00';
+            document.getElementById('overrideEndTime').value = '16:00';
+
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('overrideModal'));
+            modal.show();
+        }
+
+        async function submitOverride() {
+            const overrideDate = document.getElementById('overrideDate').value;
+            const startTime = document.getElementById('overrideStartTime').value;
+            const endTime = document.getElementById('overrideEndTime').value;
+            const reason = document.getElementById('overrideReason').value.trim();
+
+            if (!overrideDate) {
+                showToast('Please select a date.', 'warning');
+                return;
+            }
+
+            if (!startTime || !endTime) {
+                showToast('Please enter start and end times.', 'warning');
+                return;
+            }
+
+            if (startTime >= endTime) {
+                showToast('End time must be after start time.', 'warning');
+                return;
+            }
+
+            const payload = {
+                driver_id: currentUser.driver_id,
+                entry_type: 'override_available',
+                start_date: overrideDate,
+                end_date: overrideDate,
+                all_day: false,
+                start_time: startTime,
+                end_time: endTime,
+                reason: reason || null
+            };
+
+            setButtonLoading('overrideSubmitBtn', true);
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/create-driver-time-off`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Custom availability added successfully.', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('overrideModal')).hide();
+                    await loadScheduleData();
+                } else {
+                    showToast(result.message || 'Failed to add availability. Please try again.', 'error');
+                }
+            } catch (err) {
+                console.error('Error adding override:', err);
+                showToast('An error occurred while saving. Please try again.', 'error');
+            } finally {
+                setButtonLoading('overrideSubmitBtn', false);
+            }
+        }
+
+        // ========== Clinic Preferences ==========
+        async function loadClinicPreferences() {
+            showClinicPrefsLoading();
+
+            try {
+                const response = await authenticatedFetch(
+                    `${API_BASE}/get-driver-clinic-preferences?driver_id=${currentUser.driver_id}`
+                );
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const rawClinics = (result.data?.clinics || []).filter(c => c.active !== false);
+
+                    // Normalize workflow response: clinic_id → id, extract preferences
+                    const preferredIds = [];
+                    const distances = {};
+                    allClinics = rawClinics.map(c => {
+                        const id = c.id || c.clinic_id;
+                        if (c.preferred) preferredIds.push(id);
+                        if (c.distance_km != null) distances[id] = c.distance_km;
+                        return { ...c, id };
+                    });
+                    clinicPreferences = {
+                        preferred_clinic_ids: preferredIds,
+                        distances
+                    };
+                } else {
+                    allClinics = [];
+                    clinicPreferences = {};
+                }
+            } catch (err) {
+                console.warn('Error loading clinic preferences:', err);
+                allClinics = [];
+                clinicPreferences = {};
+            }
+
+            renderClinicPreferences();
+        }
+
+        function renderClinicPreferences() {
+            const container = document.getElementById('clinicPrefsList');
+
+            if (!allClinics || !allClinics.length) {
+                container.innerHTML =
+                    '<div class="empty-state">' +
+                    '<i class="bi bi-geo-alt"></i>' +
+                    '<p>No clinics available</p>' +
+                    '</div>';
+                updateClinicPrefsSummary();
+                return;
+            }
+
+            // Get driver home coordinates for distance calculation
+            const driverCoords = getDriverHomeCoordinates();
+
+            // Compute distances and sort by distance (nearest first)
+            const clinicsWithDistance = allClinics.map(clinic => {
+                let distanceKm = null;
+
+                // Use pre-computed distance from preferences if available
+                if (clinicPreferences.distances && clinicPreferences.distances[clinic.id] != null) {
+                    distanceKm = clinicPreferences.distances[clinic.id];
+                } else if (driverCoords && clinic.map_coordinates) {
+                    distanceKm = haversineDistance(
+                        driverCoords.lat, driverCoords.lng,
+                        clinic.map_coordinates.lat || clinic.map_coordinates.x,
+                        clinic.map_coordinates.lng || clinic.map_coordinates.y
+                    );
+                }
+
+                // Determine if this clinic is preferred
+                const preferredIds = clinicPreferences.preferred_clinic_ids || [];
+                const isPreferred = preferredIds.length === 0 || preferredIds.includes(clinic.id);
+
+                return { ...clinic, distanceKm, isPreferred };
+            });
+
+            clinicsWithDistance.sort((a, b) => {
+                if (a.distanceKm == null && b.distanceKm == null) return 0;
+                if (a.distanceKm == null) return 1;
+                if (b.distanceKm == null) return -1;
+                return a.distanceKm - b.distanceKm;
+            });
+
+            container.innerHTML = clinicsWithDistance.map(clinic => {
+                const distBadge = getDistanceBadgeHtml(clinic.distanceKm);
+
+                return `
+                    <div class="clinic-row" data-clinic-id="${clinic.id}">
+                        <div class="form-check form-switch" style="margin:0; padding-left: 2.8em;">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                id="clinicPref_${clinic.id}"
+                                ${clinic.isPreferred ? 'checked' : ''}
+                                onchange="onClinicToggle()">
+                        </div>
+                        <div class="clinic-info">
+                            <div class="clinic-name">${escapeHtml(clinic.clinic_name)}</div>
+                            <div class="clinic-address">${escapeHtml(clinic.full_address || '')}</div>
+                        </div>
+                        ${distBadge}
+                    </div>
+                `;
+            }).join('');
+
+            updateClinicPrefsSummary();
+        }
+
+        function getDistanceBadgeHtml(distanceKm) {
+            if (distanceKm == null) {
+                return '<span class="distance-badge">-- km</span>';
+            }
+            const rounded = Math.round(distanceKm);
+            return `<span class="distance-badge">${rounded} km</span>`;
+        }
+
+        function onClinicToggle() {
+            updateClinicPrefsSummary();
+            // Hide validation warning if at least one is selected
+            const selected = getSelectedClinicIds();
+            const validationEl = document.getElementById('clinicPrefsValidation');
+            if (selected.length > 0) {
+                validationEl.style.display = 'none';
+            }
+        }
+
+        function toggleAllClinics(selectAll) {
+            const checkboxes = document.querySelectorAll('#clinicPrefsList .form-check-input');
+            checkboxes.forEach(cb => { cb.checked = selectAll; });
+            updateClinicPrefsSummary();
+
+            const validationEl = document.getElementById('clinicPrefsValidation');
+            if (selectAll) {
+                validationEl.style.display = 'none';
+            }
+        }
+
+        function getSelectedClinicIds() {
+            const ids = [];
+            const checkboxes = document.querySelectorAll('#clinicPrefsList .form-check-input');
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const clinicId = parseInt(cb.id.replace('clinicPref_', ''), 10);
+                    if (!isNaN(clinicId)) ids.push(clinicId);
+                }
+            });
+            return ids;
+        }
+
+        function updateClinicPrefsSummary() {
+            const selected = getSelectedClinicIds();
+            const total = document.querySelectorAll('#clinicPrefsList .form-check-input').length;
+            const summaryEl = document.getElementById('clinicPrefsSummary');
+            if (summaryEl) {
+                summaryEl.textContent = `${selected.length} of ${total} selected`;
+            }
+        }
+
+        async function saveClinicPreferences() {
+            const selectedIds = getSelectedClinicIds();
+
+            // Validate at least 1 clinic
+            if (selectedIds.length === 0) {
+                document.getElementById('clinicPrefsValidation').style.display = 'block';
+                showToast('Please select at least one clinic.', 'warning');
+                return;
+            }
+
+            document.getElementById('clinicPrefsValidation').style.display = 'none';
+            setButtonLoading('saveClinicPrefsBtn', true);
+            document.getElementById('clinicPrefsSaveStatus').textContent = '';
+
+            try {
+                const payload = {
+                    driver_id: currentUser.driver_id,
+                    clinic_ids: selectedIds
+                };
+
+                const response = await authenticatedFetch(`${API_BASE}/save-driver-clinic-preferences`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Clinic preferences saved successfully.', 'success');
+                    document.getElementById('clinicPrefsSaveStatus').textContent = 'Saved just now';
+
+                    // Update local state
+                    clinicPreferences.preferred_clinic_ids = selectedIds;
+                    if (result.data?.distances) {
+                        clinicPreferences.distances = result.data.distances;
+                        renderClinicPreferences();
+                    }
+                } else {
+                    showToast(result.message || 'Failed to save preferences. Please try again.', 'error');
+                }
+            } catch (err) {
+                console.error('Error saving clinic preferences:', err);
+                showToast('An error occurred while saving. Please try again.', 'error');
+            } finally {
+                setButtonLoading('saveClinicPrefsBtn', false);
+            }
+        }
+
+        function showClinicPrefsLoading() {
+            const container = document.getElementById('clinicPrefsList');
+            let html = '';
+            for (let i = 0; i < 5; i++) {
+                html += `
+                    <div class="clinic-row">
+                        <div class="skeleton-block" style="width: 44px; height: 22px; border-radius: 11px; flex-shrink: 0;"></div>
+                        <div class="clinic-info">
+                            <div class="skeleton-block skeleton-line" style="width: ${120 + i * 20}px;"></div>
+                            <div class="skeleton-block skeleton-line" style="width: ${160 + i * 15}px; height: 10px;"></div>
+                        </div>
+                        <div class="skeleton-block" style="width: 55px; height: 26px; border-radius: 13px; flex-shrink: 0;"></div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function getDriverHomeCoordinates() {
+            if (driverData && driverData.home_coordinates) {
+                const coords = driverData.home_coordinates;
+                if (typeof coords === 'object' && coords !== null) {
+                    return {
+                        lat: coords.lat || coords.x || null,
+                        lng: coords.lng || coords.y || null
+                    };
+                }
+            }
+            return null;
+        }
+
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // ========== Utility Functions ==========
+        /**
+         * Returns the minimum selectable date for time-off requests based on the
+         * Wednesday 11:59 PM AST cutoff rule. The current week's schedule is already
+         * set, so drivers can never block time off for the current week.
+         * - Before cutoff (Mon-Wed 23:59): min = following Monday (next week open)
+         * - After cutoff (Thu-Sun): min = Monday two weeks out (next week locked)
+         * Admins/supervisors are exempt and can select any date from today.
+         */
+        function getTimeOffMinDate() {
+            const role = currentUser.role || currentUser.user_role || 'user';
+
+            // Admins and supervisors are exempt from the cutoff
+            if (role === 'admin' || role === 'supervisor') {
+                return formatDateISO(new Date());
+            }
+
+            // Get current date/time in Atlantic time
+            const nowHalifax = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Halifax' }));
+            const dayOfWeek = nowHalifax.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+            const hour = nowHalifax.getHours();
+            const minute = nowHalifax.getMinutes();
+
+            const today = new Date(nowHalifax);
+            today.setHours(0, 0, 0, 0);
+
+            // Find current week's Monday
+            // dayOfWeek: 0(Sun) -> offset 6, 1(Mon) -> 0, 2(Tue) -> 1, ... 6(Sat) -> 5
+            const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const currentMonday = new Date(today);
+            currentMonday.setDate(currentMonday.getDate() - mondayOffset);
+
+            // Following Monday (start of next week)
+            const followingMonday = new Date(currentMonday);
+            followingMonday.setDate(followingMonday.getDate() + 7);
+
+            // Determine if cutoff has passed: after Wednesday 23:59 AST
+            // Wednesday = dayOfWeek 3. Cutoff passes when we move past Wed 23:59,
+            // i.e., Thursday (4), Friday (5), Saturday (6), Sunday (0),
+            // or Wednesday after 23:59 (which is effectively Thursday)
+            const pastCutoff = (dayOfWeek === 0) || (dayOfWeek >= 4) ||
+                               (dayOfWeek === 3 && (hour > 23 || (hour === 23 && minute >= 59)));
+
+            if (pastCutoff) {
+                // Next week's schedule is locked — earliest available is Monday two weeks out
+                const twoWeeksOut = new Date(currentMonday);
+                twoWeeksOut.setDate(twoWeeksOut.getDate() + 14);
+                return formatDateISO(twoWeeksOut);
+            }
+
+            // Before cutoff — current week is already scheduled, but next week is still open
+            return formatDateISO(followingMonday);
+        }
+
+        // ========== Drive Conflict Check ==========
+        /**
+         * Find drives that conflict with a proposed availability change.
+         * @param {string} dateStr - Date to check (YYYY-MM-DD)
+         * @param {string|null} startTime - Start of available window (HH:MM 24h) or null for all-day block
+         * @param {string|null} endTime - End of available window (HH:MM 24h) or null for all-day block
+         * @param {string} mode - 'block' (any drive on this date conflicts),
+         *                        'hours' (drives outside the new hours conflict),
+         *                        'remove' (drives during the entry window conflict)
+         * @returns {Array} Array of { time, date, client, location } conflict objects
+         */
+        function getConflictingDrives(dateStr, startTime, endTime, mode) {
+            if (!driverAppointments || !driverAppointments.length) return [];
+
+            // Only check dates within the short-term cutoff window.
+            // Dates further out don't need conflict checks — supervisors can adjust.
+            const cutoffDate = getTimeOffMinDate();
+            if (dateStr >= cutoffDate) return [];
+
+            const conflicts = [];
+            const dayDrives = driverAppointments.filter(apt => {
+                const aptDate = (apt.appointment_datetime || apt.appointmentDateTime || apt.appointmenttime || '').substring(0, 10);
+                return aptDate === dateStr && (apt.status || 'scheduled') !== 'cancelled';
+            });
+
+            for (const apt of dayDrives) {
+                const dt = new Date(apt.appointment_datetime || apt.appointmentDateTime || apt.appointmenttime);
+                const aptHour = dt.getHours();
+                const aptMin = dt.getMinutes();
+                const aptTimeStr = `${String(aptHour).padStart(2, '0')}:${String(aptMin).padStart(2, '0')}`;
+
+                const timeDisplay = dt.toLocaleTimeString('en-US', {
+                    hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax'
+                });
+                const dateDisplay = dt.toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Halifax'
+                });
+                const aptType = apt.appointment_type || 'round_trip';
+                const client = (aptType === 'support' && apt.event_name)
+                    ? apt.event_name
+                    : (apt.client_name || apt.clientName || 'Client');
+
+                let isConflict = false;
+
+                if (mode === 'block') {
+                    if (startTime && endTime) {
+                        // Partial-day block: conflict if drive falls within blocked window
+                        isConflict = aptTimeStr >= startTime && aptTimeStr < endTime;
+                    } else {
+                        // All-day block: any drive is a conflict
+                        isConflict = true;
+                    }
+                } else if (mode === 'hours') {
+                    // Drive falls outside the new available hours
+                    isConflict = aptTimeStr < startTime || aptTimeStr >= endTime;
+                } else if (mode === 'remove') {
+                    // Removing availability: any drive during that window conflicts
+                    if (startTime && endTime) {
+                        isConflict = aptTimeStr >= startTime && aptTimeStr < endTime;
+                    } else {
+                        isConflict = true;
+                    }
+                }
+
+                if (isConflict) {
+                    conflicts.push({
+                        time: timeDisplay,
+                        date: dateDisplay,
+                        client: client,
+                        location: apt.location || 'TBD'
+                    });
+                }
+            }
+
+            return conflicts;
+        }
+
+        /**
+         * Check conflicts across a date range (for Block Time Off modal).
+         */
+        function getConflictingDrivesInRange(startDate, endDate, startTime, endTime, mode) {
+            const allConflicts = [];
+            const current = new Date(startDate + 'T00:00:00');
+            const end = new Date(endDate + 'T00:00:00');
+
+            while (current <= end) {
+                const dateStr = formatDateISO(current);
+                const dayConflicts = getConflictingDrives(dateStr, startTime, endTime, mode);
+                allConflicts.push(...dayConflicts);
+                current.setDate(current.getDate() + 1);
+            }
+
+            return allConflicts;
+        }
+
+        /**
+         * Format conflict list into a user-facing message.
+         */
+        function formatConflictMessage(conflicts) {
+            const lines = conflicts.map(c =>
+                `${c.date} at ${c.time} — ${c.client} (${c.location})`
+            );
+            const header = conflicts.length === 1
+                ? 'You have a drive that conflicts with this change:'
+                : `You have ${conflicts.length} drives that conflict with this change:`;
+            return header + '\n\n' + lines.join('\n') +
+                '\n\nContact your supervisor to reschedule before changing your availability.';
+        }
+
+        function formatDateISO(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatTime12(time24) {
+            if (!time24) return '';
+            const [hours, minutes] = time24.split(':');
+            const h = parseInt(hours, 10);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12}:${minutes || '00'} ${ampm}`;
+        }
+
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Setup navigation based on user role
-        function setupNavigation() {
-            const user = getCurrentUser();
-            const role = user ? (user.role || user.user_role || 'user') : 'user';
-            const navContainer = document.getElementById('mainNav');
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
 
-            // Navigation items based on role
-            const navItems = [
-                { href: 'dashboard.html', label: 'Dashboard', roles: ['admin', 'supervisor', 'scheduler', 'user'] },
-                { href: 'clients-sl.html', label: 'Clients', roles: ['admin', 'supervisor', 'scheduler'] },
-                { href: 'appointments-sl.html', label: 'Appointments', roles: ['admin', 'supervisor', 'scheduler'] },
-                { href: 'operations.html', label: 'Operations', roles: ['admin', 'supervisor'] },
-                { href: 'driver-management.html', label: 'Drivers', roles: ['admin', 'supervisor'] },
-                { href: 'finance.html', label: 'Finance', roles: ['admin'] },
-                { href: 'admin.html', label: 'Admin', roles: ['admin'] }
-            ];
+        function setButtonLoading(btnId, loading) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            const textEl = btn.querySelector('.btn-text');
+            const loadingEl = btn.querySelector('.btn-loading');
+            if (loading) {
+                btn.disabled = true;
+                if (textEl) textEl.classList.add('d-none');
+                if (loadingEl) loadingEl.classList.remove('d-none');
+            } else {
+                btn.disabled = false;
+                if (textEl) textEl.classList.remove('d-none');
+                if (loadingEl) loadingEl.classList.add('d-none');
+            }
+        }
 
-            navContainer.innerHTML = '';
+        // ========== Alert Functions ==========
+        function showProfileAlert(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `<div class="alert alert-${type}">${escapeHtml(message)}</div>`;
+            }
+        }
 
-            navItems.forEach(item => {
-                if (item.roles.includes(role.toLowerCase())) {
-                    const link = document.createElement('a');
-                    link.href = item.href;
-                    link.className = 'nav-link';
-                    link.textContent = item.label;
-                    navContainer.appendChild(link);
-                }
+        function hideAlert(containerId) {
+            const container = document.getElementById(containerId);
+            if (container) container.innerHTML = '';
+        }
+
+        // ========== Toast Notifications ==========
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const icons = {
+                success: '<i class="bi bi-check-circle-fill"></i>',
+                error: '<i class="bi bi-x-circle-fill"></i>',
+                warning: '<i class="bi bi-exclamation-triangle-fill"></i>',
+                info: '<i class="bi bi-info-circle-fill"></i>'
+            };
+
+            const titles = {
+                success: 'Success',
+                error: 'Error',
+                warning: 'Warning',
+                info: 'Info'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `custom-toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type]}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${titles[type]}</div>
+                    <div class="toast-message">${escapeHtml(message)}</div>
+                </div>
+                <button class="toast-close" onclick="this.closest('.custom-toast').classList.add('hiding'); setTimeout(() => this.closest('.custom-toast').remove(), 300);">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            if (duration > 0) {
+                setTimeout(() => {
+                    toast.classList.add('hiding');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        }
+        // ========== Day Detail Modal ==========
+        function openDayDetail(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const entries = resolveAvailability(date);
+            const baseSchedule = getBaseSchedule(date);
+            const hasManualEntries = entries.some(e => e.entry_id);
+
+            // Format the day header
+            const dayLabel = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
+            document.getElementById('dayDetailTitle').textContent = dayLabel;
+
+            // Build modal body
+            let html = '';
+
+            const statusConfig = {
+                available: { icon: 'bi-check-circle-fill', color: '#2e7d32', label: 'Available', cssClass: 'status-available' },
+                off: { icon: 'bi-dash-circle-fill', color: '#9e9e9e', label: 'Day Off', cssClass: 'status-off' },
+                blocked: { icon: 'bi-x-circle-fill', color: '#c62828', label: 'Blocked', cssClass: 'status-blocked' },
+                override: { icon: 'bi-plus-circle-fill', color: '#1565c0', label: 'Custom Availability', cssClass: 'status-override' }
+            };
+
+            // Cutoff check
+            const role = currentUser.role || currentUser.user_role || 'user';
+            const isRestricted = (role === 'driver' || role === 'client');
+            const minDate = getTimeOffMinDate();
+            const withinCutoff = isRestricted && dateStr < minDate;
+
+            // Show base schedule context when manual entries exist
+            if (hasManualEntries) {
+                const baseCfg = statusConfig[baseSchedule.type] || statusConfig.off;
+                html += `<div class="day-detail-base-schedule">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    <span>Base schedule: <strong>${escapeHtml(baseCfg.label)}</strong>${baseSchedule.hours ? ' (' + escapeHtml(baseSchedule.hours) + ')' : ''}</span>
+                    <span class="text-muted ms-1" style="font-size: 0.85em;">${escapeHtml(baseSchedule.source || '')}</span>
+                </div>`;
+            }
+
+            // Entry list
+            html += '<div class="day-detail-entries">';
+
+            for (const entry of entries) {
+                const cfg = statusConfig[entry.type] || statusConfig.off;
+
+                let detail = '';
+                if (entry.hours) detail = entry.hours;
+                if (entry.type === 'blocked' && !entry.hours) detail = 'All day';
+                if (entry.reason) detail += detail ? ` — ${entry.reason}` : entry.reason;
+
+                html += `<div class="day-detail-entry ${cfg.cssClass}">
+                    <div class="day-detail-entry-icon" style="color: ${cfg.color};">
+                        <i class="bi ${cfg.icon}"></i>
+                    </div>
+                    <div class="day-detail-entry-info">
+                        <div class="day-detail-entry-label">${escapeHtml(cfg.label)}${detail ? ': ' + escapeHtml(detail) : ''}</div>
+                        <div class="day-detail-entry-source">${escapeHtml(entry.source || '')}</div>
+                    </div>`;
+
+                // Per-entry actions (edit + delete) for manual entries
+                if (entry.entry_id) {
+                    html += '<div class="day-detail-entry-actions">';
+                    html += `<button class="btn btn-sm btn-outline-secondary" title="Edit" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailEditHours('${dateStr}', ${entry.entry_id})"><i class="bi bi-pencil"></i></button>`;
+                    html += `<button class="btn btn-sm btn-outline-danger" title="Remove" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailRemoveEntry(${entry.entry_id}, '${dateStr}')"><i class="bi bi-trash"></i></button>`;
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            // Actions section — add new entries
+            html += '<div class="day-detail-actions">';
+
+            html += `<button class="day-detail-action-btn" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailEditHours('${dateStr}')">
+                <i class="bi bi-pencil-square" style="color: var(--color-primary);"></i>
+                <div>
+                    <div class="action-label">Add custom hours</div>
+                    <div class="action-desc">${withinCutoff ? 'Past the Wednesday cutoff — contact your supervisor' : 'Add a new availability window for this day'}</div>
+                </div>
+            </button>`;
+
+            html += `<button class="day-detail-action-btn" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailBlockTime('${dateStr}')">
+                <i class="bi bi-calendar-x" style="color: var(--color-danger);"></i>
+                <div>
+                    <div class="action-label">Block time off</div>
+                    <div class="action-desc">${withinCutoff ? 'Past the Wednesday cutoff — contact your supervisor' : 'Mark this day as unavailable'}</div>
+                </div>
+            </button>`;
+
+            html += '</div>';
+
+            // Appointments on this day
+            const dayAppointments = driverAppointments.filter(apt => {
+                const aptDate = (apt.appointment_datetime || apt.appointmentDateTime || '').substring(0, 10);
+                return aptDate === dateStr;
+            });
+
+            if (dayAppointments.length > 0) {
+                html += '<div class="day-detail-appointments">';
+                html += `<h6><i class="bi bi-clock-history me-1"></i> Appointments (${dayAppointments.length})</h6>`;
+
+                dayAppointments.forEach(apt => {
+                    const dt = new Date(apt.appointment_datetime || apt.appointmentDateTime);
+                    const timeStr = dt.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        timeZone: 'America/Halifax'
+                    });
+                    const clientName = apt.client_name || apt.clientName || 'Client';
+                    const location = apt.location || 'TBD';
+                    const aptType = apt.appointment_type || 'round_trip';
+                    const displayName = (aptType === 'support' && apt.event_name) ? apt.event_name : clientName;
+
+                    html += `<div class="day-detail-apt">
+                        <strong>${escapeHtml(timeStr)}</strong> — ${escapeHtml(displayName)}
+                        <div style="font-size: 0.85em; color: #666;"><i class="bi bi-geo-alt"></i> ${escapeHtml(location)}</div>
+                    </div>`;
+                });
+
+                html += '</div>';
+            }
+
+            document.getElementById('dayDetailBody').innerHTML = html;
+
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal'));
+            modal.show();
         }
 
-        // Toggle mobile menu
-        function toggleMobileMenu() {
-            const nav = document.getElementById('mainNav');
-            nav.classList.toggle('mobile-open');
+        function dayDetailEditHours(dateStr, entryId) {
+            // Close Day Detail modal
+            const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
+            if (dayModal) dayModal.hide();
+
+            // Show inline form inside a fresh Day Detail modal after close animation
+            document.getElementById('dayDetailModal').addEventListener('hidden.bs.modal', function onHidden() {
+                document.getElementById('dayDetailModal').removeEventListener('hidden.bs.modal', onHidden);
+                showEditHoursForm(dateStr, entryId || null);
+            }, { once: true });
         }
 
-        // Logout function (from jwt-auth.js, but ensure it exists)
-        if (typeof logout !== 'function') {
-            function logout() {
-                sessionStorage.clear();
-                window.location.href = 'index.html';
+        // Track entry being edited (null = new entry)
+        let _editingEntryId = null;
+        let _editingEntryType = null;
+
+        function showEditHoursForm(dateStr, entryId) {
+            _editingEntryId = entryId || null;
+            _editingEntryType = null;
+
+            const date = new Date(dateStr + 'T00:00:00');
+            const isEditing = !!_editingEntryId;
+
+            const dayLabel = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('dayDetailTitle').textContent = `${isEditing ? 'Edit' : 'Add'} Hours — ${dayLabel}`;
+
+            // Pre-fill times: from the specific entry if editing, or defaults
+            let startVal = '08:00';
+            let endVal = '16:00';
+            let noteVal = '';
+
+            if (isEditing && timeOffEntries) {
+                const entry = timeOffEntries.find(e => e.id === _editingEntryId);
+                if (entry) {
+                    _editingEntryType = entry.entry_type;
+                    if (entry.start_time && entry.end_time) {
+                        startVal = entry.start_time;
+                        endVal = entry.end_time;
+                    }
+                    noteVal = entry.reason || '';
+                }
+            } else {
+                // New entry — use base schedule times as defaults
+                const base = getBaseSchedule(date);
+                if (base.hours) {
+                    const parsed = parseHoursToTimes(base);
+                    if (parsed) { startVal = parsed.start; endVal = parsed.end; }
+                }
+            }
+
+            const html = `
+                <div class="day-detail-edit-form">
+                    <p class="text-muted" style="font-size: 0.9em; margin-bottom: 12px;">${isEditing ? 'Edit this availability entry.' : 'Add a new availability window for this day.'}</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="form-label form-label-required">Start Time</label>
+                            <input type="time" class="form-control" id="ddEditStart" value="${startVal}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-required">End Time</label>
+                            <input type="time" class="form-control" id="ddEditEnd" value="${endVal}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label class="form-label">Note (optional)</label>
+                            <input type="text" class="form-control" id="ddEditNote" placeholder="e.g., Adjusted hours" maxlength="200" value="${escapeHtml(noteVal)}">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="ddEditSaveBtn" onclick="submitDayDetailEditHours('${dateStr}')">
+                            <span class="btn-text"><i class="bi bi-save me-1"></i>${isEditing ? 'Save Changes' : 'Save Hours'}</span>
+                            <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('dayDetailBody').innerHTML = html;
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('dayDetailModal'));
+            modal.show();
+        }
+
+        function parseHoursToTimes(availability) {
+            // Try to extract 24h times from the availability data
+            // Look for matching time_off entry first
+            if (availability.entry_id && timeOffEntries) {
+                const entry = timeOffEntries.find(e => e.id === availability.entry_id);
+                if (entry && entry.start_time && entry.end_time) {
+                    return { start: entry.start_time, end: entry.end_time };
+                }
+            }
+            // Try parsing from the hours string "H:MM AM - H:MM PM"
+            if (availability.hours) {
+                const match = availability.hours.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+                if (match) {
+                    const startH = to24h(parseInt(match[1]), match[3]);
+                    const endH = to24h(parseInt(match[4]), match[6]);
+                    return {
+                        start: `${String(startH).padStart(2, '0')}:${match[2]}`,
+                        end: `${String(endH).padStart(2, '0')}:${match[5]}`
+                    };
+                }
+            }
+            return null;
+        }
+
+        function to24h(hour, ampm) {
+            if (ampm.toUpperCase() === 'AM') return hour === 12 ? 0 : hour;
+            return hour === 12 ? 12 : hour + 12;
+        }
+
+        async function submitDayDetailEditHours(dateStr) {
+            const startTime = document.getElementById('ddEditStart').value;
+            const endTime = document.getElementById('ddEditEnd').value;
+            const note = document.getElementById('ddEditNote').value.trim();
+
+            if (!startTime || !endTime) {
+                showToast('Please enter start and end times.', 'warning');
+                return;
+            }
+            if (startTime >= endTime) {
+                showToast('End time must be after start time.', 'warning');
+                return;
+            }
+
+            // Reduction check: within the cutoff window, drivers cannot shrink their base schedule
+            const role = currentUser.role || currentUser.user_role || 'user';
+            const isRestricted = (role === 'driver' || role === 'client');
+            if (isRestricted) {
+                const minDate = getTimeOffMinDate();
+                if (dateStr < minDate) {
+                    const date = new Date(dateStr + 'T00:00:00');
+                    const base = getBaseSchedule(date);
+                    if (base.hours) {
+                        const parsed = parseHoursToTimes(base);
+                        if (parsed) {
+                            if (startTime > parsed.start || endTime < parsed.end) {
+                                showToast("You can't reduce your availability within the scheduling window. Contact your supervisor to make changes.", 'warning');
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Conflict check: ensure no assigned drives fall outside the new hours
+            const hoursConflicts = getConflictingDrives(dateStr, startTime, endTime, 'hours');
+            if (hoursConflicts.length > 0) {
+                alert(formatConflictMessage(hoursConflicts));
+                return;
+            }
+
+            const isEditing = !!_editingEntryId;
+            const endpoint = isEditing ? 'update-driver-time-off' : 'create-driver-time-off';
+
+            const payload = {
+                driver_id: currentUser.driver_id,
+                entry_type: (isEditing && _editingEntryType) ? _editingEntryType : 'override_available',
+                start_date: dateStr,
+                end_date: dateStr,
+                all_day: false,
+                start_time: startTime,
+                end_time: endTime,
+                reason: note || null
+            };
+
+            if (isEditing) {
+                payload.id = _editingEntryId;
+            }
+
+            setButtonLoading('ddEditSaveBtn', true);
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast(isEditing ? 'Entry updated.' : 'Hours added for this day.', 'success');
+                    _editingEntryId = null;
+                    _editingEntryType = null;
+                    bootstrap.Modal.getInstance(document.getElementById('dayDetailModal')).hide();
+                    await loadScheduleData();
+                } else {
+                    showToast(result.message || 'Failed to save hours.', 'error');
+                }
+            } catch (err) {
+                console.error('Error saving day hours:', err);
+                showToast('An error occurred while saving.', 'error');
+            } finally {
+                setButtonLoading('ddEditSaveBtn', false);
+            }
+        }
+
+        function dayDetailBlockTime(dateStr) {
+            // Close Day Detail modal and open Block Time Off modal pre-populated
+            const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
+            if (dayModal) dayModal.hide();
+
+            document.getElementById('dayDetailModal').addEventListener('hidden.bs.modal', function onHidden() {
+                document.getElementById('dayDetailModal').removeEventListener('hidden.bs.modal', onHidden);
+
+                // Reset and pre-populate the Block Time Off modal
+                const form = document.getElementById('blockTimeForm');
+                form.reset();
+                document.getElementById('blockAllDay').checked = true;
+                document.getElementById('blockTimeFields').style.display = 'none';
+
+                const minDate = getTimeOffMinDate();
+                const effectiveDate = dateStr >= minDate ? dateStr : minDate;
+                document.getElementById('blockStartDate').value = effectiveDate;
+                document.getElementById('blockStartDate').min = minDate;
+                document.getElementById('blockEndDate').value = effectiveDate;
+                document.getElementById('blockEndDate').min = effectiveDate;
+
+                // Show cutoff notice
+                const notice = document.getElementById('timeOffCutoffNotice');
+                const role = currentUser.role || currentUser.user_role || 'user';
+                const today = formatDateISO(new Date());
+                const isRestricted = (role === 'driver' || role === 'client');
+                notice.style.display = (isRestricted && minDate > today) ? 'block' : 'none';
+
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('blockTimeModal'));
+                modal.show();
+            }, { once: true });
+        }
+
+        async function dayDetailRemoveEntry(entryId, dateStr) {
+            // If removing an override_available entry, check for drives that depend on it
+            const entry = timeOffEntries.find(e => e.id === entryId);
+            if (entry && entry.entry_type === 'override_available') {
+                const removeConflicts = getConflictingDrives(
+                    dateStr,
+                    entry.start_time || null,
+                    entry.end_time || null,
+                    'remove'
+                );
+                if (removeConflicts.length > 0) {
+                    alert(formatConflictMessage(removeConflicts));
+                    return;
+                }
+            }
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/delete-driver-time-off`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: entryId, driver_id: currentUser.driver_id })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Entry removed successfully.', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('dayDetailModal')).hide();
+                    await loadScheduleData();
+                } else {
+                    showToast(result.message || 'Failed to remove entry.', 'error');
+                }
+            } catch (err) {
+                console.error('Error removing entry:', err);
+                showToast('An error occurred. Please try again.', 'error');
             }
         }
     </script>

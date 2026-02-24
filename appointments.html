@@ -1003,6 +1003,15 @@
                             </select>
                         </div>
                         <div class="col-md-2">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="typeFilter">
+                                <option value="">All Types</option>
+                                <option value="round_trip">Round Trip</option>
+                                <option value="one_way">One Way</option>
+                                <option value="support">Support Event</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label">From Date</label>
                             <input type="date" class="form-control" id="dateFromFilter">
                         </div>
@@ -1125,6 +1134,7 @@
 
     <!-- JWT Authentication Helper -->
     <script src="js/auth/jwt-auth.js"></script>
+    <script src="js/auth/session-manager.js"></script>
     <!-- Navigation Component -->
     <script src="js/components/navigation.js"></script>
     <!-- API Security & Audit Logging -->
