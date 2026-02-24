@@ -13,6 +13,7 @@ const NAV_ITEMS = [
     { page: 'driver-management', label: 'Drivers', icon: 'bi-truck', roles: ['admin', 'supervisor'] },
     { page: 'operations', label: 'Operations', icon: 'bi-clipboard-data', roles: ['admin', 'supervisor'] },
     { page: 'finance', label: 'Finance', icon: 'bi-currency-dollar', roles: ['admin', 'supervisor'] },
+    { page: 'profile', label: 'My Schedule', icon: 'bi-calendar-week', roles: ['driver'] },
     { page: 'admin', label: 'Admin', icon: 'bi-gear', roles: ['admin'] }
 ];
 
@@ -46,6 +47,9 @@ function initializeNavigation(options = {}) {
 
     if (userName) {
         userName.textContent = user.fullName || user.full_name || user.username || 'User';
+        userName.style.cursor = 'pointer';
+        userName.onclick = () => window.location.href = 'profile.html';
+        userName.title = 'View Profile';
     }
 
     if (userRole) {

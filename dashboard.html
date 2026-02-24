@@ -1302,7 +1302,8 @@
                         id: result.userId || result.id,
                         username: result.username || username,
                         role: result.userRole || result.role || 'admin',
-                        fullName: result.fullName || username
+                        fullName: result.fullName || username,
+                        driver_id: result.driver_id || null
                     };
 
                     sessionStorage.setItem('rrts_user', JSON.stringify(currentUser));
@@ -1396,7 +1397,7 @@
 
 	        const [appointmentsResponse, driversResponse, failedTasksResponse] = await Promise.all([
 	            fetch(`${BASE_URL}/get-active-present-future-appointments`, { headers: getAuthHeaders() }),
-	            fetch(`${BASE_URL}/get-all-drivers`, { headers: getAuthHeaders() }),
+	            fetch(`${BASE_URL}/allDrivers`, { headers: getAuthHeaders() }),
 	            fetch(`${BASE_URL}/${failedTasksEndpoint}`, { headers: getAuthHeaders() }).catch(() => null)
 	        ]);
 
@@ -1954,7 +1955,8 @@
                     currentUser = {
                         username: result.user.username,
                         role: result.user.role || 'admin',
-                        fullName: result.user.full_name || result.user.username
+                        fullName: result.user.full_name || result.user.username,
+                        driver_id: result.user.driver_id || null
                     };
 
                     sessionStorage.setItem('rrts_user', JSON.stringify(currentUser));

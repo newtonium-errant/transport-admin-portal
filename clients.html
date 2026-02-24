@@ -1240,7 +1240,7 @@
         // Load clients from API
         async function loadClients() {
             try {
-                const response = await authenticatedFetch(`${apiBaseUrl}/get-all-clients`);
+                const response = await authenticatedFetch(`${apiBaseUrl}/getAllClients`);
                 const data = await response.json();
 
                 allClients = data.clients || data || [];
