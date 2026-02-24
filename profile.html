@@ -1553,6 +1553,13 @@
             <div class="profile-card-body">
                 <div id="profileAlert"></div>
 
+                <!-- Skeleton loader for driver data -->
+                <div id="profileFormSkeleton" style="display: none;">
+                    <div class="form-group"><div class="skeleton-block" style="width: 70px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                    <div class="form-group"><div class="skeleton-block" style="width: 90px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                    <div class="form-group"><div class="skeleton-block" style="width: 85px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                    <div class="form-group"><div class="skeleton-block" style="width: 65px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                </div>
                 <form id="profileForm">
                     <div class="form-group">
                         <label class="form-label" for="fullName">Full Name</label>
@@ -1600,6 +1607,15 @@
                     <h2>Home Address</h2>
                 </div>
                 <div class="profile-card-body">
+                    <!-- Skeleton loader for driver data -->
+                    <div id="addressFormSkeleton" style="display: none;">
+                        <div class="form-group"><div class="skeleton-block" style="width: 90px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
+                        <div class="row">
+                            <div class="col-md-5"><div class="form-group"><div class="skeleton-block" style="width: 30px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div></div>
+                            <div class="col-md-4"><div class="form-group"><div class="skeleton-block" style="width: 55px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div></div>
+                            <div class="col-md-3"><div class="form-group"><div class="skeleton-block" style="width: 70px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div></div>
+                        </div>
+                    </div>
                     <form id="addressForm" onsubmit="handleAddressSubmit(event)">
                         <div class="form-group">
                             <label class="form-label" for="homeAddress">Street Address</label>
@@ -1984,6 +2000,11 @@
                 document.getElementById('driverTabs').style.display = 'block';
                 document.getElementById('driverAddressSection').style.display = 'block';
                 document.getElementById('pageSubtitle').textContent = 'Manage your profile, schedule, and preferences';
+                // Show skeletons, hide forms until driver data loads
+                document.getElementById('profileFormSkeleton').style.display = 'block';
+                document.getElementById('profileForm').style.display = 'none';
+                document.getElementById('addressFormSkeleton').style.display = 'block';
+                document.getElementById('addressForm').style.display = 'none';
                 initDriverSchedule();
                 loadClinicPreferences();
             } else {
@@ -1996,18 +2017,25 @@
         function loadUserProfile() {
             originalUserData = { ...currentUser };
 
-            const fullName = currentUser.fullName || currentUser.full_name || currentUser.username || 'User';
-            const role = currentUser.role || currentUser.user_role || 'user';
-
-            // Populate form fields
-            document.getElementById('fullName').value = currentUser.fullName || currentUser.full_name || '';
-            document.getElementById('email').value = currentUser.email || '';
-            document.getElementById('phone').value = currentUser.phone || currentUser.phone_number || '';
+            // For drivers, prefer driver data if available
+            if (currentUser.driver_id && driverData) {
+                document.getElementById('fullName').value = driverData.name || '';
+                document.getElementById('email').value = driverData.email || '';
+                document.getElementById('phone').value = driverData.phone || '';
+            } else {
+                document.getElementById('fullName').value = currentUser.fullName || currentUser.full_name || '';
+                document.getElementById('email').value = currentUser.email || '';
+                document.getElementById('phone').value = currentUser.phone || currentUser.phone_number || '';
+            }
             document.getElementById('username').value = currentUser.username || '';
         }
 
         function resetProfileForm() {
-            if (originalUserData) {
+            if (currentUser.driver_id && driverData) {
+                document.getElementById('fullName').value = driverData.name || '';
+                document.getElementById('email').value = driverData.email || '';
+                document.getElementById('phone').value = driverData.phone || '';
+            } else if (originalUserData) {
                 document.getElementById('fullName').value = originalUserData.fullName || originalUserData.full_name || '';
                 document.getElementById('email').value = originalUserData.email || '';
                 document.getElementById('phone').value = originalUserData.phone || originalUserData.phone_number || '';
@@ -2024,34 +2052,66 @@
             btn.disabled = true;
 
             try {
-                const formData = {
-                    fullName: document.getElementById('fullName').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    phone: document.getElementById('phone').value.trim()
-                };
+                const fullName = document.getElementById('fullName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
 
-                if (!formData.fullName) {
+                if (!fullName) {
                     throw new Error('Full name is required');
                 }
-                if (!formData.email || !isValidEmail(formData.email)) {
+                if (!email || !isValidEmail(email)) {
                     throw new Error('Valid email address is required');
                 }
 
-                const response = await APIClient.post('/update-user-profile', formData);
-
-                if (response.success) {
-                    const user = getCurrentUser();
-                    user.fullName = formData.fullName;
-                    user.full_name = formData.fullName;
-                    user.email = formData.email;
-                    user.phone = formData.phone;
-                    sessionStorage.setItem('rrts_user', JSON.stringify(user));
-                    currentUser = user;
-
-                    loadUserProfile();
-                    showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                // Drivers save to drivers table via update-driver
+                if (currentUser.driver_id) {
+                    const payload = {
+                        id: (driverData && driverData.id) || currentUser.driver_id,
+                        name: fullName,
+                        email: email,
+                        phone: phone
+                    };
+                    const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        // Update local driver data
+                        if (driverData) {
+                            driverData.name = fullName;
+                            driverData.email = email;
+                            driverData.phone = phone;
+                        }
+                        // Keep session in sync
+                        const user = getCurrentUser();
+                        user.fullName = fullName;
+                        user.full_name = fullName;
+                        user.email = email;
+                        user.phone = phone;
+                        sessionStorage.setItem('rrts_user', JSON.stringify(user));
+                        currentUser = user;
+                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                    } else {
+                        throw new Error(result.message || 'Failed to update profile');
+                    }
                 } else {
-                    throw new Error(response.message || 'Failed to update profile');
+                    // Non-drivers save to users table
+                    const formData = { fullName, email, phone };
+                    const response = await APIClient.post('/update-user-profile', formData);
+                    if (response.success) {
+                        const user = getCurrentUser();
+                        user.fullName = fullName;
+                        user.full_name = fullName;
+                        user.email = email;
+                        user.phone = phone;
+                        sessionStorage.setItem('rrts_user', JSON.stringify(user));
+                        currentUser = user;
+                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                    } else {
+                        throw new Error(response.message || 'Failed to update profile');
+                    }
                 }
             } catch (error) {
                 console.error('Profile update error:', error);
@@ -2193,6 +2253,13 @@
             renderCalendar();
             renderAppointments();
             populateAddressForm();
+            // Re-populate profile form now that driverData is available
+            loadUserProfile();
+            // Swap skeletons for real forms
+            document.getElementById('profileFormSkeleton').style.display = 'none';
+            document.getElementById('profileForm').style.display = '';
+            document.getElementById('addressFormSkeleton').style.display = 'none';
+            document.getElementById('addressForm').style.display = '';
         }
 
         // ========== Calendar Rendering ==========
