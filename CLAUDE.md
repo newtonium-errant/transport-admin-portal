@@ -268,7 +268,7 @@ The application includes three reusable modal components: **AppointmentModal** (
 
 ## Database Schema
 
-The application uses Supabase PostgreSQL with 8 main tables: **users** (JWT auth with refresh tokens, account lockout, 5 roles), **clients** (K numbers, primary/secondary addresses, emergency contacts, JSONB `clinic_travel_times`), **appointments** (soft delete support, Google Calendar integration, status tracking: scheduled/completed/cancelled/no_show), **drivers** (auto-created Google Calendars), **clinic_locations** (coordinates for mapping), **audit_logs** (security events with old/new values), **driver_time_off** (availability tracking), **app_config** (system settings).
+The application uses Supabase PostgreSQL with 8 main tables: **users** (JWT auth with refresh tokens, account lockout, 5 roles), **clients** (K numbers, primary/secondary addresses, emergency contacts, JSONB `clinic_travel_times`), **appointments** (soft delete support, Google Calendar integration, status tracking: scheduled/completed/cancelled/no_show), **drivers** (auto-created Google Calendars), **destinations** (clinic/destination locations with coordinates for mapping), **audit_logs** (security events with old/new values), **driver_time_off** (availability tracking), **app_config** (system settings).
 
 **Key Conventions:** All timestamps are `timestamp with time zone` (stored UTC, displayed Halifax time), new tables use uuid PKs (legacy use integer AUTO INCREMENT), K numbers format "K0001", password hashing uses custom `simpleHash()` (PBKDF2 not available in n8n), soft deletes preferred over hard deletes, JSONB for structured data (e.g., travel times, audit old/new values).
 

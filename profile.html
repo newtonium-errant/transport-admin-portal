@@ -1568,20 +1568,8 @@
                                         <input type="number" class="form-control" id="esCycleLength" min="2" max="30" value="4" onchange="onEsCycleLengthChange()">
                                     </div>
                                 </div>
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Default Start Time</label>
-                                        <input type="time" class="form-control" id="esDefaultStart" value="08:00">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">Default End Time</label>
-                                        <input type="time" class="form-control" id="esDefaultEnd" value="16:00">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Work Days in Cycle</label>
-                                    <div id="esWorkDayCheckboxes"></div>
-                                </div>
+                                <label class="form-label fw-bold">Cycle Day Schedule</label>
+                                <div class="es-schedule-grid" id="esRotatingGrid"></div>
                             </div>
 
                             <div class="modal-footer px-0 pb-0">
@@ -2026,15 +2014,17 @@
             if (driverData && driverData.schedule_pattern) {
                 const pattern = driverData.schedule_pattern;
 
-                if (pattern.type === 'rotating' && pattern.start_date && pattern.days_on && pattern.days_off) {
-                    const patternStart = new Date(pattern.start_date + 'T00:00:00');
-                    const cycleDays = pattern.days_on + pattern.days_off;
+                if (pattern.type === 'rotating' && pattern.anchor_date && pattern.cycle_days && pattern.days) {
+                    const patternStart = new Date(pattern.anchor_date + 'T00:00:00');
+                    const cycleDays = pattern.cycle_days;
                     const diffDays = Math.floor((date - patternStart) / (1000 * 60 * 60 * 24));
                     const cyclePosition = ((diffDays % cycleDays) + cycleDays) % cycleDays;
+                    const dayNum = String(cyclePosition + 1);
+                    const dayData = pattern.days[dayNum];
 
-                    if (cyclePosition < pattern.days_on) {
-                        const start = pattern.default_start || '08:00';
-                        const end = pattern.default_end || '16:00';
+                    if (dayData && dayData.available) {
+                        const start = dayData.start || '08:00';
+                        const end = dayData.end || '16:00';
                         return { type: 'available', hours: `${formatTime12(start)} - ${formatTime12(end)}` };
                     } else {
                         return { type: 'off' };
@@ -2098,21 +2088,27 @@
             const pattern = driverData && driverData.schedule_pattern;
             const typeSelect = document.getElementById('esScheduleType');
 
+            // Set active type and toggle visibility
             if (pattern && pattern.type === 'rotating') {
                 typeSelect.value = 'rotating';
-                onEsTypeChange();
-
-                document.getElementById('esAnchorDate').value = pattern.anchor_date || '';
-                document.getElementById('esCycleLength').value = pattern.cycle_days || 4;
-                document.getElementById('esDefaultStart').value = pattern.default_start || '08:00';
-                document.getElementById('esDefaultEnd').value = pattern.default_end || '16:00';
-                renderEsWorkDayCheckboxes(pattern.cycle_days || 4, pattern.work_days || []);
             } else {
                 typeSelect.value = 'weekly';
-                onEsTypeChange();
             }
+            onEsTypeChange();
 
+            // Always populate weekly grid from saved data (or defaults)
             populateEsWeeklyGrid(driverData && driverData.weekly_hours ? driverData.weekly_hours : null);
+
+            // Always populate rotating fields from saved data (or defaults)
+            if (pattern && pattern.type === 'rotating') {
+                document.getElementById('esAnchorDate').value = pattern.anchor_date || '';
+                document.getElementById('esCycleLength').value = pattern.cycle_days || 4;
+                renderEsRotatingGrid(pattern.cycle_days || 4, pattern.days || null);
+            } else {
+                document.getElementById('esAnchorDate').value = '';
+                document.getElementById('esCycleLength').value = 4;
+                renderEsRotatingGrid(4, null);
+            }
 
             const modal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
             modal.show();
@@ -2174,22 +2170,66 @@
         function onEsCycleLengthChange() {
             const cycleLen = parseInt(document.getElementById('esCycleLength').value) || 4;
             if (cycleLen < 2 || cycleLen > 30) return;
-            renderEsWorkDayCheckboxes(cycleLen, []);
+            const existingDays = getEsRotatingDaysData();
+            renderEsRotatingGrid(cycleLen, existingDays);
         }
 
-        function renderEsWorkDayCheckboxes(cycleLength, selectedDays) {
-            const container = document.getElementById('esWorkDayCheckboxes');
+        function renderEsRotatingGrid(cycleLength, existingDays) {
+            const container = document.getElementById('esRotatingGrid');
             let html = '';
             for (let i = 1; i <= cycleLength; i++) {
-                const checked = selectedDays.includes(i) ? 'checked' : '';
+                const dayData = (existingDays && existingDays[String(i)]) || { available: true, start: '08:00', end: '16:00' };
+                const isAvailable = dayData.available !== false;
+                const startVal = dayData.start || '08:00';
+                const endVal = dayData.end || '16:00';
                 html += `
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="esWorkDay${i}" value="${i}" ${checked}>
-                        <label class="form-check-label" for="esWorkDay${i}">Day ${i}</label>
+                    <div class="es-schedule-day">
+                        <div class="es-day-header">
+                            <input type="checkbox" id="esr-avail-${i}" onchange="toggleEsrDayAvailability(${i})" ${isAvailable ? 'checked' : ''}>
+                            <label for="esr-avail-${i}">Day ${i}</label>
+                        </div>
+                        <div class="es-time-inputs ${isAvailable ? '' : 'disabled'}" id="esr-times-${i}">
+                            <input type="time" id="esr-start-${i}" value="${startVal}" ${isAvailable ? '' : 'disabled'}>
+                            <span>to</span>
+                            <input type="time" id="esr-end-${i}" value="${endVal}" ${isAvailable ? '' : 'disabled'}>
+                        </div>
                     </div>
                 `;
             }
             container.innerHTML = html;
+        }
+
+        function toggleEsrDayAvailability(dayNum) {
+            const checkbox = document.getElementById(`esr-avail-${dayNum}`);
+            const timeInputs = document.getElementById(`esr-times-${dayNum}`);
+            const startTime = document.getElementById(`esr-start-${dayNum}`);
+            const endTime = document.getElementById(`esr-end-${dayNum}`);
+            if (checkbox.checked) {
+                timeInputs.classList.remove('disabled');
+                startTime.disabled = false;
+                endTime.disabled = false;
+            } else {
+                timeInputs.classList.add('disabled');
+                startTime.disabled = true;
+                endTime.disabled = true;
+            }
+        }
+
+        function getEsRotatingDaysData() {
+            const days = {};
+            let i = 1;
+            while (document.getElementById(`esr-avail-${i}`)) {
+                const cb = document.getElementById(`esr-avail-${i}`);
+                const start = document.getElementById(`esr-start-${i}`);
+                const end = document.getElementById(`esr-end-${i}`);
+                days[String(i)] = {
+                    available: cb.checked,
+                    start: cb.checked ? (start.value || '08:00') : null,
+                    end: cb.checked ? (end.value || '16:00') : null
+                };
+                i++;
+            }
+            return Object.keys(days).length > 0 ? days : null;
         }
 
         function getEsWeeklyHoursData() {
@@ -2248,37 +2288,40 @@
                 // Rotating pattern
                 const cycleLength = parseInt(document.getElementById('esCycleLength').value);
                 const anchorDate = document.getElementById('esAnchorDate').value;
-                const defaultStart = document.getElementById('esDefaultStart').value || '08:00';
-                const defaultEnd = document.getElementById('esDefaultEnd').value || '16:00';
 
                 if (!anchorDate) {
                     showToast('Please set an anchor date for the rotating pattern.', 'warning');
                     return;
                 }
 
-                if (defaultStart >= defaultEnd) {
-                    showToast('Default end time must be after start time.', 'warning');
+                const days = getEsRotatingDaysData();
+
+                // Validate at least one day is available
+                const hasAvailable = days && Object.values(days).some(d => d.available);
+                if (!hasAvailable) {
+                    showToast('Please mark at least one day as available in the cycle.', 'warning');
                     return;
                 }
 
-                const workDays = [];
-                for (let i = 1; i <= cycleLength; i++) {
-                    const cb = document.getElementById(`esWorkDay${i}`);
-                    if (cb && cb.checked) workDays.push(i);
-                }
-
-                if (workDays.length === 0) {
-                    showToast('Please select at least one work day in the cycle.', 'warning');
-                    return;
+                // Validate times for available days
+                for (const [dayNum, d] of Object.entries(days)) {
+                    if (d.available) {
+                        if (!d.start || !d.end) {
+                            showToast(`Please set start and end times for Day ${dayNum}.`, 'warning');
+                            return;
+                        }
+                        if (d.start >= d.end) {
+                            showToast(`End time must be after start time for Day ${dayNum}.`, 'warning');
+                            return;
+                        }
+                    }
                 }
 
                 payload.schedule_pattern = {
                     type: 'rotating',
                     anchor_date: anchorDate,
                     cycle_days: cycleLength,
-                    work_days: workDays,
-                    default_start: defaultStart,
-                    default_end: defaultEnd
+                    days: days
                 };
                 payload.weekly_hours = null;
             }

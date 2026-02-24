@@ -110,7 +110,7 @@ Appointments with Google Calendar integration.
 | `destination` | varchar(255) | | Clinic address |
 | `destination_name` | varchar(255) | | Clinic name |
 | `pickup_address` | text | | Pickup address (client's primary or secondary) |
-| `clinic_id` | integer | | FK → clinic_locations.id (if applicable) |
+| `clinic_id` | integer | | FK → destinations.id (if applicable) |
 | **Status** | | | |
 | `status` | varchar(50) | DEFAULT 'scheduled' | scheduled, completed, cancelled, no_show |
 | `deleted` | boolean | DEFAULT false | Soft delete flag |
@@ -251,18 +251,25 @@ Null means fall back to `weekly_hours` for default schedule.
 - Deactivated clinics: stored preferences silently ignored by UI/filtering
 - Minimum 1 clinic must be preferred when saving preferences
 
-## clinic_locations
+## destinations
 
-Clinic destinations with coordinates.
+Clinic/destination locations with coordinates. The actual Supabase table name is `destinations`.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `id` | integer | PRIMARY KEY, AUTO INCREMENT | Clinic ID |
-| `clinic_name` | varchar(255) | NOT NULL | Clinic name |
-| `full_address` | text | NOT NULL | Complete address |
+| `id` | integer | PRIMARY KEY, AUTO INCREMENT | Destination ID |
+| `name` | varchar(255) | NOT NULL | Clinic/destination name |
+| `address` | varchar(255) | | Street address |
+| `city` | varchar(100) | | City |
+| `province` | varchar(2) | | Province |
+| `postal_code` | varchar(7) | | Postal code |
+| `phone` | text | | Phone number |
+| `notes` | text | | Notes |
 | `map_coordinates` | point | | Lat/long coordinates |
-| `active` | boolean | DEFAULT true | Clinic active status |
+| `active` | boolean | DEFAULT true | Destination active status |
 | `created_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
+
+**NOTE:** Some API endpoints (e.g., `/get-clinic-locations`) transform these columns in their n8n workflow response, renaming `name` to `clinic_name` and composing `address`, `city`, `province`, `postal_code` into a single `full_address` field. When configuring Supabase nodes in n8n workflows, always use the actual column names above.
 
 ## audit_logs
 

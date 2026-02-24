@@ -727,6 +727,8 @@ Retrieve all clinic locations with coordinates.
 
 **Authentication:** Required
 
+**Database Table:** `destinations` (the n8n workflow transforms column names in the response)
+
 **Response:**
 ```javascript
 {
@@ -734,8 +736,8 @@ Retrieve all clinic locations with coordinates.
   data: [
     {
       id: number,
-      clinic_name: string,
-      full_address: string,
+      clinic_name: string,       // DB column: name
+      full_address: string,      // Composed from: address, city, province, postal_code
       map_coordinates: {
         lat: number,
         lng: number
