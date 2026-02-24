@@ -72,7 +72,7 @@ class AppointmentModal {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="appointmentForm">
+                            <form id="appointmentForm" onsubmit="event.preventDefault(); appointmentModalInstance.saveAppointment();">
                                 <!-- Appointment Type Selector -->
                                 <div class="mb-3" id="appointmentTypeSelector">
                                     <label class="form-label">Appointment Type</label>
@@ -250,26 +250,26 @@ class AppointmentModal {
 
                                 <!-- Appointment ID (hidden, for edit mode) -->
                                 <input type="hidden" id="appointmentId">
+                                <div class="modal-footer px-0 pb-0">
+                                    <button type="button" class="btn btn-dark me-auto" id="hardDeleteAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.hardDeleteAppointment()">
+                                        <i class="bi bi-trash"></i> Hard Delete
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-warning" id="restoreAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.restoreAppointment()">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                    </button>
+                                    <button type="button" class="btn btn-warning" id="reactivateAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.reactivateAppointment()">
+                                        <i class="bi bi-arrow-clockwise"></i> Reactivate
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="archiveAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.archiveAppointment()">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="cancelAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.cancelAppointment()">
+                                        <i class="bi bi-x-circle"></i> Cancel Appointment
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="saveAppointmentBtn">Save Appointment</button>
+                                </div>
                             </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-dark me-auto" id="hardDeleteAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.hardDeleteAppointment()">
-                                <i class="bi bi-trash"></i> Hard Delete
-                            </button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-warning" id="restoreAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.restoreAppointment()">
-                                <i class="bi bi-arrow-counterclockwise"></i> Restore
-                            </button>
-                            <button type="button" class="btn btn-warning" id="reactivateAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.reactivateAppointment()">
-                                <i class="bi bi-arrow-clockwise"></i> Reactivate
-                            </button>
-                            <button type="button" class="btn btn-danger" id="archiveAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.archiveAppointment()">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>
-                            <button type="button" class="btn btn-danger" id="cancelAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.cancelAppointment()">
-                                <i class="bi bi-x-circle"></i> Cancel Appointment
-                            </button>
-                            <button type="button" class="btn btn-primary" id="saveAppointmentBtn" onclick="appointmentModalInstance.saveAppointment()">Save Appointment</button>
                         </div>
                     </div>
                 </div>
@@ -700,9 +700,9 @@ class AppointmentModal {
 
             if (matches.length > 0) {
                 suggestions.innerHTML = matches.map(client => {
-                    const safeKnumber = escapeHtml(client.knumber);
-                    const safeFirst = escapeHtml(client.firstname);
-                    const safeLast = escapeHtml(client.lastname);
+                    const safeKnumber = escapeHtml(client.knumber || client.k_number || '');
+                    const safeFirst = escapeHtml(client.firstname || client.first_name || '');
+                    const safeLast = escapeHtml(client.lastname || client.last_name || '');
                     // Use data attributes to avoid inline JS with unescaped values
                     return `<a href="#" class="list-group-item list-group-item-action client-suggestion"
                         data-knumber="${safeKnumber}" data-fullname="${safeFirst} ${safeLast}">

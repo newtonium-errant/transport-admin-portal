@@ -272,7 +272,7 @@ The application uses Supabase PostgreSQL with 8 main tables: **users** (JWT auth
 
 **Key Conventions:** All timestamps are `timestamp with time zone` (stored UTC, displayed Halifax time), new tables use uuid PKs (legacy use integer AUTO INCREMENT), K numbers format "K0001", password hashing uses custom `simpleHash()` (PBKDF2 not available in n8n), soft deletes preferred over hard deletes, JSONB for structured data (e.g., travel times, audit old/new values).
 
-**Migrations:** 10 migration files in `sql/` directory run manually in Supabase SQL Editor (FK cleanup, JWT columns, travel times JSONB, audit logs, soft deletes, secondary addresses, pickup addresses, driver instructions, managed_by audit).
+**Migrations:** 21 migration files in `database/sql/` directory run manually in Supabase SQL Editor (FK cleanup, JWT columns, travel times JSONB, audit logs, soft deletes, secondary addresses, pickup addresses, driver instructions, managed_by audit, invoices, driver pay/mileage, calendar iCal, finance config, driver travel times, driver scheduling, clinic preferences, background tasks, Google Maps config, appointment types, driver_time_off nullable reason).
 
 **For complete table schemas, column definitions, JSONB structures, migration details, and database conventions, see:** `docs/reference/DATABASE_SCHEMA.md` and `database/docs/DATABASE_SCHEMA_STANDARDS.md`
 
@@ -325,7 +325,7 @@ The RRTS Transport Admin Portal uses a split-stack architecture: **Frontend** (s
 
 **Critical Environment Variables (Railway.app):** Never change `N8N_ENCRYPTION_KEY` (decrypts all credentials), `JWT_SECRET` (breaks auth), or database connection vars. See `docs/instructions/RAILWAY_DEPLOYMENT_CHECKLIST.md` for complete list.
 
-**Key Workflows:** Frontend auto-deploys from main branch (test locally by opening HTML files directly in Chrome), n8n workflows manually imported via web interface (export JSON → edit → import → activate), database migrations run manually in Supabase SQL Editor (files in `sql/` directory), local Supabase for development (`supabase start/stop/reset`).
+**Key Workflows:** Frontend auto-deploys from main branch (test locally by opening HTML files directly in Chrome), n8n workflows manually imported via web interface (export JSON → edit → import → activate), database migrations run manually in Supabase SQL Editor (files in `database/sql/` directory), local Supabase for development (`supabase start/stop/reset`).
 
 **For complete deployment guides, environment setup, workflows, and troubleshooting, see:**
 - Frontend: `docs/deployment/FRONTEND_DEPLOYMENT.md`

@@ -304,7 +304,7 @@ Driver availability tracking. Supports both unavailability blocks (`time_off`) a
 | `end_time` | time without time zone | | End time (for partial-day entries) |
 | `all_day` | boolean | DEFAULT true | Whether entry covers the full day |
 | `entry_type` | text | NOT NULL, DEFAULT 'time_off' | `time_off` = unavailable block, `override_available` = available outside default hours |
-| `reason` | text | NOT NULL | Reason for the entry |
+| `reason` | text | | Reason for the entry (optional for override_available) |
 | `notes` | text | | Additional notes |
 | `created_by` | integer | | User ID who created the entry |
 | `created_at` | timestamp without time zone | DEFAULT now() | |
@@ -330,7 +330,7 @@ System configuration settings.
 
 ## Schema Migrations
 
-SQL migration files in `sql/` directory (run manually in Supabase):
+SQL migration files in `database/sql/` directory (run manually in Supabase):
 
 1. `01_fix_foreign_key_and_delete_test_users.sql` - FK constraints cleanup
 2. `02_add_jwt_session_columns.sql` - JWT auth fields to users table
@@ -341,15 +341,18 @@ SQL migration files in `sql/` directory (run manually in Supabase):
 7. `09_add_pickup_address_field.sql` - Pickup address to appointments
 8. `09_add_driver_instructions_field.sql` - Driver instructions to appointments
 9. `10_add_managed_by_field.sql` - Audit fields to appointments
-10. `11_add_driver_pay_mileage_columns.sql` - Pay tier, home address, YTD mileage to drivers
-11. `12_add_driver_mileage_to_appointments.sql` - Driver mileage fields to appointments
-12. `13_seed_app_config_finance.sql` - Seed finance config values
-13. `14_add_driver_travel_times_to_clients.sql` - Driver travel times to clients
-14. `15_driver_scheduling.sql` - Driver scheduling: entry_type & created_by on driver_time_off, schedule_pattern on drivers, driver_id FK on users
-15. `16_driver_clinic_preferences.sql` - Clinic preferences JSONB on drivers (enabled flags + pre-computed distances)
-16. `17_background_tasks_schema.sql` - Background tasks system (tasks, archive, functions, views)
-17. `18_seed_app_config_google_maps.sql` - Seed Google Maps API key into app_config for centralized management
-18. `19_appointment_types.sql` - Appointment types (round_trip, one_way, support), sentinel client K0000, CHECK constraints
+10. `11_add_invoices_table.sql` - Invoices table for finance module
+11. `11b_add_driver_pay_mileage_columns.sql` - Pay tier, home address, YTD mileage to drivers
+12. `12_add_calendar_ical_url.sql` - Calendar iCal URL to drivers
+13. `12b_add_driver_mileage_to_appointments.sql` - Driver mileage fields to appointments
+14. `13_seed_app_config_finance.sql` - Seed finance config values
+15. `14_add_driver_travel_times_to_clients.sql` - Driver travel times to clients
+16. `15_driver_scheduling.sql` - Driver scheduling: entry_type & created_by on driver_time_off, schedule_pattern on drivers, driver_id FK on users
+17. `16_driver_clinic_preferences.sql` - Clinic preferences JSONB on drivers (enabled flags + pre-computed distances)
+18. `17_background_tasks_schema.sql` - Background tasks system (tasks, archive, functions, views)
+19. `18_seed_app_config_google_maps.sql` - Seed Google Maps API key into app_config for centralized management
+20. `19_appointment_types.sql` - Appointment types (round_trip, one_way, support), sentinel client K0000, CHECK constraints
+21. `20_driver_time_off_reason_nullable.sql` - Make driver_time_off.reason nullable for override_available entries
 
 ### Migration Process
 

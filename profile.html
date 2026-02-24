@@ -499,95 +499,194 @@
             border-color: var(--color-primary);
         }
 
-        .calendar-date-range {
-            font-weight: 600;
-            font-size: 0.9em;
-            color: var(--color-gray-dark);
+        /* Month Calendar Grid */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .calendar-grid-header {
+            display: contents;
+        }
+
+        .calendar-grid-header .cal-header-cell {
+            padding: 8px 4px;
             text-align: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #6c757d;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ecf0f1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .calendar-day {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 20px;
-            min-height: 52px;
+        .cal-day {
+            min-height: 72px;
+            padding: 4px;
             border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s;
+            border-right: 1px solid #f0f0f0;
+            position: relative;
+            cursor: default;
+            transition: background-color 0.15s;
         }
 
-        .calendar-day:last-child {
-            border-bottom: none;
+        .cal-day:nth-child(7n) {
+            border-right: none;
         }
 
-        .calendar-day:hover {
+        .cal-day:hover {
             background-color: #fafbfc;
         }
 
-        .calendar-day.today {
+        .cal-day.outside-month {
+            background-color: #fafafa;
+            opacity: 0.45;
+        }
+
+        .cal-day.past {
+            background-color: #fafafa;
+            opacity: 0.5;
+        }
+
+        .cal-day.past .cal-day-number {
+            color: #aaa;
+        }
+
+        .cal-day.today {
             background-color: #e8f5e9;
         }
 
-        .calendar-day.weekend {
-            background-color: #fafafa;
+        .cal-day.today .cal-day-number {
+            background: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .day-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 100px;
-        }
-
-        .day-name {
-            font-weight: 600;
-            font-size: 0.9em;
-            color: var(--color-gray-dark);
-        }
-
-        .day-date {
+        .cal-day-number {
             font-size: 0.8em;
-            color: #6c757d;
-        }
-
-        .day-status {
-            font-size: 0.85em;
             font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 20px;
-            white-space: nowrap;
-            text-align: center;
-            min-width: 100px;
+            color: var(--color-gray-dark);
+            margin-bottom: 2px;
         }
 
-        .day-status.available {
+        .cal-day.outside-month .cal-day-number {
+            color: #bbb;
+        }
+
+        .cal-day-indicator {
+            font-size: 0.65em;
+            font-weight: 600;
+            padding: 1px 4px;
+            border-radius: 3px;
+            display: inline-block;
+            line-height: 1.3;
+            margin-top: 1px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cal-day-indicator.available {
             background-color: #e8f5e9;
             color: #2e7d32;
         }
 
-        .day-status.off {
+        .cal-day-indicator.off {
             background-color: #f5f5f5;
             color: #9e9e9e;
         }
 
-        .day-status.blocked {
+        .cal-day-indicator.blocked {
             background-color: #ffebee;
             color: #c62828;
         }
 
-        .day-status.override {
+        .cal-day-indicator.override {
             background-color: #e3f2fd;
             color: #1565c0;
         }
 
-        .day-reason {
-            font-size: 0.75em;
+        .cal-day-indicator.appointment {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+
+        .cal-day-reason {
+            font-size: 0.6em;
             color: #999;
-            margin-top: 2px;
-            max-width: 160px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .calendar-month-label {
+            font-weight: 600;
+            font-size: 1em;
+            color: var(--color-gray-dark);
+            text-align: center;
+            user-select: none;
+        }
+
+        /* Edit Schedule Modal */
+        .es-schedule-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .es-schedule-day {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #ecf0f1;
+        }
+
+        .es-day-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 110px;
+        }
+
+        .es-day-header label {
+            font-weight: 600;
+            margin: 0;
+            font-size: 0.9em;
+        }
+
+        .es-time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .es-time-inputs.disabled {
+            opacity: 0.4;
+        }
+
+        .es-time-inputs input[type="time"] {
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100px;
+            font-size: 0.85em;
+        }
+
+        .es-time-inputs span {
+            color: #666;
+            font-size: 0.85em;
         }
 
         .schedule-action-buttons {
@@ -872,22 +971,32 @@
                 font-size: 0.8em;
             }
 
-            .calendar-date-range {
-                font-size: 0.8em;
-                width: 100%;
-                order: -1;
-                margin-bottom: 4px;
+            .calendar-month-label {
+                font-size: 0.85em;
             }
 
-            .calendar-day {
-                padding: 10px 14px;
-                min-height: 48px;
+            .cal-day {
+                min-height: 56px;
+                padding: 2px;
             }
 
-            .day-status {
-                font-size: 0.78em;
-                padding: 3px 10px;
-                min-width: 80px;
+            .cal-day-number {
+                font-size: 0.7em;
+            }
+
+            .cal-day-indicator {
+                font-size: 0.55em;
+                padding: 1px 2px;
+            }
+
+            .cal-day-reason {
+                display: none;
+            }
+
+            .es-schedule-day {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
             }
 
             .appointment-card {
@@ -1199,25 +1308,83 @@
             </div>
         </div>
 
+        <!-- Home Address Card (drivers only) -->
+        <div id="driverAddressSection" style="display: none;">
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <i class="bi bi-house-door"></i>
+                    <h2>Home Address</h2>
+                </div>
+                <div class="profile-card-body">
+                    <form id="addressForm" onsubmit="handleAddressSubmit(event)">
+                        <div class="form-group">
+                            <label class="form-label" for="homeAddress">Street Address</label>
+                            <input type="text" class="form-control" id="homeAddress" placeholder="e.g., 123 Main Street">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label class="form-label" for="homeCity">City</label>
+                                    <input type="text" class="form-control" id="homeCity" placeholder="e.g., Halifax">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label" for="homeProvince">Province</label>
+                                    <select class="form-select" id="homeProvince">
+                                        <option value="AB">Alberta</option>
+                                        <option value="BC">British Columbia</option>
+                                        <option value="MB">Manitoba</option>
+                                        <option value="NB">New Brunswick</option>
+                                        <option value="NL">Newfoundland and Labrador</option>
+                                        <option value="NS" selected>Nova Scotia</option>
+                                        <option value="NT">Northwest Territories</option>
+                                        <option value="NU">Nunavut</option>
+                                        <option value="ON">Ontario</option>
+                                        <option value="PE">Prince Edward Island</option>
+                                        <option value="QC">Quebec</option>
+                                        <option value="SK">Saskatchewan</option>
+                                        <option value="YT">Yukon</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label" for="homePostalCode">Postal Code</label>
+                                    <input type="text" class="form-control" id="homePostalCode" placeholder="A1B 2C3" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="profile-actions">
+                            <button type="submit" class="btn btn-primary" id="saveAddressBtn">
+                                <span class="btn-text">Save Address</span>
+                                <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Driver Schedule Section (rendered only for drivers) -->
         <div id="driverScheduleSection" style="display: none;">
-            <!-- 2-Week Calendar View -->
+            <!-- Month Calendar View -->
             <div class="schedule-card">
                 <div class="schedule-card-header">
                     <h3><i class="bi bi-calendar-week"></i> My Schedule</h3>
+                    <button class="btn btn-sm btn-outline-light" onclick="openEditScheduleModal()">
+                        <i class="bi bi-pencil-square"></i> Edit Schedule
+                    </button>
                 </div>
                 <div class="calendar-nav">
-                    <button class="calendar-nav-btn" onclick="prevPeriod()" aria-label="Previous 2 weeks">
-                        <i class="bi bi-chevron-left"></i> Prev
+                    <button class="calendar-nav-btn" onclick="prevMonth()" aria-label="Previous month">
+                        <i class="bi bi-chevron-left"></i>
                     </button>
-                    <button class="calendar-nav-btn current-btn" onclick="goToCurrentPeriod()" aria-label="Go to current week">
-                        <i class="bi bi-dot"></i> Current
-                    </button>
-                    <button class="calendar-nav-btn" onclick="nextPeriod()" aria-label="Next 2 weeks">
-                        Next <i class="bi bi-chevron-right"></i>
+                    <span class="calendar-month-label" id="calendarMonthLabel" onclick="goToCurrentMonth()" style="cursor:pointer;" title="Click to return to current month"></span>
+                    <button class="calendar-nav-btn" onclick="nextMonth()" aria-label="Next month">
+                        <i class="bi bi-chevron-right"></i>
                     </button>
                 </div>
-                <div class="text-center px-3 py-2" id="calendarDateRange" style="font-size:0.85em; color:#6c757d;"></div>
                 <div class="schedule-card-body" id="calendarBody"></div>
             </div>
 
@@ -1275,7 +1442,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="blockTimeForm">
+                        <form id="blockTimeForm" onsubmit="event.preventDefault(); submitBlockTime();">
+                            <div id="timeOffCutoffNotice" class="alert alert-info py-2 px-3 mb-3 small" style="display: none;">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Time off requests for next week must be submitted by <strong>Wednesday 11:59 PM AST</strong>. After the cutoff, contact your supervisor for changes.
+                            </div>
                             <div class="mb-3">
                                 <label for="blockStartDate" class="form-label form-label-required">Start Date</label>
                                 <input type="date" class="form-control" id="blockStartDate" required>
@@ -1303,17 +1474,17 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="blockReason" class="form-label">Reason (optional)</label>
-                                <input type="text" class="form-control" id="blockReason" placeholder="e.g., Vacation, Personal day" maxlength="200">
+                                <label for="blockReason" class="form-label form-label-required">Reason</label>
+                                <input type="text" class="form-control" id="blockReason" placeholder="e.g., Vacation, Personal day" maxlength="200" required>
+                            </div>
+                            <div class="modal-footer px-0 pb-0">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger" id="blockTimeSubmitBtn">
+                                    <span class="btn-text"><i class="bi bi-calendar-x"></i> Block Time</span>
+                                    <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                                </button>
                             </div>
                         </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger" id="blockTimeSubmitBtn" onclick="submitBlockTime()">
-                            <span class="btn-text"><i class="bi bi-calendar-x"></i> Block Time</span>
-                            <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1329,7 +1500,7 @@
                     </div>
                     <div class="modal-body">
                         <p class="text-muted" style="font-size:0.9em;">Add availability on a day you would normally be off.</p>
-                        <form id="overrideForm">
+                        <form id="overrideForm" onsubmit="event.preventDefault(); submitOverride();">
                             <div class="mb-3">
                                 <label for="overrideDate" class="form-label form-label-required">Date</label>
                                 <input type="date" class="form-control" id="overrideDate" required>
@@ -1348,14 +1519,79 @@
                                 <label for="overrideReason" class="form-label">Note (optional)</label>
                                 <input type="text" class="form-control" id="overrideReason" placeholder="e.g., Available for extra shift" maxlength="200">
                             </div>
+                            <div class="modal-footer px-0 pb-0">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary" id="overrideSubmitBtn" style="background-color: #1976d2; border-color: #1976d2;">
+                                    <span class="btn-text"><i class="bi bi-calendar-plus"></i> Add Availability</span>
+                                    <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                                </button>
+                            </div>
                         </form>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="overrideSubmitBtn" onclick="submitOverride()" style="background-color: #1976d2; border-color: #1976d2;">
-                            <span class="btn-text"><i class="bi bi-calendar-plus"></i> Add Availability</span>
-                            <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
-                        </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Schedule Modal -->
+        <div class="modal fade" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%); color: white;">
+                        <h5 class="modal-title" id="editScheduleModalLabel"><i class="bi bi-calendar-gear"></i> Edit Schedule</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editScheduleForm" onsubmit="submitEditSchedule(event)">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Schedule Type</label>
+                                <select class="form-select" id="esScheduleType" onchange="onEsTypeChange()">
+                                    <option value="weekly">Standard Weekly</option>
+                                    <option value="rotating">Rotating Pattern</option>
+                                </select>
+                            </div>
+
+                            <!-- Weekly Schedule Section -->
+                            <div id="esWeeklySection">
+                                <div class="es-schedule-grid" id="esWeeklyGrid"></div>
+                            </div>
+
+                            <!-- Rotating Pattern Section -->
+                            <div id="esRotatingSection" style="display: none;">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Anchor Date</label>
+                                        <input type="date" class="form-control" id="esAnchorDate">
+                                        <small class="text-muted">A known "Day 1" of the cycle</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Cycle Length (days)</label>
+                                        <input type="number" class="form-control" id="esCycleLength" min="2" max="30" value="4" onchange="onEsCycleLengthChange()">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Default Start Time</label>
+                                        <input type="time" class="form-control" id="esDefaultStart" value="08:00">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Default End Time</label>
+                                        <input type="time" class="form-control" id="esDefaultEnd" value="16:00">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Work Days in Cycle</label>
+                                    <div id="esWorkDayCheckboxes"></div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer px-0 pb-0">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary" id="esSubmitBtn">
+                                    <span class="btn-text"><i class="bi bi-save"></i> Save Schedule</span>
+                                    <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1421,7 +1657,8 @@
         let driverData = null;
         let timeOffEntries = [];
         let driverAppointments = [];
-        let calendarStartDate = null;
+        let calendarMonth = null;
+        let calendarYear = null;
 
         // Clinic preferences state
         let allClinics = [];
@@ -1446,9 +1683,9 @@
             document.getElementById('profileForm').addEventListener('submit', handleProfileSubmit);
             document.getElementById('passwordForm').addEventListener('submit', handlePasswordSubmit);
 
-            // Initialize driver schedule section if user is a driver with schedule permission
-            const userRole = currentUser.role || currentUser.user_role || '';
-            if (currentUser.driver_id && hasFeaturePermission(userRole, 'manage_own_schedule')) {
+            // Initialize driver schedule section if user is linked to a driver record
+            if (currentUser.driver_id) {
+                document.getElementById('driverAddressSection').style.display = 'block';
                 document.getElementById('driverScheduleSection').style.display = 'block';
                 initDriverSchedule();
                 loadClinicPreferences();
@@ -1587,10 +1824,8 @@
         // ========== Driver Schedule ==========
         function initDriverSchedule() {
             const today = new Date();
-            calendarStartDate = new Date(today);
-            const dayOffset = (calendarStartDate.getDay() + 6) % 7;
-            calendarStartDate.setDate(calendarStartDate.getDate() - dayOffset);
-            calendarStartDate.setHours(0, 0, 0, 0);
+            calendarMonth = today.getMonth();
+            calendarYear = today.getFullYear();
 
             const todayStr = formatDateISO(today);
             document.getElementById('blockStartDate').min = todayStr;
@@ -1603,10 +1838,12 @@
 
             document.getElementById('blockStartDate').addEventListener('change', function() {
                 const endDate = document.getElementById('blockEndDate');
+                const minDate = getTimeOffMinDate();
+                const effectiveMin = this.value > minDate ? this.value : minDate;
                 if (!endDate.value || endDate.value < this.value) {
                     endDate.value = this.value;
                 }
-                endDate.min = this.value;
+                endDate.min = effectiveMin;
             });
 
             loadScheduleData();
@@ -1646,82 +1883,106 @@
 
             renderCalendar();
             renderAppointments();
+            populateAddressForm();
         }
 
         // ========== Calendar Rendering ==========
         function renderCalendar() {
             const container = document.getElementById('calendarBody');
-            const dateRangeEl = document.getElementById('calendarDateRange');
+            const labelEl = document.getElementById('calendarMonthLabel');
 
-            const endDate = new Date(calendarStartDate);
-            endDate.setDate(endDate.getDate() + 13);
-
-            const startStr = calendarStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const endStr = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            dateRangeEl.textContent = `${startStr} - ${endStr}`;
+            const monthNames = ['January','February','March','April','May','June',
+                                'July','August','September','October','November','December'];
+            labelEl.textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
 
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            let html = '';
+            // First and last day of the displayed month
+            const firstDay = new Date(calendarYear, calendarMonth, 1);
+            const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
 
-            for (let i = 0; i < 14; i++) {
-                const dayDate = new Date(calendarStartDate);
-                dayDate.setDate(dayDate.getDate() + i);
+            // Grid starts on Sunday before (or on) the 1st
+            const gridStart = new Date(firstDay);
+            gridStart.setDate(gridStart.getDate() - gridStart.getDay());
 
-                const isToday = dayDate.getTime() === today.getTime();
-                const isWeekend = dayDate.getDay() === 0 || dayDate.getDay() === 6;
-
-                const availability = resolveAvailability(dayDate);
-
-                const dayName = dayDate.toLocaleDateString('en-US', { weekday: 'short' });
-                const dateStr = dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-                let statusClass = '';
-                let statusText = '';
-                let reasonText = '';
-
-                switch (availability.type) {
-                    case 'available':
-                        statusClass = 'available';
-                        statusText = availability.hours || '8:00 AM - 4:00 PM';
-                        break;
-                    case 'off':
-                        statusClass = 'off';
-                        statusText = 'OFF';
-                        break;
-                    case 'blocked':
-                        statusClass = 'blocked';
-                        statusText = 'BLOCKED';
-                        reasonText = availability.reason || '';
-                        break;
-                    case 'override':
-                        statusClass = 'override';
-                        statusText = availability.hours || 'OVERRIDE';
-                        break;
-                    default:
-                        statusClass = 'off';
-                        statusText = 'OFF';
-                }
-
-                const extraClasses = [];
-                if (isToday) extraClasses.push('today');
-                if (isWeekend) extraClasses.push('weekend');
-
-                html += `
-                    <div class="calendar-day ${extraClasses.join(' ')}">
-                        <div class="day-info">
-                            <span class="day-name">${dayName}${isToday ? ' (Today)' : ''}</span>
-                            <span class="day-date">${dateStr}</span>
-                        </div>
-                        <div>
-                            <span class="day-status ${statusClass}">${statusText}</span>
-                            ${reasonText ? `<div class="day-reason" title="${escapeHtml(reasonText)}">${escapeHtml(reasonText)}</div>` : ''}
-                        </div>
-                    </div>
-                `;
+            // Grid ends on Saturday after (or on) the last day
+            const gridEnd = new Date(lastDay);
+            if (gridEnd.getDay() < 6) {
+                gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
             }
 
+            let html = '<div class="calendar-grid">';
+
+            // Header row
+            html += '<div class="calendar-grid-header">';
+            const dayHeaders = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            for (const dh of dayHeaders) {
+                html += `<div class="cal-header-cell">${dh}</div>`;
+            }
+            html += '</div>';
+
+            // Day cells
+            const current = new Date(gridStart);
+            while (current <= gridEnd) {
+                const isCurrentMonth = current.getMonth() === calendarMonth && current.getFullYear() === calendarYear;
+                const isToday = current.getTime() === today.getTime();
+                const isPast = current.getTime() < today.getTime();
+
+                const classes = ['cal-day'];
+                if (!isCurrentMonth) classes.push('outside-month');
+                if (isPast && isCurrentMonth) classes.push('past');
+                if (isToday) classes.push('today');
+
+                const dayNum = current.getDate();
+                let indicatorHtml = '';
+
+                if (!isPast) {
+                    // Show availability indicators for today and future days only
+                    const availability = resolveAvailability(current);
+
+                    switch (availability.type) {
+                        case 'available':
+                            indicatorHtml += `<div class="cal-day-indicator available" title="${escapeHtml(availability.hours || '8:00 AM - 4:00 PM')}">${escapeHtml(availability.hours || '8-4')}</div>`;
+                            break;
+                        case 'off':
+                            indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
+                            break;
+                        case 'blocked':
+                            indicatorHtml += `<div class="cal-day-indicator blocked" title="${escapeHtml(availability.reason || '')}">BLOCKED</div>`;
+                            if (availability.reason) {
+                                indicatorHtml += `<div class="cal-day-reason" title="${escapeHtml(availability.reason)}">${escapeHtml(availability.reason)}</div>`;
+                            }
+                            break;
+                        case 'override':
+                            indicatorHtml += `<div class="cal-day-indicator override" title="${escapeHtml(availability.hours || 'Override')}">${escapeHtml(availability.hours || 'AVAIL')}</div>`;
+                            break;
+                        default:
+                            indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
+                    }
+
+                    // Check for appointments on this date
+                    const dateStr = formatDateISO(current);
+                    const dayAppointments = driverAppointments.filter(apt => {
+                        const aptDate = (apt.appointment_datetime || apt.appointmentDateTime || '').substring(0, 10);
+                        return aptDate === dateStr;
+                    });
+
+                    if (dayAppointments.length > 0) {
+                        const aptLabel = dayAppointments.length === 1 ? '1 appt' : `${dayAppointments.length} appts`;
+                        indicatorHtml += `<div class="cal-day-indicator appointment">${aptLabel}</div>`;
+                    }
+                }
+
+                html += `<div class="${classes.join(' ')}">
+                    <div class="cal-day-number">${dayNum}</div>
+                    ${indicatorHtml}
+                </div>`;
+
+                current.setDate(current.getDate() + 1);
+            }
+
+            html += '</div>';
             container.innerHTML = html;
         }
 
@@ -1802,23 +2063,303 @@
         }
 
         // ========== Calendar Navigation ==========
-        function prevPeriod() {
-            calendarStartDate.setDate(calendarStartDate.getDate() - 14);
+        function prevMonth() {
+            calendarMonth--;
+            if (calendarMonth < 0) {
+                calendarMonth = 11;
+                calendarYear--;
+            }
             renderCalendar();
         }
 
-        function nextPeriod() {
-            calendarStartDate.setDate(calendarStartDate.getDate() + 14);
+        function nextMonth() {
+            calendarMonth++;
+            if (calendarMonth > 11) {
+                calendarMonth = 0;
+                calendarYear++;
+            }
             renderCalendar();
         }
 
-        function goToCurrentPeriod() {
+        function goToCurrentMonth() {
             const today = new Date();
-            calendarStartDate = new Date(today);
-            const dayOffset = (calendarStartDate.getDay() + 6) % 7;
-            calendarStartDate.setDate(calendarStartDate.getDate() - dayOffset);
-            calendarStartDate.setHours(0, 0, 0, 0);
+            calendarMonth = today.getMonth();
+            calendarYear = today.getFullYear();
             renderCalendar();
+        }
+
+        // ========== Edit Schedule ==========
+        const ES_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        const ES_DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const ES_WEEKDAY_DEFAULTS = { available: true, start: '08:00', end: '16:00' };
+        const ES_WEEKEND_DEFAULTS = { available: false, start: '08:00', end: '16:00' };
+
+        function openEditScheduleModal() {
+            const pattern = driverData && driverData.schedule_pattern;
+            const typeSelect = document.getElementById('esScheduleType');
+
+            if (pattern && pattern.type === 'rotating') {
+                typeSelect.value = 'rotating';
+                onEsTypeChange();
+
+                document.getElementById('esAnchorDate').value = pattern.anchor_date || '';
+                document.getElementById('esCycleLength').value = pattern.cycle_days || 4;
+                document.getElementById('esDefaultStart').value = pattern.default_start || '08:00';
+                document.getElementById('esDefaultEnd').value = pattern.default_end || '16:00';
+                renderEsWorkDayCheckboxes(pattern.cycle_days || 4, pattern.work_days || []);
+            } else {
+                typeSelect.value = 'weekly';
+                onEsTypeChange();
+            }
+
+            populateEsWeeklyGrid(driverData && driverData.weekly_hours ? driverData.weekly_hours : null);
+
+            const modal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
+            modal.show();
+        }
+
+        function populateEsWeeklyGrid(weeklyHours) {
+            const container = document.getElementById('esWeeklyGrid');
+            let html = '';
+
+            ES_DAYS.forEach((day, idx) => {
+                const isWeekend = idx >= 5;
+                const defaults = isWeekend ? ES_WEEKEND_DEFAULTS : ES_WEEKDAY_DEFAULTS;
+                const dayData = (weeklyHours && weeklyHours[day]) ? weeklyHours[day] : defaults;
+                const isAvailable = dayData.available !== false;
+                const startVal = dayData.start || '08:00';
+                const endVal = dayData.end || '16:00';
+
+                html += `
+                    <div class="es-schedule-day">
+                        <div class="es-day-header">
+                            <input type="checkbox" id="es-avail-${day}" onchange="toggleEsDayAvailability('${day}')" ${isAvailable ? 'checked' : ''}>
+                            <label for="es-avail-${day}">${ES_DAY_LABELS[idx]}</label>
+                        </div>
+                        <div class="es-time-inputs ${isAvailable ? '' : 'disabled'}" id="es-times-${day}">
+                            <input type="time" id="es-start-${day}" value="${startVal}" ${isAvailable ? '' : 'disabled'}>
+                            <span>to</span>
+                            <input type="time" id="es-end-${day}" value="${endVal}" ${isAvailable ? '' : 'disabled'}>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleEsDayAvailability(day) {
+            const checkbox = document.getElementById(`es-avail-${day}`);
+            const timeInputs = document.getElementById(`es-times-${day}`);
+            const startTime = document.getElementById(`es-start-${day}`);
+            const endTime = document.getElementById(`es-end-${day}`);
+
+            if (checkbox.checked) {
+                timeInputs.classList.remove('disabled');
+                startTime.disabled = false;
+                endTime.disabled = false;
+            } else {
+                timeInputs.classList.add('disabled');
+                startTime.disabled = true;
+                endTime.disabled = true;
+            }
+        }
+
+        function onEsTypeChange() {
+            const isRotating = document.getElementById('esScheduleType').value === 'rotating';
+            document.getElementById('esWeeklySection').style.display = isRotating ? 'none' : 'block';
+            document.getElementById('esRotatingSection').style.display = isRotating ? 'block' : 'none';
+        }
+
+        function onEsCycleLengthChange() {
+            const cycleLen = parseInt(document.getElementById('esCycleLength').value) || 4;
+            if (cycleLen < 2 || cycleLen > 30) return;
+            renderEsWorkDayCheckboxes(cycleLen, []);
+        }
+
+        function renderEsWorkDayCheckboxes(cycleLength, selectedDays) {
+            const container = document.getElementById('esWorkDayCheckboxes');
+            let html = '';
+            for (let i = 1; i <= cycleLength; i++) {
+                const checked = selectedDays.includes(i) ? 'checked' : '';
+                html += `
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="esWorkDay${i}" value="${i}" ${checked}>
+                        <label class="form-check-label" for="esWorkDay${i}">Day ${i}</label>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function getEsWeeklyHoursData() {
+            const weeklyHours = {};
+            ES_DAYS.forEach(day => {
+                const checkbox = document.getElementById(`es-avail-${day}`);
+                const startTime = document.getElementById(`es-start-${day}`);
+                const endTime = document.getElementById(`es-end-${day}`);
+                weeklyHours[day] = {
+                    available: checkbox ? checkbox.checked : false,
+                    start: (checkbox && checkbox.checked && startTime) ? startTime.value : null,
+                    end: (checkbox && checkbox.checked && endTime) ? endTime.value : null
+                };
+            });
+            return weeklyHours;
+        }
+
+        async function submitEditSchedule(event) {
+            event.preventDefault();
+
+            const scheduleType = document.getElementById('esScheduleType').value;
+            const driverId = (driverData && driverData.id) || currentUser.driver_id;
+            if (!driverId) {
+                showToast('Driver record not found. Please refresh and try again.', 'error');
+                return;
+            }
+            let payload = { id: driverId };
+
+            if (scheduleType === 'weekly') {
+                const weeklyHours = getEsWeeklyHoursData();
+
+                // Validate at least one day is available
+                const hasAvailableDay = ES_DAYS.some(day => weeklyHours[day].available);
+                if (!hasAvailableDay) {
+                    showToast('Please mark at least one day as available.', 'warning');
+                    return;
+                }
+
+                // Validate times for available days
+                for (const day of ES_DAYS) {
+                    if (weeklyHours[day].available) {
+                        if (!weeklyHours[day].start || !weeklyHours[day].end) {
+                            showToast(`Please set start and end times for ${day}.`, 'warning');
+                            return;
+                        }
+                        if (weeklyHours[day].start >= weeklyHours[day].end) {
+                            showToast(`End time must be after start time for ${day}.`, 'warning');
+                            return;
+                        }
+                    }
+                }
+
+                payload.weekly_hours = weeklyHours;
+                payload.schedule_pattern = null;
+            } else {
+                // Rotating pattern
+                const cycleLength = parseInt(document.getElementById('esCycleLength').value);
+                const anchorDate = document.getElementById('esAnchorDate').value;
+                const defaultStart = document.getElementById('esDefaultStart').value || '08:00';
+                const defaultEnd = document.getElementById('esDefaultEnd').value || '16:00';
+
+                if (!anchorDate) {
+                    showToast('Please set an anchor date for the rotating pattern.', 'warning');
+                    return;
+                }
+
+                if (defaultStart >= defaultEnd) {
+                    showToast('Default end time must be after start time.', 'warning');
+                    return;
+                }
+
+                const workDays = [];
+                for (let i = 1; i <= cycleLength; i++) {
+                    const cb = document.getElementById(`esWorkDay${i}`);
+                    if (cb && cb.checked) workDays.push(i);
+                }
+
+                if (workDays.length === 0) {
+                    showToast('Please select at least one work day in the cycle.', 'warning');
+                    return;
+                }
+
+                payload.schedule_pattern = {
+                    type: 'rotating',
+                    anchor_date: anchorDate,
+                    cycle_days: cycleLength,
+                    work_days: workDays,
+                    default_start: defaultStart,
+                    default_end: defaultEnd
+                };
+                payload.weekly_hours = null;
+            }
+
+            setButtonLoading('esSubmitBtn', true);
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showToast('Schedule updated successfully.', 'success');
+
+                    // Update local data
+                    if (payload.weekly_hours) {
+                        driverData.weekly_hours = payload.weekly_hours;
+                        driverData.schedule_pattern = null;
+                    } else {
+                        driverData.schedule_pattern = payload.schedule_pattern;
+                        driverData.weekly_hours = null;
+                    }
+
+                    bootstrap.Modal.getInstance(document.getElementById('editScheduleModal')).hide();
+                    renderCalendar();
+                } else {
+                    showToast(result.message || 'Failed to update schedule. Please try again.', 'error');
+                }
+            } catch (err) {
+                console.error('Error updating schedule:', err);
+                showToast('An error occurred while saving. Please try again.', 'error');
+            } finally {
+                setButtonLoading('esSubmitBtn', false);
+            }
+        }
+
+        // ========== Home Address ==========
+        function populateAddressForm() {
+            if (!driverData) return;
+            document.getElementById('homeAddress').value = driverData.home_address || '';
+            document.getElementById('homeCity').value = driverData.home_city || '';
+            document.getElementById('homeProvince').value = driverData.home_province || 'NS';
+            document.getElementById('homePostalCode').value = driverData.home_postal_code || '';
+        }
+
+        async function handleAddressSubmit(event) {
+            event.preventDefault();
+            const payload = {
+                id: (driverData && driverData.id) || currentUser.driver_id,
+                home_address: document.getElementById('homeAddress').value.trim(),
+                home_city: document.getElementById('homeCity').value.trim(),
+                home_province: document.getElementById('homeProvince').value,
+                home_postal_code: document.getElementById('homePostalCode').value.trim().toUpperCase()
+            };
+            setButtonLoading('saveAddressBtn', true);
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showToast('Home address updated successfully.', 'success');
+                    driverData.home_address = payload.home_address;
+                    driverData.home_city = payload.home_city;
+                    driverData.home_province = payload.home_province;
+                    driverData.home_postal_code = payload.home_postal_code;
+                } else {
+                    showToast(result.message || 'Failed to update address.', 'error');
+                }
+            } catch (err) {
+                console.error('Error updating address:', err);
+                showToast('An error occurred while saving.', 'error');
+            } finally {
+                setButtonLoading('saveAddressBtn', false);
+            }
         }
 
         // ========== Appointments Rendering ==========
@@ -1925,18 +2466,19 @@
         // ========== Loading Skeletons ==========
         function showCalendarLoading() {
             const container = document.getElementById('calendarBody');
-            let html = '';
-            for (let i = 0; i < 14; i++) {
-                html += `
-                    <div class="skeleton-row">
-                        <div>
-                            <div class="skeleton-block skeleton-text" style="width: 50px; margin-bottom: 4px;"></div>
-                            <div class="skeleton-block skeleton-text" style="width: 70px; height: 10px;"></div>
-                        </div>
-                        <div class="skeleton-block skeleton-badge"></div>
-                    </div>
-                `;
+            let html = '<div class="calendar-grid">';
+            html += '<div class="calendar-grid-header">';
+            for (const dh of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']) {
+                html += `<div class="cal-header-cell">${dh}</div>`;
             }
+            html += '</div>';
+            for (let i = 0; i < 35; i++) {
+                html += `<div class="cal-day" style="opacity:0.5;">
+                    <div class="skeleton-block" style="width:18px; height:14px; border-radius:3px; margin-bottom:4px;"></div>
+                    <div class="skeleton-block" style="width:80%; height:12px; border-radius:3px;"></div>
+                </div>`;
+            }
+            html += '</div>';
             container.innerHTML = html;
         }
 
@@ -1968,10 +2510,18 @@
             document.getElementById('blockAllDay').checked = true;
             document.getElementById('blockTimeFields').style.display = 'none';
 
+            const minDate = getTimeOffMinDate();
+            document.getElementById('blockStartDate').value = minDate;
+            document.getElementById('blockStartDate').min = minDate;
+            document.getElementById('blockEndDate').value = minDate;
+            document.getElementById('blockEndDate').min = minDate;
+
+            // Show cutoff notice for restricted roles when cutoff is active
+            const notice = document.getElementById('timeOffCutoffNotice');
+            const role = currentUser.role || currentUser.user_role || 'user';
             const today = formatDateISO(new Date());
-            document.getElementById('blockStartDate').value = today;
-            document.getElementById('blockEndDate').value = today;
-            document.getElementById('blockEndDate').min = today;
+            const isRestricted = (role === 'driver' || role === 'client');
+            notice.style.display = (isRestricted && minDate > today) ? 'block' : 'none';
 
             const modal = new bootstrap.Modal(document.getElementById('blockTimeModal'));
             modal.show();
@@ -1990,9 +2540,24 @@
                 return;
             }
 
+            if (!reason) {
+                showToast('Please provide a reason for the time off request.', 'warning');
+                return;
+            }
+
             if (startDate > endDate) {
                 showToast('End date must be on or after start date.', 'warning');
                 return;
+            }
+
+            // Cutoff validation safety check
+            const role = currentUser.role || currentUser.user_role || 'user';
+            if (role === 'driver' || role === 'client') {
+                const minDate = getTimeOffMinDate();
+                if (startDate < minDate || endDate < minDate) {
+                    showToast('Time off for next week must be submitted by Wednesday. Please contact your supervisor for changes.', 'warning');
+                    return;
+                }
             }
 
             if (!allDay && (!startTime || !endTime)) {
@@ -2125,8 +2690,21 @@
 
                 if (response.ok) {
                     const result = await response.json();
-                    allClinics = (result.data?.clinics || []).filter(c => c.active !== false);
-                    clinicPreferences = result.data?.preferences || {};
+                    const rawClinics = (result.data?.clinics || []).filter(c => c.active !== false);
+
+                    // Normalize workflow response: clinic_id → id, extract preferences
+                    const preferredIds = [];
+                    const distances = {};
+                    allClinics = rawClinics.map(c => {
+                        const id = c.id || c.clinic_id;
+                        if (c.preferred) preferredIds.push(id);
+                        if (c.distance_km != null) distances[id] = c.distance_km;
+                        return { ...c, id };
+                    });
+                    clinicPreferences = {
+                        preferred_clinic_ids: preferredIds,
+                        distances
+                    };
                 } else {
                     allClinics = [];
                     clinicPreferences = {};
@@ -2359,6 +2937,59 @@
         }
 
         // ========== Utility Functions ==========
+        /**
+         * Returns the minimum selectable date for time-off requests based on the
+         * Wednesday 11:59 PM AST cutoff rule. The current week's schedule is already
+         * set, so drivers can never block time off for the current week.
+         * - Before cutoff (Mon-Wed 23:59): min = following Monday (next week open)
+         * - After cutoff (Thu-Sun): min = Monday two weeks out (next week locked)
+         * Admins/supervisors are exempt and can select any date from today.
+         */
+        function getTimeOffMinDate() {
+            const role = currentUser.role || currentUser.user_role || 'user';
+
+            // Admins and supervisors are exempt from the cutoff
+            if (role === 'admin' || role === 'supervisor') {
+                return formatDateISO(new Date());
+            }
+
+            // Get current date/time in Atlantic time
+            const nowHalifax = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Halifax' }));
+            const dayOfWeek = nowHalifax.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+            const hour = nowHalifax.getHours();
+            const minute = nowHalifax.getMinutes();
+
+            const today = new Date(nowHalifax);
+            today.setHours(0, 0, 0, 0);
+
+            // Find current week's Monday
+            // dayOfWeek: 0(Sun) -> offset 6, 1(Mon) -> 0, 2(Tue) -> 1, ... 6(Sat) -> 5
+            const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const currentMonday = new Date(today);
+            currentMonday.setDate(currentMonday.getDate() - mondayOffset);
+
+            // Following Monday (start of next week)
+            const followingMonday = new Date(currentMonday);
+            followingMonday.setDate(followingMonday.getDate() + 7);
+
+            // Determine if cutoff has passed: after Wednesday 23:59 AST
+            // Wednesday = dayOfWeek 3. Cutoff passes when we move past Wed 23:59,
+            // i.e., Thursday (4), Friday (5), Saturday (6), Sunday (0),
+            // or Wednesday after 23:59 (which is effectively Thursday)
+            const pastCutoff = (dayOfWeek === 0) || (dayOfWeek >= 4) ||
+                               (dayOfWeek === 3 && (hour > 23 || (hour === 23 && minute >= 59)));
+
+            if (pastCutoff) {
+                // Next week's schedule is locked — earliest available is Monday two weeks out
+                const twoWeeksOut = new Date(currentMonday);
+                twoWeeksOut.setDate(twoWeeksOut.getDate() + 14);
+                return formatDateISO(twoWeeksOut);
+            }
+
+            // Before cutoff — current week is already scheduled, but next week is still open
+            return formatDateISO(followingMonday);
+        }
+
         function formatDateISO(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');

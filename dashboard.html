@@ -928,7 +928,7 @@
                     <span id="currentDate2"></span>
                 </div>
             </div>
-            <div class="login-section">
+            <form class="login-section" id="changePasswordForm" onsubmit="event.preventDefault(); changePassword();">
                 <h3 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">Password Change Required</h3>
                 <p style="text-align: center; margin-bottom: 30px; color: #666;">
                     For security reasons, you must change your password before continuing.
@@ -949,14 +949,14 @@
                     <input type="password" id="confirmPassword" required>
                 </div>
                 <div class="form-group" style="text-align: center; margin-top: 30px;">
-                    <button type="button" id="changePasswordBtn" class="action-btn brand" onclick="changePassword()" style="width: 100%; font-size: 18px; padding: 15px;">
+                    <button type="submit" id="changePasswordBtn" class="action-btn brand" style="width: 100%; font-size: 18px; padding: 15px;">
                         <span id="changePasswordBtnText"><span class="icon">🔐</span> Change Password</span>
                         <span id="changePasswordBtnSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
                         <span id="changePasswordBtnLoading" style="display: none;"> Changing password...</span>
                     </button>
                 </div>
                 <div id="passwordChangeError" class="hidden"></div>
-            </div>
+            </form>
         </div>
 
         <!-- Main Dashboard Section -->
@@ -1312,6 +1312,15 @@
                     sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
 
                     console.log('Login successful - tokens stored');
+
+                    // Reset last activity so inactivity check passes on redirect
+                    sessionStorage.setItem('rrts_last_activity', Date.now().toString());
+
+                    // Redirect drivers to profile page
+                    if (currentUser.role === 'driver') {
+                        window.location.href = 'profile.html';
+                        return;
+                    }
 
                     // Update header with user info
                     initializeNavigation();
@@ -1970,6 +1979,15 @@
                     document.getElementById('currentPassword').value = '';
                     document.getElementById('newPassword').value = '';
                     document.getElementById('confirmPassword').value = '';
+
+                    // Reset last activity so inactivity check passes on redirect
+                    sessionStorage.setItem('rrts_last_activity', Date.now().toString());
+
+                    // Redirect drivers to profile page
+                    if (currentUser.role === 'driver') {
+                        window.location.href = 'profile.html';
+                        return;
+                    }
 
                     // Update header with user info
                     initializeNavigation();

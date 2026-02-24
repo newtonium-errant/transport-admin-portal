@@ -861,7 +861,7 @@
                     <button type="button" class="btn-close" onclick="closeAddClientModal()"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addClientForm">
+                    <form id="addClientForm" onsubmit="event.preventDefault(); saveNewClient();">
                         <!-- Basic Information -->
                         <div class="row mb-4">
                             <div class="col-12">
@@ -1021,15 +1021,15 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" onclick="closeAddClientModal()">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i>Create Client
+                            </button>
+                        </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeAddClientModal()">
-                        <i class="bi bi-x-circle me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-success" onclick="saveNewClient()">
-                        <i class="bi bi-check-circle me-1"></i>Create Client
-                    </button>
                 </div>
             </div>
         </div>

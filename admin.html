@@ -337,13 +337,18 @@
         }
 
         .status-inactive {
-            background: #f8d7da;
-            color: #721c24;
+            background: #e2e3e5;
+            color: #495057;
+        }
+
+        .status-invited {
+            background: #fff3cd;
+            color: #856404;
         }
 
         .status-locked {
-            background: #fff3cd;
-            color: #856404;
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .form-row {
@@ -761,8 +766,11 @@
                     <h3 class="section-title">👥 User Management</h3>
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <div style="flex: 1;">
-                            <input type="text" id="userSearch" placeholder="Search users..." style="width: 300px; margin-right: 15px;">
+                        <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="userSearch" placeholder="Search users..." style="width: 300px;">
+                            <button id="toggleInactiveBtn" class="action-btn secondary" onclick="toggleInactiveUsers()" style="margin: 0; white-space: nowrap;">
+                                Show Inactive
+                            </button>
                         </div>
                         <button class="action-btn success" onclick="openAddUserModal()">
                             ➕ Add User
@@ -941,7 +949,7 @@
                     <button type="button" class="action-btn secondary" onclick="closeAddUserModal()">
                         Cancel
                     </button>
-                    <button type="submit" class="action-btn success" style="margin-left: 10px;">
+                    <button type="submit" id="addUserSubmitBtn" class="action-btn success" style="margin-left: 10px;">
                         💾 Add User
                     </button>
                 </div>
@@ -969,6 +977,7 @@
         let adminData = null;
         let currentUsers = [];
         let systemLogs = [];
+        let showInactiveUsers = false;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1006,24 +1015,9 @@
                 const usersData = await usersResponse.json();
                 console.log('Users data loaded:', usersData);
 
-                // Handle different response formats from the API
-                let users = [];
-                // If response is an array wrapper, extract first element
+                // Parse response: allIncomingItems wraps in array, unwrap first
                 const responseData = Array.isArray(usersData) ? usersData[0] : usersData;
-
-                if (Array.isArray(responseData)) {
-                    // Direct array of users
-                    users = responseData;
-                } else if (responseData && responseData.data && responseData.data.users) {
-                    // Wrapped format: { success: true, data: { users: [...] } }
-                    users = responseData.data.users;
-                } else if (responseData && responseData.users) {
-                    // Simple wrapped format: { users: [...] }
-                    users = responseData.users;
-                } else if (responseData && Array.isArray(responseData.data)) {
-                    // Format: { success: true, data: [...] }
-                    users = responseData.data;
-                }
+                const users = responseData?.data?.users || [];
                 currentUsers = users;
                 console.log('Parsed users:', users);
 
@@ -1049,8 +1043,8 @@
                     uptime: 99.9
                 });
                 
-                // Render users
-                renderUsers(users);
+                // Render users (respecting inactive filter)
+                renderUsers(getFilteredUsers());
                 
                 // Render dashboard data if available, otherwise use mock data
                 if (dashboardData) {
@@ -1075,7 +1069,7 @@
                     const mockData = generateMockAdminData();
                     currentUsers = mockData.users;
                     updateSystemInfo(mockData.systemInfo);
-                    renderUsers(mockData.users);
+                    renderUsers(getFilteredUsers());
                     renderSystemConfig(mockData.systemConfig);
                     renderSystemLogs(mockData.logs);
                     renderDatabaseStats(mockData.databaseStats);
@@ -1193,7 +1187,6 @@
         }
 
         function renderUsers(users) {
-            currentUsers = users;
             const tbody = document.getElementById('userTableBody');
             
             if (!users || users.length === 0) {
@@ -1214,19 +1207,22 @@
                     }) : 'Never';
                 
                 const failedAttempts = user.failed_login_attempts || 0;
-                const isActive = user.is_active;
+                const isActive = user.is_active === true || user.is_active === 'true';
                 const isLocked = user.locked_until && new Date(user.locked_until) > new Date();
                 
                 // Determine status display
                 let statusClass = 'inactive';
                 let statusText = 'inactive';
-                
-                if (isActive && !isLocked) {
-                    statusClass = 'active';
-                    statusText = 'active';
-                } else if (isLocked) {
+
+                if (isLocked) {
                     statusClass = 'locked';
                     statusText = 'locked';
+                } else if (isActive && !user.last_login) {
+                    statusClass = 'invited';
+                    statusText = 'invited';
+                } else if (isActive) {
+                    statusClass = 'active';
+                    statusText = 'active';
                 }
                 
                 row.innerHTML = `
@@ -1239,7 +1235,7 @@
                     <td>${user.email}</td>
                     <td>
                         <span style="text-transform: capitalize; font-weight: 600; color: #2c3e50;">
-                            ${user.role || 'user'}
+                            ${(user.role || 'user').replace(/_/g, ' ')}
                         </span>
                     </td>
                     <td>
@@ -1436,17 +1432,31 @@
             });
         }
 
-        function setupUserSearch() {
-            const searchInput = document.getElementById('userSearch');
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const filteredUsers = currentUsers.filter(user => 
-                    user.username.toLowerCase().includes(searchTerm) ||
-                    user.email.toLowerCase().includes(searchTerm) ||
-                    user.role.toLowerCase().includes(searchTerm)
-                );
-                renderUsers(filteredUsers);
+        function getFilteredUsers() {
+            const searchTerm = (document.getElementById('userSearch')?.value || '').toLowerCase();
+            return currentUsers.filter(user => {
+                const isActive = user.is_active === true || user.is_active === 'true';
+                if (!showInactiveUsers && !isActive) return false;
+                if (searchTerm) {
+                    return user.username.toLowerCase().includes(searchTerm) ||
+                        user.email.toLowerCase().includes(searchTerm) ||
+                        user.role.toLowerCase().includes(searchTerm);
+                }
+                return true;
             });
+        }
+
+        function setupUserSearch() {
+            document.getElementById('userSearch').addEventListener('input', function() {
+                renderUsers(getFilteredUsers());
+            });
+        }
+
+        function toggleInactiveUsers() {
+            showInactiveUsers = !showInactiveUsers;
+            const btn = document.getElementById('toggleInactiveBtn');
+            btn.textContent = showInactiveUsers ? 'Hide Inactive' : 'Show Inactive';
+            renderUsers(getFilteredUsers());
         }
 
         function setupAddUserForm() {
@@ -1518,6 +1528,11 @@
                 return;
             }
 
+            const submitBtn = document.getElementById('addUserSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+
             try {
                 const userData = {
                     username,
@@ -1536,11 +1551,11 @@
                 });
 
                 const result = await response.json();
-                
+
                 if (result.success) {
                     showToast(`User created successfully! Temporary password: ${password}`, 'success');
                     closeAddUserModal();
-                    
+
                     // Wait a moment for the database to update, then refresh user list
                     setTimeout(() => {
                         loadAdminData();
@@ -1552,6 +1567,9 @@
             } catch (error) {
                 console.error('Failed to create user:', error);
                 showToast('Failed to create user: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         }
 

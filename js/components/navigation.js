@@ -6,14 +6,13 @@
 
 // Standard navigation items with RBAC roles
 const NAV_ITEMS = [
-    { page: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent'] },
+    { page: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2', roles: ['admin', 'supervisor', 'booking_agent', 'driver'] },
     { page: 'appointments', label: 'Appointments', icon: 'bi-calendar-check', roles: ['admin', 'supervisor', 'booking_agent'] },
     { page: 'appointments-bulk-add', label: 'Bulk Add', icon: 'bi-calendar-plus', roles: ['admin', 'supervisor', 'booking_agent'] },
     { page: 'clients', label: 'Clients', icon: 'bi-people', roles: ['admin', 'supervisor', 'booking_agent'] },
     { page: 'driver-management', label: 'Drivers', icon: 'bi-truck', roles: ['admin', 'supervisor'] },
     { page: 'operations', label: 'Operations', icon: 'bi-clipboard-data', roles: ['admin', 'supervisor'] },
     { page: 'finance', label: 'Finance', icon: 'bi-currency-dollar', roles: ['admin', 'supervisor'] },
-    { page: 'profile', label: 'My Schedule', icon: 'bi-calendar-week', roles: ['driver'] },
     { page: 'admin', label: 'Admin', icon: 'bi-gear', roles: ['admin'] }
 ];
 
