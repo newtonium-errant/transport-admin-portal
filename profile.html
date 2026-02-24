@@ -1288,54 +1288,87 @@
         }
 
         /* Day Detail Modal */
-        .day-detail-status {
+
+        .day-detail-base-schedule {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 14px 16px;
-            border-radius: 8px;
+            gap: 4px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+
+        .day-detail-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
             margin-bottom: 16px;
         }
 
-        .day-detail-status.status-available {
+        .day-detail-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        .day-detail-entry.status-available {
             background-color: #e8f5e9;
             border: 1px solid #a5d6a7;
         }
 
-        .day-detail-status.status-off {
+        .day-detail-entry.status-off {
             background-color: #f5f5f5;
             border: 1px solid #e0e0e0;
         }
 
-        .day-detail-status.status-blocked {
+        .day-detail-entry.status-blocked {
             background-color: #ffebee;
             border: 1px solid #ef9a9a;
         }
 
-        .day-detail-status.status-override {
+        .day-detail-entry.status-override {
             background-color: #e3f2fd;
             border: 1px solid #90caf9;
         }
 
-        .day-detail-status-icon {
-            font-size: 1.5em;
+        .day-detail-entry-icon {
+            font-size: 1.2em;
             line-height: 1;
+            flex-shrink: 0;
         }
 
-        .day-detail-status-text {
+        .day-detail-entry-info {
             flex: 1;
+            min-width: 0;
         }
 
-        .day-detail-status-label {
+        .day-detail-entry-label {
             font-weight: 600;
-            font-size: 1em;
+            font-size: 0.92em;
             color: var(--color-gray-dark);
         }
 
-        .day-detail-status-source {
-            font-size: 0.8em;
+        .day-detail-entry-source {
+            font-size: 0.78em;
             color: #6c757d;
-            margin-top: 2px;
+            margin-top: 1px;
+        }
+
+        .day-detail-entry-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .day-detail-entry-actions .btn {
+            padding: 2px 6px;
+            font-size: 0.8em;
         }
 
         .day-detail-actions {
@@ -2204,31 +2237,29 @@
 
                 if (!isPast) {
                     // Show availability indicators for today and future days only
-                    const availability = resolveAvailability(current);
+                    const entries = resolveAvailability(current);
 
-                    switch (availability.type) {
-                        case 'available':
-                            indicatorHtml += `<div class="cal-day-indicator available" title="${escapeHtml(availability.hours || '8:00 AM - 4:00 PM')}">${escapeHtml(availability.hours || '8-4')}</div>`;
-                            break;
-                        case 'off':
-                            indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
-                            break;
-                        case 'blocked':
-                            if (availability.hours) {
-                                // Partial-day block: show blocked hours
-                                indicatorHtml += `<div class="cal-day-indicator blocked" title="Blocked: ${escapeHtml(availability.hours)}${availability.reason ? ' - ' + escapeHtml(availability.reason) : ''}">BLOCKED ${escapeHtml(availability.hours)}</div>`;
-                            } else {
-                                indicatorHtml += `<div class="cal-day-indicator blocked" title="${escapeHtml(availability.reason || '')}">BLOCKED</div>`;
-                            }
-                            if (availability.reason) {
-                                indicatorHtml += `<div class="cal-day-reason" title="${escapeHtml(availability.reason)}">${escapeHtml(availability.reason)}</div>`;
-                            }
-                            break;
-                        case 'override':
-                            indicatorHtml += `<div class="cal-day-indicator override" title="${escapeHtml(availability.hours || 'Available')}">${escapeHtml(availability.hours || 'AVAIL')}</div>`;
-                            break;
-                        default:
-                            indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
+                    for (const entry of entries) {
+                        switch (entry.type) {
+                            case 'available':
+                                indicatorHtml += `<div class="cal-day-indicator available" title="${escapeHtml(entry.hours || '8:00 AM - 4:00 PM')}">${escapeHtml(entry.hours || '8-4')}</div>`;
+                                break;
+                            case 'off':
+                                indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
+                                break;
+                            case 'blocked':
+                                if (entry.hours) {
+                                    indicatorHtml += `<div class="cal-day-indicator blocked" title="Blocked: ${escapeHtml(entry.hours)}${entry.reason ? ' - ' + escapeHtml(entry.reason) : ''}">BLOCKED ${escapeHtml(entry.hours)}</div>`;
+                                } else {
+                                    indicatorHtml += `<div class="cal-day-indicator blocked" title="${escapeHtml(entry.reason || '')}">BLOCKED</div>`;
+                                }
+                                break;
+                            case 'override':
+                                indicatorHtml += `<div class="cal-day-indicator override" title="${escapeHtml(entry.hours || 'Available')}">${escapeHtml(entry.hours || 'AVAIL')}</div>`;
+                                break;
+                            default:
+                                indicatorHtml += '<div class="cal-day-indicator off">OFF</div>';
+                        }
                     }
 
                     // Check for appointments on this date
@@ -2257,47 +2288,19 @@
         }
 
         // ========== Three-Layer Availability Resolution ==========
-        function resolveAvailability(date) {
-            const dateStr = formatDateISO(date);
+
+        /**
+         * Returns the base schedule entry for a date (rotating pattern or weekly hours).
+         * Does NOT include manual entries (time_off / override_available).
+         * Always returns a single { type, hours, source } object.
+         */
+        function getBaseSchedule(date) {
             const dayOfWeek = date.getDay();
             const dayName = DAY_NAMES[dayOfWeek];
 
-            // Layer 1: Check manual entries (time_off or override_available)
-            if (timeOffEntries && timeOffEntries.length > 0) {
-                for (const entry of timeOffEntries) {
-                    const entryStart = entry.start_date ? entry.start_date.substring(0, 10) : null;
-                    const entryEnd = entry.end_date ? entry.end_date.substring(0, 10) : entryStart;
-
-                    if (entryStart && dateStr >= entryStart && dateStr <= entryEnd) {
-                        if (entry.entry_type === 'time_off') {
-                            let reason = entry.reason || '';
-                            if (!entry.all_day && entry.start_time && entry.end_time) {
-                                return {
-                                    type: 'blocked',
-                                    hours: `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`,
-                                    reason: reason,
-                                    entry_id: entry.id,
-                                    source: 'Time off blocked'
-                                };
-                            }
-                            return { type: 'blocked', reason: reason, entry_id: entry.id, source: 'Time off blocked' };
-                        }
-
-                        if (entry.entry_type === 'override_available') {
-                            let hours = '8:00 AM - 4:00 PM';
-                            if (entry.start_time && entry.end_time) {
-                                hours = `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`;
-                            }
-                            return { type: 'override', hours: hours, reason: entry.reason || '', entry_id: entry.id, source: 'Custom hours' };
-                        }
-                    }
-                }
-            }
-
-            // Layer 2: Check schedule_pattern (rotating schedules)
+            // Check schedule_pattern (rotating schedules)
             if (driverData && driverData.schedule_pattern) {
                 const pattern = driverData.schedule_pattern;
-
                 if (pattern.type === 'rotating' && pattern.anchor_date && pattern.cycle_days && pattern.days) {
                     const patternStart = new Date(pattern.anchor_date + 'T00:00:00');
                     const cycleDays = pattern.cycle_days;
@@ -2305,7 +2308,6 @@
                     const cyclePosition = ((diffDays % cycleDays) + cycleDays) % cycleDays;
                     const dayNum = String(cyclePosition + 1);
                     const dayData = pattern.days[dayNum];
-
                     if (dayData && dayData.available) {
                         const start = dayData.start || '08:00';
                         const end = dayData.end || '16:00';
@@ -2316,14 +2318,12 @@
                 }
             }
 
-            // Layer 3: Fall back to weekly_hours
+            // Fall back to weekly_hours
             if (driverData && driverData.weekly_hours && driverData.weekly_hours[dayName]) {
                 const dayHours = driverData.weekly_hours[dayName];
-
                 if (dayHours.available === false) {
                     return { type: 'off', source: 'From weekly schedule' };
                 }
-
                 const startTime = dayHours.start || '08:00';
                 const endTime = dayHours.end || '16:00';
                 return { type: 'available', hours: `${formatTime12(startTime)} - ${formatTime12(endTime)}`, source: 'From weekly schedule' };
@@ -2334,6 +2334,72 @@
                 return { type: 'available', hours: '8:00 AM - 4:00 PM', source: 'From weekly schedule' };
             }
             return { type: 'off', source: 'From weekly schedule' };
+        }
+
+        /**
+         * Returns ALL availability entries for a date as an array.
+         * If manual entries (time_off / override_available) exist, returns all of them.
+         * If no manual entries, falls back to the base schedule as a single-element array.
+         * Each entry: { type, hours, reason, entry_id, source }
+         * Sorted by start time.
+         */
+        function resolveAvailability(date) {
+            const dateStr = formatDateISO(date);
+            const entries = [];
+
+            // Collect ALL manual entries for this date
+            if (timeOffEntries && timeOffEntries.length > 0) {
+                for (const entry of timeOffEntries) {
+                    const entryStart = entry.start_date ? entry.start_date.substring(0, 10) : null;
+                    const entryEnd = entry.end_date ? entry.end_date.substring(0, 10) : entryStart;
+
+                    if (entryStart && dateStr >= entryStart && dateStr <= entryEnd) {
+                        if (entry.entry_type === 'time_off') {
+                            const reason = entry.reason || '';
+                            if (!entry.all_day && entry.start_time && entry.end_time) {
+                                entries.push({
+                                    type: 'blocked',
+                                    hours: `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`,
+                                    reason: reason,
+                                    entry_id: entry.id,
+                                    source: 'Time off blocked',
+                                    _startTime: entry.start_time
+                                });
+                            } else {
+                                entries.push({
+                                    type: 'blocked',
+                                    reason: reason,
+                                    entry_id: entry.id,
+                                    source: 'Time off blocked',
+                                    _startTime: '00:00'
+                                });
+                            }
+                        } else if (entry.entry_type === 'override_available') {
+                            let hours = '8:00 AM - 4:00 PM';
+                            if (entry.start_time && entry.end_time) {
+                                hours = `${formatTime12(entry.start_time)} - ${formatTime12(entry.end_time)}`;
+                            }
+                            entries.push({
+                                type: 'override',
+                                hours: hours,
+                                reason: entry.reason || '',
+                                entry_id: entry.id,
+                                source: 'Custom hours',
+                                _startTime: entry.start_time || '08:00'
+                            });
+                        }
+                    }
+                }
+            }
+
+            // If manual entries exist, sort by start time and return
+            if (entries.length > 0) {
+                entries.sort((a, b) => (a._startTime || '').localeCompare(b._startTime || ''));
+                return entries;
+            }
+
+            // No manual entries — fall back to base schedule
+            return [getBaseSchedule(date)];
         }
 
         // ========== Calendar Navigation ==========
@@ -2678,6 +2744,23 @@
                     driverData.home_city = payload.home_city;
                     driverData.home_province = payload.home_province;
                     driverData.home_postal_code = payload.home_postal_code;
+
+                    // Fire-and-forget: recalculate clinic distances from new address
+                    showToast('Recalculating clinic distances...', 'info');
+                    authenticatedFetch(`${API_BASE}/recalculate-my-clinic-distances`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ driver_id: currentUser.driver_id })
+                    }).then(r => r.json()).then(res => {
+                        if (res.success) {
+                            showToast('Clinic distances updated.', 'success');
+                            loadClinicPreferences();
+                        } else {
+                            showToast('Could not recalculate clinic distances. Try again later.', 'warning');
+                        }
+                    }).catch(() => {
+                        showToast('Could not recalculate clinic distances. Try again later.', 'warning');
+                    });
                 } else {
                     showToast(result.message || 'Failed to update address.', 'error');
                 }
@@ -3530,7 +3613,9 @@
         // ========== Day Detail Modal ==========
         function openDayDetail(dateStr) {
             const date = new Date(dateStr + 'T00:00:00');
-            const availability = resolveAvailability(date);
+            const entries = resolveAvailability(date);
+            const baseSchedule = getBaseSchedule(date);
+            const hasManualEntries = entries.some(e => e.entry_id);
 
             // Format the day header
             const dayLabel = date.toLocaleDateString('en-US', {
@@ -3544,48 +3629,70 @@
             // Build modal body
             let html = '';
 
-            // Status section
             const statusConfig = {
                 available: { icon: 'bi-check-circle-fill', color: '#2e7d32', label: 'Available', cssClass: 'status-available' },
                 off: { icon: 'bi-dash-circle-fill', color: '#9e9e9e', label: 'Day Off', cssClass: 'status-off' },
                 blocked: { icon: 'bi-x-circle-fill', color: '#c62828', label: 'Blocked', cssClass: 'status-blocked' },
                 override: { icon: 'bi-plus-circle-fill', color: '#1565c0', label: 'Custom Availability', cssClass: 'status-override' }
             };
-            const cfg = statusConfig[availability.type] || statusConfig.off;
 
-            let statusDetail = '';
-            if (availability.hours) {
-                statusDetail = availability.hours;
-            }
-            if (availability.type === 'blocked' && availability.reason) {
-                statusDetail += statusDetail ? ` — ${availability.reason}` : availability.reason;
-            }
-
-            html += `<div class="day-detail-status ${cfg.cssClass}">
-                <div class="day-detail-status-icon" style="color: ${cfg.color};">
-                    <i class="bi ${cfg.icon}"></i>
-                </div>
-                <div class="day-detail-status-text">
-                    <div class="day-detail-status-label">${escapeHtml(cfg.label)}${statusDetail ? ': ' + escapeHtml(statusDetail) : ''}</div>
-                    <div class="day-detail-status-source">${escapeHtml(availability.source || '')}</div>
-                </div>
-            </div>`;
-
-            // Actions section
-            html += '<div class="day-detail-actions">';
-
-            // Cutoff check — shared by Edit hours and Block time off
+            // Cutoff check
             const role = currentUser.role || currentUser.user_role || 'user';
             const isRestricted = (role === 'driver' || role === 'client');
             const minDate = getTimeOffMinDate();
             const withinCutoff = isRestricted && dateStr < minDate;
 
-            // Edit hours for this day (creates override)
+            // Show base schedule context when manual entries exist
+            if (hasManualEntries) {
+                const baseCfg = statusConfig[baseSchedule.type] || statusConfig.off;
+                html += `<div class="day-detail-base-schedule">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    <span>Base schedule: <strong>${escapeHtml(baseCfg.label)}</strong>${baseSchedule.hours ? ' (' + escapeHtml(baseSchedule.hours) + ')' : ''}</span>
+                    <span class="text-muted ms-1" style="font-size: 0.85em;">${escapeHtml(baseSchedule.source || '')}</span>
+                </div>`;
+            }
+
+            // Entry list
+            html += '<div class="day-detail-entries">';
+
+            for (const entry of entries) {
+                const cfg = statusConfig[entry.type] || statusConfig.off;
+
+                let detail = '';
+                if (entry.hours) detail = entry.hours;
+                if (entry.type === 'blocked' && !entry.hours) detail = 'All day';
+                if (entry.reason) detail += detail ? ` — ${entry.reason}` : entry.reason;
+
+                html += `<div class="day-detail-entry ${cfg.cssClass}">
+                    <div class="day-detail-entry-icon" style="color: ${cfg.color};">
+                        <i class="bi ${cfg.icon}"></i>
+                    </div>
+                    <div class="day-detail-entry-info">
+                        <div class="day-detail-entry-label">${escapeHtml(cfg.label)}${detail ? ': ' + escapeHtml(detail) : ''}</div>
+                        <div class="day-detail-entry-source">${escapeHtml(entry.source || '')}</div>
+                    </div>`;
+
+                // Per-entry actions (edit + delete) for manual entries
+                if (entry.entry_id) {
+                    html += '<div class="day-detail-entry-actions">';
+                    html += `<button class="btn btn-sm btn-outline-secondary" title="Edit" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailEditHours('${dateStr}', ${entry.entry_id})"><i class="bi bi-pencil"></i></button>`;
+                    html += `<button class="btn btn-sm btn-outline-danger" title="Remove" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailRemoveEntry(${entry.entry_id}, '${dateStr}')"><i class="bi bi-trash"></i></button>`;
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            // Actions section — add new entries
+            html += '<div class="day-detail-actions">';
+
             html += `<button class="day-detail-action-btn" ${withinCutoff ? 'disabled' : ''} onclick="dayDetailEditHours('${dateStr}')">
                 <i class="bi bi-pencil-square" style="color: var(--color-primary);"></i>
                 <div>
-                    <div class="action-label">Edit hours for this day</div>
-                    <div class="action-desc">${withinCutoff ? 'Past the Wednesday cutoff — contact your supervisor' : 'Set custom start/end time for this day'}</div>
+                    <div class="action-label">Add custom hours</div>
+                    <div class="action-desc">${withinCutoff ? 'Past the Wednesday cutoff — contact your supervisor' : 'Add a new availability window for this day'}</div>
                 </div>
             </button>`;
 
@@ -3596,31 +3703,6 @@
                     <div class="action-desc">${withinCutoff ? 'Past the Wednesday cutoff — contact your supervisor' : 'Mark this day as unavailable'}</div>
                 </div>
             </button>`;
-
-            // Add availability (always shown — drivers may extend hours or add on blocked/off days)
-            html += `<button class="day-detail-action-btn" onclick="dayDetailAddAvailability('${dateStr}')">
-                <i class="bi bi-calendar-plus" style="color: #1976d2;"></i>
-                <div>
-                    <div class="action-label">Add availability</div>
-                    <div class="action-desc">Add or extend your available hours for this day</div>
-                </div>
-            </button>`;
-
-            // Remove override/block (if there's an existing entry for this day)
-            if (availability.entry_id) {
-                const removeLabel = availability.type === 'blocked' ? 'Remove time off block' : 'Remove custom hours';
-                const removeDesc = availability.type === 'blocked'
-                    ? 'Delete this blocked time entry'
-                    : 'Revert to your normal schedule for this day';
-
-                html += `<button class="day-detail-action-btn btn-danger-outline" onclick="dayDetailRemoveEntry(${availability.entry_id}, '${dateStr}')">
-                    <i class="bi bi-trash" style="color: var(--color-danger);"></i>
-                    <div>
-                        <div class="action-label">${escapeHtml(removeLabel)}</div>
-                        <div class="action-desc">${escapeHtml(removeDesc)}</div>
-                    </div>
-                </button>`;
-            }
 
             html += '</div>';
 
@@ -3661,7 +3743,7 @@
             modal.show();
         }
 
-        function dayDetailEditHours(dateStr) {
+        function dayDetailEditHours(dateStr, entryId) {
             // Close Day Detail modal
             const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
             if (dayModal) dayModal.hide();
@@ -3669,13 +3751,20 @@
             // Show inline form inside a fresh Day Detail modal after close animation
             document.getElementById('dayDetailModal').addEventListener('hidden.bs.modal', function onHidden() {
                 document.getElementById('dayDetailModal').removeEventListener('hidden.bs.modal', onHidden);
-                showEditHoursForm(dateStr);
+                showEditHoursForm(dateStr, entryId || null);
             }, { once: true });
         }
 
-        function showEditHoursForm(dateStr) {
+        // Track entry being edited (null = new entry)
+        let _editingEntryId = null;
+        let _editingEntryType = null;
+
+        function showEditHoursForm(dateStr, entryId) {
+            _editingEntryId = entryId || null;
+            _editingEntryType = null;
+
             const date = new Date(dateStr + 'T00:00:00');
-            const availability = resolveAvailability(date);
+            const isEditing = !!_editingEntryId;
 
             const dayLabel = date.toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -3683,19 +3772,35 @@
                 month: 'long',
                 day: 'numeric'
             });
-            document.getElementById('dayDetailTitle').textContent = `Edit Hours — ${dayLabel}`;
+            document.getElementById('dayDetailTitle').textContent = `${isEditing ? 'Edit' : 'Add'} Hours — ${dayLabel}`;
 
-            // Pre-fill times from current availability
+            // Pre-fill times: from the specific entry if editing, or defaults
             let startVal = '08:00';
             let endVal = '16:00';
-            if (availability.hours) {
-                const parsed = parseHoursToTimes(availability);
-                if (parsed) { startVal = parsed.start; endVal = parsed.end; }
+            let noteVal = '';
+
+            if (isEditing && timeOffEntries) {
+                const entry = timeOffEntries.find(e => e.id === _editingEntryId);
+                if (entry) {
+                    _editingEntryType = entry.entry_type;
+                    if (entry.start_time && entry.end_time) {
+                        startVal = entry.start_time;
+                        endVal = entry.end_time;
+                    }
+                    noteVal = entry.reason || '';
+                }
+            } else {
+                // New entry — use base schedule times as defaults
+                const base = getBaseSchedule(date);
+                if (base.hours) {
+                    const parsed = parseHoursToTimes(base);
+                    if (parsed) { startVal = parsed.start; endVal = parsed.end; }
+                }
             }
 
             const html = `
                 <div class="day-detail-edit-form">
-                    <p class="text-muted" style="font-size: 0.9em; margin-bottom: 12px;">Set custom hours for this day.</p>
+                    <p class="text-muted" style="font-size: 0.9em; margin-bottom: 12px;">${isEditing ? 'Edit this availability entry.' : 'Add a new availability window for this day.'}</p>
                     <div class="row">
                         <div class="col-6">
                             <label class="form-label form-label-required">Start Time</label>
@@ -3709,13 +3814,13 @@
                     <div class="row">
                         <div class="col-12">
                             <label class="form-label">Note (optional)</label>
-                            <input type="text" class="form-control" id="ddEditNote" placeholder="e.g., Adjusted hours" maxlength="200">
+                            <input type="text" class="form-control" id="ddEditNote" placeholder="e.g., Adjusted hours" maxlength="200" value="${escapeHtml(noteVal)}">
                         </div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-3">
                         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary btn-sm" id="ddEditSaveBtn" onclick="submitDayDetailEditHours('${dateStr}')">
-                            <span class="btn-text"><i class="bi bi-save me-1"></i>Save Hours</span>
+                            <span class="btn-text"><i class="bi bi-save me-1"></i>${isEditing ? 'Save Changes' : 'Save Hours'}</span>
                             <span class="btn-loading d-none"><span class="spinner-border spinner-border-sm me-1"></span> Saving...</span>
                         </button>
                     </div>
@@ -3770,6 +3875,26 @@
                 return;
             }
 
+            // Reduction check: within the cutoff window, drivers cannot shrink their base schedule
+            const role = currentUser.role || currentUser.user_role || 'user';
+            const isRestricted = (role === 'driver' || role === 'client');
+            if (isRestricted) {
+                const minDate = getTimeOffMinDate();
+                if (dateStr < minDate) {
+                    const date = new Date(dateStr + 'T00:00:00');
+                    const base = getBaseSchedule(date);
+                    if (base.hours) {
+                        const parsed = parseHoursToTimes(base);
+                        if (parsed) {
+                            if (startTime > parsed.start || endTime < parsed.end) {
+                                showToast("You can't reduce your availability within the scheduling window. Contact your supervisor to make changes.", 'warning');
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
             // Conflict check: ensure no assigned drives fall outside the new hours
             const hoursConflicts = getConflictingDrives(dateStr, startTime, endTime, 'hours');
             if (hoursConflicts.length > 0) {
@@ -3777,9 +3902,12 @@
                 return;
             }
 
+            const isEditing = !!_editingEntryId;
+            const endpoint = isEditing ? 'update-driver-time-off' : 'create-driver-time-off';
+
             const payload = {
                 driver_id: currentUser.driver_id,
-                entry_type: 'override_available',
+                entry_type: (isEditing && _editingEntryType) ? _editingEntryType : 'override_available',
                 start_date: dateStr,
                 end_date: dateStr,
                 all_day: false,
@@ -3788,10 +3916,14 @@
                 reason: note || null
             };
 
+            if (isEditing) {
+                payload.id = _editingEntryId;
+            }
+
             setButtonLoading('ddEditSaveBtn', true);
 
             try {
-                const response = await authenticatedFetch(`${API_BASE}/create-driver-time-off`, {
+                const response = await authenticatedFetch(`${API_BASE}/${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -3800,14 +3932,16 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    showToast('Hours updated for this day.', 'success');
+                    showToast(isEditing ? 'Entry updated.' : 'Hours added for this day.', 'success');
+                    _editingEntryId = null;
+                    _editingEntryType = null;
                     bootstrap.Modal.getInstance(document.getElementById('dayDetailModal')).hide();
                     await loadScheduleData();
                 } else {
-                    showToast(result.message || 'Failed to update hours.', 'error');
+                    showToast(result.message || 'Failed to save hours.', 'error');
                 }
             } catch (err) {
-                console.error('Error updating day hours:', err);
+                console.error('Error saving day hours:', err);
                 showToast('An error occurred while saving.', 'error');
             } finally {
                 setButtonLoading('ddEditSaveBtn', false);
@@ -3843,25 +3977,6 @@
                 notice.style.display = (isRestricted && minDate > today) ? 'block' : 'none';
 
                 const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('blockTimeModal'));
-                modal.show();
-            }, { once: true });
-        }
-
-        function dayDetailAddAvailability(dateStr) {
-            // Close Day Detail modal and open Add Availability modal pre-populated
-            const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailModal'));
-            if (dayModal) dayModal.hide();
-
-            document.getElementById('dayDetailModal').addEventListener('hidden.bs.modal', function onHidden() {
-                document.getElementById('dayDetailModal').removeEventListener('hidden.bs.modal', onHidden);
-
-                const form = document.getElementById('overrideForm');
-                form.reset();
-                document.getElementById('overrideDate').value = dateStr;
-                document.getElementById('overrideStartTime').value = '08:00';
-                document.getElementById('overrideEndTime').value = '16:00';
-
-                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('overrideModal'));
                 modal.show();
             }, { once: true });
         }
