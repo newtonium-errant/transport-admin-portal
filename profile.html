@@ -1524,7 +1524,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-schedule" data-bs-toggle="tab" data-bs-target="#pane-schedule" type="button" role="tab" aria-controls="pane-schedule" aria-selected="false">
-                        <i class="bi bi-calendar-week me-1"></i>Schedule
+                        <i class="bi bi-calendar-week me-1"></i>Availability
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -2165,7 +2165,21 @@
 
                 if (appointmentsRes.ok) {
                     const aptsResult = await appointmentsRes.json();
-                    driverAppointments = aptsResult.data || aptsResult.appointments || [];
+                    const rawApts = aptsResult.data || aptsResult.appointments || [];
+                    // Normalize field names from API (appt_date/appt_time) to what the UI expects
+                    driverAppointments = rawApts.map(apt => {
+                        if (!apt.appointment_datetime && !apt.appointmentDateTime && !apt.appointmenttime) {
+                            // Build a combined datetime from appt_date + appt_time
+                            if (apt.appt_date) {
+                                const time = apt.appt_time || apt.pickup_time || '08:00';
+                                apt.appointment_datetime = `${apt.appt_date}T${time}`;
+                            }
+                        }
+                        if (!apt.location && apt.destination) {
+                            apt.location = apt.destination;
+                        }
+                        return apt;
+                    });
                 } else {
                     driverAppointments = [];
                 }
@@ -2791,12 +2805,12 @@
 
             const upcoming = driverAppointments
                 .filter(a => {
-                    const dt = new Date(a.appointmenttime || a.appointmentDateTime);
+                    const dt = new Date(a.appointment_datetime || a.appointmentDateTime || a.appointmenttime);
                     return dt >= now && dt <= twoWeeksOut;
                 })
                 .sort((a, b) => {
-                    return new Date(a.appointmenttime || a.appointmentDateTime) -
-                           new Date(b.appointmenttime || b.appointmentDateTime);
+                    return new Date(a.appointment_datetime || a.appointmentDateTime || a.appointmenttime) -
+                           new Date(b.appointment_datetime || b.appointmentDateTime || b.appointmenttime);
                 });
 
             if (!upcoming.length) {
@@ -2816,7 +2830,7 @@
             };
 
             container.innerHTML = upcoming.map(apt => {
-                const dt = new Date(apt.appointmenttime || apt.appointmentDateTime);
+                const dt = new Date(apt.appointment_datetime || apt.appointmentDateTime || apt.appointmenttime);
                 const dateStr = dt.toLocaleDateString('en-US', {
                     weekday: 'short',
                     month: 'short',
