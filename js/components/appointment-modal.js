@@ -2,8 +2,18 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v2.6.0
+ * Version: v3.1.0
  * Changes:
+ * - v3.1.0: Replaced client search-only input with searchable dropdown list
+ * - v3.1.0: Search filter input above dropdown for type-to-filter behavior
+ * - v3.1.0: Dropdown pre-populated with all active clients on modal open
+ * - v3.1.0: Client selection from dropdown triggers same auto-population as before
+ * - v3.0.0: Added appointment type support (round_trip, one_way, support)
+ * - v3.0.0: Bootstrap btn-group type selector with conditional field visibility
+ * - v3.0.0: One-way: trip_direction (to_clinic/to_home), adjusted labels
+ * - v3.0.0: Support: auto K0000 sentinel, event_name field, hidden transit/client
+ * - v3.0.0: Type change restrictions in edit mode (round_trip <-> one_way only)
+ * - v3.0.0: Validation per type (one_way requires direction, support requires event_name)
  * - v2.6.0: Auto-populate primary clinic when client selected (add mode only)
  * - v2.5.1: Reload clients data in edit mode to show latest secondary addresses
  * - v2.5.0: Auto-populate appointment duration from client.default_appointment_length (client-specific)
@@ -29,6 +39,14 @@
  * - v2.0.0: Scheduling notes made readonly (auto-generated)
  */
 
+// Utility: escape HTML to prevent XSS in innerHTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 class AppointmentModal {
     constructor(options = {}) {
         this.onSave = options.onSave || null;
@@ -38,6 +56,8 @@ class AppointmentModal {
         this.clients = []; // Store client data
         this.clinics = []; // Store clinic locations
         this.selectedClient = null; // Store selected client data including clinic_travel_times
+        this.appointmentType = 'round_trip'; // 'round_trip', 'one_way', 'support'
+        this.originalAppointmentType = null; // For edit mode type change restrictions
         // Store original values for edit mode to detect changes
         this.originalSchedulingNotes = null;
         this.originalAppointmentDateTime = null;
@@ -56,14 +76,53 @@ class AppointmentModal {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="appointmentForm">
+                            <form id="appointmentForm" onsubmit="event.preventDefault(); appointmentModalInstance.saveAppointment();">
+                                <!-- Appointment Type Selector -->
+                                <div class="mb-3" id="appointmentTypeSelector">
+                                    <label class="form-label">Appointment Type</label>
+                                    <div class="btn-group w-100" role="group" aria-label="Appointment type">
+                                        <input type="radio" class="btn-check" name="appointmentType" id="typeRoundTrip" value="round_trip" checked>
+                                        <label class="btn btn-outline-primary" for="typeRoundTrip">
+                                            <i class="bi bi-arrow-repeat"></i> Round Trip
+                                        </label>
+                                        <input type="radio" class="btn-check" name="appointmentType" id="typeOneWay" value="one_way">
+                                        <label class="btn btn-outline-info" for="typeOneWay">
+                                            <i class="bi bi-arrow-right"></i> One Way
+                                        </label>
+                                        <input type="radio" class="btn-check" name="appointmentType" id="typeSupport" value="support">
+                                        <label class="btn btn-outline-secondary" for="typeSupport">
+                                            <i class="bi bi-people-fill"></i> Support Event
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Trip Direction (One Way only) -->
+                                <div class="mb-3" id="tripDirectionRow" style="display: none;">
+                                    <label for="tripDirection" class="form-label">Trip Direction <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="tripDirection">
+                                        <option value="">Select direction...</option>
+                                        <option value="to_clinic">To Clinic (Home &rarr; Clinic)</option>
+                                        <option value="to_home">To Home (Clinic &rarr; Home)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Event Name (Support only) -->
+                                <div class="mb-3" id="eventNameRow" style="display: none;">
+                                    <label for="eventName" class="form-label">Event Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="eventName" placeholder="e.g., Community Health Fair, Vaccination Drive">
+                                    <small class="text-muted">Name of the support event or shuttle service</small>
+                                </div>
+
                                 <!-- Client Selection -->
-                                <div class="mb-3">
-                                    <label for="appointmentClient" class="form-label">Client <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="appointmentClient" 
-                                           placeholder="Search by name or K number..." required>
+                                <div class="mb-3" id="clientSelectionRow">
+                                    <label for="appointmentClientDropdown" class="form-label">Client <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control mb-1" id="clientSearchFilter"
+                                           placeholder="Type to filter clients..." autocomplete="off">
+                                    <select class="form-select" id="appointmentClientDropdown" required>
+                                        <option value="">Choose a client...</option>
+                                    </select>
+                                    <input type="hidden" id="appointmentClient" value="">
                                     <input type="hidden" id="appointmentClientId">
-                                    <div id="clientSuggestions" class="list-group mt-2" style="display: none;"></div>
                                 </div>
 
                                 <!-- Appointment Details -->
@@ -198,26 +257,26 @@ class AppointmentModal {
 
                                 <!-- Appointment ID (hidden, for edit mode) -->
                                 <input type="hidden" id="appointmentId">
+                                <div class="modal-footer px-0 pb-0">
+                                    <button type="button" class="btn btn-dark me-auto" id="hardDeleteAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.hardDeleteAppointment()">
+                                        <i class="bi bi-trash"></i> Hard Delete
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-warning" id="restoreAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.restoreAppointment()">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                    </button>
+                                    <button type="button" class="btn btn-warning" id="reactivateAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.reactivateAppointment()">
+                                        <i class="bi bi-arrow-clockwise"></i> Reactivate
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="archiveAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.archiveAppointment()">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="cancelAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.cancelAppointment()">
+                                        <i class="bi bi-x-circle"></i> Cancel Appointment
+                                    </button>
+                                    <button type="submit" class="btn btn-primary" id="saveAppointmentBtn">Save Appointment</button>
+                                </div>
                             </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-dark me-auto" id="hardDeleteAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.hardDeleteAppointment()">
-                                <i class="bi bi-trash"></i> Hard Delete
-                            </button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-warning" id="restoreAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.restoreAppointment()">
-                                <i class="bi bi-arrow-counterclockwise"></i> Restore
-                            </button>
-                            <button type="button" class="btn btn-warning" id="reactivateAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.reactivateAppointment()">
-                                <i class="bi bi-arrow-clockwise"></i> Reactivate
-                            </button>
-                            <button type="button" class="btn btn-danger" id="archiveAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.archiveAppointment()">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>
-                            <button type="button" class="btn btn-danger" id="cancelAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.cancelAppointment()">
-                                <i class="bi bi-x-circle"></i> Cancel Appointment
-                            </button>
-                            <button type="button" class="btn btn-primary" id="saveAppointmentBtn" onclick="appointmentModalInstance.saveAppointment()">Save Appointment</button>
                         </div>
                     </div>
                 </div>
@@ -241,9 +300,12 @@ class AppointmentModal {
 
         // Apply role-based restrictions
         this.applyRoleRestrictions();
-        
+
         // Setup auto-calculation of pickup time
         this.setupPickupTimeCalculation();
+
+        // Setup appointment type selector
+        this.setupTypeSelector();
     }
     
     setupPickupTimeCalculation() {
@@ -271,6 +333,113 @@ class AppointmentModal {
         // Add event listeners
         appointmentDateField.addEventListener('change', calculatePickupTime);
         transitTimeField.addEventListener('input', calculatePickupTime);
+    }
+
+    setupTypeSelector() {
+        const typeRadios = document.querySelectorAll('input[name="appointmentType"]');
+        typeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.appointmentType = e.target.value;
+                this.applyTypeVisibility();
+            });
+        });
+    }
+
+    /**
+     * Show/hide fields based on current appointment type.
+     * Called when type changes and when modal opens.
+     */
+    applyTypeVisibility() {
+        const type = this.appointmentType;
+        const clientSelectionRow = document.getElementById('clientSelectionRow');
+        const tripDirectionRow = document.getElementById('tripDirectionRow');
+        const eventNameRow = document.getElementById('eventNameRow');
+        const transitTimeRow = document.getElementById('transitTimeRow');
+        const pickupAddressRow = document.getElementById('pickupAddressRow');
+        const clinicLabel = document.querySelector('label[for="appointmentClinic"]');
+
+        // Trip direction: only for one_way
+        if (tripDirectionRow) {
+            tripDirectionRow.style.display = type === 'one_way' ? 'block' : 'none';
+        }
+
+        // Event name: only for support
+        if (eventNameRow) {
+            eventNameRow.style.display = type === 'support' ? 'block' : 'none';
+        }
+
+        if (type === 'support') {
+            // Support: hide client selection, auto-set K0000
+            if (clientSelectionRow) clientSelectionRow.style.display = 'none';
+            document.getElementById('appointmentClientId').value = 'K0000';
+            document.getElementById('appointmentClient').value = 'Support Event';
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            if (clientDropdown) clientDropdown.removeAttribute('required');
+
+            // Hide transit time row in support mode
+            if (transitTimeRow) transitTimeRow.style.display = 'none';
+
+            // Hide pickup address row in support mode
+            if (pickupAddressRow) pickupAddressRow.style.display = 'none';
+
+            // Change clinic label to "Event Venue"
+            if (clinicLabel) clinicLabel.innerHTML = 'Event Venue <span class="text-danger">*</span>';
+
+            // Clear selected client
+            this.selectedClient = null;
+        } else {
+            // Round trip or one way: show client selection
+            if (clientSelectionRow) clientSelectionRow.style.display = 'block';
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            if (clientDropdown) clientDropdown.setAttribute('required', '');
+
+            // Restore clinic label
+            if (clinicLabel) clinicLabel.innerHTML = 'Clinic Location <span class="text-danger">*</span>';
+
+            // Show transit time in edit mode
+            if (transitTimeRow && this.mode === 'edit') {
+                transitTimeRow.style.display = 'block';
+            }
+
+            // If switching back from support, clear the auto-set K0000
+            const currentClientId = document.getElementById('appointmentClientId').value;
+            if (currentClientId === 'K0000' && this.mode === 'add') {
+                document.getElementById('appointmentClient').value = '';
+                document.getElementById('appointmentClientId').value = '';
+                if (clientDropdown) clientDropdown.value = '';
+            }
+        }
+    }
+
+    /**
+     * Apply type change restrictions in edit mode.
+     * round_trip <-> one_way allowed, support cannot change type.
+     */
+    applyTypeRestrictions() {
+        if (this.mode !== 'edit') return;
+
+        const typeRoundTrip = document.getElementById('typeRoundTrip');
+        const typeOneWay = document.getElementById('typeOneWay');
+        const typeSupport = document.getElementById('typeSupport');
+
+        if (!typeRoundTrip || !typeOneWay || !typeSupport) return;
+
+        if (this.originalAppointmentType === 'support') {
+            // Support: lock to support only
+            typeRoundTrip.disabled = true;
+            typeOneWay.disabled = true;
+            typeSupport.disabled = false;
+            document.querySelector('label[for="typeRoundTrip"]').classList.add('disabled');
+            document.querySelector('label[for="typeOneWay"]').classList.add('disabled');
+        } else {
+            // round_trip or one_way: can switch between them, but not to support
+            typeRoundTrip.disabled = false;
+            typeOneWay.disabled = false;
+            typeSupport.disabled = true;
+            document.querySelector('label[for="typeRoundTrip"]').classList.remove('disabled');
+            document.querySelector('label[for="typeOneWay"]').classList.remove('disabled');
+            document.querySelector('label[for="typeSupport"]').classList.add('disabled');
+        }
     }
 
     async loadDrivers(drivers = null) {
@@ -519,47 +688,116 @@ class AppointmentModal {
     }
 
     setupClientSearch() {
-        const input = document.getElementById('appointmentClient');
-        const suggestions = document.getElementById('clientSuggestions');
+        const filterInput = document.getElementById('clientSearchFilter');
+        const dropdown = document.getElementById('appointmentClientDropdown');
 
-        input.addEventListener('input', () => {
-            const searchTerm = input.value.toLowerCase();
-            if (searchTerm.length < 2) {
-                suggestions.style.display = 'none';
+        if (!filterInput || !dropdown) return;
+
+        // Filter dropdown options as user types
+        filterInput.addEventListener('input', () => {
+            const searchTerm = filterInput.value.toLowerCase().trim();
+            const options = dropdown.querySelectorAll('option');
+
+            options.forEach(option => {
+                if (!option.value) {
+                    // Always show the placeholder option
+                    option.style.display = '';
+                    return;
+                }
+                const text = option.textContent.toLowerCase();
+                option.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+
+            // If search narrows to exactly one visible option (besides placeholder), auto-select it
+            const visibleOptions = Array.from(options).filter(o => o.value && o.style.display !== 'none');
+            if (visibleOptions.length === 1 && searchTerm.length >= 2) {
+                dropdown.value = visibleOptions[0].value;
+                // Do NOT auto-trigger change here; let user confirm by clicking
+            }
+        });
+
+        // When a client is selected from dropdown, trigger selectClient
+        dropdown.addEventListener('change', () => {
+            const knumber = dropdown.value;
+            if (!knumber) {
+                // Reset client selection
+                document.getElementById('appointmentClient').value = '';
+                document.getElementById('appointmentClientId').value = '';
+                this.selectedClient = null;
                 return;
             }
 
-            const matches = this.clients.filter(client => 
-                (client.firstname && client.firstname.toLowerCase().includes(searchTerm)) ||
-                (client.lastname && client.lastname.toLowerCase().includes(searchTerm)) ||
-                (client.knumber && client.knumber.toLowerCase().includes(searchTerm))
-            ).slice(0, 5);
+            const selectedOption = dropdown.selectedOptions[0];
+            const fullName = selectedOption ? selectedOption.dataset.fullname : '';
+            this.selectClient(knumber, fullName);
 
-            if (matches.length > 0) {
-                suggestions.innerHTML = matches.map(client =>
-                    `<a href="#" class="list-group-item list-group-item-action"
-                        onclick="appointmentModalInstance.selectClient('${client.knumber}', '${client.firstname} ${client.lastname}'); return false;">
-                        <strong>${client.knumber}</strong> - ${client.firstname} ${client.lastname}
-                    </a>`
-                ).join('');
-                suggestions.style.display = 'block';
-            } else {
-                suggestions.style.display = 'none';
-            }
+            // Clear the search filter after selection
+            filterInput.value = '';
+            // Show all options again
+            dropdown.querySelectorAll('option').forEach(o => o.style.display = '');
+        });
+    }
+
+    /**
+     * Populates the client dropdown with all active clients.
+     * Called after clients are loaded (in open() method).
+     */
+    populateClientDropdown() {
+        const dropdown = document.getElementById('appointmentClientDropdown');
+        if (!dropdown) return;
+
+        // Preserve current selection if any
+        const currentValue = dropdown.value;
+
+        dropdown.innerHTML = '<option value="">Choose a client...</option>';
+
+        // Filter to active clients only, exclude K0000 sentinel in non-support mode
+        const clientsToShow = this.clients.filter(client => {
+            const knum = client.knumber || client.k_number || '';
+            if (knum === 'K0000' && this.appointmentType !== 'support') return false;
+            // Only show active clients (match bulk-add page pattern)
+            if (client.active === false || client.status === 'inactive') return false;
+            return true;
         });
 
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!input.contains(e.target) && !suggestions.contains(e.target)) {
-                suggestions.style.display = 'none';
-            }
+        // Sort by last name, first name for easy browsing
+        clientsToShow.sort((a, b) => {
+            const lastA = (a.lastname || a.last_name || '').toLowerCase();
+            const lastB = (b.lastname || b.last_name || '').toLowerCase();
+            if (lastA !== lastB) return lastA.localeCompare(lastB);
+            const firstA = (a.firstname || a.first_name || '').toLowerCase();
+            const firstB = (b.firstname || b.first_name || '').toLowerCase();
+            return firstA.localeCompare(firstB);
         });
+
+        clientsToShow.forEach(client => {
+            const knum = client.knumber || client.k_number || '';
+            const firstName = client.firstname || client.first_name || '';
+            const lastName = client.lastname || client.last_name || '';
+            const option = document.createElement('option');
+            option.value = knum;
+            option.textContent = `${lastName}, ${firstName} - ${knum}`;
+            option.dataset.fullname = `${firstName} ${lastName}`;
+            dropdown.appendChild(option);
+        });
+
+        // Restore previous selection if it still exists
+        if (currentValue) {
+            dropdown.value = currentValue;
+        }
+
+        console.log(`[Modal] Populated client dropdown with ${clientsToShow.length} clients`);
     }
 
     selectClient(knumber, fullName) {
         document.getElementById('appointmentClient').value = fullName;
         document.getElementById('appointmentClientId').value = knumber;
-        document.getElementById('clientSuggestions').style.display = 'none';
+
+        // Sync dropdown selection if it exists
+        const dropdown = document.getElementById('appointmentClientDropdown');
+        if (dropdown && dropdown.value !== knumber) {
+            dropdown.value = knumber;
+        }
 
         // Store the full client object including clinic_travel_times
         // Check both knumber and k_number field names for compatibility
@@ -963,6 +1201,9 @@ class AppointmentModal {
             await this.loadClients();
             this.clientsLoaded = true;
         }
+        // Populate client dropdown with loaded clients
+        this.populateClientDropdown();
+
         if (!this.clinicsLoaded) {
             await this.loadClinics();
             this.clinicsLoaded = true;
@@ -1188,11 +1429,17 @@ class AppointmentModal {
         if (mode === 'edit' && appointment) {
             this.populateForm(appointment);
 
-            // Lock client field in edit mode - cannot change appointment's client
-            const clientField = document.getElementById('appointmentClient');
-            clientField.disabled = true;
-            clientField.style.backgroundColor = '#e9ecef';
-            clientField.title = 'Cannot change client for existing appointment. Archive this appointment and create a new one if needed.';
+            // Lock client dropdown in edit mode - cannot change appointment's client
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            const clientSearchFilter = document.getElementById('clientSearchFilter');
+            if (clientDropdown) {
+                clientDropdown.disabled = true;
+                clientDropdown.style.backgroundColor = '#e9ecef';
+                clientDropdown.title = 'Cannot change client for existing appointment. Archive this appointment and create a new one if needed.';
+            }
+            if (clientSearchFilter) {
+                clientSearchFilter.style.display = 'none';
+            }
         } else {
             document.getElementById('appointmentForm').reset();
             // Clear hidden fields
@@ -1204,29 +1451,74 @@ class AppointmentModal {
             document.getElementById('pickupTime').value = '';
             document.getElementById('schedulingNotes').value = '';
 
+            // Reset appointment type fields
+            document.getElementById('tripDirection').value = '';
+            document.getElementById('eventName').value = '';
+
             // Reset original values (add mode - no originals to compare against)
             this.originalSchedulingNotes = null;
             this.originalAppointmentDateTime = null;
             this.originalTransitTime = null;
 
-            // Ensure client field is enabled in add mode
-            const clientField = document.getElementById('appointmentClient');
-            clientField.disabled = false;
-            clientField.style.backgroundColor = '';
-            clientField.title = '';
+            // Ensure client dropdown is enabled in add mode
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            const clientSearchFilter = document.getElementById('clientSearchFilter');
+            if (clientDropdown) {
+                clientDropdown.disabled = false;
+                clientDropdown.style.backgroundColor = '';
+                clientDropdown.title = '';
+                clientDropdown.value = '';
+            }
+            if (clientSearchFilter) {
+                clientSearchFilter.style.display = '';
+                clientSearchFilter.value = '';
+            }
+            // Clear hidden client field
+            document.getElementById('appointmentClient').value = '';
         }
+
+        // Initialize appointment type for this open
+        if (mode === 'add') {
+            // Default to round_trip, all types selectable
+            this.appointmentType = 'round_trip';
+            this.originalAppointmentType = null;
+            document.getElementById('typeRoundTrip').checked = true;
+            document.getElementById('typeRoundTrip').disabled = false;
+            document.getElementById('typeOneWay').disabled = false;
+            document.getElementById('typeSupport').disabled = false;
+            document.querySelector('label[for="typeRoundTrip"]').classList.remove('disabled');
+            document.querySelector('label[for="typeOneWay"]').classList.remove('disabled');
+            document.querySelector('label[for="typeSupport"]').classList.remove('disabled');
+            document.getElementById('appointmentTypeSelector').style.display = 'block';
+        } else if (mode === 'edit') {
+            // Type and restrictions are set inside populateForm() which runs above
+            document.getElementById('appointmentTypeSelector').style.display = 'block';
+        } else {
+            // View mode: show type selector but disable all
+            document.getElementById('appointmentTypeSelector').style.display = 'block';
+            document.getElementById('typeRoundTrip').disabled = true;
+            document.getElementById('typeOneWay').disabled = true;
+            document.getElementById('typeSupport').disabled = true;
+        }
+        this.applyTypeVisibility();
 
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
 
-        // Ensure client field state is correct after modal is shown
+        // Ensure client dropdown state is correct after modal is shown
         document.getElementById('appointmentModal').addEventListener('shown.bs.modal', () => {
-            const clientField = document.getElementById('appointmentClient');
-            if (mode === 'add') {
-                clientField.disabled = false;
-                clientField.style.backgroundColor = '';
-                clientField.title = '';
-                clientField.focus(); // Also focus it for convenience
+            const clientDropdown = document.getElementById('appointmentClientDropdown');
+            const clientSearchFilter = document.getElementById('clientSearchFilter');
+            if (mode === 'add' && this.appointmentType !== 'support') {
+                if (clientDropdown) {
+                    clientDropdown.disabled = false;
+                    clientDropdown.style.backgroundColor = '';
+                    clientDropdown.title = '';
+                }
+                if (clientSearchFilter) {
+                    clientSearchFilter.style.display = '';
+                    clientSearchFilter.focus(); // Focus the search filter for convenience
+                }
             }
         }, { once: true }); // Use once: true to prevent duplicate listeners
 
@@ -1334,11 +1626,57 @@ class AppointmentModal {
 
     populateForm(appointment) {
         document.getElementById('appointmentId').value = appointment.id;
-        document.getElementById('appointmentClient').value = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim();
+        const clientFullName = `${appointment.clientFirstName || ''} ${appointment.clientLastName || ''}`.trim();
+        document.getElementById('appointmentClient').value = clientFullName;
 
         // Check both knumber and k_number field names for compatibility
         const aptKnumber = appointment.knumber || appointment.k_number;
         document.getElementById('appointmentClientId').value = aptKnumber;
+
+        // Set the client dropdown to the correct client
+        const clientDropdown = document.getElementById('appointmentClientDropdown');
+        if (clientDropdown) {
+            clientDropdown.value = aptKnumber;
+            // If the client is not in the dropdown (e.g., inactive), add a temporary option
+            if (clientDropdown.value !== aptKnumber) {
+                const tempOption = document.createElement('option');
+                tempOption.value = aptKnumber;
+                tempOption.textContent = `${appointment.clientLastName || ''}, ${appointment.clientFirstName || ''} - ${aptKnumber}`;
+                tempOption.dataset.fullname = clientFullName;
+                clientDropdown.appendChild(tempOption);
+                clientDropdown.value = aptKnumber;
+            }
+        }
+
+        // Populate appointment type fields (default to round_trip for backward compat)
+        this.appointmentType = appointment.appointment_type || 'round_trip';
+        this.originalAppointmentType = this.appointmentType;
+
+        // Set the correct radio button
+        const typeRadio = document.getElementById(
+            this.appointmentType === 'round_trip' ? 'typeRoundTrip' :
+            this.appointmentType === 'one_way' ? 'typeOneWay' : 'typeSupport'
+        );
+        if (typeRadio) typeRadio.checked = true;
+
+        // Populate one-way direction
+        if (appointment.trip_direction) {
+            document.getElementById('tripDirection').value = appointment.trip_direction;
+        }
+
+        // Populate support event name
+        if (appointment.event_name) {
+            document.getElementById('eventName').value = appointment.event_name;
+        }
+
+        // Apply type visibility and restrictions for edit mode
+        this.applyTypeVisibility();
+        this.applyTypeRestrictions();
+
+        // For support events, show the event name as client display
+        if (this.appointmentType === 'support') {
+            document.getElementById('appointmentClient').value = appointment.event_name || 'Support Event';
+        }
 
         // Store selected client for clinic travel times lookup
         this.selectedClient = this.clients.find(c => (c.knumber || c.k_number) === aptKnumber) || null;
@@ -1482,6 +1820,24 @@ class AppointmentModal {
             return;
         }
 
+        // Type-specific validation
+        if (this.appointmentType === 'one_way') {
+            const tripDirection = document.getElementById('tripDirection').value;
+            if (!tripDirection) {
+                document.getElementById('tripDirection').focus();
+                alert('Please select a trip direction for one-way appointments.');
+                return;
+            }
+        }
+        if (this.appointmentType === 'support') {
+            const eventName = document.getElementById('eventName').value.trim();
+            if (!eventName) {
+                document.getElementById('eventName').focus();
+                alert('Please enter an event name for support events.');
+                return;
+            }
+        }
+
         // Get save button for loading state (Phase 6)
         const saveBtn = document.getElementById('saveAppointmentBtn');
         const originalText = saveBtn.innerHTML;
@@ -1562,7 +1918,11 @@ class AppointmentModal {
             customRate: null,
             location: document.getElementById('appointmentClinic').value,
             clinic_id: parseInt(document.getElementById('appointmentClinicId').value) || null,
-            locationAddress: document.getElementById('appointmentAddress').value
+            locationAddress: document.getElementById('appointmentAddress').value,
+            // Appointment type fields
+            appointment_type: this.appointmentType,
+            trip_direction: this.appointmentType === 'one_way' ? document.getElementById('tripDirection').value : null,
+            event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null
         };
 
         // Include driver assignment if user has permission
@@ -1692,7 +2052,8 @@ class AppointmentModal {
     setFormFieldsDisabled(disabled) {
         // Disable/enable all form input fields
         const fields = [
-            'appointmentClient',
+            'appointmentClientDropdown',
+            'clientSearchFilter',
             'appointmentDate',
             'transitTime',
             'appointmentClinic',
@@ -1701,9 +2062,17 @@ class AppointmentModal {
             'appointmentNotes',
             'driverInstructions',
             'appointmentCost',
-            'driverAssigned',
-            'managingAgent'
+            'appointmentDriver',
+            'appointmentPickupAddress',
+            'managingAgent',
+            'tripDirection',
+            'eventName'
         ];
+
+        // Also disable type selector radios
+        document.querySelectorAll('input[name="appointmentType"]').forEach(radio => {
+            radio.disabled = disabled;
+        });
 
         fields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
@@ -1889,7 +2258,11 @@ class AppointmentModal {
                 driver_first_name: null,
                 pickupTime: pickupTime,
                 managed_by: null,
-                managed_by_name: null
+                managed_by_name: null,
+                // Preserve appointment type fields
+                appointment_type: this.appointmentType,
+                trip_direction: this.appointmentType === 'one_way' ? document.getElementById('tripDirection').value : null,
+                event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null
             };
 
             // Use update appointment endpoint with complete data
