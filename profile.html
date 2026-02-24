@@ -1877,22 +1877,44 @@
                     minute: '2-digit',
                     timeZone: 'America/Halifax'
                 });
-                const clientName = apt.client_name || apt.clientName || 'Client';
+
+                // Appointment type handling
+                const aptType = apt.appointment_type || 'round_trip';
+                const typeIcons = {
+                    'round_trip': '<i class="bi bi-arrow-repeat text-primary" title="Round Trip"></i>',
+                    'one_way': '<i class="bi bi-arrow-right text-info" title="One Way"></i>',
+                    'support': '<i class="bi bi-people-fill text-secondary" title="Support Event"></i>'
+                };
+                const typeIcon = typeIcons[aptType] || typeIcons['round_trip'];
+
+                // Support events show event_name, others show client name
+                const displayName = (aptType === 'support' && apt.event_name)
+                    ? apt.event_name
+                    : (apt.client_name || apt.clientName || 'Client');
+
+                // One-way direction indicator
+                const directionInfo = aptType === 'one_way' && apt.trip_direction
+                    ? ` <small class="text-info">${apt.trip_direction === 'to_clinic' ? '&rarr; Clinic' : '&rarr; Home'}</small>`
+                    : '';
+
                 const location = apt.location || 'TBD';
                 const status = apt.status || 'scheduled';
                 const statusLabel = status.replace('_', ' ');
+
+                // Person icon or people icon based on type
+                const personIcon = aptType === 'support' ? 'bi-people-fill' : 'bi-person';
 
                 return `
                     <div class="appointment-card">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div class="appointment-date">${dateStr}</div>
-                                <div class="appointment-time">${timeStr}</div>
+                                <div class="appointment-date">${typeIcon} ${dateStr}</div>
+                                <div class="appointment-time">${timeStr}${directionInfo}</div>
                             </div>
                             <span class="badge" style="background-color: ${statusColors[status] || '#6c757d'}; font-size: 0.78em;">${escapeHtml(statusLabel)}</span>
                         </div>
                         <div class="mt-2">
-                            <div class="appointment-detail"><i class="bi bi-person"></i> ${escapeHtml(clientName)}</div>
+                            <div class="appointment-detail"><i class="bi ${personIcon}"></i> ${escapeHtml(displayName)}</div>
                             <div class="appointment-detail"><i class="bi bi-geo-alt"></i> ${escapeHtml(location)}</div>
                         </div>
                     </div>

@@ -126,8 +126,18 @@ Appointments with Google Calendar integration.
 | **Audit** | | | |
 | `managed_by` | integer | FK → users.id | User who created/manages |
 | `managed_by_name` | varchar(255) | | Manager name (denormalized) |
+| **Appointment Type** | | | |
+| `appointment_type` | text | DEFAULT 'round_trip', CHECK IN ('round_trip','one_way','support') | Type of appointment |
+| `trip_direction` | text | CHECK: only when type='one_way' | Direction for one-way trips: to_clinic or to_home |
+| `event_name` | text | CHECK: only when type='support' | Name/description of support event |
 | `created_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
 | `updated_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
+
+### Appointment Type Values
+
+- `round_trip` - Standard round-trip appointment (default for all existing rows)
+- `one_way` - One-way trip; requires `trip_direction` (to_clinic or to_home)
+- `support` - Support event; uses sentinel client K0000 "Support Event (No Client)"; optional `event_name`
 
 ### Status Values
 
@@ -339,6 +349,7 @@ SQL migration files in `sql/` directory (run manually in Supabase):
 15. `16_driver_clinic_preferences.sql` - Clinic preferences JSONB on drivers (enabled flags + pre-computed distances)
 16. `17_background_tasks_schema.sql` - Background tasks system (tasks, archive, functions, views)
 17. `18_seed_app_config_google_maps.sql` - Seed Google Maps API key into app_config for centralized management
+18. `19_appointment_types.sql` - Appointment types (round_trip, one_way, support), sentinel client K0000, CHECK constraints
 
 ### Migration Process
 
@@ -375,6 +386,7 @@ SQL migration files in `sql/` directory (run manually in Supabase):
 - Format: "K" + 4-digit number (e.g., "K0001", "K1234")
 - Unique identifier for clients
 - Never reuse K numbers
+- **K0000** is a sentinel record ("Support Event (No Client)") reserved for support-type appointments; do not use for regular clients
 
 ### Password Hashing
 

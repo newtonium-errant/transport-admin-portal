@@ -2,8 +2,14 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v2.6.0
+ * Version: v3.0.0
  * Changes:
+ * - v3.0.0: Added appointment type support (round_trip, one_way, support)
+ * - v3.0.0: Bootstrap btn-group type selector with conditional field visibility
+ * - v3.0.0: One-way: trip_direction (to_clinic/to_home), adjusted labels
+ * - v3.0.0: Support: auto K0000 sentinel, event_name field, hidden transit/client
+ * - v3.0.0: Type change restrictions in edit mode (round_trip <-> one_way only)
+ * - v3.0.0: Validation per type (one_way requires direction, support requires event_name)
  * - v2.6.0: Auto-populate primary clinic when client selected (add mode only)
  * - v2.5.1: Reload clients data in edit mode to show latest secondary addresses
  * - v2.5.0: Auto-populate appointment duration from client.default_appointment_length (client-specific)
@@ -29,6 +35,14 @@
  * - v2.0.0: Scheduling notes made readonly (auto-generated)
  */
 
+// Utility: escape HTML to prevent XSS in innerHTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 class AppointmentModal {
     constructor(options = {}) {
         this.onSave = options.onSave || null;
@@ -38,6 +52,8 @@ class AppointmentModal {
         this.clients = []; // Store client data
         this.clinics = []; // Store clinic locations
         this.selectedClient = null; // Store selected client data including clinic_travel_times
+        this.appointmentType = 'round_trip'; // 'round_trip', 'one_way', 'support'
+        this.originalAppointmentType = null; // For edit mode type change restrictions
         // Store original values for edit mode to detect changes
         this.originalSchedulingNotes = null;
         this.originalAppointmentDateTime = null;
@@ -57,10 +73,46 @@ class AppointmentModal {
                         </div>
                         <div class="modal-body">
                             <form id="appointmentForm">
+                                <!-- Appointment Type Selector -->
+                                <div class="mb-3" id="appointmentTypeSelector">
+                                    <label class="form-label">Appointment Type</label>
+                                    <div class="btn-group w-100" role="group" aria-label="Appointment type">
+                                        <input type="radio" class="btn-check" name="appointmentType" id="typeRoundTrip" value="round_trip" checked>
+                                        <label class="btn btn-outline-primary" for="typeRoundTrip">
+                                            <i class="bi bi-arrow-repeat"></i> Round Trip
+                                        </label>
+                                        <input type="radio" class="btn-check" name="appointmentType" id="typeOneWay" value="one_way">
+                                        <label class="btn btn-outline-info" for="typeOneWay">
+                                            <i class="bi bi-arrow-right"></i> One Way
+                                        </label>
+                                        <input type="radio" class="btn-check" name="appointmentType" id="typeSupport" value="support">
+                                        <label class="btn btn-outline-secondary" for="typeSupport">
+                                            <i class="bi bi-people-fill"></i> Support Event
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Trip Direction (One Way only) -->
+                                <div class="mb-3" id="tripDirectionRow" style="display: none;">
+                                    <label for="tripDirection" class="form-label">Trip Direction <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="tripDirection">
+                                        <option value="">Select direction...</option>
+                                        <option value="to_clinic">To Clinic (Home &rarr; Clinic)</option>
+                                        <option value="to_home">To Home (Clinic &rarr; Home)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Event Name (Support only) -->
+                                <div class="mb-3" id="eventNameRow" style="display: none;">
+                                    <label for="eventName" class="form-label">Event Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="eventName" placeholder="e.g., Community Health Fair, Vaccination Drive">
+                                    <small class="text-muted">Name of the support event or shuttle service</small>
+                                </div>
+
                                 <!-- Client Selection -->
-                                <div class="mb-3">
+                                <div class="mb-3" id="clientSelectionRow">
                                     <label for="appointmentClient" class="form-label">Client <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="appointmentClient" 
+                                    <input type="text" class="form-control" id="appointmentClient"
                                            placeholder="Search by name or K number..." required>
                                     <input type="hidden" id="appointmentClientId">
                                     <div id="clientSuggestions" class="list-group mt-2" style="display: none;"></div>
@@ -241,9 +293,12 @@ class AppointmentModal {
 
         // Apply role-based restrictions
         this.applyRoleRestrictions();
-        
+
         // Setup auto-calculation of pickup time
         this.setupPickupTimeCalculation();
+
+        // Setup appointment type selector
+        this.setupTypeSelector();
     }
     
     setupPickupTimeCalculation() {
@@ -271,6 +326,110 @@ class AppointmentModal {
         // Add event listeners
         appointmentDateField.addEventListener('change', calculatePickupTime);
         transitTimeField.addEventListener('input', calculatePickupTime);
+    }
+
+    setupTypeSelector() {
+        const typeRadios = document.querySelectorAll('input[name="appointmentType"]');
+        typeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.appointmentType = e.target.value;
+                this.applyTypeVisibility();
+            });
+        });
+    }
+
+    /**
+     * Show/hide fields based on current appointment type.
+     * Called when type changes and when modal opens.
+     */
+    applyTypeVisibility() {
+        const type = this.appointmentType;
+        const clientSelectionRow = document.getElementById('clientSelectionRow');
+        const tripDirectionRow = document.getElementById('tripDirectionRow');
+        const eventNameRow = document.getElementById('eventNameRow');
+        const transitTimeRow = document.getElementById('transitTimeRow');
+        const pickupAddressRow = document.getElementById('pickupAddressRow');
+        const clinicLabel = document.querySelector('label[for="appointmentClinic"]');
+
+        // Trip direction: only for one_way
+        if (tripDirectionRow) {
+            tripDirectionRow.style.display = type === 'one_way' ? 'block' : 'none';
+        }
+
+        // Event name: only for support
+        if (eventNameRow) {
+            eventNameRow.style.display = type === 'support' ? 'block' : 'none';
+        }
+
+        if (type === 'support') {
+            // Support: hide client search, auto-set K0000
+            if (clientSelectionRow) clientSelectionRow.style.display = 'none';
+            document.getElementById('appointmentClientId').value = 'K0000';
+            document.getElementById('appointmentClient').value = 'Support Event';
+            document.getElementById('appointmentClient').removeAttribute('required');
+
+            // Hide transit time row in support mode
+            if (transitTimeRow) transitTimeRow.style.display = 'none';
+
+            // Hide pickup address row in support mode
+            if (pickupAddressRow) pickupAddressRow.style.display = 'none';
+
+            // Change clinic label to "Event Venue"
+            if (clinicLabel) clinicLabel.innerHTML = 'Event Venue <span class="text-danger">*</span>';
+
+            // Clear selected client
+            this.selectedClient = null;
+        } else {
+            // Round trip or one way: show client search
+            if (clientSelectionRow) clientSelectionRow.style.display = 'block';
+            document.getElementById('appointmentClient').setAttribute('required', '');
+
+            // Restore clinic label
+            if (clinicLabel) clinicLabel.innerHTML = 'Clinic Location <span class="text-danger">*</span>';
+
+            // Show transit time in edit mode
+            if (transitTimeRow && this.mode === 'edit') {
+                transitTimeRow.style.display = 'block';
+            }
+
+            // If switching back from support, clear the auto-set K0000
+            const currentClientId = document.getElementById('appointmentClientId').value;
+            if (currentClientId === 'K0000' && this.mode === 'add') {
+                document.getElementById('appointmentClient').value = '';
+                document.getElementById('appointmentClientId').value = '';
+            }
+        }
+    }
+
+    /**
+     * Apply type change restrictions in edit mode.
+     * round_trip <-> one_way allowed, support cannot change type.
+     */
+    applyTypeRestrictions() {
+        if (this.mode !== 'edit') return;
+
+        const typeRoundTrip = document.getElementById('typeRoundTrip');
+        const typeOneWay = document.getElementById('typeOneWay');
+        const typeSupport = document.getElementById('typeSupport');
+
+        if (!typeRoundTrip || !typeOneWay || !typeSupport) return;
+
+        if (this.originalAppointmentType === 'support') {
+            // Support: lock to support only
+            typeRoundTrip.disabled = true;
+            typeOneWay.disabled = true;
+            typeSupport.disabled = false;
+            document.querySelector('label[for="typeRoundTrip"]').classList.add('disabled');
+            document.querySelector('label[for="typeOneWay"]').classList.add('disabled');
+        } else {
+            // round_trip or one_way: can switch between them, but not to support
+            typeRoundTrip.disabled = false;
+            typeOneWay.disabled = false;
+            typeSupport.disabled = true;
+            document.querySelector('label[for="typeRoundTrip"]').classList.remove('disabled');
+            document.querySelector('label[for="typeOneWay"]').classList.remove('disabled');
+            document.querySelector('label[for="typeSupport"]').classList.add('disabled');
+        }
     }
 
     async loadDrivers(drivers = null) {
@@ -529,20 +688,38 @@ class AppointmentModal {
                 return;
             }
 
-            const matches = this.clients.filter(client => 
-                (client.firstname && client.firstname.toLowerCase().includes(searchTerm)) ||
-                (client.lastname && client.lastname.toLowerCase().includes(searchTerm)) ||
-                (client.knumber && client.knumber.toLowerCase().includes(searchTerm))
-            ).slice(0, 5);
+            const matches = this.clients.filter(client => {
+                // Filter out K0000 sentinel client in non-support mode
+                const knum = client.knumber || client.k_number || '';
+                if (knum === 'K0000' && this.appointmentType !== 'support') return false;
+
+                return (client.firstname && client.firstname.toLowerCase().includes(searchTerm)) ||
+                    (client.lastname && client.lastname.toLowerCase().includes(searchTerm)) ||
+                    (knum && knum.toLowerCase().includes(searchTerm));
+            }).slice(0, 5);
 
             if (matches.length > 0) {
-                suggestions.innerHTML = matches.map(client =>
-                    `<a href="#" class="list-group-item list-group-item-action"
-                        onclick="appointmentModalInstance.selectClient('${client.knumber}', '${client.firstname} ${client.lastname}'); return false;">
-                        <strong>${client.knumber}</strong> - ${client.firstname} ${client.lastname}
-                    </a>`
-                ).join('');
+                suggestions.innerHTML = matches.map(client => {
+                    const safeKnumber = escapeHtml(client.knumber);
+                    const safeFirst = escapeHtml(client.firstname);
+                    const safeLast = escapeHtml(client.lastname);
+                    // Use data attributes to avoid inline JS with unescaped values
+                    return `<a href="#" class="list-group-item list-group-item-action client-suggestion"
+                        data-knumber="${safeKnumber}" data-fullname="${safeFirst} ${safeLast}">
+                        <strong>${safeKnumber}</strong> - ${safeFirst} ${safeLast}
+                    </a>`;
+                }).join('');
                 suggestions.style.display = 'block';
+
+                // Attach click handlers via delegation
+                suggestions.querySelectorAll('.client-suggestion').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const knumber = item.dataset.knumber;
+                        const fullname = item.dataset.fullname;
+                        appointmentModalInstance.selectClient(knumber, fullname);
+                    });
+                });
             } else {
                 suggestions.style.display = 'none';
             }
@@ -1204,6 +1381,10 @@ class AppointmentModal {
             document.getElementById('pickupTime').value = '';
             document.getElementById('schedulingNotes').value = '';
 
+            // Reset appointment type fields
+            document.getElementById('tripDirection').value = '';
+            document.getElementById('eventName').value = '';
+
             // Reset original values (add mode - no originals to compare against)
             this.originalSchedulingNotes = null;
             this.originalAppointmentDateTime = null;
@@ -1216,13 +1397,38 @@ class AppointmentModal {
             clientField.title = '';
         }
 
+        // Initialize appointment type for this open
+        if (mode === 'add') {
+            // Default to round_trip, all types selectable
+            this.appointmentType = 'round_trip';
+            this.originalAppointmentType = null;
+            document.getElementById('typeRoundTrip').checked = true;
+            document.getElementById('typeRoundTrip').disabled = false;
+            document.getElementById('typeOneWay').disabled = false;
+            document.getElementById('typeSupport').disabled = false;
+            document.querySelector('label[for="typeRoundTrip"]').classList.remove('disabled');
+            document.querySelector('label[for="typeOneWay"]').classList.remove('disabled');
+            document.querySelector('label[for="typeSupport"]').classList.remove('disabled');
+            document.getElementById('appointmentTypeSelector').style.display = 'block';
+        } else if (mode === 'edit') {
+            // Type and restrictions are set inside populateForm() which runs above
+            document.getElementById('appointmentTypeSelector').style.display = 'block';
+        } else {
+            // View mode: show type selector but disable all
+            document.getElementById('appointmentTypeSelector').style.display = 'block';
+            document.getElementById('typeRoundTrip').disabled = true;
+            document.getElementById('typeOneWay').disabled = true;
+            document.getElementById('typeSupport').disabled = true;
+        }
+        this.applyTypeVisibility();
+
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
 
         // Ensure client field state is correct after modal is shown
         document.getElementById('appointmentModal').addEventListener('shown.bs.modal', () => {
             const clientField = document.getElementById('appointmentClient');
-            if (mode === 'add') {
+            if (mode === 'add' && this.appointmentType !== 'support') {
                 clientField.disabled = false;
                 clientField.style.backgroundColor = '';
                 clientField.title = '';
@@ -1339,6 +1545,36 @@ class AppointmentModal {
         // Check both knumber and k_number field names for compatibility
         const aptKnumber = appointment.knumber || appointment.k_number;
         document.getElementById('appointmentClientId').value = aptKnumber;
+
+        // Populate appointment type fields (default to round_trip for backward compat)
+        this.appointmentType = appointment.appointment_type || 'round_trip';
+        this.originalAppointmentType = this.appointmentType;
+
+        // Set the correct radio button
+        const typeRadio = document.getElementById(
+            this.appointmentType === 'round_trip' ? 'typeRoundTrip' :
+            this.appointmentType === 'one_way' ? 'typeOneWay' : 'typeSupport'
+        );
+        if (typeRadio) typeRadio.checked = true;
+
+        // Populate one-way direction
+        if (appointment.trip_direction) {
+            document.getElementById('tripDirection').value = appointment.trip_direction;
+        }
+
+        // Populate support event name
+        if (appointment.event_name) {
+            document.getElementById('eventName').value = appointment.event_name;
+        }
+
+        // Apply type visibility and restrictions for edit mode
+        this.applyTypeVisibility();
+        this.applyTypeRestrictions();
+
+        // For support events, show the event name as client display
+        if (this.appointmentType === 'support') {
+            document.getElementById('appointmentClient').value = appointment.event_name || 'Support Event';
+        }
 
         // Store selected client for clinic travel times lookup
         this.selectedClient = this.clients.find(c => (c.knumber || c.k_number) === aptKnumber) || null;
@@ -1482,6 +1718,24 @@ class AppointmentModal {
             return;
         }
 
+        // Type-specific validation
+        if (this.appointmentType === 'one_way') {
+            const tripDirection = document.getElementById('tripDirection').value;
+            if (!tripDirection) {
+                document.getElementById('tripDirection').focus();
+                alert('Please select a trip direction for one-way appointments.');
+                return;
+            }
+        }
+        if (this.appointmentType === 'support') {
+            const eventName = document.getElementById('eventName').value.trim();
+            if (!eventName) {
+                document.getElementById('eventName').focus();
+                alert('Please enter an event name for support events.');
+                return;
+            }
+        }
+
         // Get save button for loading state (Phase 6)
         const saveBtn = document.getElementById('saveAppointmentBtn');
         const originalText = saveBtn.innerHTML;
@@ -1562,7 +1816,11 @@ class AppointmentModal {
             customRate: null,
             location: document.getElementById('appointmentClinic').value,
             clinic_id: parseInt(document.getElementById('appointmentClinicId').value) || null,
-            locationAddress: document.getElementById('appointmentAddress').value
+            locationAddress: document.getElementById('appointmentAddress').value,
+            // Appointment type fields
+            appointment_type: this.appointmentType,
+            trip_direction: this.appointmentType === 'one_way' ? document.getElementById('tripDirection').value : null,
+            event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null
         };
 
         // Include driver assignment if user has permission
@@ -1702,8 +1960,15 @@ class AppointmentModal {
             'driverInstructions',
             'appointmentCost',
             'driverAssigned',
-            'managingAgent'
+            'managingAgent',
+            'tripDirection',
+            'eventName'
         ];
+
+        // Also disable type selector radios
+        document.querySelectorAll('input[name="appointmentType"]').forEach(radio => {
+            radio.disabled = disabled;
+        });
 
         fields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
@@ -1889,7 +2154,11 @@ class AppointmentModal {
                 driver_first_name: null,
                 pickupTime: pickupTime,
                 managed_by: null,
-                managed_by_name: null
+                managed_by_name: null,
+                // Preserve appointment type fields
+                appointment_type: this.appointmentType,
+                trip_direction: this.appointmentType === 'one_way' ? document.getElementById('tripDirection').value : null,
+                event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null
             };
 
             // Use update appointment endpoint with complete data

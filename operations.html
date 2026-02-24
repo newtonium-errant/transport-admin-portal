@@ -1483,27 +1483,53 @@
             });
         }
 
+        function getAppointmentTypeIcon(type) {
+            const config = {
+                'round_trip': { icon: 'bi-arrow-repeat', title: 'Round Trip' },
+                'one_way':    { icon: 'bi-arrow-right',  title: 'One Way' },
+                'support':    { icon: 'bi-people-fill',   title: 'Support Event' }
+            };
+            const c = config[type] || config['round_trip'];
+            return `<i class="bi ${c.icon}" title="${c.title}"></i>`;
+        }
+
         function renderDayAppointments(dayAppointments) {
             if (dayAppointments.length === 0) {
                 return '<div class="no-appointments">No appointments</div>';
             }
-            
+
             return dayAppointments.map(apt => {
                 const appointmentTime = new Date(apt.appointmentDateTime);
-                const timeString = appointmentTime.toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
+                const timeString = appointmentTime.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
                     minute: '2-digit',
                     hour12: true,
                     timeZone: 'America/Halifax'
                 });
-                
-                const clientName = escapeHtml(`${apt.clientFirstName || ''} ${apt.clientLastName || ''}`.trim() || 'Unknown Client');
-                const kNumber = apt.knumber ? ` (${escapeHtml(apt.knumber)})` : '';
+
+                const aptType = apt.appointment_type || 'round_trip';
+                const typeIcon = getAppointmentTypeIcon(aptType);
+
+                // Support events show event_name instead of client name
+                let displayName;
+                let kNumber;
+                if (aptType === 'support' && apt.event_name) {
+                    displayName = escapeHtml(apt.event_name);
+                    kNumber = '';
+                } else {
+                    displayName = escapeHtml(`${apt.clientFirstName || ''} ${apt.clientLastName || ''}`.trim() || 'Unknown Client');
+                    kNumber = apt.knumber ? ` (${escapeHtml(apt.knumber)})` : '';
+                }
+
+                // One-way direction indicator
+                const directionInfo = aptType === 'one_way' && apt.trip_direction
+                    ? ` <small class="text-info">${apt.trip_direction === 'to_clinic' ? '&rarr; Clinic' : '&rarr; Home'}</small>`
+                    : '';
 
                 return `
                     <div class="appointment-slot" data-appointment-id="${apt.id}">
-                        <div class="appointment-time">${timeString}</div>
-                        <div class="appointment-client">${clientName}${kNumber}</div>
+                        <div class="appointment-time">${typeIcon} ${timeString}${directionInfo}</div>
+                        <div class="appointment-client">${displayName}${kNumber}</div>
                         <div class="appointment-location">${escapeHtml(apt.location || 'No location')}</div>
                         ${renderDriverDropdown(apt.id, apt.appointmentDateTime, apt.pickupTime, apt.dropOffTime, apt.appointmentLength, apt.driverAssigned, apt.clinic_id)}
                     </div>

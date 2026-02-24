@@ -467,8 +467,30 @@
                     <strong>Bulk Add Mode:</strong> Create multiple appointments for the same client at once. Great for scheduling recurring appointments or multiple visits.
                 </div>
 
-                <!-- Client Selection -->
+                <!-- Appointment Type Selection -->
                 <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-tag me-2"></i>
+                            Appointment Type
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="btn-group" role="group" aria-label="Bulk appointment type">
+                            <input type="radio" class="btn-check" name="bulkAppointmentType" id="bulkTypeRoundTrip" value="round_trip" checked onchange="switchBulkType(this.value)">
+                            <label class="btn btn-outline-primary" for="bulkTypeRoundTrip">
+                                <i class="bi bi-arrow-repeat"></i> Round Trip
+                            </label>
+                            <input type="radio" class="btn-check" name="bulkAppointmentType" id="bulkTypeSupport" value="support" onchange="switchBulkType(this.value)">
+                            <label class="btn btn-outline-secondary" for="bulkTypeSupport">
+                                <i class="bi bi-people-fill"></i> Support Event
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client Selection (hidden in support mode) -->
+                <div class="card mb-4" id="clientSelectionCard">
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-person-search me-2"></i>
@@ -488,6 +510,27 @@
                                     <strong>Selected Client:</strong>
                                     <div id="clientDetails"></div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Name (support mode only) -->
+                <div class="card mb-4" id="eventNameCard" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-people-fill me-2"></i>
+                            Step 1: Event Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="bulkEventName" class="form-label">Event Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="bulkEventName" placeholder="e.g., Community Health Fair, Vaccination Drive" onchange="selectSupportEvent()">
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block mt-2">Support events use the sentinel client K0000 and do not require individual client selection.</small>
                             </div>
                         </div>
                     </div>
@@ -550,6 +593,14 @@
     <script src="js/auth/jwt-auth.js"></script>
     <script src="js/components/navigation.js"></script>
     <script>
+        // Escape HTML special characters to prevent XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Global variables
         let clients = [];
         let destinations = [];
@@ -557,6 +608,54 @@
         let appointments = [];
         let appointmentCounter = 0;
         let availableAddresses = [];
+        let bulkAppointmentType = 'round_trip'; // 'round_trip' or 'support'
+        let bulkEventName = '';
+
+        // Switch between round_trip and support mode
+        function switchBulkType(type) {
+            bulkAppointmentType = type;
+            const clientCard = document.getElementById('clientSelectionCard');
+            const eventCard = document.getElementById('eventNameCard');
+
+            if (type === 'support') {
+                clientCard.style.display = 'none';
+                eventCard.style.display = 'block';
+                // Reset client selection
+                document.getElementById('clientSelect').value = '';
+                selectedClient = null;
+                document.getElementById('clientInfo').style.display = 'none';
+                document.getElementById('appointmentsCard').style.display = 'none';
+                document.getElementById('saveSection').style.display = 'none';
+                appointments = [];
+                appointmentCounter = 0;
+            } else {
+                clientCard.style.display = 'block';
+                eventCard.style.display = 'none';
+                bulkEventName = '';
+                document.getElementById('bulkEventName').value = '';
+                document.getElementById('appointmentsCard').style.display = 'none';
+                document.getElementById('saveSection').style.display = 'none';
+                appointments = [];
+                appointmentCounter = 0;
+            }
+        }
+
+        // Handle support event name entry
+        function selectSupportEvent() {
+            bulkEventName = document.getElementById('bulkEventName').value.trim();
+            if (!bulkEventName) {
+                document.getElementById('appointmentsCard').style.display = 'none';
+                document.getElementById('saveSection').style.display = 'none';
+                return;
+            }
+            // For support: use sentinel K0000 as client
+            selectedClient = { knumber: 'K0000', firstname: 'Support', lastname: 'Event' };
+            availableAddresses = [];
+            document.getElementById('appointmentsCard').style.display = 'block';
+            appointments = [];
+            appointmentCounter = 0;
+            addAppointment();
+        }
 
         // API Configuration
         const apiBaseUrl = 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
@@ -706,19 +805,19 @@
             const primaryAddress = availableAddresses.find(addr => addr.type === 'primary');
             const secondaryAddress = availableAddresses.find(addr => addr.type === 'secondary');
 
-            let addressDisplay = `<div><strong>Primary:</strong> ${primaryAddress.full}</div>`;
+            let addressDisplay = `<div><strong>Primary:</strong> ${escapeHtml(primaryAddress.full)}</div>`;
             if (secondaryAddress) {
-                addressDisplay += `<div><strong>Secondary:</strong> ${secondaryAddress.full}</div>`;
+                addressDisplay += `<div><strong>Secondary:</strong> ${escapeHtml(secondaryAddress.full)}</div>`;
                 if (secondaryAddress.notes) {
-                    addressDisplay += `<div class="text-muted" style="font-size: 0.875rem;"><em>${secondaryAddress.notes}</em></div>`;
+                    addressDisplay += `<div class="text-muted" style="font-size: 0.875rem;"><em>${escapeHtml(secondaryAddress.notes)}</em></div>`;
                 }
             }
 
             clientDetails.innerHTML = `
-                <div><strong>${selectedClient.firstname || ''} ${selectedClient.lastname || ''}</strong></div>
+                <div><strong>${escapeHtml(selectedClient.firstname || '')} ${escapeHtml(selectedClient.lastname || '')}</strong></div>
                 ${addressDisplay}
-                <div>Phone: ${selectedClient.phone || 'Not provided'}</div>
-                <div>Email: ${selectedClient.email || 'Not provided'}</div>
+                <div>Phone: ${escapeHtml(selectedClient.phone || 'Not provided')}</div>
+                <div>Email: ${escapeHtml(selectedClient.email || 'Not provided')}</div>
             `;
 
             document.getElementById('clientInfo').style.display = 'block';
@@ -815,7 +914,7 @@
             return availableAddresses.map(addr => {
                 const badgeClass = addr.type === 'primary' ? 'badge-primary' : 'badge-secondary';
                 const selected = addr.type === selectedType ? 'selected' : '';
-                return `<option value="${addr.type}" ${selected}>${addr.short}</option>`;
+                return `<option value="${escapeHtml(addr.type)}" ${selected}>${escapeHtml(addr.short)}</option>`;
             }).join('');
         }
 
@@ -863,8 +962,8 @@
                                         onchange="updateAppointmentLocation('${appointment.id}', this.value)" required>
                                     <option value="">Choose a clinic...</option>
                                     ${destinations.map(dest => `
-                                        <option value="${dest.name}" ${appointment.location === dest.name ? 'selected' : ''}>
-                                            ${dest.name}
+                                        <option value="${escapeHtml(dest.name)}" ${appointment.location === dest.name ? 'selected' : ''}>
+                                            ${escapeHtml(dest.name)}
                                         </option>
                                     `).join('')}
                                 </select>
@@ -878,6 +977,7 @@
                         </div>
 
                         <div class="row mt-3">
+                            ${bulkAppointmentType !== 'support' ? `
                             <div class="col-md-6">
                                 <label for="pickup-${appointment.id}" class="form-label">
                                     Pickup Address *
@@ -891,7 +991,8 @@
                                     ${availableAddresses.length > 1 ? 'Choose primary or secondary address for this appointment' : 'Using primary address'}
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            ` : ''}
+                            <div class="${bulkAppointmentType === 'support' ? 'col-md-12' : 'col-md-6'}">
                                 <label for="notes-${appointment.id}" class="form-label">Appointment Notes</label>
                                 <textarea class="form-control" id="notes-${appointment.id}" rows="2"
                                           placeholder="Enter any notes for this appointment..."
@@ -962,9 +1063,13 @@
 
         // Update save section
         function updateSaveSection() {
-            const validAppointments = appointments.filter(apt =>
-                apt.date && apt.time && apt.location && apt.pickupAddress
-            );
+            const validAppointments = appointments.filter(apt => {
+                // Support events don't require pickup address
+                if (bulkAppointmentType === 'support') {
+                    return apt.date && apt.time && apt.location;
+                }
+                return apt.date && apt.time && apt.location && apt.pickupAddress;
+            });
 
             if (validAppointments.length > 0) {
                 document.getElementById('saveSection').style.display = 'block';
@@ -979,7 +1084,10 @@
             const summaryDiv = document.getElementById('appointmentSummary');
             const pastAppointments = validAppointments.filter(apt => isPastDate(apt.date));
 
-            let summary = `<div><strong>Ready to save:</strong> ${validAppointments.length} appointment(s) for ${selectedClient.firstname} ${selectedClient.lastname}</div>`;
+            const clientDisplay = bulkAppointmentType === 'support'
+                ? `Support Event: ${escapeHtml(bulkEventName)}`
+                : `${escapeHtml(selectedClient.firstname)} ${escapeHtml(selectedClient.lastname)}`;
+            let summary = `<div><strong>Ready to save:</strong> ${validAppointments.length} appointment(s) for ${clientDisplay}</div>`;
 
             if (pastAppointments.length > 0) {
                 summary += `<div class="mt-2" style="color: #e74c3c;"><strong>⚠️ Warning:</strong> ${pastAppointments.length} appointment(s) scheduled in the past</div>`;
@@ -990,7 +1098,7 @@
                     const pickupType = apt.pickupAddressType === 'primary' ? 'Primary' : 'Secondary';
                     return `
                         <div class="text-muted">
-                            ${index + 1}. ${apt.date} at ${apt.time} - ${apt.location} - ${pickupType} Address (${apt.appointmentLength} min)
+                            ${index + 1}. ${escapeHtml(apt.date)} at ${escapeHtml(apt.time)} - ${escapeHtml(apt.location)} - ${pickupType} Address (${apt.appointmentLength} min)
                         </div>
                     `;
                 }).join('')}
@@ -999,9 +1107,12 @@
 
         // Save appointments
         async function saveAppointments() {
-            const validAppointments = appointments.filter(apt =>
-                apt.date && apt.time && apt.location && apt.pickupAddress
-            );
+            const validAppointments = appointments.filter(apt => {
+                if (bulkAppointmentType === 'support') {
+                    return apt.date && apt.time && apt.location;
+                }
+                return apt.date && apt.time && apt.location && apt.pickupAddress;
+            });
 
             if (validAppointments.length === 0) {
                 showError('Please complete at least one appointment before saving.');
@@ -1055,7 +1166,11 @@
                         clinic_id: apt.locationId,
                         locationAddress: apt.locationAddress,
                         managed_by: currentUser.id || null,
-                        managed_by_name: currentUser.fullName || currentUser.full_name || currentUser.username || null
+                        managed_by_name: currentUser.fullName || currentUser.full_name || currentUser.username || null,
+                        // Appointment type fields
+                        appointment_type: bulkAppointmentType,
+                        trip_direction: null,
+                        event_name: bulkAppointmentType === 'support' ? bulkEventName : null
                     };
                 });
 
@@ -1078,7 +1193,7 @@
                         window.location.href = 'appointments.html';
                     }, 2000);
                 } else {
-                    showError(`Failed to save appointments: ${data.message || 'Unknown error'}`);
+                    showError(`Failed to save appointments: ${escapeHtml(data.message || 'Unknown error')}`);
                 }
             } catch (error) {
                 console.error('Error saving appointments:', error);
