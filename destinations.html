@@ -662,6 +662,8 @@
 
         .toast.toast-success { border-left-color: #28a745; }
         .toast.toast-error { border-left-color: #dc3545; }
+        .toast.toast-warning { border-left-color: #ffc107; }
+        .toast.toast-info { border-left-color: #17a2b8; }
 
         .toast-icon {
             font-size: 1.5em;
@@ -670,6 +672,8 @@
 
         .toast-success .toast-icon { color: #28a745; }
         .toast-error .toast-icon { color: #dc3545; }
+        .toast-warning .toast-icon { color: #ffc107; }
+        .toast-info .toast-icon { color: #17a2b8; }
 
         .toast-content { flex: 1; }
 
@@ -804,12 +808,15 @@
             <h2><i class="bi bi-geo-alt me-2"></i>Destination Management</h2>
             <div class="toolbar-actions">
                 <input type="text" class="search-input" id="searchInput" placeholder="Search destinations...">
-                <button class="btn-add" onclick="openAddModal()">
+                <button class="btn-add" id="btnAddDestination" onclick="openAddModal()">
                     <i class="bi bi-plus-circle"></i>
                     Add Destination
                 </button>
             </div>
         </div>
+
+        <!-- Search results count -->
+        <div id="resultsCount" style="display: none; font-size: 0.85em; color: #666; margin-bottom: 8px;"></div>
 
         <!-- Destinations Table -->
         <div class="destinations-card">
@@ -993,6 +1000,7 @@
         let modalMode = 'add'; // 'add' or 'edit'
         let searchTimeout = null;
         let destinationModal = null;
+        let canManageDestinations = false;
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1004,6 +1012,17 @@
             // Enforce RBAC page access
             if (!enforcePageAccess()) {
                 return;
+            }
+
+            // Check destination management permission
+            var userRole = getUserRole();
+            var rolePerms = ROLE_PERMISSIONS[userRole] || {};
+            canManageDestinations = rolePerms.canManageDestinations === true;
+
+            // Hide Add button if user cannot manage destinations
+            if (!canManageDestinations) {
+                var addBtn = document.getElementById('btnAddDestination');
+                if (addBtn) addBtn.style.display = 'none';
             }
 
             // Initialize Bootstrap modal
@@ -1026,6 +1045,9 @@
 
         // Load all destinations from API
         async function loadDestinations() {
+            var addBtn = document.getElementById('btnAddDestination');
+            if (addBtn) addBtn.disabled = true;
+
             try {
                 const response = await APIClient.get('/get-all-destinations');
                 allDestinations = response.data || response || [];
@@ -1035,11 +1057,24 @@
                     allDestinations = [];
                 }
 
+                // Parse contacts JSONB strings into arrays
+                allDestinations.forEach(function(dest) {
+                    let contacts = dest.contacts || [];
+                    if (typeof contacts === 'string') {
+                        try { contacts = JSON.parse(contacts); } catch (e) { contacts = []; }
+                    }
+                    if (!Array.isArray(contacts)) { contacts = []; }
+                    dest.contacts = contacts;
+                });
+
                 renderDestinations(allDestinations);
+                updateResultsCount(allDestinations.length, allDestinations.length, false);
             } catch (error) {
                 console.error('Error loading destinations:', error);
                 showToast('error', 'Load Failed', 'Could not load destinations. Please try again.');
                 renderDestinations([]);
+            } finally {
+                if (addBtn) addBtn.disabled = false;
             }
         }
 
@@ -1133,17 +1168,19 @@
                 tdStatus.appendChild(statusBadge);
                 tr.appendChild(tdStatus);
 
-                // Edit button cell
+                // Edit button cell (only show if user can manage destinations)
                 const tdActions = document.createElement('td');
                 tdActions.setAttribute('data-label', '');
-                const editBtn = document.createElement('button');
-                editBtn.className = 'btn-edit';
-                editBtn.title = 'Edit destination';
-                editBtn.onclick = function() { openEditModal(dest.id); };
-                const editIcon = document.createElement('i');
-                editIcon.className = 'bi bi-pencil';
-                editBtn.appendChild(editIcon);
-                tdActions.appendChild(editBtn);
+                if (canManageDestinations) {
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn-edit';
+                    editBtn.title = 'Edit destination';
+                    editBtn.onclick = function() { openEditModal(dest.id); };
+                    const editIcon = document.createElement('i');
+                    editIcon.className = 'bi bi-pencil';
+                    editBtn.appendChild(editIcon);
+                    tdActions.appendChild(editBtn);
+                }
                 tr.appendChild(tdActions);
 
                 tbody.appendChild(tr);
@@ -1192,6 +1229,7 @@
             const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
 
             if (!searchTerm) {
+                updateResultsCount(allDestinations.length, allDestinations.length, false);
                 renderDestinations(allDestinations);
                 return;
             }
@@ -1200,10 +1238,26 @@
                 const name = (dest.name || '').toLowerCase();
                 const address = (dest.address || '').toLowerCase();
                 const city = (dest.city || '').toLowerCase();
-                return name.includes(searchTerm) || address.includes(searchTerm) || city.includes(searchTerm);
+                const phone = (getPrimaryPhone(dest) || '').toLowerCase();
+                const email = (getPrimaryEmail(dest) || '').toLowerCase();
+                const province = (dest.province || '').toLowerCase();
+                return name.includes(searchTerm) || address.includes(searchTerm) || city.includes(searchTerm) || phone.includes(searchTerm) || email.includes(searchTerm) || province.includes(searchTerm);
             });
 
+            updateResultsCount(filtered.length, allDestinations.length, true);
             renderDestinations(filtered);
+        }
+
+        // Update search results count indicator
+        function updateResultsCount(shown, total, active) {
+            var el = document.getElementById('resultsCount');
+            if (!el) return;
+            if (active) {
+                el.textContent = 'Showing ' + shown + ' of ' + total + ' destinations';
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
         }
 
         // Open modal in Add mode
@@ -1241,7 +1295,11 @@
             // Populate contacts
             const contactsList = document.getElementById('contactsList');
             contactsList.innerHTML = '';
-            const contacts = dest.contacts || [];
+            let contacts = dest.contacts || [];
+            if (typeof contacts === 'string') {
+                try { contacts = JSON.parse(contacts); } catch (e) { contacts = []; }
+            }
+            if (!Array.isArray(contacts)) { contacts = []; }
             contacts.forEach(function(contact) {
                 addContactRow(contact);
             });
@@ -1427,6 +1485,11 @@
                 return;
             }
 
+            // Confirm before updating existing destination
+            if (modalMode === 'edit') {
+                if (!confirm('Update this destination?')) return;
+            }
+
             setSaveLoading(true);
 
             const payload = {
@@ -1451,6 +1514,7 @@
                 }
 
                 destinationModal.hide();
+                document.getElementById('searchInput').value = '';
                 await loadDestinations();
             } catch (error) {
                 console.error('Error saving destination:', error);
@@ -1479,13 +1543,16 @@
         // Toast notification
         function showToast(type, title, message) {
             const container = document.getElementById('toastContainer');
+            if (!container) return;
 
             const toast = document.createElement('div');
             toast.className = 'toast toast-' + type;
 
             const iconMap = {
                 success: 'bi-check-circle-fill',
-                error: 'bi-exclamation-circle-fill'
+                error: 'bi-exclamation-circle-fill',
+                warning: 'bi-exclamation-triangle-fill',
+                info: 'bi-info-circle-fill'
             };
 
             const icon = document.createElement('span');
@@ -1509,7 +1576,7 @@
 
             const closeBtn = document.createElement('button');
             closeBtn.className = 'toast-close';
-            closeBtn.innerHTML = '&times;';
+            closeBtn.textContent = '\u00D7';
             closeBtn.onclick = function() { dismissToast(toast); };
             toast.appendChild(closeBtn);
 

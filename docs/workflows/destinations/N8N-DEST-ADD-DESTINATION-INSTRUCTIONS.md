@@ -385,7 +385,7 @@ Connect: `Validate Destination Data - Code` → `Check Validation - Switch`
 
 ---
 
-## STEP 7: Create Destination - Supabase Node
+## STEP 8: Create Destination - Supabase Node
 
 **Node Name:** `Create Destination - Supabase`
 
@@ -413,7 +413,7 @@ Connect: `Check Validation - Switch` → Output **True** → `Create Destination
 
 ---
 
-## STEP 8: Format Success Response - Code Node
+## STEP 9: Format Success Response - Code Node
 
 **Node Name:** `Format Success Response - Code`
 
@@ -451,7 +451,7 @@ return [{
 
 ---
 
-## STEP 9: Format Error Response - Code Node
+## STEP 10: Format Error Response - Code Node
 
 **Node Name:** `Format Error Response - Code`
 
@@ -477,7 +477,7 @@ return [{
 
 ---
 
-## STEP 10: Unauthorized Response - Code Node
+## STEP 11: Unauthorized Response - Code Node
 
 **Node Name:** `Unauthorized Response - Code`
 
@@ -505,7 +505,7 @@ return [{
 
 ---
 
-## STEP 11: Respond to Webhook Node
+## STEP 12: Respond to Webhook Node
 
 **Node Name:** `Respond to Webhook`
 
@@ -518,7 +518,7 @@ Connect all three terminal paths to this node:
 
 ---
 
-## STEP 12: Activate and Test
+## STEP 13: Activate and Test
 
 1. **Save** the workflow
 2. **Activate** the workflow
@@ -597,6 +597,8 @@ curl -X POST \
 ## Checklist
 
 - [x] Webhook uses POST method with `responseNode` mode
+- [x] JWT secret fetched dynamically from `app_config` table (never hardcoded)
+- [x] JWT Validation Code uses named node references (`$('NodeName').first().json`)
 - [x] JWT validation rejects limited and refresh tokens
 - [x] Role-based access control (admin, supervisor only)
 - [x] Switch nodes use strict type validation with string comparisons

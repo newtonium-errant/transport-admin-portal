@@ -10,17 +10,18 @@
 
 ```
 Webhook (PUT)
-  → JWT Validation - Code
-    → JWT Validation - Switch
-      → [Authorized] Validate Update Data - Code
-        → Check Validation - Switch
-          → [True] Update Destination - Supabase
-            → Format Success Response - Code
+  → Get JWT Secret - Supabase
+    → JWT Validation - Code
+      → JWT Validation - Switch
+        → [Authorized] Validate Update Data - Code
+          → Check Validation - Switch
+            → [True] Update Destination - Supabase
+              → Format Success Response - Code
+                → Respond to Webhook
+            → [False] Format Error Response - Code
               → Respond to Webhook
-          → [False] Format Error Response - Code
-            → Respond to Webhook
-      → [Unauthorized] Unauthorized Response - Code
-        → Respond to Webhook
+        → [Unauthorized] Unauthorized Response - Code
+          → Respond to Webhook
 ```
 
 ---
@@ -44,17 +45,40 @@ Webhook (PUT)
 
 ---
 
-## STEP 3: JWT Validation - Code Node
+## STEP 3: Get JWT Secret - Supabase Node
+
+**Node Name:** `Get JWT Secret - Supabase`
+
+Connect: `PUT Update Destination - Webhook` → `Get JWT Secret - Supabase`
+
+- **Credential:** `Supabase Service Role`
+- **Resource:** `Row`
+- **Operation:** `Get` (single record lookup)
+- **Table:** `app_config`
+- **Filters:**
+  - Column: `key`
+  - Value: `jwt_secret`
+
+**Purpose:** Fetches the JWT secret dynamically from the `app_config` table instead of hardcoding it. This ensures the workflow always uses the current secret.
+
+---
+
+## STEP 4: JWT Validation - Code Node
 
 **Node Name:** `JWT Validation - Code`
 
-Connect: `PUT Update Destination - Webhook` → `JWT Validation - Code`
+Connect: `Get JWT Secret - Supabase` → `JWT Validation - Code`
+
+**IMPORTANT:** Since `$input` now comes from the Supabase node (not the Webhook), you must use named references:
+- Webhook data: `$('PUT Update Destination - Webhook').first().json`
+- JWT secret: `$('Get JWT Secret - Supabase').first().json.value`
 
 **Replace ENTIRE code with:**
 
 ```javascript
-// JWT Token Validation - v1.0.0
-const webhookData = $input.first().json;
+// JWT Token Validation - v2.0.0
+// Fetches JWT secret from app_config via preceding Supabase node
+const webhookData = $('PUT Update Destination - Webhook').first().json;
 
 const authHeader =
   webhookData.headers?.authorization ||
@@ -96,7 +120,21 @@ function simpleHash(input) {
   return hash.toString(36);
 }
 
-const JWT_SECRET = "RRTS_JWT_SECRET_KEY_PHASE2_TEMP";
+// Get JWT secret from app_config (fetched by previous Supabase node)
+const configData = $('Get JWT Secret - Supabase').first().json;
+const JWT_SECRET = configData.value;
+
+if (!JWT_SECRET) {
+  return [{
+    json: {
+      _route: 'unauthorized',
+      success: false,
+      message: 'JWT secret not configured',
+      statusCode: 500,
+      timestamp: new Date().toISOString()
+    }
+  }];
+}
 
 function verifyJWT(token) {
   try {
@@ -196,12 +234,12 @@ return [{
   }
 }];
 
-// Version: v1.1.0 - JWT validation with RBAC role check
+// Version: v2.0.0 - Dynamic JWT secret from app_config + RBAC role check
 ```
 
 ---
 
-## STEP 4: JWT Validation - Switch Node
+## STEP 5: JWT Validation - Switch Node
 
 **Node Name:** `JWT Validation - Switch`
 
@@ -222,7 +260,7 @@ Connect: `JWT Validation - Code` → `JWT Validation - Switch`
 
 ---
 
-## STEP 5: Validate Update Data - Code Node
+## STEP 6: Validate Update Data - Code Node
 
 **Node Name:** `Validate Update Data - Code`
 
@@ -370,7 +408,7 @@ return [{
 
 ---
 
-## STEP 6: Check Validation - Switch Node
+## STEP 7: Check Validation - Switch Node
 
 **Node Name:** `Check Validation - Switch`
 
@@ -391,7 +429,7 @@ Connect: `Validate Update Data - Code` → `Check Validation - Switch`
 
 ---
 
-## STEP 7: Update Destination - Supabase Node
+## STEP 8: Update Destination - Supabase Node
 
 **Node Name:** `Update Destination - Supabase`
 
@@ -440,11 +478,11 @@ If you want to send ONLY the fields that were actually provided (recommended), r
 - **Send Body:** `JSON`
 - **JSON Body:** `{{ JSON.stringify($json.updateFields) }}`
 
-However, if using the standard Supabase node approach (Step 7 above), it will work correctly since the Code node only includes fields that were actually provided. Fields set to `undefined` in the expression will be sent as empty/null by the Supabase node, so **the Supabase node approach is simpler and works well when all fields are included in the update object.**
+However, if using the standard Supabase node approach (Step 8 above), it will work correctly since the Code node only includes fields that were actually provided. Fields set to `undefined` in the expression will be sent as empty/null by the Supabase node, so **the Supabase node approach is simpler and works well when all fields are included in the update object.**
 
 ---
 
-## STEP 8: Format Success Response - Code Node
+## STEP 9: Format Success Response - Code Node
 
 **Node Name:** `Format Success Response - Code`
 
@@ -493,7 +531,7 @@ return [{
 
 ---
 
-## STEP 9: Format Error Response - Code Node
+## STEP 10: Format Error Response - Code Node
 
 **Node Name:** `Format Error Response - Code`
 
@@ -519,7 +557,7 @@ return [{
 
 ---
 
-## STEP 10: Unauthorized Response - Code Node
+## STEP 11: Unauthorized Response - Code Node
 
 **Node Name:** `Unauthorized Response - Code`
 
@@ -547,7 +585,7 @@ return [{
 
 ---
 
-## STEP 11: Respond to Webhook Node
+## STEP 12: Respond to Webhook Node
 
 **Node Name:** `Respond to Webhook`
 
@@ -560,7 +598,7 @@ Connect all three terminal paths to this node:
 
 ---
 
-## STEP 12: Activate and Test
+## STEP 13: Activate and Test
 
 1. **Save** the workflow
 2. **Activate** the workflow
@@ -669,6 +707,8 @@ curl -X PUT \
 ## Checklist
 
 - [x] Webhook uses PUT method with `responseNode` mode
+- [x] JWT secret fetched dynamically from `app_config` table (never hardcoded)
+- [x] JWT Validation Code uses named node references (`$('NodeName').first().json`)
 - [x] JWT validation rejects limited and refresh tokens
 - [x] Role-based access control (admin, supervisor only)
 - [x] Switch nodes use strict type validation with string comparisons
