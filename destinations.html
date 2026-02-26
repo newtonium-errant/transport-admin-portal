@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destination Management - RRTS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/shared-styles.css" rel="stylesheet">
+    <script src="js/auth/permissions.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 90px;
+        }
+
+        /* RRTS Brand Colors */
+        :root {
+            --color-primary: #1B4332;
+            --color-accent: #2D6A4F;
+            --color-white: #FFFFFF;
+            --color-black: #000000;
+            --color-gray-light: #E5E5E5;
+            --color-gray-dark: #333333;
+            --color-success: #27ae60;
+            --color-warning: #f39c12;
+            --color-danger: #e74c3c;
+        }
+
+        /* Header Styles */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 100%;
+            height: 100%;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--color-white);
+            font-weight: 600;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .header-brand:hover {
+            opacity: 0.9;
+        }
+
+        .brand-icon {
+            font-size: 1.8em;
+            line-height: 1;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* Navigation */
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+        }
+
+        .nav-link {
+            color: var(--color-white);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+        }
+
+        .nav-link.active {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        /* User Section */
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .user-name {
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .user-role-badge {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: var(--color-white);
+            border: 1px solid var(--color-white);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--color-white);
+            color: var(--color-primary);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .header-container {
+                padding: 0 20px;
+            }
+
+            .user-name {
+                display: none;
+            }
+
+            .logout-btn span {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .header-nav {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 250px;
+                height: calc(100vh - 70px);
+                background-color: var(--color-primary);
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 10px;
+                transition: left 0.3s;
+                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .header-nav.mobile-open {
+                left: 0;
+            }
+
+            .nav-link {
+                width: 100%;
+                padding: 12px 16px;
+            }
+
+            .brand-text {
+                font-size: 0.9em;
+            }
+
+            .user-info {
+                gap: 8px;
+            }
+
+            .user-role-badge {
+                display: none;
+            }
+        }
+
+        /* Main Content */
+        .container-fluid {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Page Toolbar */
+        .page-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-toolbar h2 {
+            margin: 0;
+            font-size: 1.6em;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-input {
+            padding: 10px 16px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 280px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(27, 67, 50, 0.3);
+        }
+
+        /* Destinations Table Card */
+        .destinations-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #ecf0f1;
+            overflow: hidden;
+        }
+
+        .destinations-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .destinations-table thead th {
+            background-color: #f8f9fa;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .destinations-table tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.95em;
+            color: #2c3e50;
+            vertical-align: middle;
+        }
+
+        .destinations-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .destinations-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .dest-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .dest-address {
+            font-size: 0.88em;
+            color: #7f8c8d;
+        }
+
+        .dest-contact {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .dest-contact i {
+            width: 16px;
+            color: #95a5a6;
+            margin-right: 4px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .contacts-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.78em;
+            font-weight: 600;
+            background-color: #e8f4fd;
+            color: #2980b9;
+        }
+
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-edit:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .empty-state h4 {
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 0.95em;
+        }
+
+        /* Skeleton Loader */
+        .skeleton-row td {
+            padding: 14px 16px;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+            height: 16px;
+            display: block;
+        }
+
+        .skeleton.skeleton-name {
+            width: 60%;
+            height: 18px;
+            margin-bottom: 4px;
+        }
+
+        .skeleton.skeleton-address {
+            width: 80%;
+            height: 14px;
+        }
+
+        .skeleton.skeleton-short {
+            width: 50%;
+        }
+
+        .skeleton.skeleton-badge {
+            width: 60px;
+            height: 24px;
+            border-radius: 12px;
+        }
+
+        .skeleton.skeleton-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Modal Styles */
+        .modal-header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+            color: white;
+            border-bottom: none;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body .form-label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+
+        .modal-body .form-control,
+        .modal-body .form-select {
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .modal-body .form-control:focus,
+        .modal-body .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        /* Contacts Section */
+        .contacts-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid #ecf0f1;
+        }
+
+        .contacts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .contacts-header h6 {
+            margin: 0;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .btn-add-contact {
+            background-color: var(--color-success);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-add-contact:hover {
+            background-color: #219a52;
+        }
+
+        .contact-row {
+            background: #f8f9fa;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto auto;
+            gap: 8px;
+            align-items: end;
+        }
+
+        .contact-row .form-control,
+        .contact-row .form-select {
+            font-size: 13px;
+            padding: 8px 10px;
+        }
+
+        .contact-row label {
+            font-size: 0.78em;
+            font-weight: 600;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .btn-remove-contact {
+            background-color: var(--color-danger);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 38px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: end;
+        }
+
+        .btn-remove-contact:hover {
+            background-color: #c0392b;
+        }
+
+        .modal-footer {
+            border-top: 2px solid #ecf0f1;
+            padding: 16px 24px;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(27, 67, 50, 0.3);
+        }
+
+        .btn-save:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 300px;
+            max-width: 400px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid;
+        }
+
+        .toast.toast-success { border-left-color: #28a745; }
+        .toast.toast-error { border-left-color: #dc3545; }
+
+        .toast-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .toast-success .toast-icon { color: #28a745; }
+        .toast-error .toast-icon { color: #dc3545; }
+
+        .toast-content { flex: 1; }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .toast-message {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .toast-close {
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2em;
+            line-height: 1;
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            padding: 0;
+            margin-left: auto;
+        }
+
+        .toast-close:hover { color: #333; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.hiding {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar-actions {
+                flex-direction: column;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .contact-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .destinations-table thead {
+                display: none;
+            }
+
+            .destinations-table tbody td {
+                display: block;
+                padding: 8px 16px;
+                text-align: left;
+            }
+
+            .destinations-table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #7f8c8d;
+                font-size: 0.8em;
+                text-transform: uppercase;
+                display: block;
+                margin-bottom: 4px;
+            }
+
+            .destinations-table tbody tr {
+                display: block;
+                border-bottom: 2px solid #ecf0f1;
+                padding: 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <!-- Brand -->
+            <div class="header-brand" onclick="window.location.href='dashboard.html'">
+                <span class="brand-icon">&#x1F690;</span>
+                <span class="brand-text">RRTS</span>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <!-- Navigation -->
+            <nav class="header-nav" id="mainNav">
+                <!-- Navigation links populated by navigation.js based on RBAC -->
+            </nav>
+
+            <!-- User Section -->
+            <div class="header-user">
+                <div class="user-info">
+                    <span class="user-avatar" id="userAvatar">--</span>
+                    <span class="user-name" id="userName">User</span>
+                    <span class="user-role-badge" id="userRoleBadge">Guest</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="logout-text">Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <!-- Page Toolbar -->
+        <div class="page-toolbar">
+            <h2><i class="bi bi-geo-alt me-2"></i>Destination Management</h2>
+            <div class="toolbar-actions">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search destinations...">
+                <button class="btn-add" onclick="openAddModal()">
+                    <i class="bi bi-plus-circle"></i>
+                    Add Destination
+                </button>
+            </div>
+        </div>
+
+        <!-- Destinations Table -->
+        <div class="destinations-card">
+            <table class="destinations-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th style="width: 60px;"></th>
+                    </tr>
+                </thead>
+                <tbody id="destinationsBody">
+                    <!-- Skeleton loaders shown initially -->
+                    <tr class="skeleton-row">
+                        <td><span class="skeleton skeleton-name"></span></td>
+                        <td><span class="skeleton skeleton-address"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-badge"></span></td>
+                        <td><span class="skeleton skeleton-btn"></span></td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td><span class="skeleton skeleton-name"></span></td>
+                        <td><span class="skeleton skeleton-address"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-badge"></span></td>
+                        <td><span class="skeleton skeleton-btn"></span></td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td><span class="skeleton skeleton-name"></span></td>
+                        <td><span class="skeleton skeleton-address"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-badge"></span></td>
+                        <td><span class="skeleton skeleton-btn"></span></td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td><span class="skeleton skeleton-name"></span></td>
+                        <td><span class="skeleton skeleton-address"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-badge"></span></td>
+                        <td><span class="skeleton skeleton-btn"></span></td>
+                    </tr>
+                    <tr class="skeleton-row">
+                        <td><span class="skeleton skeleton-name"></span></td>
+                        <td><span class="skeleton skeleton-address"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-short"></span></td>
+                        <td><span class="skeleton skeleton-badge"></span></td>
+                        <td><span class="skeleton skeleton-btn"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Empty State (hidden by default) -->
+            <div id="emptyState" style="display: none;">
+                <div class="empty-state">
+                    <i class="bi bi-geo-alt"></i>
+                    <h4>No destinations found</h4>
+                    <p>Try adjusting your search or add a new destination.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Destination Modal -->
+    <div class="modal fade" id="destinationModal" tabindex="-1" aria-labelledby="destinationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="destinationModalLabel">Add Destination</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="destinationForm" novalidate>
+                        <div class="row g-3">
+                            <!-- Name -->
+                            <div class="col-12">
+                                <label for="destName" class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="destName" required placeholder="Clinic or destination name">
+                                <div class="invalid-feedback">This field is required.</div>
+                            </div>
+
+                            <!-- Address -->
+                            <div class="col-12">
+                                <label for="destAddress" class="form-label">Address <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="destAddress" required placeholder="Street address">
+                                <div class="invalid-feedback">This field is required.</div>
+                            </div>
+
+                            <!-- City + Province + Postal Code -->
+                            <div class="col-md-5">
+                                <label for="destCity" class="form-label">City <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="destCity" required placeholder="City">
+                                <div class="invalid-feedback">This field is required.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="destProvince" class="form-label">Province <span class="text-danger">*</span></label>
+                                <select class="form-select" id="destProvince" required>
+                                    <option value="">Select province...</option>
+                                    <option value="AB">Alberta</option>
+                                    <option value="BC">British Columbia</option>
+                                    <option value="MB">Manitoba</option>
+                                    <option value="NB">New Brunswick</option>
+                                    <option value="NL">Newfoundland and Labrador</option>
+                                    <option value="NS">Nova Scotia</option>
+                                    <option value="NT">Northwest Territories</option>
+                                    <option value="NU">Nunavut</option>
+                                    <option value="ON">Ontario</option>
+                                    <option value="PE">Prince Edward Island</option>
+                                    <option value="QC">Quebec</option>
+                                    <option value="SK">Saskatchewan</option>
+                                    <option value="YT">Yukon</option>
+                                </select>
+                                <div class="invalid-feedback">This field is required.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="destPostalCode" class="form-label">Postal Code <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="destPostalCode" required placeholder="A1B 2C3" maxlength="7">
+                                <div class="invalid-feedback">This field is required.</div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="col-12">
+                                <label for="destNotes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="destNotes" rows="2" placeholder="Optional notes about this destination"></textarea>
+                            </div>
+
+                            <!-- Active Toggle -->
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="destActive" checked>
+                                    <label class="form-check-label" for="destActive">Active</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contacts Section -->
+                        <div class="contacts-section">
+                            <div class="contacts-header">
+                                <h6><i class="bi bi-person-lines-fill me-2"></i>Contacts</h6>
+                                <button type="button" class="btn-add-contact" onclick="addContactRow()">
+                                    <i class="bi bi-plus"></i> Add Contact
+                                </button>
+                            </div>
+                            <div id="contactsList">
+                                <!-- Dynamic contact rows inserted here -->
+                            </div>
+                            <div id="noContactsMsg" class="text-muted text-center py-2" style="font-size: 0.88em;">
+                                No contacts added. Click "Add Contact" to add one.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn-save" id="btnSave" onclick="saveDestination()">
+                        <span id="saveText">Save Destination</span>
+                        <span id="saveSpinner" class="spinner-border spinner-border-sm" role="status" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/auth/jwt-auth.js"></script>
+    <script src="js/auth/session-manager.js"></script>
+    <script src="js/components/navigation.js"></script>
+    <script src="js/core/api-client.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // State
+        let allDestinations = [];
+        let editingId = null;
+        let modalMode = 'add'; // 'add' or 'edit'
+        let searchTimeout = null;
+        let destinationModal = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check JWT authentication
+            if (!(await requireAuth())) {
+                return;
+            }
+
+            // Enforce RBAC page access
+            if (!enforcePageAccess()) {
+                return;
+            }
+
+            // Initialize Bootstrap modal
+            destinationModal = new bootstrap.Modal(document.getElementById('destinationModal'));
+
+            // Clean up modal state on close
+            document.getElementById('destinationModal').addEventListener('hidden.bs.modal', function() {
+                resetModalForm();
+            });
+
+            // Setup debounced search
+            document.getElementById('searchInput').addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(filterDestinations, 300);
+            });
+
+            // Load destinations
+            await loadDestinations();
+        });
+
+        // Load all destinations from API
+        async function loadDestinations() {
+            try {
+                const response = await APIClient.get('/get-all-destinations');
+                allDestinations = response.data || response || [];
+
+                // Ensure it's an array
+                if (!Array.isArray(allDestinations)) {
+                    allDestinations = [];
+                }
+
+                renderDestinations(allDestinations);
+            } catch (error) {
+                console.error('Error loading destinations:', error);
+                showToast('error', 'Load Failed', 'Could not load destinations. Please try again.');
+                renderDestinations([]);
+            }
+        }
+
+        // Render destinations table
+        function renderDestinations(destinations) {
+            const tbody = document.getElementById('destinationsBody');
+            const emptyState = document.getElementById('emptyState');
+
+            if (destinations.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            tbody.innerHTML = '';
+            destinations.forEach(function(dest) {
+                const tr = document.createElement('tr');
+
+                // Name cell
+                const tdName = document.createElement('td');
+                tdName.setAttribute('data-label', 'Name');
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'dest-name';
+                nameSpan.textContent = dest.name || '';
+                tdName.appendChild(nameSpan);
+
+                // Show contacts count badge if contacts exist
+                const contacts = dest.contacts || [];
+                if (contacts.length > 0) {
+                    const badge = document.createElement('span');
+                    badge.className = 'contacts-badge ms-2';
+                    badge.textContent = contacts.length + ' contact' + (contacts.length !== 1 ? 's' : '');
+                    tdName.appendChild(badge);
+                }
+                tr.appendChild(tdName);
+
+                // Address cell
+                const tdAddress = document.createElement('td');
+                tdAddress.setAttribute('data-label', 'Address');
+                const addressSpan = document.createElement('span');
+                addressSpan.className = 'dest-address';
+                addressSpan.textContent = composeAddress(dest);
+                tdAddress.appendChild(addressSpan);
+                tr.appendChild(tdAddress);
+
+                // Phone cell
+                const tdPhone = document.createElement('td');
+                tdPhone.setAttribute('data-label', 'Phone');
+                const phoneSpan = document.createElement('span');
+                phoneSpan.className = 'dest-contact';
+                const primaryPhone = getPrimaryPhone(dest);
+                if (primaryPhone) {
+                    const phoneIcon = document.createElement('i');
+                    phoneIcon.className = 'bi bi-telephone';
+                    phoneSpan.appendChild(phoneIcon);
+                    phoneSpan.appendChild(document.createTextNode(' ' + primaryPhone));
+                } else {
+                    phoneSpan.textContent = '-';
+                    phoneSpan.style.color = '#bdc3c7';
+                }
+                tdPhone.appendChild(phoneSpan);
+                tr.appendChild(tdPhone);
+
+                // Email cell
+                const tdEmail = document.createElement('td');
+                tdEmail.setAttribute('data-label', 'Email');
+                const emailSpan = document.createElement('span');
+                emailSpan.className = 'dest-contact';
+                const primaryEmail = getPrimaryEmail(dest);
+                if (primaryEmail) {
+                    const emailIcon = document.createElement('i');
+                    emailIcon.className = 'bi bi-envelope';
+                    emailSpan.appendChild(emailIcon);
+                    emailSpan.appendChild(document.createTextNode(' ' + primaryEmail));
+                } else {
+                    emailSpan.textContent = '-';
+                    emailSpan.style.color = '#bdc3c7';
+                }
+                tdEmail.appendChild(emailSpan);
+                tr.appendChild(tdEmail);
+
+                // Status cell
+                const tdStatus = document.createElement('td');
+                tdStatus.setAttribute('data-label', 'Status');
+                const statusBadge = document.createElement('span');
+                const isActive = dest.active !== false;
+                statusBadge.className = 'status-badge ' + (isActive ? 'active' : 'inactive');
+                statusBadge.textContent = isActive ? 'Active' : 'Inactive';
+                tdStatus.appendChild(statusBadge);
+                tr.appendChild(tdStatus);
+
+                // Edit button cell
+                const tdActions = document.createElement('td');
+                tdActions.setAttribute('data-label', '');
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-edit';
+                editBtn.title = 'Edit destination';
+                editBtn.onclick = function() { openEditModal(dest.id); };
+                const editIcon = document.createElement('i');
+                editIcon.className = 'bi bi-pencil';
+                editBtn.appendChild(editIcon);
+                tdActions.appendChild(editBtn);
+                tr.appendChild(tdActions);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Compose full address string
+        function composeAddress(dest) {
+            const parts = [];
+            if (dest.address) parts.push(dest.address);
+            if (dest.city) parts.push(dest.city);
+            if (dest.province) {
+                if (dest.postal_code) {
+                    parts.push(dest.province + ' ' + dest.postal_code);
+                } else {
+                    parts.push(dest.province);
+                }
+            } else if (dest.postal_code) {
+                parts.push(dest.postal_code);
+            }
+            return parts.join(', ');
+        }
+
+        // Get primary phone: top-level phone field, or first contact with phone
+        function getPrimaryPhone(dest) {
+            if (dest.phone) return dest.phone;
+            const contacts = dest.contacts || [];
+            for (let i = 0; i < contacts.length; i++) {
+                if (contacts[i].phone) return contacts[i].phone;
+            }
+            return null;
+        }
+
+        // Get primary email: top-level email field, or first contact with email
+        function getPrimaryEmail(dest) {
+            if (dest.email) return dest.email;
+            const contacts = dest.contacts || [];
+            for (let i = 0; i < contacts.length; i++) {
+                if (contacts[i].email) return contacts[i].email;
+            }
+            return null;
+        }
+
+        // Filter destinations by search term (debounced)
+        function filterDestinations() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            if (!searchTerm) {
+                renderDestinations(allDestinations);
+                return;
+            }
+
+            const filtered = allDestinations.filter(function(dest) {
+                const name = (dest.name || '').toLowerCase();
+                const address = (dest.address || '').toLowerCase();
+                const city = (dest.city || '').toLowerCase();
+                return name.includes(searchTerm) || address.includes(searchTerm) || city.includes(searchTerm);
+            });
+
+            renderDestinations(filtered);
+        }
+
+        // Open modal in Add mode
+        function openAddModal() {
+            modalMode = 'add';
+            editingId = null;
+            document.getElementById('destinationModalLabel').textContent = 'Add Destination';
+            document.getElementById('saveText').textContent = 'Save Destination';
+            resetModalForm();
+            destinationModal.show();
+        }
+
+        // Open modal in Edit mode
+        function openEditModal(destId) {
+            const dest = allDestinations.find(function(d) { return d.id === destId; });
+            if (!dest) {
+                showToast('error', 'Error', 'Destination not found.');
+                return;
+            }
+
+            modalMode = 'edit';
+            editingId = destId;
+            document.getElementById('destinationModalLabel').textContent = 'Edit Destination';
+            document.getElementById('saveText').textContent = 'Update Destination';
+
+            // Populate form fields
+            document.getElementById('destName').value = dest.name || '';
+            document.getElementById('destAddress').value = dest.address || '';
+            document.getElementById('destCity').value = dest.city || '';
+            document.getElementById('destProvince').value = dest.province || '';
+            document.getElementById('destPostalCode').value = dest.postal_code || '';
+            document.getElementById('destNotes').value = dest.notes || '';
+            document.getElementById('destActive').checked = dest.active !== false;
+
+            // Populate contacts
+            const contactsList = document.getElementById('contactsList');
+            contactsList.innerHTML = '';
+            const contacts = dest.contacts || [];
+            contacts.forEach(function(contact) {
+                addContactRow(contact);
+            });
+            updateNoContactsMsg();
+
+            destinationModal.show();
+        }
+
+        // Reset modal form to defaults
+        function resetModalForm() {
+            document.getElementById('destinationForm').reset();
+            document.getElementById('destActive').checked = true;
+            document.getElementById('contactsList').innerHTML = '';
+            updateNoContactsMsg();
+
+            // Clear validation states
+            document.querySelectorAll('#destinationForm .is-invalid').forEach(function(el) {
+                el.classList.remove('is-invalid');
+            });
+
+            // Reset save button
+            setSaveLoading(false);
+        }
+
+        // Add a contact row to the contacts list
+        function addContactRow(contact) {
+            const contactsList = document.getElementById('contactsList');
+
+            const row = document.createElement('div');
+            row.className = 'contact-row';
+
+            // Contact Name
+            const nameGroup = document.createElement('div');
+            const nameLabel = document.createElement('label');
+            nameLabel.textContent = 'Name';
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.className = 'form-control contact-name';
+            nameInput.placeholder = 'Contact name';
+            nameInput.value = (contact && contact.name) || '';
+            nameGroup.appendChild(nameLabel);
+            nameGroup.appendChild(nameInput);
+            row.appendChild(nameGroup);
+
+            // Phone
+            const phoneGroup = document.createElement('div');
+            const phoneLabel = document.createElement('label');
+            phoneLabel.textContent = 'Phone';
+            const phoneInput = document.createElement('input');
+            phoneInput.type = 'tel';
+            phoneInput.className = 'form-control contact-phone';
+            phoneInput.placeholder = 'Phone number';
+            phoneInput.value = (contact && contact.phone) || '';
+            phoneGroup.appendChild(phoneLabel);
+            phoneGroup.appendChild(phoneInput);
+            row.appendChild(phoneGroup);
+
+            // Email
+            const emailGroup = document.createElement('div');
+            const emailLabel = document.createElement('label');
+            emailLabel.textContent = 'Email';
+            const emailInput = document.createElement('input');
+            emailInput.type = 'email';
+            emailInput.className = 'form-control contact-email';
+            emailInput.placeholder = 'Email address';
+            emailInput.value = (contact && contact.email) || '';
+            emailGroup.appendChild(emailLabel);
+            emailGroup.appendChild(emailInput);
+            row.appendChild(emailGroup);
+
+            // Type dropdown
+            const typeGroup = document.createElement('div');
+            const typeLabel = document.createElement('label');
+            typeLabel.textContent = 'Type';
+            const typeSelect = document.createElement('select');
+            typeSelect.className = 'form-select contact-type';
+            const typeOptions = [
+                { value: 'main', text: 'Main' },
+                { value: 'billing', text: 'Billing' },
+                { value: 'scheduling', text: 'Scheduling' },
+                { value: 'other', text: 'Other' }
+            ];
+            typeOptions.forEach(function(opt) {
+                var option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                typeSelect.appendChild(option);
+            });
+            if (contact && contact.type) {
+                typeSelect.value = contact.type;
+            }
+            typeGroup.appendChild(typeLabel);
+            typeGroup.appendChild(typeSelect);
+            row.appendChild(typeGroup);
+
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn-remove-contact';
+            removeBtn.title = 'Remove contact';
+            removeBtn.onclick = function() {
+                const contactRows = document.querySelectorAll('.contact-row');
+                if (contactRows.length <= 1) {
+                    if (!confirm('Remove the last contact?')) return;
+                }
+                row.remove();
+                updateNoContactsMsg();
+            };
+            const removeIcon = document.createElement('i');
+            removeIcon.className = 'bi bi-x-lg';
+            removeBtn.appendChild(removeIcon);
+            row.appendChild(removeBtn);
+
+            contactsList.appendChild(row);
+            updateNoContactsMsg();
+        }
+
+        // Show/hide the "no contacts" message
+        function updateNoContactsMsg() {
+            const contactsList = document.getElementById('contactsList');
+            const msg = document.getElementById('noContactsMsg');
+            if (contactsList.children.length === 0) {
+                msg.style.display = 'block';
+            } else {
+                msg.style.display = 'none';
+            }
+        }
+
+        // Collect contacts data from the DOM
+        function getContactsFromForm() {
+            const rows = document.querySelectorAll('#contactsList .contact-row');
+            const contacts = [];
+            rows.forEach(function(row) {
+                const name = row.querySelector('.contact-name').value.trim();
+                const phone = row.querySelector('.contact-phone').value.trim();
+                const email = row.querySelector('.contact-email').value.trim();
+                const type = row.querySelector('.contact-type').value;
+
+                // Only include contacts that have at least one field filled
+                if (name || phone || email) {
+                    contacts.push({
+                        name: name,
+                        phone: phone,
+                        email: email,
+                        type: type
+                    });
+                }
+            });
+            return contacts;
+        }
+
+        // Validate required fields
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = [
+                { id: 'destName', label: 'Name' },
+                { id: 'destAddress', label: 'Address' },
+                { id: 'destCity', label: 'City' },
+                { id: 'destProvince', label: 'Province' },
+                { id: 'destPostalCode', label: 'Postal Code' }
+            ];
+
+            // Clear previous validation
+            document.querySelectorAll('#destinationForm .is-invalid').forEach(function(el) {
+                el.classList.remove('is-invalid');
+            });
+
+            requiredFields.forEach(function(field) {
+                const el = document.getElementById(field.id);
+                if (!el.value.trim()) {
+                    el.classList.add('is-invalid');
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        }
+
+        // Save destination (add or update)
+        async function saveDestination() {
+            if (!validateForm()) {
+                showToast('error', 'Validation Error', 'Please fill in all required fields.');
+                return;
+            }
+
+            setSaveLoading(true);
+
+            const payload = {
+                name: document.getElementById('destName').value.trim(),
+                address: document.getElementById('destAddress').value.trim(),
+                city: document.getElementById('destCity').value.trim(),
+                province: document.getElementById('destProvince').value,
+                postal_code: document.getElementById('destPostalCode').value.trim(),
+                notes: document.getElementById('destNotes').value.trim(),
+                active: document.getElementById('destActive').checked,
+                contacts: getContactsFromForm()
+            };
+
+            try {
+                if (modalMode === 'add') {
+                    await APIClient.post('/add-destination', payload);
+                    showToast('success', 'Success', 'Destination added successfully.');
+                } else {
+                    payload.id = editingId;
+                    await APIClient.put('/update-destination', payload);
+                    showToast('success', 'Success', 'Destination updated successfully.');
+                }
+
+                destinationModal.hide();
+                await loadDestinations();
+            } catch (error) {
+                console.error('Error saving destination:', error);
+                const msg = (error && error.message) || 'Failed to save destination. Please try again.';
+                showToast('error', 'Save Failed', msg);
+            } finally {
+                setSaveLoading(false);
+            }
+        }
+
+        // Toggle save button loading state
+        function setSaveLoading(loading) {
+            const btn = document.getElementById('btnSave');
+            const text = document.getElementById('saveText');
+            const spinner = document.getElementById('saveSpinner');
+
+            btn.disabled = loading;
+            spinner.style.display = loading ? 'inline-block' : 'none';
+            if (loading) {
+                text.textContent = 'Saving...';
+            } else {
+                text.textContent = modalMode === 'edit' ? 'Update Destination' : 'Save Destination';
+            }
+        }
+
+        // Toast notification
+        function showToast(type, title, message) {
+            const container = document.getElementById('toastContainer');
+
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+
+            const iconMap = {
+                success: 'bi-check-circle-fill',
+                error: 'bi-exclamation-circle-fill'
+            };
+
+            const icon = document.createElement('span');
+            icon.className = 'toast-icon';
+            const iconEl = document.createElement('i');
+            iconEl.className = 'bi ' + (iconMap[type] || 'bi-info-circle-fill');
+            icon.appendChild(iconEl);
+            toast.appendChild(icon);
+
+            const content = document.createElement('div');
+            content.className = 'toast-content';
+            const titleEl = document.createElement('div');
+            titleEl.className = 'toast-title';
+            titleEl.textContent = title;
+            content.appendChild(titleEl);
+            const msgEl = document.createElement('div');
+            msgEl.className = 'toast-message';
+            msgEl.textContent = message;
+            content.appendChild(msgEl);
+            toast.appendChild(content);
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'toast-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = function() { dismissToast(toast); };
+            toast.appendChild(closeBtn);
+
+            container.appendChild(toast);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(function() { dismissToast(toast); }, 5000);
+        }
+
+        function dismissToast(toast) {
+            if (!toast.parentNode) return;
+            toast.classList.add('hiding');
+            setTimeout(function() {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 300);
+        }
+    </script>
+</body>
+</html>

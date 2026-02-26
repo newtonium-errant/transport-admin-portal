@@ -263,11 +263,29 @@ Clinic/destination locations with coordinates. The actual Supabase table name is
 | `city` | varchar(100) | | City |
 | `province` | varchar(2) | | Province |
 | `postal_code` | varchar(7) | | Postal code |
-| `phone` | text | | Phone number |
+| `phone` | text | | Phone number (legacy; see `contacts` JSONB) |
+| `email` | text | | Primary email address |
+| `contacts` | jsonb | DEFAULT '[]' | Array of contact objects (see structure below) |
 | `notes` | text | | Notes |
 | `map_coordinates` | point | | Lat/long coordinates |
 | `active` | boolean | DEFAULT true | Destination active status |
 | `created_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
+| `updated_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | Last modification timestamp |
+
+### contacts JSONB Structure
+
+```json
+[
+  {
+    "name": "Main",
+    "phone": "902-555-1234",
+    "email": "info@clinic.ca",
+    "type": "main"
+  }
+]
+```
+
+Supported `type` values: `"main"`, `"billing"`, `"scheduling"`, `"other"`
 
 **NOTE:** Some API endpoints (e.g., `/get-clinic-locations`) transform these columns in their n8n workflow response, renaming `name` to `clinic_name` and composing `address`, `city`, `province`, `postal_code` into a single `full_address` field. When configuring Supabase nodes in n8n workflows, always use the actual column names above.
 
