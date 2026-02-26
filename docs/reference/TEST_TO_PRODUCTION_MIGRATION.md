@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide outlines the complete process for migrating validated TEST pages and workflows from the `developing/` folder to the Testing git branch, and eventually to production (main branch).
+This guide outlines the complete process for migrating validated TEST pages and workflows from the `developing/` folder to the staging git branch, and eventually to production (main branch).
 
 **Important:** TEST files in `developing/` folder are gitignored and NOT tracked in version control. This migration process brings them into the repository.
 
@@ -14,7 +14,7 @@ This guide outlines the complete process for migrating validated TEST pages and 
 ### Phase 2: Frontend File Migration (HTML/JS)
 ### Phase 3: Backend Workflow Migration (n8n)
 ### Phase 4: Database Schema Sync
-### Phase 5: Testing Branch Testing
+### Phase 5: Staging Branch Testing
 ### Phase 6: Production Deployment
 
 ---
@@ -57,7 +57,7 @@ Create a list of all files being migrated:
 
 ## Phase 2: Frontend File Migration (HTML/JS) 🔧
 
-**Goal:** Convert TEST HTML/JS files to production versions in Testing branch
+**Goal:** Convert TEST HTML/JS files to production versions in staging branch
 
 ### 2.1 Rename Files (Remove TEST- Prefix)
 
@@ -71,7 +71,7 @@ developing/js/pages/TEST-client-profile.js
 developing/js/core/TEST-finance.js
 ```
 
-**After (in Testing branch root):**
+**After (in staging branch root):**
 ```
 dashboard.html (if updating existing) OR new-page-name.html
 clients-sl.html (if updating existing)
@@ -82,7 +82,7 @@ js/core/finance.js (if updating existing)
 ```
 
 **Action Items:**
-- [ ] Copy TEST files to Testing branch root/js directories
+- [ ] Copy TEST files to staging branch root/js directories
 - [ ] Rename files (remove `TEST-` prefix)
 - [ ] If file already exists in production, decide: replace entirely or merge changes?
 
@@ -289,7 +289,7 @@ workflows/drivers/DRIVER - Get All Drivers.json
   "credentials": {
     "supabaseApi": {
       "id": "pHAY0PSxRTkwJnPE",              // ❌ BEFORE (Testing Branch)
-      "name": "Testing Branch - Supabase"
+      "name": "Supabase Testing"
     }
   }
 }
@@ -313,7 +313,7 @@ Change to:
   - Note the credential ID
 - [ ] For each workflow JSON:
   - [ ] Search for `"supabaseApi"`
-  - [ ] Replace Testing Branch credential ID with production credential ID
+  - [ ] Replace Supabase Testing credential ID with production credential ID
   - [ ] Replace credential name to production name
 
 #### 3.3.4 Remove TEST References in Code Nodes
@@ -347,7 +347,7 @@ console.log('[Client Profile] Processing data...');
 - [ ] Verify workflow imported correctly
 - [ ] Check webhook path is correct (no TEST- prefix)
 - [ ] Check Supabase nodes use production credentials
-- [ ] **DO NOT ACTIVATE YET** (wait until Testing branch validation)
+- [ ] **DO NOT ACTIVATE YET** (wait until staging branch validation)
 
 ### 3.5 Deactivate TEST Workflows
 
@@ -363,11 +363,11 @@ console.log('[Client Profile] Processing data...');
 
 ## Phase 4: Database Schema Sync 🗄️
 
-**Goal:** Ensure production database has all schema changes from Testing Branch
+**Goal:** Ensure production database has all schema changes from Supabase Testing
 
 ### 4.1 Identify Schema Differences
 
-**Check Testing Branch database for new/modified:**
+**Check Supabase Testing database for new/modified:**
 - [ ] Tables (e.g., new tables created during testing)
 - [ ] Columns (e.g., `clients.primary_clinic_id`, `clients.updated_at`)
 - [ ] Indexes
@@ -375,7 +375,7 @@ console.log('[Client Profile] Processing data...');
 - [ ] Constraints (e.g., foreign keys)
 
 **How to Check:**
-- Open Testing Branch Supabase → Table Editor
+- Open Supabase Testing → Table Editor
 - Compare with Production Supabase → Table Editor
 - Look for differences
 
@@ -414,14 +414,14 @@ COMMENT ON COLUMN clients.primary_clinic_id IS 'FK to destinations table - prima
 
 ---
 
-## Phase 5: Testing Branch Testing 🧪
+## Phase 5: Staging Branch Testing 🧪
 
-**Goal:** Validate production versions in Testing git branch before merging to main
+**Goal:** Validate production versions in staging git branch before merging to main
 
-### 5.1 Commit Files to Testing Branch
+### 5.1 Commit Files to Staging Branch
 
 **Action Items:**
-- [ ] Ensure on Testing git branch: `git checkout Testing`
+- [ ] Ensure on staging git branch: `git checkout staging`
 - [ ] Stage new/modified files: `git add [files]`
 - [ ] Commit with descriptive message:
   ```bash
@@ -435,14 +435,14 @@ COMMENT ON COLUMN clients.primary_clinic_id IS 'FK to destinations table - prima
   - Add CLINIC - Get Clinic Locations workflow
   "
   ```
-- [ ] Push to Testing branch: `git push origin Testing`
+- [ ] Push to staging branch: `git push origin staging`
 
 ### 5.2 Test with Production Data
 
 **CRITICAL: Test everything with production Supabase data**
 
 **Action Items:**
-- [ ] Open production HTML pages in Chrome (from Testing branch)
+- [ ] Open production HTML pages in Chrome (from staging branch)
 - [ ] Login with all roles:
   - [ ] Admin
   - [ ] Supervisor
@@ -481,7 +481,7 @@ COMMENT ON COLUMN clients.primary_clinic_id IS 'FK to destinations table - prima
 - [ ] Check Supabase logs for errors
 - [ ] Test with real users (if available)
 - [ ] Document any bugs found
-- [ ] Fix bugs in Testing branch before merging
+- [ ] Fix bugs in staging branch before merging
 
 ### 5.5 Final Testing Checklist
 
@@ -504,13 +504,13 @@ COMMENT ON COLUMN clients.primary_clinic_id IS 'FK to destinations table - prima
 
 ## Phase 6: Production Deployment 🚀
 
-**Goal:** Merge Testing branch to main and deploy to production
+**Goal:** Merge staging branch to main and deploy to production
 
 ### 6.1 Create Pull Request
 
 **Action Items:**
 - [ ] Go to GitHub repository
-- [ ] Create Pull Request: `Testing` → `main`
+- [ ] Create Pull Request: `staging` → `main`
 - [ ] Title: "Add [feature name] - Client Profile Page & Finance Dashboard"
 - [ ] Description: Summarize changes, list new files, note testing completed
 - [ ] Assign reviewers (if applicable)
@@ -554,7 +554,7 @@ Adds client profile page with primary clinic support and finance dashboard with 
 - [ ] Review PR for any issues
 - [ ] Get approval (if required)
 - [ ] Merge PR to main branch
-- [ ] Delete Testing branch merge commit (or keep for history)
+- [ ] Delete staging branch merge commit (or keep for history)
 
 ### 6.3 Verify Production Deployment
 
@@ -594,7 +594,7 @@ Adds client profile page with primary clinic support and finance dashboard with 
 - [ ] Deactivate production workflows in n8n
 - [ ] Re-activate old workflows (if applicable)
 - [ ] Notify users of issues
-- [ ] Fix issues in Testing branch
+- [ ] Fix issues in staging branch
 - [ ] Repeat testing process
 
 ---
@@ -620,7 +620,7 @@ Adds client profile page with primary clinic support and finance dashboard with 
 **n8n Workflow JSON Files:**
 - [ ] Remove TEST- prefix from workflow name
 - [ ] Update webhook path (TEST-* → *)
-- [ ] Change Supabase credentials (Testing Branch → Production)
+- [ ] Change Supabase credentials (Supabase Testing → Production)
 - [ ] Remove TEST references in code nodes
 - [ ] Import to n8n
 - [ ] Activate after testing
@@ -641,10 +641,10 @@ Adds client profile page with primary clinic support and finance dashboard with 
 3. **Supabase Credentials** - Workflows MUST use production credentials
 4. **Webhook Paths** - `/TEST-endpoint` won't work, must be `/endpoint`
 5. **Internal Links** - `TEST-dashboard.html` links will 404 in production
-6. **Database Schema** - Production MUST have same schema as Testing Branch before workflow activation
+6. **Database Schema** - Production MUST have same schema as Supabase Testing before workflow activation
 7. **Workflow Activation** - Don't activate production workflows until frontend is deployed
 8. **Testing with Production Data** - Always test with production Supabase before merging
-9. **Git Branch** - Make sure you're on Testing branch, not main
+9. **Git Branch** - Make sure you're on staging branch, not main
 10. **Pull Request** - Don't merge directly to main, always use PR for review
 
 ---
@@ -658,7 +658,7 @@ Use these patterns to find all instances that need updating:
 TEST-
 [TEST
 v1.0.0-TEST
-Testing Branch
+Staging Branch
 TEST MODE
 TEST endpoints
 ```
@@ -719,7 +719,7 @@ endpoint: "/TEST-
 - **Phase 2 (Frontend Migration):** 3-6 hours
 - **Phase 3 (Workflow Migration):** 2-4 hours
 - **Phase 4 (Database Sync):** 1-2 hours
-- **Phase 5 (Testing Branch Testing):** 4-8 hours (includes monitoring)
+- **Phase 5 (Staging Branch Testing):** 4-8 hours (includes monitoring)
 - **Phase 6 (Production Deployment):** 1-2 hours
 
 **Total:** 13-26 hours (spread over 2-5 days to allow for monitoring)
@@ -733,14 +733,14 @@ endpoint: "/TEST-
 2. 🔧 Remove TEST- prefixes and TEST-specific code
 3. 🔧 Update endpoints, links, paths, credentials
 4. 🗄️ Sync database schema to production
-5. 🧪 Test in Testing branch with production data
+5. 🧪 Test in staging branch with production data
 6. 🚀 Merge to main and deploy
 
 **Key Success Factors:**
-- Test thoroughly in Testing branch before merging
+- Test thoroughly in staging branch before merging
 - Use production data for testing
 - Monitor production closely after deployment
 - Have rollback plan ready
 - Document everything
 
-**Remember:** Better to take extra time in Testing branch than rush to production and break things!
+**Remember:** Better to take extra time in staging branch than rush to production and break things!

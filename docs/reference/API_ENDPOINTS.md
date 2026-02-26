@@ -1076,9 +1076,9 @@ Create audit log entry.
 
 ---
 
-## Testing Branch Endpoints
+## Staging Branch Endpoints
 
-All production endpoints have TEST versions with `TEST-` prefix for safe testing:
+All production endpoints have TEST versions with `TEST-` prefix for safe testing on the staging branch:
 
 **Pattern:** `/TEST-{endpoint-name}`
 
@@ -1091,11 +1091,11 @@ All production endpoints have TEST versions with `TEST-` prefix for safe testing
 - `/TEST-get-all-drivers`
 
 **Configuration:**
-- Point to Testing Branch Supabase database
+- Point to Supabase Testing database
 - Use test data (anonymized clients K0000001-K0000011)
 - Access via `developing/TEST-*.html` files
 
-**For complete Testing Branch setup, see:** `docs/reference/TESTING_BRANCH_GUIDE.md`
+**For complete staging branch setup, see:** `docs/reference/TESTING_BRANCH_GUIDE.md`
 
 ---
 

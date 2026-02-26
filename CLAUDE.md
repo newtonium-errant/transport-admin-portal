@@ -10,7 +10,7 @@ RRTS (Rural Route Transportation Services) Transport Admin Portal is a static HT
 
 **Core Concepts:**
 - [Architecture](#architecture) - Frontend/backend stack and data flow
-- [Testing Branch Environment](#testing-branch-environment) - Safe testing setup with anonymized data
+- [Staging Branch Environment](#staging-branch-environment) - Safe testing setup with anonymized data
 - [Authentication Architecture](#authentication-architecture) - JWT three-token system
 - [API Client Library](#api-client-library) - Modern authenticated API wrapper
 - [Performance Optimizations](#performance-optimizations) - 6-phase optimization achieving 76% faster loads
@@ -56,13 +56,13 @@ Frontend (HTML/JS)
     → External APIs (OpenPhone, Google Calendar)
 ```
 
-## Testing Branch Environment
+## Staging Branch Environment
 
-**Testing Branch (git branch)**: Local copy of code about to be pushed to main branch. All validated work ready for production.
+**Staging branch (git branch `staging`)**: Local copy of code about to be pushed to main branch. All validated work ready for production.
 
-**developing/ folder (gitignored)**: Inside Testing branch, contains work currently in development - not validated yet, not ready for commit to Testing branch. Includes TEST HTML files (with TEST MODE banner), TEST n8n workflows (using `TEST-` prefix in webhook paths), and anonymized Supabase Testing Branch database (3 users: admin/booking_agent/supervisor, 12 anonymized clients K0000001-K0000011, 74 test appointments). Access TEST files by opening them directly in Chrome (e.g., `developing/TEST-dashboard.html`) using production credentials (password hashes copied).
+**developing/ folder (gitignored)**: Inside staging branch, contains work currently in development - not validated yet, not ready for commit to staging branch. Includes TEST HTML files (with TEST MODE banner), TEST n8n workflows (using `TEST-` prefix in webhook paths), and anonymized Supabase staging database (3 users: admin/booking_agent/supervisor, 12 anonymized clients K0000001-K0000011, 74 test appointments). Access TEST files by opening them directly in Chrome (e.g., `developing/TEST-dashboard.html`) using production credentials (password hashes copied).
 
-**Key Practices:** Always use TEST- prefix for workflows/webhooks in developing/ folder, never commit developing/ folder to any branch (gitignored), preserve anonymization when exporting seed data, test changes in developing/ folder first, then move validated code to Testing branch root, merge Testing branch to main when ready for production.
+**Key Practices:** Always use TEST- prefix for workflows/webhooks in developing/ folder, never commit developing/ folder to any branch (gitignored), preserve anonymization when exporting seed data, test changes in developing/ folder first, then move validated code to staging branch root, merge staging branch to main when ready for production.
 
 **For complete setup, workflows, seed data management, and troubleshooting, see:** `docs/reference/TESTING_BRANCH_GUIDE.md`
 
@@ -103,9 +103,9 @@ Optimized pages include `appointments-sl.html` + `appointments-sl.js` (full Phas
 
 ### Git Workflow
 - **Main branch**: `main` (production)
-- **Testing branch**: `Testing` (local copy of code about to be pushed to main)
+- **Staging branch**: `staging` (local copy of code about to be pushed to main)
 - **developing/ folder**: Work in development (not validated, not ready for commit, included in .gitignore)
-- Create pull requests from `Testing` to `main`
+- Create pull requests from `staging` to `main`
 
 ## Project Structure
 
@@ -166,7 +166,7 @@ Use `api-security.js` functions for secure API calls:
 
 **Admin:** `/admin-dashboard` (stats + logs + alerts), `/store-audit-log`
 
-**Testing:** All endpoints have `/TEST-{endpoint}` versions for Testing Branch (e.g., `/TEST-user-login`, `/TEST-get-all-appointments`)
+**Testing:** All endpoints have `/TEST-{endpoint}` versions for the staging branch (e.g., `/TEST-user-login`, `/TEST-get-all-appointments`)
 
 **For complete endpoint documentation including full request/response schemas, authentication requirements, field validation, error responses, and code examples, see:** `docs/reference/API_ENDPOINTS.md`
 
@@ -344,7 +344,7 @@ The RRTS Transport Admin Portal uses a split-stack architecture: **Frontend** (s
 - `COMPONENT_LIBRARY.md` - Reusable modal components (AppointmentModal, ClientModal, ClientQuickView)
 - `DATABASE_SCHEMA.md` - Complete database table schemas, JSONB structures, and migrations
 - `TESTING_GUIDE.md` - Comprehensive testing guidelines (role-based, API, component, browser compatibility)
-- `TESTING_BRANCH_GUIDE.md` - Testing Branch setup, seed data management, and workflow
+- `TESTING_BRANCH_GUIDE.md` - Staging branch setup, seed data management, and workflow
 
 ### n8n Workflow Development (`docs/instructions/`)
 
