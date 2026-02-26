@@ -1,0 +1,473 @@
+{
+  "name": "USER - Update User Profile",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "update-user-profile",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "up100001-0001-4000-8000-000000000001",
+      "name": "POST Update User Profile - Webhook",
+      "webhookId": "up100001-0001-4000-8000-00000000000w"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "app_config",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "jwt_secret"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "id": "up100001-0002-4000-8000-000000000002",
+      "name": "Get JWT Secret - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "PLACEHOLDER",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate JWT & Extract Data - v1.0.0\n// Verifies JWT signature, rejects limited/refresh tokens\n// Extracts username from sub, validates request body\n\nconst webhookData = $('POST Update User Profile - Webhook').first().json;\nconst jwtSecret = $('Get JWT Secret - Supabase').first().json.value;\n\nconst headers = webhookData.headers || {};\nconst body = webhookData.body || {};\n\n// Extract Authorization header\nconst authHeader = headers.authorization\n  || headers.Authorization || '';\n\nif (!authHeader || !authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Authentication required',\n      statusCode: 401\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\n// JWT signature verification\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nfunction verifyJWT(token, secret) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n    const [header, payload, signature] = parts;\n    const expected = simpleHash(\n      `${header}.${payload}.${secret}`\n    );\n    if (signature !== expected) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n    const decoded = JSON.parse(atob(payload));\n    const now = Math.floor(Date.now() / 1000);\n    if (decoded.exp && decoded.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n    return { valid: true, payload: decoded };\n  } catch (e) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst result = verifyJWT(token, jwtSecret);\n\nif (!result.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: result.error || 'Invalid token',\n      statusCode: 401\n    }\n  }];\n}\n\nconst payload = result.payload;\n\n// Reject limited tokens\nif (payload.type === 'limited') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Full authentication required',\n      statusCode: 403\n    }\n  }];\n}\n\n// Reject refresh tokens\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used here',\n      statusCode: 403\n    }\n  }];\n}\n\n// Validate request body - at least one field\nconst fullName = body.fullName;\nconst email = body.email;\nconst phone = body.phone;\n\nconst hasFullName = fullName !== undefined\n  && fullName !== null;\nconst hasEmail = email !== undefined\n  && email !== null;\nconst hasPhone = phone !== undefined\n  && phone !== null;\n\nif (!hasFullName && !hasEmail && !hasPhone) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'At least one field required: fullName, email, or phone',\n      statusCode: 400\n    }\n  }];\n}\n\n// Validate email format if provided\nif (hasEmail && email.trim() !== '') {\n  if (!email.includes('@') || !email.includes('.')) {\n    return [{\n      json: {\n        _route: 'unauthorized',\n        success: false,\n        message: 'Invalid email format',\n        statusCode: 400\n      }\n    }];\n  }\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    username: payload.sub,\n    fullName: hasFullName ? fullName.trim() : null,\n    email: hasEmail ? email.trim() : null,\n    phone: hasPhone ? phone.trim() : null,\n    hasFullName: hasFullName,\n    hasEmail: hasEmail,\n    hasPhone: hasPhone\n  }\n}];\n\n// Version: v1.0.0 - JWT validation with app_config secret"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "up100001-0003-4000-8000-000000000003",
+      "name": "Validate JWT & Extract Data - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "route-authorized",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "route-unauthorized",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [660, 0],
+      "id": "up100001-0004-4000-8000-000000000004",
+      "name": "Check Auth - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "username",
+              "keyValue": "={{ $json.username }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [880, -120],
+      "id": "up100001-0005-4000-8000-000000000005",
+      "name": "Get User by Username - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "PLACEHOLDER",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Update Fields - v1.0.0\n// Checks user exists, builds update payload\n\nconst validatedData = $('Validate JWT & Extract Data - Code')\n  .first().json;\nconst userRecord = $input.first().json;\n\n// Check if user was found\nif (!userRecord || !userRecord.id) {\n  return [{\n    json: {\n      _route: 'not_found',\n      success: false,\n      message: 'User not found',\n      statusCode: 404\n    }\n  }];\n}\n\n// Build update object with only provided fields\nconst updateFields = {};\n\nif (validatedData.hasFullName) {\n  updateFields.full_name = validatedData.fullName;\n}\nif (validatedData.hasEmail) {\n  updateFields.email = validatedData.email;\n}\nif (validatedData.hasPhone) {\n  updateFields.phone = validatedData.phone;\n}\n\nreturn [{\n  json: {\n    _route: 'found',\n    userId: userRecord.id,\n    username: validatedData.username,\n    updateFields: updateFields\n  }\n}];\n\n// Version: v1.0.0 - Build conditional update payload"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, -120],
+      "id": "up100001-0006-4000-8000-000000000006",
+      "name": "Build Update Fields - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "user-found",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "found",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "user-not-found",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "not_found",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not Found"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1320, -120],
+      "id": "up100001-0007-4000-8000-000000000007",
+      "name": "Check User Found - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Supabase Update - v1.0.0\n// Flattens updateFields for Supabase expression refs\n\nconst data = $input.first().json;\nconst fields = data.updateFields;\n\nreturn [{\n  json: {\n    username: data.username,\n    full_name: fields.full_name !== undefined\n      ? fields.full_name : null,\n    email: fields.email !== undefined\n      ? fields.email : null,\n    phone: fields.phone !== undefined\n      ? fields.phone : null,\n    has_full_name: fields.full_name !== undefined\n      ? 'true' : 'false',\n    has_email: fields.email !== undefined\n      ? 'true' : 'false',\n    has_phone: fields.phone !== undefined\n      ? 'true' : 'false'\n  }\n}];\n\n// Version: v1.0.0 - Flatten fields for Supabase node"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, -240],
+      "id": "up100001-0008-4000-8000-000000000008",
+      "name": "Prepare Supabase Update - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "username",
+              "condition": "eq",
+              "keyValue": "={{ $json.username }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "full_name",
+              "fieldValue": "={{ $json.full_name }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $json.phone }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1760, -240],
+      "id": "up100001-0009-4000-8000-000000000009",
+      "name": "Update User Profile - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "PLACEHOLDER",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Success Response - v1.0.0\n\nconst updatedUser = $input.first().json;\nconst validatedData = $('Validate JWT & Extract Data - Code')\n  .first().json;\n\n// Check for database error\nif (updatedUser.error) {\n  console.error('Database update error:', updatedUser.error);\n  return [{\n    json: {\n      success: false,\n      message: 'Failed to update profile',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Return only the fields that were updated\nconst responseData = {};\nif (validatedData.hasFullName) {\n  responseData.full_name = updatedUser.full_name;\n}\nif (validatedData.hasEmail) {\n  responseData.email = updatedUser.email;\n}\nif (validatedData.hasPhone) {\n  responseData.phone = updatedUser.phone;\n}\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Profile updated successfully',\n    data: responseData,\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - Format profile update response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, -240],
+      "id": "up100001-0010-4000-8000-000000000010",
+      "name": "Format Success Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Auth/Validation Error - v1.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'Unauthorized',\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - Auth error formatting"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 120],
+      "id": "up100001-0011-4000-8000-000000000011",
+      "name": "Format Auth Error - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Not Found Error - v1.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'User not found',\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - User not found error formatting"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 0],
+      "id": "up100001-0012-4000-8000-000000000012",
+      "name": "Format Not Found Error - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [2200, 0],
+      "id": "up100001-0013-4000-8000-000000000013",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "POST Update User Profile - Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get JWT Secret - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JWT Secret - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Validate JWT & Extract Data - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate JWT & Extract Data - Code": {
+      "main": [
+        [
+          {
+            "node": "Check Auth - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Auth - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get User by Username - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Auth Error - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User by Username - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Build Update Fields - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Update Fields - Code": {
+      "main": [
+        [
+          {
+            "node": "Check User Found - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check User Found - Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Supabase Update - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Not Found Error - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Supabase Update - Code": {
+      "main": [
+        [
+          {
+            "node": "Update User Profile - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update User Profile - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Auth Error - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Not Found Error - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "user-update-profile-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "rrts-user-management"
+  },
+  "tags": [
+    {
+      "name": "User Management"
+    },
+    {
+      "name": "with JWT"
+    }
+  ]
+}

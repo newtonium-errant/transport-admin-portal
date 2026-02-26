@@ -2141,6 +2141,18 @@
                 if (!newPassword || newPassword.length < 8) {
                     throw new Error('New password must be at least 8 characters');
                 }
+                if (!/[A-Z]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one uppercase letter');
+                }
+                if (!/[a-z]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one lowercase letter');
+                }
+                if (!/[0-9]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one number');
+                }
+                if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one special character');
+                }
                 if (newPassword !== confirmPassword) {
                     throw new Error('New passwords do not match');
                 }
@@ -2148,14 +2160,13 @@
                     throw new Error('New password must be different from current password');
                 }
 
-                const user = getCurrentUser();
                 const response = await fetch(JWT_API_ENDPOINTS.CHANGE_PASSWORD, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
-                        username: user.username,
-                        currentPassword: currentPassword,
-                        newPassword: newPassword
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
                     })
                 });
 
