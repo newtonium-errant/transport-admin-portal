@@ -10,17 +10,18 @@
 
 ```
 Webhook (POST)
-  → JWT Validation - Code
-    → JWT Validation - Switch
-      → [Authorized] Validate Destination Data - Code
-        → Check Validation - Switch
-          → [True] Create Destination - Supabase
-            → Format Success Response - Code
+  → Get JWT Secret - Supabase
+    → JWT Validation - Code
+      → JWT Validation - Switch
+        → [Authorized] Validate Destination Data - Code
+          → Check Validation - Switch
+            → [True] Create Destination - Supabase
+              → Format Success Response - Code
+                → Respond to Webhook
+            → [False] Format Error Response - Code
               → Respond to Webhook
-          → [False] Format Error Response - Code
-            → Respond to Webhook
-      → [Unauthorized] Unauthorized Response - Code
-        → Respond to Webhook
+        → [Unauthorized] Unauthorized Response - Code
+          → Respond to Webhook
 ```
 
 ---
@@ -44,17 +45,40 @@ Webhook (POST)
 
 ---
 
-## STEP 3: JWT Validation - Code Node
+## STEP 3: Get JWT Secret - Supabase Node
+
+**Node Name:** `Get JWT Secret - Supabase`
+
+Connect: `POST Add Destination - Webhook` → `Get JWT Secret - Supabase`
+
+- **Credential:** `Supabase Service Role`
+- **Resource:** `Row`
+- **Operation:** `Get` (single record lookup)
+- **Table:** `app_config`
+- **Filters:**
+  - Column: `key`
+  - Value: `jwt_secret`
+
+**Purpose:** Fetches the JWT secret dynamically from the `app_config` table instead of hardcoding it. This ensures the workflow always uses the current secret.
+
+---
+
+## STEP 4: JWT Validation - Code Node
 
 **Node Name:** `JWT Validation - Code`
 
-Connect: `POST Add Destination - Webhook` → `JWT Validation - Code`
+Connect: `Get JWT Secret - Supabase` → `JWT Validation - Code`
+
+**IMPORTANT:** Since `$input` now comes from the Supabase node (not the Webhook), you must use named references:
+- Webhook data: `$('POST Add Destination - Webhook').first().json`
+- JWT secret: `$('Get JWT Secret - Supabase').first().json.value`
 
 **Replace ENTIRE code with:**
 
 ```javascript
-// JWT Token Validation - v1.0.0
-const webhookData = $input.first().json;
+// JWT Token Validation - v2.0.0
+// Fetches JWT secret from app_config via preceding Supabase node
+const webhookData = $('POST Add Destination - Webhook').first().json;
 
 const authHeader =
   webhookData.headers?.authorization ||
@@ -96,7 +120,21 @@ function simpleHash(input) {
   return hash.toString(36);
 }
 
-const JWT_SECRET = "RRTS_JWT_SECRET_KEY_PHASE2_TEMP";
+// Get JWT secret from app_config (fetched by previous Supabase node)
+const configData = $('Get JWT Secret - Supabase').first().json;
+const JWT_SECRET = configData.value;
+
+if (!JWT_SECRET) {
+  return [{
+    json: {
+      _route: 'unauthorized',
+      success: false,
+      message: 'JWT secret not configured',
+      statusCode: 500,
+      timestamp: new Date().toISOString()
+    }
+  }];
+}
 
 function verifyJWT(token) {
   try {
@@ -196,12 +234,12 @@ return [{
   }
 }];
 
-// Version: v1.1.0 - JWT validation with RBAC role check
+// Version: v2.0.0 - Dynamic JWT secret from app_config + RBAC role check
 ```
 
 ---
 
-## STEP 4: JWT Validation - Switch Node
+## STEP 5: JWT Validation - Switch Node
 
 **Node Name:** `JWT Validation - Switch`
 
@@ -222,7 +260,7 @@ Connect: `JWT Validation - Code` → `JWT Validation - Switch`
 
 ---
 
-## STEP 5: Validate Destination Data - Code Node
+## STEP 6: Validate Destination Data - Code Node
 
 **Node Name:** `Validate Destination Data - Code`
 
@@ -326,7 +364,7 @@ return [{
 
 ---
 
-## STEP 6: Check Validation - Switch Node
+## STEP 7: Check Validation - Switch Node
 
 **Node Name:** `Check Validation - Switch`
 
