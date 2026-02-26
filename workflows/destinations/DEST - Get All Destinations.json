@@ -1,0 +1,231 @@
+{
+  "name": "DEST - Get All Destinations",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "get-all-destinations",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "dest-get-0001-4000-8000-000000000001",
+      "name": "GET Destinations - Webhook",
+      "webhookId": "dest-get-0001-4000-8000-00000000000w"
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation - v1.0.0\nconst webhookData = $input.first().json;\n\nconst authHeader =\n  webhookData.headers?.authorization ||\n  webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nconst JWT_SECRET = \"RRTS_JWT_SECRET_KEY_PHASE2_TEMP\";\n\nfunction verifyJWT(token) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n\n    const [header, payload, sig] = parts;\n    const dataToSign = `${header}.${payload}.${JWT_SECRET}`;\n    const expectedSig = simpleHash(dataToSign);\n\n    if (sig !== expectedSig) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n\n    const decoded = JSON.parse(atob(payload));\n    const now = Math.floor(Date.now() / 1000);\n    if (decoded.exp && decoded.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n\n    return { valid: true, payload: decoded };\n  } catch (error) {\n    return {\n      valid: false,\n      error: 'Token verification failed'\n    };\n  }\n}\n\nconst validation = verifyJWT(token);\n\nif (!validation.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: validation.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst payload = validation.payload;\n\nif (payload.type === 'limited') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Full authentication required',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used here',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// RBAC: Only admin and supervisor can access destinations management\nconst allowedRoles = ['admin', 'supervisor'];\nif (!allowedRoles.includes(payload.role)) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Insufficient permissions',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      username: payload.sub,\n      role: payload.role,\n      tokenType: payload.type\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.1.0 - JWT validation with RBAC role check"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "id": "dest-get-0002-4000-8000-000000000002",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "dest-get-route-auth"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    },
+                    "id": "dest-get-route-unauth"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [440, 0],
+      "id": "dest-get-0003-4000-8000-000000000003",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "destinations",
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [660, -120],
+      "id": "dest-get-0004-4000-8000-000000000004",
+      "name": "Get All Destinations - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Destinations Response - v1.0.0\nconst items = $input.all();\n\nconst destinations = [];\n\nfor (const item of items) {\n  const d = item.json;\n  if (!d || !d.id) continue;\n\n  destinations.push({\n    id: d.id,\n    name: d.name || '',\n    address: d.address || '',\n    city: d.city || '',\n    province: d.province || '',\n    postal_code: d.postal_code || '',\n    phone: d.phone || '',\n    email: d.email || '',\n    contacts: d.contacts || [],\n    notes: d.notes || '',\n    map_coordinates: d.map_coordinates || null,\n    active: d.active !== false,\n    created_at: d.created_at || null,\n    updated_at: d.updated_at || null\n  });\n}\n\ndestinations.sort((a, b) => a.name.localeCompare(b.name));\n\nif (destinations.length === 0) {\n  console.log('No destinations found in database');\n}\n\nreturn [{\n  json: {\n    success: true,\n    message: `Retrieved ${destinations.length} destinations`,\n    data: destinations,\n    count: destinations.length,\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - Raw column names for management page"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, -120],
+      "id": "dest-get-0005-4000-8000-000000000005",
+      "name": "Format Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Unauthorized Error Response - v1.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'Unauthorized access',\n    error: {\n      statusCode: errorData.statusCode || 401\n    },\n    timestamp: errorData.timestamp || new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - Standard unauthorized response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 120],
+      "id": "dest-get-0006-4000-8000-000000000006",
+      "name": "Unauthorized Response - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1100, 0],
+      "id": "dest-get-0007-4000-8000-000000000007",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GET Destinations - Webhook": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get All Destinations - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Destinations - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dest-get-all-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "tags": [
+    {
+      "name": "Destination Management"
+    }
+  ]
+}
