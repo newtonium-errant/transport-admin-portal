@@ -109,9 +109,9 @@ Optimized pages include `appointments-sl.html` + `appointments-sl.js` (full Phas
 
 ## Project Structure
 
-The project follows a flat-root structure with HTML pages at root (for clean production URLs: `customdomainname.ca/appointments-sl.html`) and organized subdirectories for JavaScript (`js/core`, `js/auth`, `js/components`, `js/pages`), stylesheets (`css/`), n8n workflows (`workflows/` by module: appointments, clients, drivers, users, admin, reminders, clinics, finance), database files (`database/scripts`, `database/sql`, `database/docs`), documentation (`docs/instructions`, `docs/implementation`, `docs/workflows`, `docs/reference`, `docs/session-notes`), and local Supabase (`supabase/`).
+The project follows a flat-root structure with HTML pages at root (for clean production URLs: `customdomainname.ca/appointments-sl.html`) and organized subdirectories for JavaScript (`js/core`, `js/auth`, `js/components`, `js/pages`), stylesheets (`css/`), n8n workflows (`workflows/` by module: appointments, clients, drivers, users, admin, reminders, clinics, destinations, finance), database files (`database/scripts`, `database/sql`, `database/docs`), documentation (`docs/instructions`, `docs/implementation`, `docs/workflows`, `docs/reference`, `docs/session-notes`), and local Supabase (`supabase/`).
 
-**Key Pages:** `appointments-sl.html` (optimized, Phase 1-6), `clients-sl.html` (optimized), `dashboard.html` (main entry), `admin.html` (admin only), `operations.html`, `finance.html`, `index.html` (public landing).
+**Key Pages:** `appointments-sl.html` (optimized, Phase 1-6), `clients-sl.html` (optimized), `dashboard.html` (main entry), `admin.html` (admin only), `operations.html`, `finance.html`, `destinations.html` (admin/supervisor destination management), `index.html` (public landing).
 
 **Key JavaScript:** `api-client.js` (recommended API wrapper), `jwt-manager.js` + `jwt-auth.js` (authentication), `session-manager.js` (timeouts), `permissions.js` (RBAC), `appointment-modal.js` (reusable component), `appointments-sl.js` (reference controller with DataCache).
 
@@ -160,7 +160,7 @@ Use `api-security.js` functions for secure API calls:
 
 **Drivers:** `/get-all-drivers`, `/add-driver-with-calendar` (auto-creates Google Calendar), `/update-driver`
 
-**Clinics:** `/get-clinic-locations` (with coordinates for mapping)
+**Destinations:** `/get-clinic-locations` (with coordinates for mapping), `/get-all-destinations` (full CRUD data), `/add-destination`, `/update-destination`
 
 **Users:** `/get-all-users` (admin only), `/get-booking-agents`, `/create-user`, `/update-user`, `/delete-user`
 
@@ -281,6 +281,8 @@ The application uses Supabase PostgreSQL with 8 main tables: **users** (JWT auth
 **CRITICAL Before Creating Workflows:** (1) Read `docs/instructions/AGENT_INSTRUCTIONS_N8N.md`, (2) Use `docs/instructions/N8N_WORKFLOW_TEMPLATE.json` as starting point, (3) Follow `docs/instructions/N8N_WORKFLOW_CHECKLIST.md`.
 
 **Non-Negotiable Rules:** ❌ NEVER use IF nodes (use Switch with `typeValidation: "strict"`), ❌ NEVER log data/loops (Railway rate limits), ✅ ALWAYS convert booleans to strings for Switch, ✅ ALWAYS set `alwaysOutputData: true` on Supabase nodes, ✅ ALWAYS use standardized response structure (`{success, message, data, timestamp}`), ✅ ONLY log errors/critical warnings.
+
+**New vs Existing Workflows:** For **new workflows**, create importable JSON files in `workflows/` (agents can build these). For **editing existing workflows**, create instruction docs with step-by-step changes for manual application in the n8n UI (workflow JSON changes with every UI edit, so direct JSON edits break on import).
 
 **Critical Limitations:** (1) **PBKDF2 NOT AVAILABLE** - use custom `simpleHash()` function for passwords (ALL auth workflows MUST use identical implementation, format: `salt:hash`), (2) **SQL JOINs NOT SUPPORTED** in Supabase nodes - fetch related data in separate nodes and merge in Code nodes, (3) **`executeQuery` NOT SUPPORTED** - use basic operations only (`get`, `getAll`, `create`, `update`, `delete`).
 

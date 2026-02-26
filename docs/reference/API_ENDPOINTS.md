@@ -720,10 +720,10 @@ Update driver information.
 
 ---
 
-## Clinic Endpoints
+## Destination Endpoints
 
 ### `GET /get-clinic-locations`
-Retrieve all clinic locations with coordinates.
+Retrieve active destinations with transformed column names (legacy endpoint for dropdowns).
 
 **Authentication:** Required
 
@@ -754,6 +754,126 @@ Retrieve all clinic locations with coordinates.
 - Appointment location dropdowns
 - Travel time calculations
 - Map display
+
+### `GET /get-all-destinations`
+Retrieve all destinations (active and inactive) with raw column names for management.
+
+**Authentication:** Required (admin, supervisor only)
+
+**Database Table:** `destinations`
+
+**Response:**
+```javascript
+{
+  success: true,
+  message: "Retrieved 12 destinations",
+  data: [
+    {
+      id: number,
+      name: string,
+      address: string,
+      city: string,
+      province: string,
+      postal_code: string,
+      phone: string,              // Legacy field, kept for backward compat
+      email: string,
+      contacts: [                 // JSONB array of contacts
+        {
+          name: string,
+          phone: string,
+          email: string,
+          type: string            // "main", "billing", "scheduling", "other"
+        }
+      ],
+      notes: string,
+      map_coordinates: string,    // Point format "(lat,lng)"
+      active: boolean,
+      created_at: string,
+      updated_at: string
+    }
+  ],
+  count: number,
+  timestamp: string
+}
+```
+
+**Use Cases:**
+- Destination management page (destinations.html)
+
+### `POST /add-destination`
+Create a new destination.
+
+**Authentication:** Required (admin, supervisor only)
+
+**Request Body:**
+```javascript
+{
+  name: string,            // Required
+  address: string,         // Required
+  city: string,            // Required
+  province: string,        // Required (2-letter code, auto-uppercased)
+  postal_code: string,     // Required (auto-uppercased)
+  phone: string,           // Optional
+  email: string,           // Optional (validated format)
+  contacts: [              // Optional JSONB array
+    { name: string, phone: string, email: string, type: string }
+  ],
+  notes: string,           // Optional
+  map_coordinates: string, // Optional
+  active: boolean          // Optional (default: true)
+}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  message: "Destination created successfully",
+  data: { /* created destination object */ },
+  timestamp: string
+}
+```
+
+**Notes:**
+- Auto-extracts first contact's phone/email into top-level fields for backward compat with `/get-clinic-locations`
+
+### `PUT /update-destination`
+Update an existing destination by id.
+
+**Authentication:** Required (admin, supervisor only)
+
+**Request Body:**
+```javascript
+{
+  id: number,              // Required
+  // All other fields optional - only provided fields are updated
+  name: string,
+  address: string,
+  city: string,
+  province: string,
+  postal_code: string,
+  phone: string,
+  email: string,
+  contacts: [],
+  notes: string,
+  map_coordinates: string,
+  active: boolean
+}
+```
+
+**Response:**
+```javascript
+{
+  success: true,
+  message: "Destination updated successfully",
+  data: { /* updated destination object */ },
+  timestamp: string
+}
+```
+
+**Notes:**
+- Always sets `updated_at` timestamp
+- Auto-extracts first contact's phone/email into top-level fields when contacts are updated
 
 ---
 

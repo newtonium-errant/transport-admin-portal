@@ -32,6 +32,7 @@ transport-admin-portal/
 │   ├── admin/          # ADMIN - *.json and ADMN - *.json
 │   ├── reminders/      # RMDR - *.json
 │   ├── clinics/        # CLINIC - *.json
+│   ├── destinations/   # DEST - *.json
 │   └── finance/        # FIN - *.json
 │
 ├── database/           # Database-related files
@@ -117,6 +118,15 @@ All HTML files are located at the project root for clean production URLs.
 
 - `driver-management.html` - Driver management with Google Calendar integration
   - **Features**: Create/edit drivers, auto-create Google Calendars, manage availability
+
+---
+
+### Destination Management
+
+- `destinations.html` - Destination/clinic management
+  - **Auth**: Admin, Supervisor
+  - **Features**: List all destinations, add/edit with modal, dynamic contacts (multiple phone/email per destination), search, active/inactive toggle
+  - **API**: `/get-all-destinations`, `/add-destination`, `/update-destination`
 
 ---
 
