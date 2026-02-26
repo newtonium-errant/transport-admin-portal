@@ -1551,8 +1551,6 @@
                 <h2>Profile Information</h2>
             </div>
             <div class="profile-card-body">
-                <div id="profileAlert"></div>
-
                 <!-- Skeleton loader for driver data -->
                 <div id="profileFormSkeleton" style="display: none;">
                     <div class="form-group"><div class="skeleton-block" style="width: 70px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
@@ -1673,8 +1671,6 @@
                 <h2>Change Password</h2>
             </div>
             <div class="profile-card-body">
-                <div id="passwordAlert"></div>
-
                 <form id="passwordForm">
                     <div class="form-group">
                         <label class="form-label" for="currentPassword">Current Password</label>
@@ -1986,7 +1982,7 @@
             currentUser = savedUser ? JSON.parse(savedUser) : null;
 
             if (!currentUser) {
-                showProfileAlert('profileAlert', 'error', 'Unable to load user data');
+                showToast('Unable to load user data', 'error');
                 return;
             }
 
@@ -2040,7 +2036,7 @@
                 document.getElementById('email').value = originalUserData.email || '';
                 document.getElementById('phone').value = originalUserData.phone || originalUserData.phone_number || '';
             }
-            hideAlert('profileAlert');
+            // Alert cleared (toasts auto-dismiss)
         }
 
         async function handleProfileSubmit(e) {
@@ -2092,7 +2088,7 @@
                         user.phone = phone;
                         sessionStorage.setItem('rrts_user', JSON.stringify(user));
                         currentUser = user;
-                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                        showToast('Profile updated successfully', 'success');
                     } else {
                         throw new Error(result.message || 'Failed to update profile');
                     }
@@ -2108,14 +2104,14 @@
                         user.phone = phone;
                         sessionStorage.setItem('rrts_user', JSON.stringify(user));
                         currentUser = user;
-                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                        showToast('Profile updated successfully', 'success');
                     } else {
                         throw new Error(response.message || 'Failed to update profile');
                     }
                 }
             } catch (error) {
                 console.error('Profile update error:', error);
-                showProfileAlert('profileAlert', 'error', error.message || 'Failed to update profile');
+                showToast(error.message || 'Failed to update profile', 'error');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
@@ -2173,14 +2169,14 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showProfileAlert('passwordAlert', 'success', 'Password changed successfully');
+                    showToast('Password changed successfully', 'success');
                     document.getElementById('passwordForm').reset();
                 } else {
                     throw new Error(data.message || 'Failed to change password');
                 }
             } catch (error) {
                 console.error('Password change error:', error);
-                showProfileAlert('passwordAlert', 'error', error.message || 'Failed to change password');
+                showToast(error.message || 'Failed to change password', 'error');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
@@ -3646,19 +3642,6 @@
                 if (textEl) textEl.classList.remove('d-none');
                 if (loadingEl) loadingEl.classList.add('d-none');
             }
-        }
-
-        // ========== Alert Functions ==========
-        function showProfileAlert(containerId, type, message) {
-            const container = document.getElementById(containerId);
-            if (container) {
-                container.innerHTML = `<div class="alert alert-${type}">${escapeHtml(message)}</div>`;
-            }
-        }
-
-        function hideAlert(containerId) {
-            const container = document.getElementById(containerId);
-            if (container) container.innerHTML = '';
         }
 
         // ========== Toast Notifications ==========
