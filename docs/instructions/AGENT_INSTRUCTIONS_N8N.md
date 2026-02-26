@@ -99,6 +99,7 @@ The project uses **separate Supabase credentials** for testing and production:
 
 ### Critical Rules (Non-Negotiable):
 - ❌ **NEVER** use IF nodes - use Switch nodes instead
+- ❌ **NEVER** hardcode `JWT_SECRET` - always fetch dynamically from the `app_config` table (`key = 'jwt_secret'`) via a Supabase Get node before JWT validation. Reference the secret in the JWT Code node with `$('Get JWT Secret - Supabase').first().json.value` and the webhook data with `$('<WebhookNodeName>').first().json`
 - ❌ **NEVER** log data for debugging - use n8n Executions area instead
 - ❌ **NEVER** log in loops or per-item processing
 - ❌ **NEVER** write long comments that wrap to multiple lines in Code nodes (causes syntax errors)

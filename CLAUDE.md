@@ -280,7 +280,7 @@ The application uses Supabase PostgreSQL with 8 main tables: **users** (JWT auth
 
 **CRITICAL Before Creating Workflows:** (1) Read `docs/instructions/AGENT_INSTRUCTIONS_N8N.md`, (2) Use `docs/instructions/N8N_WORKFLOW_TEMPLATE.json` as starting point, (3) Follow `docs/instructions/N8N_WORKFLOW_CHECKLIST.md`.
 
-**Non-Negotiable Rules:** ❌ NEVER use IF nodes (use Switch with `typeValidation: "strict"`), ❌ NEVER log data/loops (Railway rate limits), ✅ ALWAYS convert booleans to strings for Switch, ✅ ALWAYS set `alwaysOutputData: true` on Supabase nodes, ✅ ALWAYS use standardized response structure (`{success, message, data, timestamp}`), ✅ ONLY log errors/critical warnings.
+**Non-Negotiable Rules:** ❌ NEVER use IF nodes (use Switch with `typeValidation: "strict"`), ❌ NEVER log data/loops (Railway rate limits), ❌ NEVER hardcode `JWT_SECRET` — always fetch dynamically from `app_config` table (key: `jwt_secret`) via a Supabase Get node before JWT validation, ✅ ALWAYS convert booleans to strings for Switch, ✅ ALWAYS set `alwaysOutputData: true` on Supabase nodes, ✅ ALWAYS use standardized response structure (`{success, message, data, timestamp}`), ✅ ONLY log errors/critical warnings.
 
 **New vs Existing Workflows:** For **new workflows**, create importable JSON files in `workflows/` (agents can build these). For **editing existing workflows**, create instruction docs with step-by-step changes for manual application in the n8n UI (workflow JSON changes with every UI edit, so direct JSON edits break on import).
 
