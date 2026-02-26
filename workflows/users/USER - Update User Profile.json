@@ -11,9 +11,9 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [0, 0],
-      "id": "up100001-0001-4000-8000-000000000001",
+      "id": "up200001-0001-4000-8000-000000000001",
       "name": "POST Update User Profile - Webhook",
-      "webhookId": "up100001-0001-4000-8000-00000000000w"
+      "webhookId": "up200001-0001-4000-8000-00000000000w"
     },
     {
       "parameters": {
@@ -31,7 +31,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [220, 0],
-      "id": "up100001-0002-4000-8000-000000000002",
+      "id": "up200001-0002-4000-8000-000000000002",
       "name": "Get JWT Secret - Supabase",
       "alwaysOutputData": true,
       "credentials": {
@@ -43,12 +43,12 @@
     },
     {
       "parameters": {
-        "jsCode": "// Validate JWT & Extract Data - v1.0.0\n// Verifies JWT signature, rejects limited/refresh tokens\n// Extracts username from sub, validates request body\n\nconst webhookData = $('POST Update User Profile - Webhook').first().json;\nconst jwtSecret = $('Get JWT Secret - Supabase').first().json.value;\n\nconst headers = webhookData.headers || {};\nconst body = webhookData.body || {};\n\n// Extract Authorization header\nconst authHeader = headers.authorization\n  || headers.Authorization || '';\n\nif (!authHeader || !authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Authentication required',\n      statusCode: 401\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\n// JWT signature verification\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nfunction verifyJWT(token, secret) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n    const [header, payload, signature] = parts;\n    const expected = simpleHash(\n      `${header}.${payload}.${secret}`\n    );\n    if (signature !== expected) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n    const decoded = JSON.parse(atob(payload));\n    const now = Math.floor(Date.now() / 1000);\n    if (decoded.exp && decoded.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n    return { valid: true, payload: decoded };\n  } catch (e) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst result = verifyJWT(token, jwtSecret);\n\nif (!result.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: result.error || 'Invalid token',\n      statusCode: 401\n    }\n  }];\n}\n\nconst payload = result.payload;\n\n// Reject limited tokens\nif (payload.type === 'limited') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Full authentication required',\n      statusCode: 403\n    }\n  }];\n}\n\n// Reject refresh tokens\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used here',\n      statusCode: 403\n    }\n  }];\n}\n\n// Validate request body - at least one field\nconst fullName = body.fullName;\nconst email = body.email;\nconst phone = body.phone;\n\nconst hasFullName = fullName !== undefined\n  && fullName !== null;\nconst hasEmail = email !== undefined\n  && email !== null;\nconst hasPhone = phone !== undefined\n  && phone !== null;\n\nif (!hasFullName && !hasEmail && !hasPhone) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'At least one field required: fullName, email, or phone',\n      statusCode: 400\n    }\n  }];\n}\n\n// Validate email format if provided\nif (hasEmail && email.trim() !== '') {\n  if (!email.includes('@') || !email.includes('.')) {\n    return [{\n      json: {\n        _route: 'unauthorized',\n        success: false,\n        message: 'Invalid email format',\n        statusCode: 400\n      }\n    }];\n  }\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    username: payload.sub,\n    fullName: hasFullName ? fullName.trim() : null,\n    email: hasEmail ? email.trim() : null,\n    phone: hasPhone ? phone.trim() : null,\n    hasFullName: hasFullName,\n    hasEmail: hasEmail,\n    hasPhone: hasPhone\n  }\n}];\n\n// Version: v1.0.0 - JWT validation with app_config secret"
+        "jsCode": "// Validate JWT & Extract Data - v2.0.0\n// Verifies JWT signature, rejects limited/refresh\n// Extracts username from sub, validates request body\n\nconst webhookData = $('POST Update User Profile - Webhook').first().json;\nconst jwtSecret = $('Get JWT Secret - Supabase').first().json.value;\n\nconst headers = webhookData.headers || {};\nconst body = webhookData.body || {};\n\nconst authHeader = headers.authorization\n  || headers.Authorization || '';\n\nif (!authHeader || !authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Authentication required',\n      statusCode: 401\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nfunction verifyJWT(token, secret) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n    const [header, payload, signature] = parts;\n    const expected = simpleHash(\n      `${header}.${payload}.${secret}`\n    );\n    if (signature !== expected) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n    const decoded = JSON.parse(atob(payload));\n    const now = Math.floor(Date.now() / 1000);\n    if (decoded.exp && decoded.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n    return { valid: true, payload: decoded };\n  } catch (e) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst result = verifyJWT(token, jwtSecret);\n\nif (!result.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: result.error || 'Invalid token',\n      statusCode: 401\n    }\n  }];\n}\n\nconst payload = result.payload;\n\nif (payload.type === 'limited') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Full authentication required',\n      statusCode: 403\n    }\n  }];\n}\n\nif (payload.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used here',\n      statusCode: 403\n    }\n  }];\n}\n\nconst fullName = body.fullName;\nconst email = body.email;\nconst phone = body.phone;\n\nconst hasFullName = fullName !== undefined\n  && fullName !== null;\nconst hasEmail = email !== undefined\n  && email !== null;\nconst hasPhone = phone !== undefined\n  && phone !== null;\n\nif (!hasFullName && !hasEmail && !hasPhone) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'At least one field required',\n      statusCode: 400\n    }\n  }];\n}\n\nif (hasEmail && email.trim() !== '') {\n  if (!email.includes('@') || !email.includes('.')) {\n    return [{\n      json: {\n        _route: 'unauthorized',\n        success: false,\n        message: 'Invalid email format',\n        statusCode: 400\n      }\n    }];\n  }\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    username: payload.sub,\n    fullName: hasFullName ? fullName.trim() : null,\n    email: hasEmail ? email.trim() : null,\n    phone: hasPhone ? phone.trim() : null,\n    hasFullName: hasFullName,\n    hasEmail: hasEmail,\n    hasPhone: hasPhone\n  }\n}];\n\n// v2.0.0 - JWT validation with app_config secret"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [440, 0],
-      "id": "up100001-0003-4000-8000-000000000003",
+      "id": "up200001-0003-4000-8000-000000000003",
       "name": "Validate JWT & Extract Data - Code"
     },
     {
@@ -110,7 +110,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [660, 0],
-      "id": "up100001-0004-4000-8000-000000000004",
+      "id": "up200001-0004-4000-8000-000000000004",
       "name": "Check Auth - Switch"
     },
     {
@@ -129,7 +129,7 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [880, -120],
-      "id": "up100001-0005-4000-8000-000000000005",
+      "id": "up200001-0005-4000-8000-000000000005",
       "name": "Get User by Username - Supabase",
       "alwaysOutputData": true,
       "credentials": {
@@ -141,12 +141,12 @@
     },
     {
       "parameters": {
-        "jsCode": "// Build Update Fields - v1.0.0\n// Checks user exists, builds update payload\n\nconst validatedData = $('Validate JWT & Extract Data - Code')\n  .first().json;\nconst userRecord = $input.first().json;\n\n// Check if user was found\nif (!userRecord || !userRecord.id) {\n  return [{\n    json: {\n      _route: 'not_found',\n      success: false,\n      message: 'User not found',\n      statusCode: 404\n    }\n  }];\n}\n\n// Build update object with only provided fields\nconst updateFields = {};\n\nif (validatedData.hasFullName) {\n  updateFields.full_name = validatedData.fullName;\n}\nif (validatedData.hasEmail) {\n  updateFields.email = validatedData.email;\n}\nif (validatedData.hasPhone) {\n  updateFields.phone = validatedData.phone;\n}\n\nreturn [{\n  json: {\n    _route: 'found',\n    userId: userRecord.id,\n    username: validatedData.username,\n    updateFields: updateFields\n  }\n}];\n\n// Version: v1.0.0 - Build conditional update payload"
+        "jsCode": "// Build Update Fields - v2.0.0\n// Checks user exists and if driver_id is linked\n// Builds update payload for users table\n\nconst validatedData = $('Validate JWT & Extract Data - Code')\n  .first().json;\nconst userRecord = $input.first().json;\n\nif (!userRecord || !userRecord.id) {\n  return [{\n    json: {\n      _route: 'not_found',\n      success: false,\n      message: 'User not found',\n      statusCode: 404\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'found',\n    userId: userRecord.id,\n    username: validatedData.username,\n    driverId: userRecord.driver_id || null,\n    fullName: validatedData.fullName,\n    email: validatedData.email,\n    phone: validatedData.phone,\n    hasFullName: validatedData.hasFullName,\n    hasEmail: validatedData.hasEmail,\n    hasPhone: validatedData.hasPhone\n  }\n}];\n\n// v2.0.0 - Added driver_id from user record"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1100, -120],
-      "id": "up100001-0006-4000-8000-000000000006",
+      "id": "up200001-0006-4000-8000-000000000006",
       "name": "Build Update Fields - Code"
     },
     {
@@ -208,18 +208,18 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [1320, -120],
-      "id": "up100001-0007-4000-8000-000000000007",
+      "id": "up200001-0007-4000-8000-000000000007",
       "name": "Check User Found - Switch"
     },
     {
       "parameters": {
-        "jsCode": "// Prepare Supabase Update - v1.0.0\n// Flattens updateFields for Supabase expression refs\n\nconst data = $input.first().json;\nconst fields = data.updateFields;\n\nreturn [{\n  json: {\n    username: data.username,\n    full_name: fields.full_name !== undefined\n      ? fields.full_name : null,\n    email: fields.email !== undefined\n      ? fields.email : null,\n    phone: fields.phone !== undefined\n      ? fields.phone : null,\n    has_full_name: fields.full_name !== undefined\n      ? 'true' : 'false',\n    has_email: fields.email !== undefined\n      ? 'true' : 'false',\n    has_phone: fields.phone !== undefined\n      ? 'true' : 'false'\n  }\n}];\n\n// Version: v1.0.0 - Flatten fields for Supabase node"
+        "jsCode": "// Prepare Users Table Update - v2.0.0\n// Flattens fields for Supabase Update node\n\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    username: data.username,\n    driverId: data.driverId,\n    full_name: data.hasFullName ? data.fullName : null,\n    email: data.hasEmail ? data.email : null,\n    phone: data.hasPhone ? data.phone : null,\n    hasFullName: data.hasFullName,\n    hasEmail: data.hasEmail,\n    hasPhone: data.hasPhone,\n    fullName: data.fullName\n  }\n}];\n\n// v2.0.0 - Pass through driverId and fullName"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1540, -240],
-      "id": "up100001-0008-4000-8000-000000000008",
-      "name": "Prepare Supabase Update - Code"
+      "id": "up200001-0008-4000-8000-000000000008",
+      "name": "Prepare Users Table Update - Code"
     },
     {
       "parameters": {
@@ -254,8 +254,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [1760, -240],
-      "id": "up100001-0009-4000-8000-000000000009",
-      "name": "Update User Profile - Supabase",
+      "id": "up200001-0009-4000-8000-000000000009",
+      "name": "Update Users Table - Supabase",
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
@@ -266,33 +266,210 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format Success Response - v1.0.0\n\nconst updatedUser = $input.first().json;\nconst validatedData = $('Validate JWT & Extract Data - Code')\n  .first().json;\n\n// Check for database error\nif (updatedUser.error) {\n  console.error('Database update error:', updatedUser.error);\n  return [{\n    json: {\n      success: false,\n      message: 'Failed to update profile',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Return only the fields that were updated\nconst responseData = {};\nif (validatedData.hasFullName) {\n  responseData.full_name = updatedUser.full_name;\n}\nif (validatedData.hasEmail) {\n  responseData.email = updatedUser.email;\n}\nif (validatedData.hasPhone) {\n  responseData.phone = updatedUser.phone;\n}\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Profile updated successfully',\n    data: responseData,\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - Format profile update response"
+        "jsCode": "// Check Driver Link - v2.0.0\n// Determines if user has a linked driver record\n\nconst prepData = $('Prepare Users Table Update - Code')\n  .first().json;\nconst updatedUser = $input.first().json;\n\nif (updatedUser.error) {\n  console.error('Users table update failed');\n  return [{\n    json: {\n      _route: 'error',\n      success: false,\n      message: 'Failed to update user profile',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst driverId = prepData.driverId;\nconst hasDriver = driverId !== null\n  && driverId !== undefined;\n\nreturn [{\n  json: {\n    _route: hasDriver ? 'has_driver' : 'no_driver',\n    driverId: driverId,\n    fullName: prepData.fullName,\n    email: prepData.email,\n    phone: prepData.phone,\n    hasFullName: prepData.hasFullName,\n    hasEmail: prepData.hasEmail,\n    hasPhone: prepData.hasPhone,\n    updatedUser: {\n      full_name: updatedUser.full_name,\n      email: updatedUser.email,\n      phone: updatedUser.phone\n    }\n  }\n}];\n\n// v2.0.0 - Check driver_id and pass data forward"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1980, -240],
-      "id": "up100001-0010-4000-8000-000000000010",
-      "name": "Format Success Response - Code"
+      "id": "up200001-0010-4000-8000-000000000010",
+      "name": "Check Driver Link - Code"
     },
     {
       "parameters": {
-        "jsCode": "// Format Auth/Validation Error - v1.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'Unauthorized',\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - Auth error formatting"
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "has-driver",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "has_driver",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Driver"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "no-driver",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "no_driver",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Driver"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "db-error",
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [2200, -240],
+      "id": "up200001-0011-4000-8000-000000000011",
+      "name": "Check Has Driver - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Driver Table Update - v2.0.0\n// Maps user profile fields to driver columns\n// name, first_name, last_name, email, phone\n\nconst data = $input.first().json;\n\nconst driverFields = {\n  driverId: data.driverId\n};\n\nif (data.hasFullName && data.fullName) {\n  driverFields.name = data.fullName;\n  const parts = data.fullName.split(' ');\n  driverFields.first_name = parts[0] || '';\n  driverFields.last_name = parts.slice(1).join(' ') || '';\n}\nif (data.hasEmail) {\n  driverFields.email = data.email;\n}\nif (data.hasPhone) {\n  driverFields.phone = data.phone;\n}\n\n// Carry forward for response\ndriverFields.updatedUser = data.updatedUser;\n\nreturn [{ json: driverFields }];\n\n// v2.0.0 - Map profile fields to driver columns"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, -360],
+      "id": "up200001-0012-4000-8000-000000000012",
+      "name": "Prepare Driver Table Update - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "drivers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.driverId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.name }}"
+            },
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $json.first_name }}"
+            },
+            {
+              "fieldId": "last_name",
+              "fieldValue": "={{ $json.last_name }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.email }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $json.phone }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2640, -360],
+      "id": "up200001-0013-4000-8000-000000000013",
+      "name": "Update Driver Table - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "PLACEHOLDER",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Success (Driver Updated) - v2.0.0\n\nconst prepData = $('Prepare Driver Table Update - Code')\n  .first().json;\nconst driverResult = $input.first().json;\nconst userData = prepData.updatedUser;\n\nif (driverResult.error) {\n  console.error('Driver table update failed');\n}\n\nconst responseData = {\n  full_name: userData.full_name,\n  email: userData.email,\n  phone: userData.phone\n};\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Profile updated successfully',\n    data: responseData,\n    driver_updated: !driverResult.error,\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// v2.0.0 - Success response with driver_updated flag"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, -360],
+      "id": "up200001-0014-4000-8000-000000000014",
+      "name": "Format Success (Driver Updated) - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Success (No Driver) - v2.0.0\n\nconst data = $input.first().json;\nconst userData = data.updatedUser;\n\nconst responseData = {\n  full_name: userData.full_name,\n  email: userData.email,\n  phone: userData.phone\n};\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Profile updated successfully',\n    data: responseData,\n    driver_updated: false,\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// v2.0.0 - Success response without driver update"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, -120],
+      "id": "up200001-0015-4000-8000-000000000015",
+      "name": "Format Success (No Driver) - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Auth/Validation Error - v2.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'Unauthorized',\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// v2.0.0 - Auth error formatting"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [880, 120],
-      "id": "up100001-0011-4000-8000-000000000011",
+      "id": "up200001-0016-4000-8000-000000000016",
       "name": "Format Auth Error - Code"
     },
     {
       "parameters": {
-        "jsCode": "// Format Not Found Error - v1.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'User not found',\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// Version: v1.0.0 - User not found error formatting"
+        "jsCode": "// Format Not Found Error - v2.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'User not found',\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// v2.0.0 - User not found error formatting"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1540, 0],
-      "id": "up100001-0012-4000-8000-000000000012",
+      "id": "up200001-0017-4000-8000-000000000017",
       "name": "Format Not Found Error - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format DB Error - v2.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'Database error',\n    timestamp: new Date().toISOString()\n  }\n}];\n\n// v2.0.0 - Database error formatting"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, -10],
+      "id": "up200001-0018-4000-8000-000000000018",
+      "name": "Format DB Error - Code"
     },
     {
       "parameters": {
@@ -300,8 +477,8 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
-      "position": [2200, 0],
-      "id": "up100001-0013-4000-8000-000000000013",
+      "position": [3080, 0],
+      "id": "up200001-0019-4000-8000-000000000019",
       "name": "Respond to Webhook"
     }
   ],
@@ -383,7 +560,7 @@
       "main": [
         [
           {
-            "node": "Prepare Supabase Update - Code",
+            "node": "Prepare Users Table Update - Code",
             "type": "main",
             "index": 0
           }
@@ -397,29 +574,98 @@
         ]
       ]
     },
-    "Prepare Supabase Update - Code": {
+    "Prepare Users Table Update - Code": {
       "main": [
         [
           {
-            "node": "Update User Profile - Supabase",
+            "node": "Update Users Table - Supabase",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Update User Profile - Supabase": {
+    "Update Users Table - Supabase": {
       "main": [
         [
           {
-            "node": "Format Success Response - Code",
+            "node": "Check Driver Link - Code",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format Success Response - Code": {
+    "Check Driver Link - Code": {
+      "main": [
+        [
+          {
+            "node": "Check Has Driver - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Has Driver - Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Driver Table Update - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Success (No Driver) - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format DB Error - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Driver Table Update - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Driver Table - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Driver Table - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Success (Driver Updated) - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success (Driver Updated) - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success (No Driver) - Code": {
       "main": [
         [
           {
@@ -451,13 +697,24 @@
           }
         ]
       ]
+    },
+    "Format DB Error - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "user-update-profile-v1",
+  "versionId": "user-update-profile-v2",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "rrts-user-management"
