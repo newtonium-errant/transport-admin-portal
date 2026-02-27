@@ -115,6 +115,31 @@ The project uses **separate Supabase credentials** for testing and production:
 - ✅ **ALWAYS** use "RRTS" (not "RRTS Transport") in email subjects and content
 - ✅ **ALWAYS** keep comments SHORT (under 80 characters) to prevent line wrapping
 
+### Audit Logging:
+Workflows that create, update, or delete data **MUST** log the action to the `audit_logs` table. Add a Supabase Create node (named `Log Audit - Supabase`) after the data mutation with these required fields:
+
+| Column | Type | Value |
+|--------|------|-------|
+| `username` | text | Username from JWT payload (required) |
+| `role` | text | User role from JWT payload (required) |
+| `action` | text | `{resource}_{verb}` format, e.g. `driver_update`, `client_create` (required) |
+| `user_id` | integer | User ID from JWT payload (nullable) |
+| `resource_type` | text | Entity type: `appointment`, `client`, `driver`, `user`, `destination` |
+| `resource_id` | text | ID of the affected record (as string) |
+| `details` | jsonb | Old/new values, reasons, metadata — use `JSON.stringify()` |
+| `success` | boolean | `true` for success, `false` for error paths |
+| `error_message` | text | Error details (only on error paths) |
+
+Set `alwaysOutputData: true` on the audit node. Audit log failures should **not** block the main workflow response — place the audit node as a non-blocking parallel path after the mutation.
+
+**Full SOP with examples, patterns, and checklist:** `docs/instructions/N8N_AUDIT_LOGGING_SOP.md`
+
+### Critical Limitations:
+1. **`fetch()` NOT AVAILABLE in Code nodes** — use `this.helpers.httpRequest()` instead. Returns parsed JSON directly (no `.json()` needed). Use `qs` parameter for query strings. Body is auto-serialized for POST requests (no `JSON.stringify` needed). Note: `this` context is lost in nested functions — capture with `const self = this;` at the top of the Code node and use `self.helpers.httpRequest()` inside functions.
+2. **PBKDF2 NOT AVAILABLE** — use custom `simpleHash()` function for passwords. ALL auth workflows MUST use the identical implementation. Format: `salt:hash`.
+3. **SQL JOINs NOT SUPPORTED** in Supabase nodes — fetch related data in separate nodes and merge in Code nodes.
+4. **`executeQuery` NOT SUPPORTED** — use basic Supabase operations only (`get`, `getAll`, `create`, `update`, `delete`).
+
 ## Workflow Creation Process
 
 ### Step 1: Planning

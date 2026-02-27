@@ -354,7 +354,8 @@ The RRTS Transport Admin Portal uses a split-stack architecture: **Frontend** (s
 - `N8N_WORKFLOW_CHECKLIST.md` - Workflow creation checklist
 
 **n8n Best Practices:**
-- `N8N_LOGGING_BEST_PRACTICES.md` - Minimal logging standards (Railway rate limits)
+- `N8N_AUDIT_LOGGING_SOP.md` - Audit logging SOP (when/what/how to log to `audit_logs` table)
+- `N8N_LOGGING_BEST_PRACTICES.md` - Console logging standards (Railway rate limits)
 - `N8N_TIMEZONE_CONFIGURATION.md` - Halifax/AST/ADT timezone handling
 - `N8N_WORKFLOW_PATTERNS_REFERENCE.md` - Common workflow patterns and solutions
 

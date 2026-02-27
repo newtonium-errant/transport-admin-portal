@@ -2812,7 +2812,7 @@
         async function handleAddressSubmit(event) {
             event.preventDefault();
             const payload = {
-                id: (driverData && driverData.id) || currentUser.driver_id,
+                driver_id: (driverData && driverData.id) || currentUser.driver_id,
                 home_address: document.getElementById('homeAddress').value.trim(),
                 home_city: document.getElementById('homeCity').value.trim(),
                 home_province: document.getElementById('homeProvince').value,
@@ -2820,7 +2820,7 @@
             };
             setButtonLoading('saveAddressBtn', true);
             try {
-                const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                const response = await authenticatedFetch(`${API_BASE}/update-driver-home-address`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2832,23 +2832,6 @@
                     driverData.home_city = payload.home_city;
                     driverData.home_province = payload.home_province;
                     driverData.home_postal_code = payload.home_postal_code;
-
-                    // Fire-and-forget: recalculate clinic distances from new address
-                    showToast('Recalculating clinic distances...', 'info');
-                    authenticatedFetch(`${API_BASE}/recalculate-my-clinic-distances`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ driver_id: currentUser.driver_id })
-                    }).then(r => r.json()).then(res => {
-                        if (res.success) {
-                            showToast('Clinic distances updated.', 'success');
-                            loadClinicPreferences();
-                        } else {
-                            showToast('Could not recalculate clinic distances. Try again later.', 'warning');
-                        }
-                    }).catch(() => {
-                        showToast('Could not recalculate clinic distances. Try again later.', 'warning');
-                    });
                 } else {
                     showToast(result.message || 'Failed to update address.', 'error');
                 }
