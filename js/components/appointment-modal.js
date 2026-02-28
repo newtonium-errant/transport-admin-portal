@@ -143,6 +143,7 @@ class AppointmentModal {
                                         </label>
                                         <input type="number" class="form-control" id="transitTime" min="1" max="300">
                                         <small class="text-muted">Auto-populated from client travel times (editable)</small>
+                                        <small class="text-info d-none" id="transitTimeCalculatingHint"><i class="bi bi-hourglass-split me-1"></i>Travel times are still being calculated for this client. You may need to enter transit time manually.</small>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="pickupTime" class="form-label">Pickup Time (Calculated)</label>
@@ -635,9 +636,13 @@ class AppointmentModal {
             document.getElementById('appointmentAddress').value = fullAddress;
 
             // Auto-populate transit time from client's pre-calculated travel times
+            const calculatingHint = document.getElementById('transitTimeCalculatingHint');
             if (this.selectedClient && this.selectedClient.clinic_travel_times) {
                 const travelTimes = this.selectedClient.clinic_travel_times;
                 console.log(`[Transit Time] Client travel times:`, travelTimes);
+
+                // Hide the calculating hint since travel times are available
+                if (calculatingHint) calculatingHint.classList.add('d-none');
 
                 // Try to find travel time for this clinic (handle JSONB parsing if needed)
                 let clinicTravelTime = null;
@@ -679,6 +684,8 @@ class AppointmentModal {
                 if (!this.selectedClient) {
                     console.warn(`[Transit Time] No client selected`);
                 } else if (!this.selectedClient.clinic_travel_times) {
+                    // Show hint that travel times may still be calculating
+                    if (calculatingHint) calculatingHint.classList.remove('d-none');
                     console.warn(`[Transit Time] Client ${this.selectedClient.knumber} has no clinic_travel_times`);
                 }
             }
@@ -1454,6 +1461,10 @@ class AppointmentModal {
             // Reset appointment type fields
             document.getElementById('tripDirection').value = '';
             document.getElementById('eventName').value = '';
+
+            // Hide travel times calculating hint
+            const calculatingHint = document.getElementById('transitTimeCalculatingHint');
+            if (calculatingHint) calculatingHint.classList.add('d-none');
 
             // Reset original values (add mode - no originals to compare against)
             this.originalSchedulingNotes = null;

@@ -473,7 +473,7 @@ class ClientModal {
 
             // Success
             const message = data.travelTimesRecalculated
-                ? 'Client updated and travel times recalculated!'
+                ? 'Client updated successfully. Travel times are being recalculated in the background.'
                 : 'Client updated successfully!';
             this.showSuccess(message);
 
