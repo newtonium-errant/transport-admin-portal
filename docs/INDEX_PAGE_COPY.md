@@ -16,7 +16,7 @@ Rural Route Transportation Services
 Rural Route Transportation Services
 
 **Subtitle:**
-Reliable, veteran-owned medical transportation serving the Annapolis Valley, Nova Scotia. Getting you to your appointments safely and on time.
+Reliable, veteran-owned medical transportation serving the Annapolis Valley & Halifax, Nova Scotia.
 
 **CTA Button Text:**
 Call Us: (782) 822-6886
@@ -26,11 +26,11 @@ Call Us: (782) 822-6886
 ## What We Do
 
 **Section Intro:**
-We take the stress out of getting to your medical appointments. Whether you need a ride to the hospital, a clinic, or a specialist, we handle the details so you can focus on your health.
+We'll get you where you're going. Whether you need a ride to the hospital, a clinic, or a specialist, we handle the details so you can focus on your health.
 
 ### Card 1: Medical Appointments
 
-We specialize in transportation for medical appointments throughout the Annapolis Valley. From routine check-ups to specialist visits, we get you there on time.
+We specialize in transportation for medical appointments throughout the Annapolis Valley and Halifax, Nova Scotia. If you need a drive, we can get you there.
 
 ### Card 2: We Handle the Booking
 
@@ -48,13 +48,14 @@ Every ride is handled with care and respect. Our drivers understand the importan
 Rural Route Transportation Services was founded by a veteran who experienced firsthand the challenges of getting to medical appointments in rural Nova Scotia.
 
 **Body Text:**
-After years of navigating long distances and limited transportation options, the idea for RRTS was born out of a simple belief: no one should miss a medical appointment because they can't get there. What started as a mission to help fellow veterans has grown into a service that supports the entire community across the Annapolis Valley.
+After years of navigating the medical system, the VAC system, and the Medavie Blue Cross system, it only seems to become harder to get the care you need. Departments not talking to each other. Claims systems denying your request without even telling you why. And even if you work through all of that, getting back and forth to appointments is just another obstacle, especially in most of Nova Scotia where the distances are long and the options are limited.
+
 
 **Founder Quote:**
-"I know what it's like to need a ride and not have one. That's why I started RRTS — so no one in our community has to face that alone."
+"I know what it's like to go through the frustration of not being able to do everything for myself. We were taught to stand alone. But we were also taught to help each other, leave no one behind. Transportation to appointments is only one small thing, but I know it can mean the difference between getting the treatment you need or not.  That's why I started RRTS — so no one in our community has to face it all alone."
 
 **Quote Attribution:**
-— Founder, RRTS
+— Andrew Newton, Veteran & Founder of RRTS
 
 ---
 
@@ -69,7 +70,7 @@ Ready to book a ride or have questions? Reach out by phone, text, or email. We'r
 
 ### Service Area Card
 
-We proudly serve the **Annapolis Valley** and surrounding communities in Nova Scotia. If you're unsure whether we cover your area, give us a call and we'll do our best to help.
+We proudly serve the **Annapolis Valley to Halifax** and surrounding communities in Nova Scotia. If you're unsure whether we cover your area, give us a call and we'll do our best to help.
 
 ---
 
@@ -79,4 +80,4 @@ We proudly serve the **Annapolis Valley** and surrounding communities in Nova Sc
 Veteran-owned medical transportation serving the Annapolis Valley, Nova Scotia.
 
 **Copyright:**
-© 2026 Rural Route Transportation Services. All rights reserved.
+© 2026 Rural Route Transportation Services, a division of 3335556 NS Ltd. All rights reserved.

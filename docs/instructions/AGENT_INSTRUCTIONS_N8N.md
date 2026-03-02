@@ -139,6 +139,20 @@ Set `alwaysOutputData: true` on the audit node. Audit log failures should **not*
 2. **PBKDF2 NOT AVAILABLE** — use custom `simpleHash()` function for passwords. ALL auth workflows MUST use the identical implementation. Format: `salt:hash`.
 3. **SQL JOINs NOT SUPPORTED** in Supabase nodes — fetch related data in separate nodes and merge in Code nodes.
 4. **`executeQuery` NOT SUPPORTED** — use basic Supabase operations only (`get`, `getAll`, `create`, `update`, `delete`).
+5. **HTTP Request JSON bodies with expressions BREAK** — n8n's expression interpolation inside JSON body strings causes `"JSON parameter needs to be valid JSON"` errors (template literals, newlines, and special characters all break JSON parsing). **Always use the Code-node-first pattern:** build the complete request body as a JavaScript object in an upstream Code node, then reference it in the HTTP Request node with `={{ JSON.stringify($json.bodyFieldName) }}`. Example:
+   ```javascript
+   // Upstream Code node ("Prepare Request Body - Code")
+   return {
+     json: {
+       smsBody: {
+         to: [phoneNumber],
+         from: phoneId,
+         content: `Hi ${name}, your message here`
+       }
+     }
+   };
+   // HTTP Request node JSON field: ={{ JSON.stringify($json.smsBody) }}
+   ```
 
 ## Workflow Creation Process
 
@@ -222,6 +236,21 @@ if (result.error) {
   "tableId": "table_name",
   "alwaysOutputData": true
 }
+```
+
+### HTTP Request Body Mistakes:
+```javascript
+// ❌ WRONG - Expressions inside JSON body string
+// Causes "JSON parameter needs to be valid JSON"
+={
+  "to": ["{{ $json.phone }}"],
+  "content": "Hi {{ $json.name }}, welcome!"
+}
+
+// ✅ CORRECT - Build body in upstream Code node
+// Code node:
+return { json: { smsBody: { to: [$json.phone], content: `Hi ${name}` } } };
+// HTTP Request JSON field: ={{ JSON.stringify($json.smsBody) }}
 ```
 
 ### Code Node Comment Mistakes:

@@ -65,8 +65,12 @@ Client records with K numbers.
 | **Settings** | | | |
 | `appointment_length` | integer | DEFAULT 120 | Default appointment duration (minutes) |
 | `clinic_travel_times` | jsonb | | Pre-calculated travel times to clinics |
+| `primary_clinic_id` | integer | FK → destinations.id, ON DELETE SET NULL | Default clinic for auto-populating appointment forms |
 | `active` | boolean | DEFAULT true | Client active status |
 | `notes` | text | | General notes about client |
+| **Fast-Add / Profile** | | | |
+| `profile_status` | text | NOT NULL, DEFAULT 'complete', CHECK IN ('complete','incomplete') | Profile completeness: complete or incomplete (fast-add, missing fields) |
+| `created_via` | text | NOT NULL, DEFAULT 'standard', CHECK IN ('standard','fast_add') | How the client was created: standard (full form) or fast_add (minimal data) |
 | `created_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
 | `updated_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
 
@@ -397,6 +401,12 @@ SQL migration files in `database/sql/` directory (run manually in Supabase):
 19. `18_seed_app_config_google_maps.sql` - Seed Google Maps API key into app_config for centralized management
 20. `19_appointment_types.sql` - Appointment types (round_trip, one_way, support), sentinel client K0000, CHECK constraints
 21. `20_driver_time_off_reason_nullable.sql` - Make driver_time_off.reason nullable for override_available entries
+22. `22_add_destination_contacts.sql` - Add contacts JSONB to destinations
+23. `23_create_distance_lookup_tables.sql` - Distance lookup tables for drivers/clients/destinations
+24. `24_add_driver_total_distance_and_clinic_fk.sql` - Driver total distance and clinic FK on appointments
+25. `25_add_client_primary_clinic.sql` - Add primary_clinic_id FK to clients
+26. `26_background_tasks.sql` - Background tasks system for async operations
+27. `27_fast_add_client_columns.sql` - Add profile_status and created_via to clients for Fast-Add feature
 
 ### Migration Process
 
