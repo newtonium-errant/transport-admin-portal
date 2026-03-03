@@ -47,10 +47,21 @@ Major profile.html improvements, session manager bug fixes, appointment modal dr
 - Update Driver Time Off
 - Recalculate My Clinic Distances
 
+### Frontend — profile.html (Profile Info & Loading States)
+13. **Profile info from driver data**: For driver users, Profile Information form (name, email, phone) now loads from `driverData` (drivers table) and saves via `POST /update-driver`. Non-drivers still use session storage and `update-user-profile`.
+14. **Skeleton loaders**: Shimmer skeletons in Profile Info and Home Address sections while driver data loads from API. Forms hidden until data ready, then swapped in.
+
+### n8n Workflows — Updated
+- **Get Driver Schedule → Merge Schedule Data v1.1.0**: Added `email`, `phone`, `home_address`, `home_city`, `home_province`, `home_postal_code`, `home_coordinates` to the driver object returned by the API. Previously only returned schedule fields.
+
 ## Commits
 - `4af2838` — Profile redesign, appointment modal dropdown, session fixes, and calendar improvements (9 files, +1361/-377)
 - `97142b1` — Multi-entry calendar, per-entry editing, and clinic distance recalculation (+283/-168)
 - `c1b85ec` — Rename Schedule tab to Availability, add appointment button loading, fix driver appointments display (+30/-8)
+- `6e347cb` — Profile info loads from driver data with skeleton loaders (+96/-29)
+
+## Deployment
+- Testing merged into main (`a2b6f04`) — 24 files deployed to production
 
 ## Pending
 - Denormalize `client_name` into appointments table (task #8)
@@ -58,6 +69,7 @@ Major profile.html improvements, session manager bug fixes, appointment modal dr
 - Get Driver Appointments workflow — validated locally, needs production deployment
 - Remaining migrations: 19 (appointment types), 14 (driver travel times), 17 (background tasks)
 - Reference workflow templates in `Workflows/drivers/` still use `clinic_locations` — should be updated to `destinations`
+- index.html redesign on wip branch — not yet ready for Testing/main
 
 ## Team Agents Used
 - **frontend** (claude-opus-4-6, acceptEdits mode): Profile redesign, calendar features, session fixes, appointment button loading

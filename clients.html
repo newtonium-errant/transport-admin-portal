@@ -432,6 +432,15 @@
             color: #084298;
         }
 
+        .badge-incomplete {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .client-row.incomplete {
+            border-left: 3px solid #f0ad4e;
+        }
+
         .client-details-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -794,6 +803,7 @@
                         <option value="all">All Clients</option>
                         <option value="active" selected>Active Only</option>
                         <option value="inactive">Inactive Only</option>
+                        <option value="incomplete">Incomplete Profiles</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -862,6 +872,13 @@
                 </div>
                 <div class="modal-body">
                     <form id="addClientForm" onsubmit="event.preventDefault(); saveNewClient();">
+                        <!-- Fast Add Toggle -->
+                        <div class="form-check form-switch mb-3 p-2 rounded" style="background-color: #f8f9fa; padding-left: 2.5rem !important;">
+                            <input class="form-check-input" type="checkbox" id="fastAddToggle" onchange="toggleFastAdd()">
+                            <label class="form-check-label fw-bold" for="fastAddToggle">
+                                <i class="bi bi-lightning-fill text-warning me-1"></i>Quick Add — minimal fields only
+                            </label>
+                        </div>
                         <!-- Basic Information -->
                         <div class="row mb-4">
                             <div class="col-12">
@@ -924,7 +941,7 @@
                         </div>
 
                         <!-- Secondary Address (Optional) - Collapsible -->
-                        <div class="row mb-4">
+                        <div class="row mb-4" id="secondaryAddressHeader">
                             <div class="col-12">
                                 <h6 class="text-primary fw-bold mb-3">
                                     <button class="btn btn-link p-0 text-decoration-none text-primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#secondaryAddressSection" aria-expanded="false" aria-controls="secondaryAddressSection">
@@ -967,7 +984,7 @@
                         </div>
 
                         <!-- Appointment Settings -->
-                        <div class="row mb-4">
+                        <div class="row mb-4" id="appointmentSettingsSection">
                             <div class="col-12">
                                 <h6 class="text-primary fw-bold mb-3">
                                     <i class="bi bi-calendar-check me-2"></i>Appointment Settings
@@ -984,7 +1001,7 @@
                         </div>
 
                         <!-- Emergency Contact -->
-                        <div class="row mb-4">
+                        <div class="row mb-4" id="emergencyContactSection">
                             <div class="col-12">
                                 <h6 class="text-primary fw-bold mb-3">
                                     <i class="bi bi-telephone-fill me-2"></i>Emergency Contact
@@ -1001,7 +1018,7 @@
                         </div>
 
                         <!-- Clinic Selection for Travel Times -->
-                        <div class="row mb-4">
+                        <div class="row mb-4" id="clinicSelectionSection">
                             <div class="col-12">
                                 <h6 class="text-primary fw-bold mb-3">
                                     <i class="bi bi-pin-map-fill me-2"></i>Calculate Travel Times
@@ -1037,6 +1054,7 @@
 
     <!-- JWT Authentication Helper -->
     <script src="js/auth/jwt-auth.js"></script>
+    <script src="js/core/api-client.js"></script>
     <script src="js/auth/session-manager.js"></script>
     <script src="js/components/navigation.js"></script>
     <script src="js/components/client-modal.js"></script>
@@ -1070,8 +1088,14 @@
             // Initialize client quick edit modal
             clientModalInstance = new ClientModal({
                 apiBaseUrl: apiBaseUrl,
-                onSave: async (clientData) => {
-                    // Reload clients after save
+                onSave: async (responseData) => {
+                    // If profile was completed, show additional toast
+                    const data = responseData?.data || {};
+                    if (data.profileCompleted) {
+                        showToast('Client profile is now complete!', 'info');
+                    }
+
+                    // Reload clients to reflect all changes
                     await loadClients();
                 },
                 onClose: () => {
@@ -1317,10 +1341,12 @@
                     (client.email || '').toLowerCase().includes(searchTerm);
 
                 // Status filter
+                const isIncomplete = client.profile_status === 'incomplete';
                 const matchesStatus =
                     statusFilter === 'all' ||
                     (statusFilter === 'active' && client.active === true) ||
-                    (statusFilter === 'inactive' && client.active === false);
+                    (statusFilter === 'inactive' && client.active === false) ||
+                    (statusFilter === 'incomplete' && isIncomplete);
 
                 // Address filter
                 const hasSecondaryAddress = client.secondary_civic_address &&
@@ -1367,8 +1393,10 @@
                     client.secondary_province
                 ].filter(Boolean).join(', ') : null;
 
+                const isIncomplete = client.profile_status === 'incomplete';
+
                 return `
-                    <div class="client-row ${client.active === false ? 'inactive' : ''}" onclick="quickEditClient('${client.knumber}')" style="cursor: pointer;">
+                    <div class="client-row ${client.active === false ? 'inactive' : ''} ${isIncomplete ? 'incomplete' : ''}" onclick="quickEditClient('${client.knumber}')" style="cursor: pointer;">
                         <div class="client-main-info">
                             <div class="client-name-section">
                                 <h4 class="client-name">${client.lastname || ''}, ${client.firstname || ''}</h4>
@@ -1378,6 +1406,10 @@
                                 ${client.active === true ?
                                     '<span class="badge badge-active">Active</span>' :
                                     '<span class="badge badge-inactive">Inactive</span>'
+                                }
+                                ${isIncomplete ?
+                                    '<span class="badge badge-incomplete"><i class="bi bi-exclamation-triangle-fill me-1"></i>Incomplete</span>' :
+                                    ''
                                 }
                                 ${hasSecondaryAddress ?
                                     '<span class="badge badge-secondary-address"><i class="bi bi-house-fill me-1"></i>2 Addresses</span>' :
@@ -1493,6 +1525,72 @@
 
         // Add Client Modal Functions
         let availableClinics = [];
+        let isFastAddMode = false;
+
+        // Toggle Fast Add mode in the Add Client modal
+        function toggleFastAdd() {
+            isFastAddMode = document.getElementById('fastAddToggle').checked;
+
+            // Update modal title
+            const modalTitle = document.querySelector('#addClientModal .modal-title');
+            if (isFastAddMode) {
+                modalTitle.innerHTML = '<i class="bi bi-lightning-fill me-2 text-warning"></i>Quick Add Client';
+            } else {
+                modalTitle.innerHTML = '<i class="bi bi-person-plus-fill me-2"></i>Add New Client';
+            }
+
+            // Toggle section visibility
+            const sectionsToHide = [
+                'secondaryAddressHeader',
+                'secondaryAddressSection',
+                'appointmentSettingsSection',
+                'emergencyContactSection',
+                'clinicSelectionSection'
+            ];
+            sectionsToHide.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = isFastAddMode ? 'none' : '';
+            });
+
+            // Toggle email required
+            const emailField = document.getElementById('newEmail');
+            emailField.required = !isFastAddMode;
+
+            // Toggle email asterisk
+            const emailLabel = emailField.closest('.mb-3').querySelector('.form-label');
+            const emailAsterisk = emailLabel ? emailLabel.querySelector('.text-danger') : null;
+            if (emailAsterisk) emailAsterisk.style.display = isFastAddMode ? 'none' : '';
+
+            // K Number: optional in fast mode, required in full mode
+            const kNumberField = document.getElementById('newKNumber');
+            kNumberField.required = !isFastAddMode;
+
+            // Toggle K number asterisk and help text
+            const kNumberLabel = kNumberField.closest('.mb-3').querySelector('.form-label');
+            const kNumberAsterisk = kNumberLabel ? kNumberLabel.querySelector('.text-danger') : null;
+            if (kNumberAsterisk) kNumberAsterisk.style.display = isFastAddMode ? 'none' : '';
+
+            const kNumberHelp = kNumberField.closest('.mb-3').querySelector('.text-muted');
+            if (kNumberHelp) {
+                kNumberHelp.textContent = isFastAddMode
+                    ? 'Optional \u2014 a temporary number will be assigned automatically'
+                    : 'Format: K followed by 7 digits';
+            }
+
+            // Remove/restore pattern validation for K number
+            if (isFastAddMode) {
+                kNumberField.removeAttribute('pattern');
+                kNumberField.placeholder = 'Optional';
+            } else {
+                kNumberField.setAttribute('pattern', 'K\\d{7}');
+                kNumberField.placeholder = 'K1234567';
+            }
+
+            // Auto-focus first name in fast mode
+            if (isFastAddMode) {
+                setTimeout(() => document.getElementById('newFirstName').focus(), 100);
+            }
+        }
 
         async function openAddClientModal() {
             // Load clinics for selection
@@ -1502,6 +1600,10 @@
             document.getElementById('addClientForm').reset();
             document.getElementById('newProvince').value = 'NS'; // Default to NS
             document.getElementById('newAppointmentLength').value = '120'; // Default 2 hours
+
+            // Reset fast-add toggle to off (full mode)
+            document.getElementById('fastAddToggle').checked = false;
+            toggleFastAdd();
 
             // Re-check all clinic checkboxes and Select All after form reset
             document.querySelectorAll('.clinic-checkbox').forEach(checkbox => {
@@ -1594,30 +1696,40 @@
             const selectedCheckboxes = document.querySelectorAll('.clinic-checkbox:checked');
             const selectedClinicIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
 
-            // Build request payload
+            // Build request payload — send null (not "") for empty optional fields
+            const kNumberValue = document.getElementById('newKNumber').value.trim().toUpperCase();
+            const emailValue = document.getElementById('newEmail').value.trim();
+            const notesValue = document.getElementById('newNotes').value.trim();
+
             const requestData = {
-                kNumber: document.getElementById('newKNumber').value.toUpperCase(),
+                kNumber: kNumberValue || null,
                 clientData: {
-                    firstName: document.getElementById('newFirstName').value,
-                    lastName: document.getElementById('newLastName').value,
-                    phone: document.getElementById('newPhone').value,
-                    email: document.getElementById('newEmail').value,
-                    civicAddress: document.getElementById('newCivicAddress').value,
-                    city: document.getElementById('newCity').value,
+                    firstName: document.getElementById('newFirstName').value.trim(),
+                    lastName: document.getElementById('newLastName').value.trim(),
+                    phone: document.getElementById('newPhone').value.trim(),
+                    email: emailValue || null,
+                    civicAddress: document.getElementById('newCivicAddress').value.trim(),
+                    city: document.getElementById('newCity').value.trim(),
                     province: document.getElementById('newProvince').value,
-                    postalCode: document.getElementById('newPostalCode').value,
-                    appointmentLength: parseInt(document.getElementById('newAppointmentLength').value),
-                    notes: document.getElementById('newNotes').value,
-                    emergencyContactName: document.getElementById('newEmergencyName').value,
-                    emergencyContactNumber: document.getElementById('newEmergencyNumber').value,
+                    postalCode: document.getElementById('newPostalCode').value.trim(),
+                    appointmentLength: isFastAddMode ? 120 : parseInt(document.getElementById('newAppointmentLength').value),
+                    notes: notesValue || null,
+                    emergencyContactName: isFastAddMode ? null : (document.getElementById('newEmergencyName').value.trim() || null),
+                    emergencyContactNumber: isFastAddMode ? null : (document.getElementById('newEmergencyNumber').value.trim() || null),
                     active: true,
-                    mapAddress: '' // Not used in this form
+                    mapAddress: null
                 },
-                selectedClinicIds: selectedClinicIds // Empty array = all clinics
+                selectedClinicIds: isFastAddMode ? [] : selectedClinicIds
             };
 
-            // Add secondary address if provided
-            const secondaryAddress = document.getElementById('newSecondaryCivicAddress').value;
+            // Add mode flag for fast-add
+            if (isFastAddMode) {
+                requestData.mode = 'fast';
+            }
+
+            // Add secondary address if provided (not available in fast-add mode)
+            const secondaryAddressField = document.getElementById('newSecondaryCivicAddress');
+            const secondaryAddress = secondaryAddressField ? secondaryAddressField.value : '';
             if (secondaryAddress && secondaryAddress.trim() !== '') {
                 requestData.clientData.secondary_civic_address = secondaryAddress;
                 requestData.clientData.secondary_city = document.getElementById('newSecondaryCity').value;
@@ -1633,20 +1745,13 @@
                 saveBtn.disabled = true;
                 saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem; margin-right: 0.25rem;"></span>Creating...';
 
-                // Call the new v5 endpoint
-                const response = await authenticatedFetch(`${apiBaseUrl}/create-client-destinations`, {
-                    method: 'POST',
-                    body: JSON.stringify(requestData)
-                });
+                // Call the async add-client endpoint via APIClient
+                const result = await ClientsAPI.add(requestData);
 
-                const result = await response.json();
-
-                if (!response.ok || !result.success) {
-                    throw new Error(result.message || 'Failed to create client');
-                }
-
-                // Success!
-                showToast('Client created successfully with travel times calculated!', 'success');
+                // Success! Show assigned K number in toast
+                const assignedK = result?.data?.client?.knumber || requestData.kNumber || '';
+                const kLabel = assignedK ? ` as ${assignedK}` : '';
+                showToast(`Client created${kLabel}. Travel times are being calculated in the background.`, 'success');
                 closeAddClientModal();
 
                 // Reload clients list

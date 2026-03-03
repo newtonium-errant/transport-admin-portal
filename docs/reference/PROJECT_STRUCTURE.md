@@ -32,6 +32,7 @@ transport-admin-portal/
 │   ├── admin/          # ADMIN - *.json and ADMN - *.json
 │   ├── reminders/      # RMDR - *.json
 │   ├── clinics/        # CLINIC - *.json
+│   ├── destinations/   # DEST - *.json
 │   └── finance/        # FIN - *.json
 │
 ├── database/           # Database-related files
@@ -109,7 +110,7 @@ All HTML files are located at the project root for clean production URLs.
 - `client-profile.html` - Full client profile editor (production)
   - **Features**: All client fields, secondary address, emergency contacts
 - `developing/TEST-client-profile.html` - Test version for safe testing
-  - **Database**: Points to Testing Branch Supabase
+  - **Database**: Points to Supabase Testing database
 
 ---
 
@@ -117,6 +118,15 @@ All HTML files are located at the project root for clean production URLs.
 
 - `driver-management.html` - Driver management with Google Calendar integration
   - **Features**: Create/edit drivers, auto-create Google Calendars, manage availability
+
+---
+
+### Destination Management
+
+- `destinations.html` - Destination/clinic management
+  - **Auth**: Admin, Supervisor
+  - **Features**: List all destinations, add/edit with modal, dynamic contacts (multiple phone/email per destination), search, active/inactive toggle
+  - **API**: `/get-all-destinations`, `/add-destination`, `/update-destination`
 
 ---
 
@@ -215,7 +225,7 @@ All JavaScript files use simple paths from root (e.g., `src="js/auth/permissions
 - **`TEST-client-profile.js`** - Test version of client profile controller
   - **Location**: `developing/js/pages/TEST-client-profile.js`
   - **Endpoints**: Uses TEST- prefixed endpoints
-  - **Database**: Testing Branch Supabase
+  - **Database**: Supabase Testing database
 
 ---
 
@@ -406,7 +416,7 @@ Detailed n8n workflow instructions and code node documentation:
 - `COMPONENT_LIBRARY.md` - Reusable modal components
 - `DATABASE_SCHEMA.md` - Complete database table schemas
 - `TESTING_GUIDE.md` - Comprehensive testing guidelines
-- `TESTING_BRANCH_GUIDE.md` - Testing Branch setup and usage
+- `TESTING_BRANCH_GUIDE.md` - Staging branch setup and usage
 - `PROJECT_STRUCTURE.md` - This file
 
 **Other References:**
@@ -425,7 +435,7 @@ Development session summaries and progress tracking:
 
 ---
 
-## Testing Branch Structure (`developing/`)
+## Staging Branch Structure (`developing/`)
 
 **Status:** ⚠️ Gitignored - not committed to repository
 
@@ -437,11 +447,11 @@ Development session summaries and progress tracking:
 - `TEST Workflow Copies/` - n8n workflows with TEST- webhook paths
 - `supabase seed data/` - SQL scripts for anonymized test data
 
-**Database:** Points to Testing Branch Supabase (separate from production)
+**Database:** Points to Supabase Testing database (separate from production)
 
 **Access:** Open files directly in Chrome (e.g., `file:///F:/GitHub/Repos/transport-admin-portal/developing/TEST-dashboard.html`)
 
-**For complete Testing Branch documentation, see:** `docs/reference/TESTING_BRANCH_GUIDE.md`
+**For complete staging branch documentation, see:** `docs/reference/TESTING_BRANCH_GUIDE.md`
 
 ---
 

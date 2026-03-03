@@ -41,7 +41,7 @@ Client records with K numbers.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `id` | integer | PRIMARY KEY, AUTO INCREMENT | Internal ID |
+| `id` | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Internal ID |
 | `knumber` | varchar(10) | UNIQUE, NOT NULL | Client identifier (e.g., "K1234") |
 | `firstname` | varchar(100) | NOT NULL | First name |
 | `lastname` | varchar(100) | NOT NULL | Last name |
@@ -65,8 +65,12 @@ Client records with K numbers.
 | **Settings** | | | |
 | `appointment_length` | integer | DEFAULT 120 | Default appointment duration (minutes) |
 | `clinic_travel_times` | jsonb | | Pre-calculated travel times to clinics |
+| `primary_clinic_id` | integer | FK → destinations.id, ON DELETE SET NULL | Default clinic for auto-populating appointment forms |
 | `active` | boolean | DEFAULT true | Client active status |
 | `notes` | text | | General notes about client |
+| **Fast-Add / Profile** | | | |
+| `profile_status` | text | NOT NULL, DEFAULT 'complete', CHECK IN ('complete','incomplete') | Profile completeness: complete or incomplete (fast-add, missing fields) |
+| `created_via` | text | NOT NULL, DEFAULT 'standard', CHECK IN ('standard','fast_add') | How the client was created: standard (full form) or fast_add (minimal data) |
 | `created_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
 | `updated_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
 
@@ -263,39 +267,76 @@ Clinic/destination locations with coordinates. The actual Supabase table name is
 | `city` | varchar(100) | | City |
 | `province` | varchar(2) | | Province |
 | `postal_code` | varchar(7) | | Postal code |
-| `phone` | text | | Phone number |
+| `phone` | text | | Phone number (legacy; see `contacts` JSONB) |
+| `email` | text | | Primary email address |
+| `contacts` | jsonb | DEFAULT '[]' | Array of contact objects (see structure below) |
 | `notes` | text | | Notes |
 | `map_coordinates` | point | | Lat/long coordinates |
 | `active` | boolean | DEFAULT true | Destination active status |
 | `created_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
+| `updated_at` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | Last modification timestamp |
+
+### contacts JSONB Structure
+
+```json
+[
+  {
+    "name": "Main",
+    "phone": "902-555-1234",
+    "email": "info@clinic.ca",
+    "type": "main"
+  }
+]
+```
+
+Supported `type` values: `"main"`, `"billing"`, `"scheduling"`, `"other"`
 
 **NOTE:** Some API endpoints (e.g., `/get-clinic-locations`) transform these columns in their n8n workflow response, renaming `name` to `clinic_name` and composing `address`, `city`, `province`, `postal_code` into a single `full_address` field. When configuring Supabase nodes in n8n workflows, always use the actual column names above.
 
 ## audit_logs
 
-System audit trail for security events.
+User action audit trail for accountability and compliance. See `docs/instructions/N8N_AUDIT_LOGGING_SOP.md` for full usage guide.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `id` | uuid | PRIMARY KEY, DEFAULT uuid_generate_v4() | Log entry ID |
-| `event_type` | varchar(100) | NOT NULL | Event category |
-| `event_description` | text | NOT NULL | Event details |
-| `user_id` | uuid | FK → users.id | User who triggered event |
-| `user_role` | varchar(50) | | User role at time of event |
-| `affected_resource` | varchar(255) | | Resource affected (table.id) |
-| `old_value` | jsonb | | Previous value (for updates) |
-| `new_value` | jsonb | | New value (for updates) |
-| `ip_address` | varchar(45) | | User IP address |
-| `timestamp` | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP | |
+| `id` | integer | PRIMARY KEY, SERIAL | Log entry ID (auto-increment) |
+| `timestamp` | timestamptz | NOT NULL, DEFAULT now() | When the action occurred |
+| `user_id` | integer | FK → users.id, ON DELETE SET NULL | User who performed the action |
+| `username` | text | NOT NULL | Username at time of action |
+| `role` | text | NOT NULL | User role at time of action |
+| `action` | text | NOT NULL | Action type (`{resource}_{verb}` format) |
+| `resource_type` | text | | Entity type: `appointment`, `client`, `driver`, `user`, etc. |
+| `resource_id` | text | | ID of affected record (as string) |
+| `details` | jsonb | DEFAULT '{}' | Action-specific data (old/new values, reasons, metadata) |
+| `ip_address` | inet | | Client IP address |
+| `user_agent` | text | | Browser user agent string |
+| `success` | boolean | DEFAULT true | Whether the action completed successfully |
+| `error_message` | text | | Error details if success is false |
+| `created_at` | timestamptz | DEFAULT now() | When the log entry was created |
 
-### Event Types
+### Action Types
+
+Format: `{resource}_{verb}` in snake_case.
 
 - `user_login`, `user_logout`, `failed_login`
 - `password_reset`, `password_change`
-- `appointment_create`, `appointment_update`, `appointment_delete`
+- `appointment_create`, `appointment_update`, `appointment_delete`, `appointment_cancelled`, `appointment_unarchived`, `appointment_reactivated`
 - `client_create`, `client_update`
-- `driver_create`, `driver_update`
+- `driver_create`, `driver_update`, `driver_assigned`, `driver_unassigned`
 - `user_create`, `user_update`, `user_delete`
+- `destination_create`, `destination_update`
+- `config_update`
+- `permission_denied`
+
+### Indexes
+
+- `idx_audit_logs_timestamp` — timestamp DESC
+- `idx_audit_logs_user_id` — user_id (WHERE NOT NULL)
+- `idx_audit_logs_username` — username
+- `idx_audit_logs_action` — action
+- `idx_audit_logs_resource` — (resource_type, resource_id) composite
+- `idx_audit_logs_created_at` — created_at DESC
+- `idx_audit_logs_user_timestamp` — (user_id, timestamp DESC)
 
 ## driver_time_off
 
@@ -360,6 +401,12 @@ SQL migration files in `database/sql/` directory (run manually in Supabase):
 19. `18_seed_app_config_google_maps.sql` - Seed Google Maps API key into app_config for centralized management
 20. `19_appointment_types.sql` - Appointment types (round_trip, one_way, support), sentinel client K0000, CHECK constraints
 21. `20_driver_time_off_reason_nullable.sql` - Make driver_time_off.reason nullable for override_available entries
+22. `22_add_destination_contacts.sql` - Add contacts JSONB to destinations
+23. `23_create_distance_lookup_tables.sql` - Distance lookup tables for drivers/clients/destinations
+24. `24_add_driver_total_distance_and_clinic_fk.sql` - Driver total distance and clinic FK on appointments
+25. `25_add_client_primary_clinic.sql` - Add primary_clinic_id FK to clients
+26. `26_background_tasks.sql` - Background tasks system for async operations
+27. `27_fast_add_client_columns.sql` - Add profile_status and created_via to clients for Fast-Add feature
 
 ### Migration Process
 

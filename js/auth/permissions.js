@@ -6,12 +6,13 @@
 
 const ROLE_PERMISSIONS = {
     'admin': {
-        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'admin', 'finance', 'profile'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'destinations', 'admin', 'finance', 'profile'],
         features: ['all'],
         canDeleteClients: true,
         canDeleteAppointments: true,
         canHardDeleteAppointments: true,
         canManageDrivers: true,
+        canManageDestinations: true,
         canManageUsers: true,
         canManageSystemConfig: true,
         canAssignDrivers: true,
@@ -20,12 +21,13 @@ const ROLE_PERMISSIONS = {
         canViewCosts: true
     },
     'supervisor': {
-        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'finance', 'profile'],
+        pages: ['dashboard', 'clients', 'appointments', 'appointments-bulk-add', 'operations', 'driver-management', 'destinations', 'finance', 'profile'],
         features: ['view_clients', 'edit_clients', 'delete_clients', 'view_appointments', 'edit_appointments', 'assign_drivers', 'view_drivers', 'view_reports'],
         canDeleteClients: true,
         canDeleteAppointments: true,
         canHardDeleteAppointments: false,
         canManageDrivers: true,
+        canManageDestinations: true,
         canManageUsers: false,
         canManageSystemConfig: false,
         canAssignDrivers: true,
@@ -39,6 +41,7 @@ const ROLE_PERMISSIONS = {
         canDeleteClients: false,
         canDeleteAppointments: true,
         canManageDrivers: false,
+        canManageDestinations: false,
         canManageUsers: false,
         canManageSystemConfig: false,
         canAssignDrivers: false,
@@ -52,6 +55,7 @@ const ROLE_PERMISSIONS = {
         canDeleteClients: false,
         canDeleteAppointments: false,
         canManageDrivers: false,
+        canManageDestinations: false,
         canManageUsers: false,
         canManageSystemConfig: false,
         canAssignDrivers: false,
@@ -65,6 +69,7 @@ const ROLE_PERMISSIONS = {
         canDeleteClients: false,
         canDeleteAppointments: false,
         canManageDrivers: false,
+        canManageDestinations: false,
         canManageUsers: false,
         canManageSystemConfig: false,
         canAssignDrivers: false,
