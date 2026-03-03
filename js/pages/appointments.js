@@ -2285,11 +2285,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (mode === 'edit') {
                     // v7 Update endpoint with complete calendar management
-                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete';
+                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete-test';
                     payload = appointmentData;
                 } else {
                     // v7 Add endpoint - uses pre-calculated travel times (simplified payload)
-                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-v7';
+                    endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-test';
                     payload = { appointments: [appointmentData] }; // Wrap in array for workflow
                 }
 
