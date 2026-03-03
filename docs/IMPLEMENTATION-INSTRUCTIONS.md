@@ -4,7 +4,7 @@
 
 We've designed an async workflow system to improve user experience by reducing wait times. Instead of users waiting 30+ seconds for workflows to complete, they get immediate responses while background tasks handle slow operations (drive time calculations, Quo API sync, notifications, etc.).
 
-**Branch:** `claude/async-tasks-Sr2aC` (based on `Testing`)
+**Branch:** `claude/async-tasks-Sr2aC` (based on `staging`)
 
 ---
 

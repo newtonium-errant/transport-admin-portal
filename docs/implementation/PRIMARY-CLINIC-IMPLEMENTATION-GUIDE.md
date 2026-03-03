@@ -24,7 +24,7 @@ This guide provides a complete checklist for implementing the Primary Clinic fea
 - [ ] **CLIENT - Get Single Client by K-Number**
   - File: `workflows/clients/CLIENT - Get Single Client by K-Number.json`
   - Import into n8n
-  - Update credential to "Testing Branch - Supabase"
+  - Update credential to "Supabase Testing"
   - Test endpoint: `GET /webhook/get-client?knumber=K7807878`
   - Verify returns client with `primary_clinic_name` field
   - Switch to "Supabase Production" when ready

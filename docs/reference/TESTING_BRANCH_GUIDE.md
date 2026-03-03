@@ -1,23 +1,23 @@
-# Testing Branch Guide
+# Staging Branch Guide
 
 ## Overview
 
-The project includes a complete Testing Branch setup that mirrors production for safe development and testing.
+The project includes a complete staging branch setup that mirrors production for safe development and testing.
 
-## Testing Branch Architecture
+## Staging Branch Architecture
 
 ```
-Testing Branch (local)
+Staging Branch (local, git branch: staging)
   ├── developing/ folder (TEST HTML files)
   ├── developing/TEST Workflow Copies/ (TEST n8n workflows)
   └── developing/supabase seed data/ (anonymized production data)
       ↓
   n8n TEST- workflows (Railway.app)
       ↓
-  Supabase Testing Branch Database (cloud)
+  Supabase Testing Database (cloud)
 ```
 
-## Testing Branch Components
+## Staging Branch Components
 
 ### 1. TEST HTML Files (`developing/` folder)
 - `TEST-dashboard.html` - Login and dashboard (TEST endpoints)
@@ -31,14 +31,14 @@ Testing Branch (local)
 ### 2. TEST Workflows (`developing/TEST Workflow Copies/`)
 - All TEST workflows use `TEST-` prefix in webhook paths
 - Example: `TEST-user-login`, `TEST-get-active-clients`, etc.
-- Configured with Testing Branch Supabase credentials
+- Configured with Supabase Testing credentials
 - **Required but not yet created**:
   - `TEST-user-login` (authentication)
   - `TEST-refresh-token` (JWT refresh)
   - `TEST-change-password` (password management)
   - `TEST-forgot-password` (password reset)
 
-### 3. Testing Branch Database (Supabase)
+### 3. Supabase Testing Database
 - **2 Destinations** - NuVista Psychedelic locations
 - **3 Users** (copied from production with password hashes):
   - ID 13: `***REMOVED***` (admin)
@@ -53,7 +53,7 @@ Testing Branch (local)
     - Email: strugglebusca@gmail.com
     - Addresses: Real NS addresses preserved for mapping accuracy
 - **74 Appointments** - Mix of past and future appointments
-- **Schema Enhancements** (Testing Branch only):
+- **Schema Enhancements** (Testing database only):
   - `clients.updated_at` with automatic trigger
   - `clients.primary_clinic_id` (FK to destinations)
   - `destinations.phone`, `destinations.notes`, `destinations.updated_at`
@@ -70,13 +70,13 @@ Location: `developing/supabase seed data/`
 -- Includes anonymization for PII protection
 ```
 
-**STEP 2**: Import extracted data to Testing Branch
+**STEP 2**: Import extracted data to Supabase Testing database
 ```sql
 -- Generated file: import-to-testing.sql
--- Run this file in Testing Branch Supabase SQL Editor
+-- Run this file in Supabase Testing SQL Editor
 ```
 
-**STEP 3**: Apply Testing Branch-specific migrations
+**STEP 3**: Apply testing-specific migrations
 ```sql
 -- Run: ADD - clients updated_at column.sql
 -- Adds updated_at column with automatic trigger
@@ -91,7 +91,7 @@ Location: `developing/supabase seed data/`
   - Addresses: **Preserved** (needed for accurate mapping/routing)
   - Travel times: **Preserved** (clinic_travel_times JSON)
 
-## Using Testing Branch
+## Using the Staging Branch
 
 ### Running TEST Environment Locally
 ```bash
@@ -127,38 +127,38 @@ const API_ENDPOINTS = {
 };
 ```
 
-## Testing Branch Workflow
+## Staging Branch Workflow
 
 ### Making Changes
 1. **Frontend**: Edit TEST HTML files in `developing/` folder
 2. **Backend**: Update TEST workflow JSONs in `developing/TEST Workflow Copies/`
-3. **Database**: Run migrations in Testing Branch Supabase
+3. **Database**: Run migrations in Supabase Testing database
 4. **Import Workflows**: Upload TEST workflows to n8n with TEST- webhook paths
 
 ### Testing Flow
-1. Make changes in Testing Branch
+1. Make changes in staging branch
 2. Test with TEST HTML files and TEST workflows
-3. Verify with Testing Branch database
+3. Verify with Supabase Testing database
 4. Once stable, copy changes to production files (remove TEST- prefixes)
-5. Merge Testing branch to main branch
+5. Merge staging branch to main
 
 ### Resetting Test Data
-To reset Testing Branch to fresh production data:
-1. Truncate all tables in Testing Branch Supabase
+To reset the Supabase Testing database to fresh production data:
+1. Truncate all tables in Supabase Testing database
 2. Re-run `import-to-testing.sql`
 3. Re-run `ADD - clients updated_at column.sql`
 
-## Testing Branch Best Practices
+## Staging Branch Best Practices
 
 1. **Always use TEST- prefix** for workflows and webhook paths
-2. **Never commit TEST files to main branch** - keep in Testing branch
+2. **Never commit TEST files to main branch** - keep in staging branch
 3. **Use TEST banner** on all TEST HTML files for visual distinction
 4. **Preserve anonymization** when exporting data - never expose real PII
-5. **Document schema changes** in Testing Branch before merging to production
+5. **Document schema changes** in Supabase Testing database before merging to production
 6. **Test JWT workflows** thoroughly before using in production
 7. **Verify RBAC** with all three test user roles
 
-## Troubleshooting Testing Branch
+## Troubleshooting
 
 ### "Failed to load resource" errors
 - Check that TEST HTML files use `../` for shared resources
@@ -167,11 +167,11 @@ To reset Testing Branch to fresh production data:
 ### "TEST workflow not found" (404 errors)
 - Verify TEST workflow is imported to n8n
 - Check webhook path includes `TEST-` prefix
-- Confirm Testing Branch Supabase credentials configured
+- Confirm Supabase Testing credentials configured
 
 ### Login fails
 - Verify `TEST-user-login` workflow exists and is active
-- Check Testing Branch database has users (IDs 13, 23, 30)
+- Check Supabase Testing database has users (IDs 13, 23, 30)
 - Confirm password hashes were copied correctly
 
 ### Data inconsistencies

@@ -1551,8 +1551,6 @@
                 <h2>Profile Information</h2>
             </div>
             <div class="profile-card-body">
-                <div id="profileAlert"></div>
-
                 <!-- Skeleton loader for driver data -->
                 <div id="profileFormSkeleton" style="display: none;">
                     <div class="form-group"><div class="skeleton-block" style="width: 70px; height: 13px; margin-bottom: 8px;"></div><div class="skeleton-block" style="width: 100%; height: 38px; border-radius: 6px;"></div></div>
@@ -1673,8 +1671,6 @@
                 <h2>Change Password</h2>
             </div>
             <div class="profile-card-body">
-                <div id="passwordAlert"></div>
-
                 <form id="passwordForm">
                     <div class="form-group">
                         <label class="form-label" for="currentPassword">Current Password</label>
@@ -1986,7 +1982,7 @@
             currentUser = savedUser ? JSON.parse(savedUser) : null;
 
             if (!currentUser) {
-                showProfileAlert('profileAlert', 'error', 'Unable to load user data');
+                showToast('Unable to load user data', 'error');
                 return;
             }
 
@@ -2040,7 +2036,7 @@
                 document.getElementById('email').value = originalUserData.email || '';
                 document.getElementById('phone').value = originalUserData.phone || originalUserData.phone_number || '';
             }
-            hideAlert('profileAlert');
+            // Alert cleared (toasts auto-dismiss)
         }
 
         async function handleProfileSubmit(e) {
@@ -2092,7 +2088,7 @@
                         user.phone = phone;
                         sessionStorage.setItem('rrts_user', JSON.stringify(user));
                         currentUser = user;
-                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                        showToast('Profile updated successfully', 'success');
                     } else {
                         throw new Error(result.message || 'Failed to update profile');
                     }
@@ -2108,14 +2104,14 @@
                         user.phone = phone;
                         sessionStorage.setItem('rrts_user', JSON.stringify(user));
                         currentUser = user;
-                        showProfileAlert('profileAlert', 'success', 'Profile updated successfully');
+                        showToast('Profile updated successfully', 'success');
                     } else {
                         throw new Error(response.message || 'Failed to update profile');
                     }
                 }
             } catch (error) {
                 console.error('Profile update error:', error);
-                showProfileAlert('profileAlert', 'error', error.message || 'Failed to update profile');
+                showToast(error.message || 'Failed to update profile', 'error');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
@@ -2141,6 +2137,18 @@
                 if (!newPassword || newPassword.length < 8) {
                     throw new Error('New password must be at least 8 characters');
                 }
+                if (!/[A-Z]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one uppercase letter');
+                }
+                if (!/[a-z]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one lowercase letter');
+                }
+                if (!/[0-9]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one number');
+                }
+                if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+                    throw new Error('Password must contain at least one special character');
+                }
                 if (newPassword !== confirmPassword) {
                     throw new Error('New passwords do not match');
                 }
@@ -2148,28 +2156,27 @@
                     throw new Error('New password must be different from current password');
                 }
 
-                const user = getCurrentUser();
                 const response = await fetch(JWT_API_ENDPOINTS.CHANGE_PASSWORD, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
-                        username: user.username,
-                        currentPassword: currentPassword,
-                        newPassword: newPassword
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    showProfileAlert('passwordAlert', 'success', 'Password changed successfully');
+                    showToast('Password changed successfully', 'success');
                     document.getElementById('passwordForm').reset();
                 } else {
                     throw new Error(data.message || 'Failed to change password');
                 }
             } catch (error) {
                 console.error('Password change error:', error);
-                showProfileAlert('passwordAlert', 'error', error.message || 'Failed to change password');
+                showToast(error.message || 'Failed to change password', 'error');
             } finally {
                 btn.textContent = originalText;
                 btn.disabled = false;
@@ -2805,7 +2812,7 @@
         async function handleAddressSubmit(event) {
             event.preventDefault();
             const payload = {
-                id: (driverData && driverData.id) || currentUser.driver_id,
+                driver_id: (driverData && driverData.id) || currentUser.driver_id,
                 home_address: document.getElementById('homeAddress').value.trim(),
                 home_city: document.getElementById('homeCity').value.trim(),
                 home_province: document.getElementById('homeProvince').value,
@@ -2813,7 +2820,7 @@
             };
             setButtonLoading('saveAddressBtn', true);
             try {
-                const response = await authenticatedFetch(`${API_BASE}/update-driver`, {
+                const response = await authenticatedFetch(`${API_BASE}/update-driver-home-address`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2825,23 +2832,6 @@
                     driverData.home_city = payload.home_city;
                     driverData.home_province = payload.home_province;
                     driverData.home_postal_code = payload.home_postal_code;
-
-                    // Fire-and-forget: recalculate clinic distances from new address
-                    showToast('Recalculating clinic distances...', 'info');
-                    authenticatedFetch(`${API_BASE}/recalculate-my-clinic-distances`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ driver_id: currentUser.driver_id })
-                    }).then(r => r.json()).then(res => {
-                        if (res.success) {
-                            showToast('Clinic distances updated.', 'success');
-                            loadClinicPreferences();
-                        } else {
-                            showToast('Could not recalculate clinic distances. Try again later.', 'warning');
-                        }
-                    }).catch(() => {
-                        showToast('Could not recalculate clinic distances. Try again later.', 'warning');
-                    });
                 } else {
                     showToast(result.message || 'Failed to update address.', 'error');
                 }
@@ -3637,19 +3627,6 @@
             }
         }
 
-        // ========== Alert Functions ==========
-        function showProfileAlert(containerId, type, message) {
-            const container = document.getElementById(containerId);
-            if (container) {
-                container.innerHTML = `<div class="alert alert-${type}">${escapeHtml(message)}</div>`;
-            }
-        }
-
-        function hideAlert(containerId) {
-            const container = document.getElementById(containerId);
-            if (container) container.innerHTML = '';
-        }
-
         // ========== Toast Notifications ==========
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');
@@ -4100,5 +4077,9 @@
             }
         }
     </script>
+
+    <!-- Background Task Monitoring -->
+    <script src="js/core/task-monitor.js"></script>
+    <script src="js/components/task-notifications.js"></script>
 </body>
 </html>
