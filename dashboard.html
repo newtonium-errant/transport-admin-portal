@@ -1499,6 +1499,12 @@
 	            return false;
 	        }
 
+	        // Helper: check if appointment is cancelled or no-show (should not count in totals)
+	        function isExcludedStatus(apt) {
+	            const status = (apt.operation_status || apt.appointmentstatus || apt.status || '').toLowerCase();
+	            return status === 'cancelled' || status === 'no_show';
+	        }
+
 	        // Helper: check if appointment has no driver assigned
 	        function isUnassigned(apt) {
 	            return !apt.driver_assigned && !apt.driverAssigned && !apt.driver_first_name;
@@ -1511,7 +1517,7 @@
 	        tomorrow.setDate(tomorrow.getDate() + 1);
 
 	        const todaysAppointments = appointments.filter(apt => {
-	            if (isArchived(apt)) return false;
+	            if (isArchived(apt) || isExcludedStatus(apt)) return false;
 	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
 	            return aptDate >= today && aptDate < tomorrow;
 	        });
@@ -1528,7 +1534,7 @@
 	        nextMonday.setDate(monday.getDate() + 7);
 
 	        const thisWeekAppointments = appointments.filter(apt => {
-	            if (isArchived(apt)) return false;
+	            if (isArchived(apt) || isExcludedStatus(apt)) return false;
 	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
 	            return aptDate >= monday && aptDate < nextMonday;
 	        });
@@ -1540,7 +1546,7 @@
 	        nextNextMonday.setDate(nextMonday.getDate() + 7);
 
 	        const nextWeekAppointments = appointments.filter(apt => {
-	            if (isArchived(apt)) return false;
+	            if (isArchived(apt) || isExcludedStatus(apt)) return false;
 	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
 	            return aptDate >= nextMonday && aptDate < nextNextMonday;
 	        });
@@ -1552,7 +1558,7 @@
 	        tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
 
 	        const todayTomorrowAppts = appointments.filter(apt => {
-	            if (isArchived(apt)) return false;
+	            if (isArchived(apt) || isExcludedStatus(apt)) return false;
 	            const aptDate = new Date(apt.appointmenttime || apt.appointmentDateTime);
 	            return aptDate >= today && aptDate < tomorrowEnd;
 	        });

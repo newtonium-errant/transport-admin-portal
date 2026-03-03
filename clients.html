@@ -1088,8 +1088,14 @@
             // Initialize client quick edit modal
             clientModalInstance = new ClientModal({
                 apiBaseUrl: apiBaseUrl,
-                onSave: async (clientData) => {
-                    // Reload clients after save
+                onSave: async (responseData) => {
+                    // If profile was completed, show additional toast
+                    const data = responseData?.data || {};
+                    if (data.profileCompleted) {
+                        showToast('Client profile is now complete!', 'info');
+                    }
+
+                    // Reload clients to reflect all changes
                     await loadClients();
                 },
                 onClose: () => {

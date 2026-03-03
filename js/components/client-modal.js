@@ -582,8 +582,8 @@ class ClientModal {
             );
             requestBody.clientData.profile_status = isComplete ? 'complete' : 'incomplete';
 
-            // Send to UPDATE workflow endpoint
-            const response = await authenticatedFetch(`${this.apiBaseUrl}/update-client-destinations`, {
+            // Send to UPDATE workflow endpoint (async with background tasks)
+            const response = await authenticatedFetch(`${this.apiBaseUrl}/update-client`, {
                 method: 'POST',
                 body: JSON.stringify(requestBody)
             });
@@ -594,10 +594,22 @@ class ClientModal {
                 throw new Error(data.message || 'Failed to update client');
             }
 
-            // Success
-            const message = data.travelTimesRecalculated
-                ? 'Client updated successfully. Travel times are being recalculated in the background.'
-                : 'Client updated successfully!';
+            // Build success message based on async response flags
+            let message = 'Client updated successfully!';
+            const responseData = data.data || {};
+            const bgTasks = responseData.backgroundTasks;
+
+            if (bgTasks && Object.keys(bgTasks).length > 0) {
+                const taskNames = Object.keys(bgTasks).map(t => t.replace(/_/g, ' ')).join(', ');
+                message = `Client updated. Background tasks running: ${taskNames}.`;
+            } else if (responseData.addressChanged) {
+                message = 'Client updated. Travel times will be recalculated.';
+            }
+
+            if (responseData.profileCompleted) {
+                message += ' Profile is now complete.';
+            }
+
             this.showSuccess(message);
 
             // Wait a moment, then close and callback
@@ -690,4 +702,4 @@ class ClientModal {
 // Global instance (for onclick handlers)
 let clientModalInstance = null;
 
-// Version: v2.2.0 - Fixed spinner size, use page toast; v2.1.0 fixed duplicate ID bug
+// Version: v2.3.0 - Switch to /update-client async endpoint with background task handling; v2.2.0 fixed spinner size, use page toast
