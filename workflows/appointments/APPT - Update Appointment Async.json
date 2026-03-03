@@ -1,0 +1,902 @@
+{
+  "name": "APPT - Update Appointment Async",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "update-appointment-complete",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-2640, 400],
+      "id": "ua-wh01-0001",
+      "name": "Webhook - Update Appointment",
+      "webhookId": "ua-wh01-0001"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "app_config",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "jwt_secret"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-2400, 400],
+      "id": "ua-jwt01-0001",
+      "name": "Get JWT Secret - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Validation - v2.0.0\n// Fetch secret from app_config, validate Bearer token\nconst webhookData = $('Webhook - Update Appointment').first().json;\nconst jwtSecret = $('Get JWT Secret - Supabase').first().json.value;\n\nif (!jwtSecret) {\n  return [{ json: { validationPassed: 'false', errorMessage: 'JWT secret not configured', statusCode: 500 } }];\n}\n\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization || '';\nconst token = authHeader.replace('Bearer ', '').trim();\n\nif (!token) {\n  return [{ json: { validationPassed: 'false', errorMessage: 'No authorization token provided', statusCode: 401 } }];\n}\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nfunction verifyJWT(token, secret) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) return { valid: false, error: 'Invalid token format' };\n    const [header, payload, sig] = parts;\n    const expected = simpleHash(header + '.' + payload + '.' + secret);\n    if (sig !== expected) return { valid: false, error: 'Invalid signature' };\n    const decoded = JSON.parse(atob(payload));\n    const now = Math.floor(Date.now() / 1000);\n    if (decoded.exp && decoded.exp < now) return { valid: false, error: 'Token expired' };\n    if (decoded.type === 'limited') return { valid: false, error: 'Limited token not allowed' };\n    if (decoded.type === 'refresh') return { valid: false, error: 'Refresh tokens not allowed' };\n    return { valid: true, payload: decoded };\n  } catch (e) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst result = verifyJWT(token, jwtSecret);\nif (!result.valid) {\n  return [{ json: { validationPassed: 'false', errorMessage: result.error, statusCode: 401 } }];\n}\n\nreturn [{ json: { validationPassed: 'true', user: { id: result.payload.user_id || null, username: result.payload.sub, role: result.payload.role, tokenType: result.payload.type } } }];\n// v2.0.0 - JWT validation from app_config"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-2160, 400],
+      "id": "ua-jwt02-0001",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $json.validationPassed }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw01-auth" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $json.validationPassed }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw01-unauth" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-1920, 400],
+      "id": "ua-sw01-0001",
+      "name": "JWT Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate Request - v2.0.0\n// Type-aware validation for appointment update\nconst webhookData = $('Webhook - Update Appointment').first().json;\nconst data = webhookData.body;\nconst user = $('JWT Validation - Code').first().json.user;\n\nif (!data.id) {\n  return [{ json: { validationResult: 'invalid', error: 'Appointment ID is required' } }];\n}\nif (!data.knumber) {\n  return [{ json: { validationResult: 'invalid', error: 'Client K number is required' } }];\n}\nif (!data.appointmentDateTime) {\n  return [{ json: { validationResult: 'invalid', error: 'Appointment date/time is required' } }];\n}\n\nconst appointmentType = data.appointment_type || 'round_trip';\nconst validTypes = ['round_trip', 'one_way', 'support'];\nif (!validTypes.includes(appointmentType)) {\n  return [{ json: { validationResult: 'invalid', error: 'Invalid appointment_type: ' + appointmentType } }];\n}\n\nif (appointmentType === 'one_way') {\n  const validDirs = ['to_clinic', 'to_home'];\n  const dir = data.trip_direction || '';\n  if (!validDirs.includes(dir)) {\n    return [{ json: { validationResult: 'invalid', error: 'trip_direction required for one_way' } }];\n  }\n}\n\nif (appointmentType === 'support') {\n  if (!data.event_name || !data.event_name.trim()) {\n    return [{ json: { validationResult: 'invalid', error: 'event_name required for support type' } }];\n  }\n}\n\nreturn [{ json: { validationResult: 'valid', ...data, appointment_type: appointmentType, trip_direction: data.trip_direction || null, event_name: data.event_name || null, calculate_traffic_transit: data.calculate_traffic_transit === true || data.calculate_traffic_transit === 'true', userId: user?.id || null, userName: user?.username || 'unknown', userRole: user?.role || 'unknown' } }];\n// v2.0.0 - Type-aware validation + traffic flag"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1664, 288],
+      "id": "ua-val01-0001",
+      "name": "Validate Request - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $json.validationResult }}", "rightValue": "valid", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw02-valid" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-1440, 288],
+      "id": "ua-sw02-0001",
+      "name": "Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate Times - v2.0.0\n// Type-aware timing calculations\nconst appointmentDateTime = new Date($json.appointmentDateTime);\nconst transitTime = parseInt($json.transitTime) || 30;\nconst appointmentLength = parseInt($json.appointmentLength) || 120;\nconst appointmentType = $json.appointment_type || 'round_trip';\nconst oneWayDirection = $json.trip_direction || 'to_clinic';\n\nlet pickupTime, dropOffTime;\n\nif (appointmentType === 'one_way') {\n  if (oneWayDirection === 'to_home') {\n    pickupTime = appointmentDateTime.toISOString();\n    const dropOff = new Date(appointmentDateTime.getTime() + (transitTime * 60000));\n    dropOffTime = dropOff.toISOString();\n  } else {\n    const pickup = new Date(appointmentDateTime.getTime() - (transitTime * 60000));\n    pickupTime = pickup.toISOString();\n    dropOffTime = appointmentDateTime.toISOString();\n  }\n} else if (appointmentType === 'support') {\n  pickupTime = appointmentDateTime.toISOString();\n  const dropOff = new Date(appointmentDateTime.getTime() + (appointmentLength * 60000));\n  dropOffTime = dropOff.toISOString();\n} else {\n  const pickup = new Date(appointmentDateTime.getTime() - (transitTime * 60000));\n  pickupTime = pickup.toISOString();\n  const totalDuration = appointmentLength + transitTime;\n  const dropOff = new Date(appointmentDateTime.getTime() + (totalDuration * 60000));\n  dropOffTime = dropOff.toISOString();\n}\n\nreturn [{ json: { ...$json, pickupTime: pickupTime, dropOffTime: dropOffTime, transitTime: transitTime, appointmentLength: appointmentLength } }];\n// v2.0.0 - Type-aware timing calculations"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1200, 160],
+      "id": "ua-calc01-0001",
+      "name": "Calculate Times - Code"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "appointments",
+        "filters": { "conditions": [{ "keyName": "id", "keyValue": "={{ $json.id }}" }] }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-960, 160],
+      "id": "ua-get01-0001",
+      "name": "Get Current Appointment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compare Current vs New - v2.0.0\nconst requestData = $('Calculate Times - Code').first().json;\nconst currentAppointment = $input.first().json;\n\nconst hasOriginalDriver = currentAppointment.driver_assigned !== null && currentAppointment.driver_assigned !== undefined;\nconst hasOriginalCalendarEvent = currentAppointment.driver_calendar_event_id && currentAppointment.driver_calendar_event_id !== null;\nconst hasNewDriver = requestData.driver_assigned && requestData.driver_assigned !== null;\nconst driverChanged = currentAppointment.driver_assigned !== requestData.driver_assigned;\n\nconst hasOrphanedEvent = (!hasOriginalDriver && hasOriginalCalendarEvent) ? 'true' : 'false';\nconst needsDelete = (driverChanged && hasOriginalDriver && hasOriginalCalendarEvent) ? 'true' : 'false';\n\nconst calendarFieldsChanged = (\n  currentAppointment.appointmenttime !== requestData.appointmentDateTime ||\n  currentAppointment.pickuptime !== requestData.pickupTime ||\n  currentAppointment.dropOffTime !== requestData.dropOffTime ||\n  currentAppointment.locationname !== requestData.location ||\n  currentAppointment.locationaddress !== requestData.locationAddress ||\n  currentAppointment.scheduling_notes !== requestData.scheduling_notes ||\n  currentAppointment.notes !== requestData.notes\n);\n\nconst needsSync = (hasNewDriver && (driverChanged || calendarFieldsChanged)) ? 'true' : 'false';\n\nconst apptType = requestData.appointment_type || 'round_trip';\nconst trafficFlag = requestData.calculate_traffic_transit === true || requestData.calculate_traffic_transit === 'true';\nconst trafficCalcNeeded = (trafficFlag && apptType !== 'support') ? 'true' : 'false';\nconst hasAsyncTask = (needsDelete === 'true' || needsSync === 'true' || trafficCalcNeeded === 'true') ? 'true' : 'false';\n\nconst dateStr = new Date(requestData.appointmentDateTime).toLocaleDateString('en-CA');\nconst entityLabel = (requestData.knumber || 'Unknown') + ' - ' + (requestData.location || 'Unknown') + ' (' + dateStr + ')';\n\nreturn [{ json: { ...requestData, currentAppointment: currentAppointment, appointment_type: apptType, trip_direction: requestData.trip_direction || null, event_name: requestData.event_name || null, trafficCalcNeeded: trafficCalcNeeded, hasAsyncTask: hasAsyncTask, entityLabel: entityLabel, calendarOperations: { needsDelete: needsDelete, needsSync: needsSync, hasOrphanedEvent: hasOrphanedEvent, originalDriverAssigned: currentAppointment.driver_assigned, originalCalendarEventId: currentAppointment.driver_calendar_event_id, newDriverAssigned: requestData.driver_assigned, driverChanged: driverChanged, calendarFieldsChanged: calendarFieldsChanged, hasOriginalDriver: hasOriginalDriver, hasOriginalCalendarEvent: hasOriginalCalendarEvent } } }];\n// v2.0.0 - Type fields, traffic flag, entity label"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 160],
+      "id": "ua-cmp01-0001",
+      "name": "Compare Current vs New - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $json.calendarOperations.needsDelete }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw03-del" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Delete"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $json.calendarOperations.needsDelete }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw03-nodel" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-480, 160],
+      "id": "ua-sw03-0001",
+      "name": "Check Delete Needed - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": { "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $('Compare Current vs New - Code').item.json.id }}" }] },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "appointmenttime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.appointmentDateTime }}" },
+            { "fieldId": "pickuptime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.pickupTime }}" },
+            { "fieldId": "dropOffTime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.dropOffTime }}" },
+            { "fieldId": "locationname", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.location }}" },
+            { "fieldId": "locationaddress", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.locationAddress }}" },
+            { "fieldId": "clinic_id", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.clinic_id }}" },
+            { "fieldId": "transittime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.transitTime }}" },
+            { "fieldId": "this_appointment_length", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.appointmentLength }}" },
+            { "fieldId": "scheduling_notes", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.scheduling_notes }}" },
+            { "fieldId": "notes", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.notes }}" },
+            { "fieldId": "driver_instructions", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.driver_instructions }}" },
+            { "fieldId": "pickup_address", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.pickup_address }}" },
+            { "fieldId": "appointmentstatus", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.status }}" },
+            { "fieldId": "operation_status", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.status }}" },
+            { "fieldId": "custom_rate", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.customRate }}" },
+            { "fieldId": "managed_by", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.managed_by }}" },
+            { "fieldId": "managed_by_name", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.managed_by_name }}" },
+            { "fieldId": "driver_assigned", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.driver_assigned }}" },
+            { "fieldId": "driver_first_name", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.driver_first_name }}" },
+            { "fieldId": "appointment_type", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.appointment_type }}" },
+            { "fieldId": "trip_direction", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.trip_direction }}" },
+            { "fieldId": "event_name", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.event_name }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [0, 320],
+      "id": "ua-upd01-0001",
+      "name": "Update Appointment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": { "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $('Compare Current vs New - Code').item.json.id }}" }] },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "appointmenttime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.appointmentDateTime }}" },
+            { "fieldId": "pickuptime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.pickupTime }}" },
+            { "fieldId": "dropOffTime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.dropOffTime }}" },
+            { "fieldId": "locationname", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.location }}" },
+            { "fieldId": "locationaddress", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.locationAddress }}" },
+            { "fieldId": "clinic_id", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.clinic_id }}" },
+            { "fieldId": "transittime", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.transitTime }}" },
+            { "fieldId": "this_appointment_length", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.appointmentLength }}" },
+            { "fieldId": "scheduling_notes", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.scheduling_notes }}" },
+            { "fieldId": "notes", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.notes }}" },
+            { "fieldId": "driver_instructions", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.driver_instructions }}" },
+            { "fieldId": "pickup_address", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.pickup_address }}" },
+            { "fieldId": "appointmentstatus", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.status }}" },
+            { "fieldId": "operation_status", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.status }}" },
+            { "fieldId": "custom_rate", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.customRate }}" },
+            { "fieldId": "managed_by", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.managed_by }}" },
+            { "fieldId": "managed_by_name", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.managed_by_name }}" },
+            { "fieldId": "driver_assigned", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.driver_assigned }}" },
+            { "fieldId": "driver_first_name", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.driver_first_name }}" },
+            { "fieldId": "driver_calendar_event_id", "fieldValue": "" },
+            { "fieldId": "google_calendar_last_synced", "fieldValue": "" },
+            { "fieldId": "appointment_type", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.appointment_type }}" },
+            { "fieldId": "trip_direction", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.trip_direction }}" },
+            { "fieldId": "event_name", "fieldValue": "={{ $('Compare Current vs New - Code').item.json.event_name }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [0, -80],
+      "id": "ua-upd02-0001",
+      "name": "Update Appt After Delete - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Decide Async Task - v1.0.0\nconst data = $('Compare Current vs New - Code').first().json;\nconst needsDelete = data.calendarOperations.needsDelete === 'true';\nconst needsSync = data.calendarOperations.needsSync === 'true';\nconst trafficCalc = data.trafficCalcNeeded === 'true';\nconst hasAsyncTask = needsDelete || needsSync || trafficCalc;\n\nconst steps = [];\nif (trafficCalc) steps.push('traffic_calc');\nif (needsDelete) steps.push('calendar_delete');\nif (needsSync) steps.push('calendar_sync');\n\nreturn [{ json: { ...data, hasAsyncTask: hasAsyncTask ? 'true' : 'false', asyncSteps: steps, taskMetadata: hasAsyncTask ? { entity_type: 'appointment', entity_id: data.id, entity_label: data.entityLabel, task_type: 'appointment_async_ops', status: 'pending', created_by: data.userId || null } : null } }];\n// v1.0.0 - Decide async task"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 160],
+      "id": "ua-decide01-0001",
+      "name": "Decide Async Task - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $json.hasAsyncTask }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw04-yes" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Task"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $json.hasAsyncTask }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw04-no" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Task"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [720, 160],
+      "id": "ua-sw04-0001",
+      "name": "Needs Async - Switch"
+    },
+    {
+      "parameters": {
+        "tableId": "background_tasks",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "entity_type", "fieldValue": "={{ $('Decide Async Task - Code').first().json.taskMetadata.entity_type }}" },
+            { "fieldId": "entity_id", "fieldValue": "={{ $('Decide Async Task - Code').first().json.taskMetadata.entity_id }}" },
+            { "fieldId": "entity_label", "fieldValue": "={{ $('Decide Async Task - Code').first().json.taskMetadata.entity_label }}" },
+            { "fieldId": "task_type", "fieldValue": "={{ $('Decide Async Task - Code').first().json.taskMetadata.task_type }}" },
+            { "fieldId": "status", "fieldValue": "={{ $('Decide Async Task - Code').first().json.taskMetadata.status }}" },
+            { "fieldId": "created_by", "fieldValue": "={{ $('Decide Async Task - Code').first().json.taskMetadata.created_by }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [960, 0],
+      "id": "ua-task01-0001",
+      "name": "Create Background Task - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Async Response - v1.0.0\nconst data = $('Decide Async Task - Code').first().json;\nconst taskRow = $input.first().json;\n\nreturn [{ json: { success: true, message: 'Appointment updated. Background tasks started.', data: { id: data.id, knumber: data.knumber, appointmenttime: data.appointmentDateTime, location: data.location, appointment_type: data.appointment_type || 'round_trip', trip_direction: data.trip_direction || null, event_name: data.event_name || null }, backgroundTasks: { taskId: taskRow.id || null, taskType: 'appointment_async_ops', steps: data.asyncSteps || [] }, timestamp: new Date().toISOString() } }];\n// v1.0.0 - Async response with task info"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 0],
+      "id": "ua-resp01-0001",
+      "name": "Format Async Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Simple Response - v1.0.0\nconst data = $('Decide Async Task - Code').first().json;\n\nreturn [{ json: { success: true, message: 'Appointment updated successfully.', data: { id: data.id, knumber: data.knumber, appointmenttime: data.appointmentDateTime, location: data.location, appointment_type: data.appointment_type || 'round_trip', trip_direction: data.trip_direction || null, event_name: data.event_name || null }, backgroundTasks: null, timestamp: new Date().toISOString() } }];\n// v1.0.0 - Simple response, no async tasks"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 400],
+      "id": "ua-resp02-0001",
+      "name": "Format Simple Response - Code"
+    },
+    {
+      "parameters": { "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1680, 400],
+      "id": "ua-respond01-0001",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format JWT Error - v1.0.0\nconst errorData = $input.first().json;\nreturn [{ json: { success: false, message: errorData.errorMessage || 'Unauthorized', error: errorData.errorMessage || 'JWT validation failed', timestamp: new Date().toISOString() } }];\n// v1.0.0 - JWT error response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1664, 640],
+      "id": "ua-err01-0001",
+      "name": "Format JWT Error - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Validation Error - v1.0.0\nconst errorData = $input.first().json;\nreturn [{ json: { success: false, message: errorData.error || 'Validation failed', error: errorData.error || 'Invalid request data', timestamp: new Date().toISOString() } }];\n// v1.0.0 - Validation error response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1200, 480],
+      "id": "ua-err02-0001",
+      "name": "Format Validation Error - Code"
+    },
+    {
+      "parameters": {
+        "tableId": "audit_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "username", "fieldValue": "={{ $('Decide Async Task - Code').first().json.userName }}" },
+            { "fieldId": "role", "fieldValue": "={{ $('Decide Async Task - Code').first().json.userRole }}" },
+            { "fieldId": "action", "fieldValue": "appointment_update" },
+            { "fieldId": "user_id", "fieldValue": "={{ $('Decide Async Task - Code').first().json.userId }}" },
+            { "fieldId": "resource_type", "fieldValue": "appointment" },
+            { "fieldId": "resource_id", "fieldValue": "={{ $('Decide Async Task - Code').first().json.id }}" },
+            { "fieldId": "success", "fieldValue": "true" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1920, 640],
+      "id": "ua-audit01-0001",
+      "name": "Log Audit - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Async Context - v1.0.0\nconst data = $('Decide Async Task - Code').first().json;\nconst taskRow = $('Create Background Task - Supabase').first().json;\n\nreturn [{ json: { taskId: taskRow.id, appointmentId: data.id, knumber: data.knumber, appointment_type: data.appointment_type || 'round_trip', trip_direction: data.trip_direction || null, event_name: data.event_name || null, appointmentDateTime: data.appointmentDateTime, appointmentLength: data.appointmentLength, transitTime: data.transitTime, pickupTime: data.pickupTime, dropOffTime: data.dropOffTime, location: data.location, locationAddress: data.locationAddress, pickup_address: data.pickup_address, clinic_id: data.clinic_id, scheduling_notes: data.scheduling_notes, notes: data.notes, driver_instructions: data.driver_instructions, trafficCalcNeeded: data.trafficCalcNeeded, needsDelete: data.calendarOperations.needsDelete, needsSync: data.calendarOperations.needsSync, originalDriverAssigned: data.calendarOperations.originalDriverAssigned, originalCalendarEventId: data.calendarOperations.originalCalendarEventId, newDriverAssigned: data.calendarOperations.newDriverAssigned, driver_assigned: data.driver_assigned, driver_first_name: data.driver_first_name, stepResults: {} } }];\n// v1.0.0 - Gather async context"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 0],
+      "id": "ua-ctx01-0001",
+      "name": "Prepare Async Context - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "background_tasks",
+        "filters": { "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $json.taskId }}" }] },
+        "fieldsUi": { "fieldValues": [{ "fieldId": "status", "fieldValue": "processing" }] }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2400, 0],
+      "id": "ua-taskproc01-0001",
+      "name": "Mark Task Processing - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $('Prepare Async Context - Code').first().json.trafficCalcNeeded }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw05-yes" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Calc Traffic"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $('Prepare Async Context - Code').first().json.trafficCalcNeeded }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw05-no" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Skip Traffic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [2640, 0],
+      "id": "ua-sw05-0001",
+      "name": "Check Traffic Calc - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "app_config",
+        "filters": { "conditions": [{ "keyName": "key", "keyValue": "google_maps_api_key" }] }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2880, -160],
+      "id": "ua-maps01-0001",
+      "name": "Get Maps API Key - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Distance Request - v1.0.0\nconst data = $('Prepare Async Context - Code').first().json;\nconst apiKey = $('Get Maps API Key - Supabase').first().json.value;\n\nif (!apiKey) {\n  return [{ json: { ...data, trafficError: 'Google Maps API key not found', stepResults: { ...data.stepResults, traffic_calc: 'failed_no_key' } } }];\n}\n\nconst apptType = data.appointment_type || 'round_trip';\nconst direction = data.trip_direction || 'to_clinic';\nlet origins = data.pickup_address || '';\nlet destinations = data.locationAddress || '';\n\nif (apptType === 'one_way' && direction === 'to_home') {\n  origins = data.locationAddress || '';\n  destinations = data.pickup_address || '';\n}\n\nconst departureTime = Math.floor(new Date(data.appointmentDateTime).getTime() / 1000);\n\nreturn [{ json: { ...data, apiKey: apiKey, origins: origins, destinations: destinations, departureTime: departureTime } }];\n// v1.0.0 - Prepare distance request"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3120, -160],
+      "id": "ua-dist01-0001",
+      "name": "Prepare Distance Request - Code"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"origins\": \"{{ $json.origins }}\",\n  \"destinations\": \"{{ $json.destinations }}\",\n  \"key\": \"{{ $json.apiKey }}\",\n  \"mode\": \"driving\",\n  \"units\": \"metric\",\n  \"departure_time\": \"{{ $json.departureTime }}\",\n  \"traffic_model\": \"pessimistic\"\n}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [3360, -160],
+      "id": "ua-dist02-0001",
+      "name": "Call Distance Matrix - HTTP",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Traffic Result - v1.0.0\nconst data = $('Prepare Distance Request - Code').first().json;\nconst mapResult = $input.first().json;\nconst stepResults = data.stepResults || {};\n\nif (data.trafficError) {\n  return [{ json: { ...data, stepResults: { ...stepResults, traffic_calc: 'failed' } } }];\n}\n\nconst el = mapResult.rows?.[0]?.elements?.[0];\nif (!el || el.status !== 'OK') {\n  return [{ json: { ...data, stepResults: { ...stepResults, traffic_calc: 'failed_api_error' } } }];\n}\n\nconst noTraffic = el.duration.value;\nconst pessimistic = el.duration_in_traffic ? el.duration_in_traffic.value : noTraffic;\nconst p75sec = noTraffic + (pessimistic - noTraffic) * 0.75;\nconst p75min = Math.ceil(p75sec / 60);\nconst rounded = Math.ceil(p75min / 5) * 5;\nconst newTransit = Math.max(rounded, 5);\nconst distKm = parseFloat((el.distance.value / 1000).toFixed(2));\n\nconst apptDT = new Date(data.appointmentDateTime);\nconst apptLen = data.appointmentLength || 120;\nconst apptType = data.appointment_type || 'round_trip';\nconst dir = data.trip_direction || 'to_clinic';\n\nlet newPickup, newDropOff;\nif (apptType === 'one_way') {\n  if (dir === 'to_home') {\n    newPickup = apptDT.toISOString();\n    newDropOff = new Date(apptDT.getTime() + (newTransit * 60000)).toISOString();\n  } else {\n    newPickup = new Date(apptDT.getTime() - (newTransit * 60000)).toISOString();\n    newDropOff = apptDT.toISOString();\n  }\n} else {\n  newPickup = new Date(apptDT.getTime() - (newTransit * 60000)).toISOString();\n  const total = apptLen + newTransit;\n  newDropOff = new Date(apptDT.getTime() + (total * 60000)).toISOString();\n}\n\nreturn [{ json: { ...data, newTransitTime: newTransit, newPickupTime: newPickup, newDropOffTime: newDropOff, driverTotalDistance: distKm, stepResults: { ...stepResults, traffic_calc: 'completed', traffic_transit_minutes: newTransit, traffic_distance_km: distKm } } }];\n// v1.0.0 - Process traffic result"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3600, -160],
+      "id": "ua-dist03-0001",
+      "name": "Process Traffic Result - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": { "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $json.appointmentId }}" }] },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "transittime", "fieldValue": "={{ $json.newTransitTime }}" },
+            { "fieldId": "pickuptime", "fieldValue": "={{ $json.newPickupTime }}" },
+            { "fieldId": "dropOffTime", "fieldValue": "={{ $json.newDropOffTime }}" },
+            { "fieldId": "driver_total_distance", "fieldValue": "={{ $json.driverTotalDistance }}" },
+            { "fieldId": "traffic_aware_transit", "fieldValue": "true" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3840, -160],
+      "id": "ua-dist04-0001",
+      "name": "Update Appt Times - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $('Prepare Async Context - Code').first().json.needsDelete }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw06-yes" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Delete"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $('Prepare Async Context - Code').first().json.needsDelete }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw06-no" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Skip Delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [4080, 0],
+      "id": "ua-sw06-0001",
+      "name": "Check Async Delete - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "drivers",
+        "filters": { "conditions": [{ "keyName": "id", "keyValue": "={{ $('Prepare Async Context - Code').first().json.originalDriverAssigned }}" }] }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [4320, -160],
+      "id": "ua-olddrv01-0001",
+      "name": "Get Old Driver - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://www.googleapis.com/calendar/v3/calendars/{{ $json.google_calendar_id }}/events/{{ $('Prepare Async Context - Code').first().json.originalCalendarEventId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [4560, -160],
+      "id": "ua-caldel01-0001",
+      "name": "Delete Old Calendar - HTTP",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": { "oAuth2Api": { "id": "5WdbkjLVKF4RMfnm", "name": "Google Calendar - Generic OAuth2 API" } }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $('Prepare Async Context - Code').first().json.needsSync }}", "rightValue": "true", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw07-yes" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sync"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [{ "leftValue": "={{ $('Prepare Async Context - Code').first().json.needsSync }}", "rightValue": "false", "operator": { "type": "string", "operation": "equals" }, "id": "ua-sw07-no" }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Skip Sync"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [4800, 0],
+      "id": "ua-sw07-0001",
+      "name": "Check Async Sync - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "drivers",
+        "filters": { "conditions": [{ "keyName": "id", "keyValue": "={{ $('Prepare Async Context - Code').first().json.newDriverAssigned }}" }] }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5040, -160],
+      "id": "ua-newdrv01-0001",
+      "name": "Get New Driver - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "appointments",
+        "filters": { "conditions": [{ "keyName": "id", "keyValue": "={{ $('Prepare Async Context - Code').first().json.appointmentId }}" }] }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5280, -160],
+      "id": "ua-getappt01-0001",
+      "name": "Get Updated Appt - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "clients",
+        "filters": { "conditions": [{ "keyName": "knumber", "keyValue": "={{ $('Prepare Async Context - Code').first().json.knumber }}" }] }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5520, -160],
+      "id": "ua-getcli01-0001",
+      "name": "Get Client - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Calendar Event - v2.0.0\nconst ctx = $('Prepare Async Context - Code').first().json;\nconst appointment = $('Get Updated Appt - Supabase').first().json;\nconst client = $('Get Client - Supabase').first().json;\nconst driver = $('Get New Driver - Supabase').first().json;\n\nif (!driver || !driver.google_calendar_id) {\n  return [{ json: { ...ctx, calendarError: 'Driver has no calendar', stepResults: { ...ctx.stepResults, calendar_sync: 'failed_no_calendar' } } }];\n}\n\nconst pickupTime = new Date(appointment.pickuptime);\nconst apptTime = new Date(appointment.appointmenttime);\nconst dropOff = new Date(appointment.dropOffTime || apptTime.getTime() + (appointment.this_appointment_length * 60000));\n\nconst clientName = [client.firstname || '', client.lastname || ''].filter(Boolean).join(' ') || 'Unknown Client';\nconst clientAddr = [client.civicaddress, client.city, client.prov, client.postalcode].filter(Boolean).join(', ');\n\nconst apptType = appointment.appointment_type || 'round_trip';\nconst oneWayDir = appointment.trip_direction || 'to_clinic';\nconst supportName = appointment.event_name || 'Support Event';\n\nlet eventTitle;\nif (apptType === 'one_way') {\n  if (oneWayDir === 'to_home') { eventTitle = 'ONE-WAY: ' + clientName + ' \\u2192 Home'; }\n  else { eventTitle = 'ONE-WAY: ' + clientName + ' \\u2192 ' + appointment.locationname; }\n} else if (apptType === 'support') {\n  eventTitle = 'SUPPORT: ' + supportName;\n} else {\n  eventTitle = 'Round Trip: ' + clientName + ' to ' + appointment.locationname;\n}\n\nlet colorId = '2';\nif (apptType === 'one_way') colorId = '6';\nif (apptType === 'support') colorId = '3';\n\nconst timeOpts = { timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit', hour12: true };\nconst pickupStr = pickupTime.toLocaleString('en-US', timeOpts);\nconst apptStr = apptTime.toLocaleString('en-US', timeOpts);\n\nconst descLines = ['Client: ' + clientName, client.phone ? 'Phone: ' + client.phone : '', 'Type: ' + apptType.replace('_', ' ')];\nif (apptType === 'one_way') descLines.push('Direction: ' + oneWayDir.replace('_', ' '));\ndescLines.push('Pickup: ' + pickupStr);\ndescLines.push('Appointment: ' + apptStr);\ndescLines.push('Duration: ' + appointment.this_appointment_length + ' min');\nif (appointment.driver_instructions) descLines.push('Instructions: ' + appointment.driver_instructions);\nif (appointment.scheduling_notes) descLines.push('Notes: ' + appointment.scheduling_notes);\n\nlet eventLocation = clientAddr;\nif (apptType === 'one_way' && oneWayDir === 'to_home') eventLocation = appointment.locationaddress || clientAddr;\n\nconst calEvent = { summary: eventTitle, description: descLines.filter(Boolean).join('\\n'), start: { dateTime: appointment.pickuptime, timeZone: 'America/Halifax' }, end: { dateTime: dropOff.toISOString(), timeZone: 'America/Halifax' }, location: eventLocation, colorId: colorId, extendedProperties: { private: { rrts_appointment_id: appointment.id.toString(), rrts_driver_id: driver.id.toString(), rrts_appointment_type: apptType } }, reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 60 }, { method: 'popup', minutes: 5 }] } };\n\nconst operation = appointment.driver_calendar_event_id ? 'UPDATE' : 'CREATE';\nconst calUrl = operation === 'UPDATE' ? 'https://www.googleapis.com/calendar/v3/calendars/' + driver.google_calendar_id + '/events/' + appointment.driver_calendar_event_id : 'https://www.googleapis.com/calendar/v3/calendars/' + driver.google_calendar_id + '/events';\n\nreturn [{ json: { ...ctx, calendarOperation: operation, calendarId: driver.google_calendar_id, calendarMethod: operation === 'UPDATE' ? 'PATCH' : 'POST', calendarUrl: calUrl, calendarEvent: calEvent } }];\n// v2.0.0 - Type-aware calendar event"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5760, -160],
+      "id": "ua-calprep01-0001",
+      "name": "Prepare Calendar Event - Code"
+    },
+    {
+      "parameters": {
+        "method": "={{ $json.calendarMethod }}",
+        "url": "={{ $json.calendarUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.calendarEvent) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [6000, -160],
+      "id": "ua-calexec01-0001",
+      "name": "Execute Calendar API - HTTP",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "credentials": { "oAuth2Api": { "id": "5WdbkjLVKF4RMfnm", "name": "Google Calendar - Generic OAuth2 API" } }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": { "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $('Prepare Async Context - Code').first().json.appointmentId }}" }] },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "driver_calendar_event_id", "fieldValue": "={{ $json.id || '' }}" },
+            { "fieldId": "google_calendar_last_synced", "fieldValue": "={{ $json.id ? new Date().toISOString() : '' }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [6240, -160],
+      "id": "ua-calsave01-0001",
+      "name": "Save Calendar Event ID - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Task Result - v1.0.0\n// Collect per-step results for background_task JSONB\nconst ctx = $('Prepare Async Context - Code').first().json;\nconst stepResults = {};\n\n// Step 1: Traffic calc\nif (ctx.trafficCalcNeeded === 'true') {\n  try {\n    const trafficData = $('Process Traffic Result - Code').first().json;\n    stepResults.traffic_calc = trafficData.stepResults?.traffic_calc || 'completed';\n    if (trafficData.stepResults?.traffic_transit_minutes) stepResults.traffic_transit_minutes = trafficData.stepResults.traffic_transit_minutes;\n    if (trafficData.stepResults?.traffic_distance_km) stepResults.traffic_distance_km = trafficData.stepResults.traffic_distance_km;\n  } catch (e) {\n    stepResults.traffic_calc = 'skipped';\n  }\n} else {\n  stepResults.traffic_calc = 'skipped';\n}\n\n// Step 2: Calendar delete\nif (ctx.needsDelete === 'true') {\n  try {\n    const delResult = $('Delete Old Calendar - HTTP').first().json;\n    stepResults.calendar_delete = (delResult.error || delResult.code >= 400) ? 'failed' : 'completed';\n  } catch (e) {\n    stepResults.calendar_delete = 'failed';\n  }\n} else {\n  stepResults.calendar_delete = 'skipped';\n}\n\n// Step 3: Calendar sync\nif (ctx.needsSync === 'true') {\n  try {\n    const syncResult = $('Execute Calendar API - HTTP').first().json;\n    stepResults.calendar_sync = (syncResult.error || !syncResult.id) ? 'failed' : 'completed';\n  } catch (e) {\n    stepResults.calendar_sync = 'failed';\n  }\n} else {\n  stepResults.calendar_sync = 'skipped';\n}\n\nconst hasFailed = Object.values(stepResults).some(v => v === 'failed');\nconst finalStatus = hasFailed ? 'failed' : 'completed';\nconst errorMsg = hasFailed ? 'One or more async steps failed: ' + Object.entries(stepResults).filter(([k,v]) => v === 'failed').map(([k]) => k).join(', ') : null;\n\nreturn [{ json: { taskId: ctx.taskId, finalStatus: finalStatus, errorMessage: errorMsg, stepResults: stepResults } }];\n// v1.0.0 - Build task result"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [6480, 0],
+      "id": "ua-buildresult01-0001",
+      "name": "Build Task Result - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "background_tasks",
+        "filters": { "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $json.taskId }}" }] },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "status", "fieldValue": "={{ $json.finalStatus }}" },
+            { "fieldId": "completed_at", "fieldValue": "={{ new Date().toISOString() }}" },
+            { "fieldId": "result", "fieldValue": "={{ JSON.stringify($json.stepResults) }}" },
+            { "fieldId": "error_message", "fieldValue": "={{ $json.errorMessage || '' }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [6720, 0],
+      "id": "ua-taskcomplete01-0001",
+      "name": "Mark Task Complete - Supabase",
+      "alwaysOutputData": true,
+      "credentials": { "supabaseApi": { "id": "SEqiOYHTdU9Hm0pI", "name": "Supabase Service Role" } }
+    }
+  ],
+  "connections": {
+    "Webhook - Update Appointment": {
+      "main": [[{ "node": "Get JWT Secret - Supabase", "type": "main", "index": 0 }]]
+    },
+    "Get JWT Secret - Supabase": {
+      "main": [[{ "node": "JWT Validation - Code", "type": "main", "index": 0 }]]
+    },
+    "JWT Validation - Code": {
+      "main": [[{ "node": "JWT Validation - Switch", "type": "main", "index": 0 }]]
+    },
+    "JWT Validation - Switch": {
+      "main": [
+        [{ "node": "Validate Request - Code", "type": "main", "index": 0 }],
+        [{ "node": "Format JWT Error - Code", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate Request - Code": {
+      "main": [[{ "node": "Validation - Switch", "type": "main", "index": 0 }]]
+    },
+    "Validation - Switch": {
+      "main": [
+        [{ "node": "Calculate Times - Code", "type": "main", "index": 0 }],
+        [{ "node": "Format Validation Error - Code", "type": "main", "index": 0 }]
+      ]
+    },
+    "Calculate Times - Code": {
+      "main": [[{ "node": "Get Current Appointment - Supabase", "type": "main", "index": 0 }]]
+    },
+    "Get Current Appointment - Supabase": {
+      "main": [[{ "node": "Compare Current vs New - Code", "type": "main", "index": 0 }]]
+    },
+    "Compare Current vs New - Code": {
+      "main": [[{ "node": "Check Delete Needed - Switch", "type": "main", "index": 0 }]]
+    },
+    "Check Delete Needed - Switch": {
+      "main": [
+        [{ "node": "Update Appt After Delete - Supabase", "type": "main", "index": 0 }],
+        [{ "node": "Update Appointment - Supabase", "type": "main", "index": 0 }]
+      ]
+    },
+    "Update Appointment - Supabase": {
+      "main": [[{ "node": "Decide Async Task - Code", "type": "main", "index": 0 }]]
+    },
+    "Update Appt After Delete - Supabase": {
+      "main": [[{ "node": "Decide Async Task - Code", "type": "main", "index": 0 }]]
+    },
+    "Decide Async Task - Code": {
+      "main": [[{ "node": "Needs Async - Switch", "type": "main", "index": 0 }]]
+    },
+    "Needs Async - Switch": {
+      "main": [
+        [{ "node": "Create Background Task - Supabase", "type": "main", "index": 0 }],
+        [{ "node": "Format Simple Response - Code", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Background Task - Supabase": {
+      "main": [[{ "node": "Format Async Response - Code", "type": "main", "index": 0 }]]
+    },
+    "Format Async Response - Code": {
+      "main": [[
+        { "node": "Respond to Webhook", "type": "main", "index": 0 },
+        { "node": "Log Audit - Supabase", "type": "main", "index": 0 },
+        { "node": "Prepare Async Context - Code", "type": "main", "index": 0 }
+      ]]
+    },
+    "Format Simple Response - Code": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    },
+    "Format JWT Error - Code": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    },
+    "Format Validation Error - Code": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    },
+    "Prepare Async Context - Code": {
+      "main": [[{ "node": "Mark Task Processing - Supabase", "type": "main", "index": 0 }]]
+    },
+    "Mark Task Processing - Supabase": {
+      "main": [[{ "node": "Check Traffic Calc - Switch", "type": "main", "index": 0 }]]
+    },
+    "Check Traffic Calc - Switch": {
+      "main": [
+        [{ "node": "Get Maps API Key - Supabase", "type": "main", "index": 0 }],
+        [{ "node": "Check Async Delete - Switch", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Maps API Key - Supabase": {
+      "main": [[{ "node": "Prepare Distance Request - Code", "type": "main", "index": 0 }]]
+    },
+    "Prepare Distance Request - Code": {
+      "main": [[{ "node": "Call Distance Matrix - HTTP", "type": "main", "index": 0 }]]
+    },
+    "Call Distance Matrix - HTTP": {
+      "main": [[{ "node": "Process Traffic Result - Code", "type": "main", "index": 0 }]]
+    },
+    "Process Traffic Result - Code": {
+      "main": [[{ "node": "Update Appt Times - Supabase", "type": "main", "index": 0 }]]
+    },
+    "Update Appt Times - Supabase": {
+      "main": [[{ "node": "Check Async Delete - Switch", "type": "main", "index": 0 }]]
+    },
+    "Check Async Delete - Switch": {
+      "main": [
+        [{ "node": "Get Old Driver - Supabase", "type": "main", "index": 0 }],
+        [{ "node": "Check Async Sync - Switch", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Old Driver - Supabase": {
+      "main": [[{ "node": "Delete Old Calendar - HTTP", "type": "main", "index": 0 }]]
+    },
+    "Delete Old Calendar - HTTP": {
+      "main": [[{ "node": "Check Async Sync - Switch", "type": "main", "index": 0 }]]
+    },
+    "Check Async Sync - Switch": {
+      "main": [
+        [{ "node": "Get New Driver - Supabase", "type": "main", "index": 0 }],
+        [{ "node": "Build Task Result - Code", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get New Driver - Supabase": {
+      "main": [[{ "node": "Get Updated Appt - Supabase", "type": "main", "index": 0 }]]
+    },
+    "Get Updated Appt - Supabase": {
+      "main": [[{ "node": "Get Client - Supabase", "type": "main", "index": 0 }]]
+    },
+    "Get Client - Supabase": {
+      "main": [[{ "node": "Prepare Calendar Event - Code", "type": "main", "index": 0 }]]
+    },
+    "Prepare Calendar Event - Code": {
+      "main": [[{ "node": "Execute Calendar API - HTTP", "type": "main", "index": 0 }]]
+    },
+    "Execute Calendar API - HTTP": {
+      "main": [[{ "node": "Save Calendar Event ID - Supabase", "type": "main", "index": 0 }]]
+    },
+    "Save Calendar Event ID - Supabase": {
+      "main": [[{ "node": "Build Task Result - Code", "type": "main", "index": 0 }]]
+    },
+    "Build Task Result - Code": {
+      "main": [[{ "node": "Mark Task Complete - Supabase", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
