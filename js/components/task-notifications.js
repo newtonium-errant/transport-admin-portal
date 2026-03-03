@@ -69,36 +69,14 @@ const TaskNotifications = (function() {
      * Create header indicator badge
      */
     function createHeaderIndicator() {
-        // Find the header/navbar - try common patterns
-        const navbar = document.querySelector('.navbar-nav, .nav, header nav, .header-right, .navbar-collapse');
+        // Insert into .header-user section (before logout button)
+        const headerUser = document.querySelector('.header-user');
 
-        if (!navbar) {
-            console.warn('[TaskNotifications] Could not find navbar for indicator');
-            // Create a floating indicator instead
-            headerIndicator = document.createElement('div');
-            headerIndicator.id = 'task-indicator';
-            headerIndicator.className = 'task-indicator task-indicator-floating';
-            headerIndicator.innerHTML = `
-                <button class="task-indicator-btn" onclick="TaskNotifications.togglePanel()" title="Failed Tasks">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                    <span class="task-indicator-badge">0</span>
-                </button>
-            `;
-            headerIndicator.style.display = 'none';
-            document.body.appendChild(headerIndicator);
-            return;
-        }
-
-        // Create indicator in navbar
-        headerIndicator = document.createElement('li');
+        headerIndicator = document.createElement('div');
         headerIndicator.id = 'task-indicator';
-        headerIndicator.className = 'nav-item task-indicator';
+        headerIndicator.className = 'task-indicator' + (headerUser ? '' : ' task-indicator-floating');
         headerIndicator.innerHTML = `
-            <button class="nav-link task-indicator-btn" onclick="TaskNotifications.togglePanel()" title="Failed Tasks">
+            <button class="task-indicator-btn" onclick="TaskNotifications.togglePanel()" title="Failed Tasks">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                     <line x1="12" y1="9" x2="12" y2="13"></line>
@@ -109,12 +87,18 @@ const TaskNotifications = (function() {
         `;
         headerIndicator.style.display = 'none';
 
-        // Insert before the last nav item (usually user dropdown)
-        const lastItem = navbar.lastElementChild;
-        if (lastItem) {
-            navbar.insertBefore(headerIndicator, lastItem);
+        if (headerUser) {
+            // Insert before the logout button
+            const logoutBtn = headerUser.querySelector('.logout-btn');
+            if (logoutBtn) {
+                headerUser.insertBefore(headerIndicator, logoutBtn);
+            } else {
+                headerUser.appendChild(headerIndicator);
+            }
         } else {
-            navbar.appendChild(headerIndicator);
+            // Fallback: floating indicator in top-right corner
+            console.warn('[TaskNotifications] Could not find .header-user for indicator');
+            document.body.appendChild(headerIndicator);
         }
     }
 

@@ -1401,8 +1401,7 @@
 	    try {
 	        // Parallel fetch: appointments, drivers, and failed tasks
 	        const userRole = currentUser?.role || 'admin';
-	        const failedTasksEndpoint = (userRole === 'admin' || userRole === 'supervisor')
-	            ? 'get-all-failed-tasks' : 'get-failed-tasks';
+	        const failedTasksEndpoint = 'get-failed-tasks';
 
 	        const [appointmentsResponse, driversResponse, failedTasksResponse] = await Promise.all([
 	            fetch(`${BASE_URL}/get-active-present-future-appointments`, { headers: getAuthHeaders() }),
