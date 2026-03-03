@@ -180,9 +180,7 @@ const TaskMonitor = (function() {
                                   window.location.pathname.includes('TEST-');
                 const prefix = isTestEnv ? '/TEST-' : '/';
 
-                const endpoint = userRole === 'admin' || userRole === 'supervisor'
-                    ? prefix + 'get-all-failed-tasks'
-                    : prefix + 'get-failed-tasks';
+                const endpoint = prefix + 'get-failed-tasks';
 
                 let response;
 
@@ -358,16 +356,16 @@ const TaskMonitor = (function() {
                 // Detect TEST environment
                 const isTestEnv = window.location.pathname.includes('developing') ||
                                   window.location.pathname.includes('TEST-');
-                const endpoint = isTestEnv ? '/TEST-dismiss-all-tasks' : '/dismiss-all-tasks';
+                const endpoint = isTestEnv ? '/TEST-dismiss-task' : '/dismiss-task';
 
                 if (typeof APIClient !== 'undefined' && APIClient.post) {
-                    await APIClient.post(endpoint, {});
+                    await APIClient.post(endpoint, { dismiss_all: true });
                 } else if (typeof authenticatedFetch !== 'undefined') {
                     const baseUrl = window.apiBaseUrl || 'https://webhook-processor-production-3bb8.up.railway.app/webhook';
                     await authenticatedFetch(baseUrl + endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({})
+                        body: JSON.stringify({ dismiss_all: true })
                     });
                 }
             }

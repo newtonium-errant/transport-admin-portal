@@ -416,7 +416,13 @@ const TaskNotifications = (function() {
             'sync_quo': 'Sync to Quo',
             'sync_appointment_quo': 'Sync appointment to Quo',
             'generate_invoice': 'Generate invoice',
-            'send_notification': 'Send notification'
+            'send_notification': 'Send notification',
+            'calculate_distances': 'Calculate distances',
+            'calculate_travel_times': 'Calculate travel times',
+            'add_openphone_contact': 'Add OpenPhone contact',
+            'send_test_sms': 'Send welcome SMS',
+            'send_onboarding_email': 'Send onboarding email',
+            'complete_client_profile': 'Complete client profile'
         };
         return map[type] || type.replace(/_/g, ' ');
     }
