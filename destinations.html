@@ -1267,6 +1267,7 @@
             document.getElementById('destinationModalLabel').textContent = 'Add Destination';
             document.getElementById('saveText').textContent = 'Save Destination';
             resetModalForm();
+            document.getElementById('destProvince').value = 'NS';
             destinationModal.show();
         }
 
@@ -1485,11 +1486,6 @@
                 return;
             }
 
-            // Confirm before updating existing destination
-            if (modalMode === 'edit') {
-                if (!confirm('Update this destination?')) return;
-            }
-
             setSaveLoading(true);
 
             const payload = {
@@ -1505,12 +1501,26 @@
 
             try {
                 if (modalMode === 'add') {
-                    await APIClient.post('/add-destination', payload);
-                    showToast('success', 'Success', 'Destination added successfully.');
+                    const rawResult = await APIClient.post('/add-destination-v5', payload);
+                    const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
+                    const bgTasks = result?.data?.backgroundTasks;
+                    if (bgTasks && Object.keys(bgTasks).length > 0) {
+                        const taskNames = Object.keys(bgTasks).map(t => t.replace(/_/g, ' ')).join(', ');
+                        showToast('success', 'Success', `Destination added. Background tasks running: ${taskNames}.`);
+                    } else {
+                        showToast('success', 'Success', 'Destination added successfully.');
+                    }
                 } else {
                     payload.id = editingId;
-                    await APIClient.put('/update-destination', payload);
-                    showToast('success', 'Success', 'Destination updated successfully.');
+                    const rawResult = await APIClient.put('/update-destination-v5', payload);
+                    const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
+                    const bgTasks = result?.data?.backgroundTasks;
+                    if (bgTasks && Object.keys(bgTasks).length > 0) {
+                        const taskNames = Object.keys(bgTasks).map(t => t.replace(/_/g, ' ')).join(', ');
+                        showToast('success', 'Success', `Destination updated. Background tasks running: ${taskNames}.`);
+                    } else {
+                        showToast('success', 'Success', 'Destination updated successfully.');
+                    }
                 }
 
                 destinationModal.hide();

@@ -238,6 +238,17 @@ if (result.error) {
 }
 ```
 
+### Clearing Column Values Mistakes:
+```javascript
+// ❌ WRONG - Empty string for non-text columns (timestamp, integer, boolean, uuid, jsonb)
+// Causes: "invalid input syntax for type timestamp with time zone"
+{ "fieldId": "google_calendar_last_synced", "fieldValue": "" }
+
+// ✅ CORRECT - Use null expression for ALL non-text columns
+{ "fieldId": "google_calendar_last_synced", "fieldValue": "={{ null }}" }
+```
+**Rule:** Always use `={{ null }}` to clear column values. Empty strings only work for `text`/`varchar`. See `database/docs/SUPABASE_NODE_QUICK_REFERENCE.md` for the full column type compatibility table.
+
 ### HTTP Request Body Mistakes:
 ```javascript
 // ❌ WRONG - Expressions inside JSON body string

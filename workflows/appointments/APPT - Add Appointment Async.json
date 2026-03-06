@@ -1,0 +1,963 @@
+{
+  "name": "APPT - Add Appointment Async",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "save-appointment-v7",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-2400, 400],
+      "id": "aaa-wh01-0001-4000-8000-000000000001",
+      "name": "Webhook - Save Appointment",
+      "webhookId": "aaa-wh01-0001-4000-8000-000000000001"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "app_config",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "jwt_secret"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-2160, 400],
+      "id": "aaa-sb01-0001-4000-8000-000000000002",
+      "name": "Get JWT Secret - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation - v2.0.0\n// v2.0.0: Fetch JWT_SECRET from app_config\n\nconst webhookData = $('Webhook - Save Appointment').first().json;\nconst jwtSecret = $('Get JWT Secret - Supabase').first().json.value;\n\nif (!jwtSecret) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'JWT secret not configured',\n      statusCode: 500,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst authHeader = webhookData.headers?.authorization\n  || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nfunction verifyJWT(tkn, secret) {\n  try {\n    const parts = tkn.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n    const [header, payload, sig] = parts;\n    const expected = simpleHash(\n      `${header}.${payload}.${secret}`\n    );\n    if (sig !== expected) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n    const decoded = JSON.parse(atob(payload));\n    const now = Math.floor(Date.now() / 1000);\n    if (decoded.exp && decoded.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n    return { valid: true, payload: decoded };\n  } catch (e) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst result = verifyJWT(token, jwtSecret);\n\nif (!result.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: result.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst p = result.payload;\n\nif (p.type === 'limited') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Full authentication required',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (p.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      id: p.user_id || null,\n      username: p.sub,\n      role: p.role,\n      tokenType: p.type\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n// v2.0.0 - JWT secret from app_config"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1920, 400],
+      "id": "aaa-cd01-0001-4000-8000-000000000003",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw01-cond-auth"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw01-cond-unauth"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-1680, 400],
+      "id": "aaa-sw01-0001-4000-8000-000000000004",
+      "name": "JWT Route - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate Request Data - v3.0.0\n// v3.0.0: Type-aware validation, array support\n\nconst data = $json.requestBody || $json.body || $json;\nconst user = $('JWT Validation - Code').first().json.user;\n\nlet appointments = [];\nif (data.appointments && Array.isArray(data.appointments)) {\n  appointments = data.appointments;\n} else {\n  appointments = [data];\n}\n\nif (appointments.length === 0) {\n  return [{\n    json: {\n      _route: 'error',\n      success: false,\n      message: 'No appointments provided',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst validTypes = ['round_trip', 'one_way', 'support'];\nconst validDirs = ['to_clinic', 'to_home'];\nconst processed = [];\n\nfor (let i = 0; i < appointments.length; i++) {\n  const apt = appointments[i];\n  const errors = [];\n  const aptType = apt.appointment_type || 'round_trip';\n\n  if (!validTypes.includes(aptType)) {\n    errors.push('Invalid appointment_type: ' + aptType);\n  }\n\n  if (!apt.knumber) errors.push('knumber is required');\n  if (!apt.appointmentDateTime) {\n    errors.push('appointmentDateTime is required');\n  }\n\n  if (aptType === 'round_trip' || aptType === 'one_way') {\n    if (!apt.location) errors.push('location is required');\n    if (!apt.locationAddress) {\n      errors.push('locationAddress is required');\n    }\n  }\n\n  if (aptType === 'one_way') {\n    const dir = apt.trip_direction || '';\n    if (!validDirs.includes(dir)) {\n      errors.push('trip_direction required for one_way');\n    }\n  }\n\n  if (aptType === 'support') {\n    if (!apt.event_name || !apt.event_name.trim()) {\n      errors.push('event_name required for support');\n    }\n  }\n\n  if (apt.appointmentDateTime) {\n    try {\n      const d = new Date(apt.appointmentDateTime);\n      if (isNaN(d.getTime())) {\n        errors.push('Invalid appointmentDateTime format');\n      }\n    } catch (e) {\n      errors.push('Invalid appointmentDateTime');\n    }\n  }\n\n  if (errors.length > 0) {\n    console.error(\n      `Appt ${i + 1} invalid: ${errors.join(', ')}`\n    );\n    continue;\n  }\n\n  processed.push({\n    json: {\n      _route: 'valid',\n      ...apt,\n      appointment_type: aptType,\n      trip_direction: apt.trip_direction || null,\n      event_name: apt.event_name || null,\n      calculate_traffic_transit:\n        apt.calculate_traffic_transit === true\n          ? 'true' : 'false',\n      user: user\n    }\n  });\n}\n\nif (processed.length === 0) {\n  return [{\n    json: {\n      _route: 'error',\n      success: false,\n      message: 'No valid appointments to process',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn processed;\n// v3.0.0 - Type-aware validation with traffic flag"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1440, 320],
+      "id": "aaa-cd02-0001-4000-8000-000000000005",
+      "name": "Validate Request - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "valid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw02-cond-valid"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Valid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw02-cond-error"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [-1200, 320],
+      "id": "aaa-sw02-0001-4000-8000-000000000006",
+      "name": "Validation - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate Times - v3.0.0\n// Type-aware pickup/dropoff calculations\n\nconst items = $input.all();\n\nreturn items.map(item => {\n  const d = item.json;\n  const apptDT = new Date(d.appointmentDateTime);\n  const transit = parseInt(d.transitTime) || 30;\n  const length = parseInt(d.appointmentLength) || 120;\n  const aptType = d.appointment_type || 'round_trip';\n  const dir = d.trip_direction || 'to_clinic';\n\n  let pickupTime, dropOffTime;\n\n  if (aptType === 'one_way') {\n    if (dir === 'to_home') {\n      pickupTime = apptDT.toISOString();\n      const dropOff = new Date(\n        apptDT.getTime() + (transit * 60000)\n      );\n      dropOffTime = dropOff.toISOString();\n    } else {\n      const pickup = new Date(\n        apptDT.getTime() - (transit * 60000)\n      );\n      pickupTime = pickup.toISOString();\n      dropOffTime = apptDT.toISOString();\n    }\n  } else if (aptType === 'support') {\n    pickupTime = apptDT.toISOString();\n    const dropOff = new Date(\n      apptDT.getTime() + (length * 60000)\n    );\n    dropOffTime = dropOff.toISOString();\n  } else {\n    const pickup = new Date(\n      apptDT.getTime() - (transit * 60000)\n    );\n    pickupTime = pickup.toISOString();\n    const total = length + transit;\n    const dropOff = new Date(\n      apptDT.getTime() + (total * 60000)\n    );\n    dropOffTime = dropOff.toISOString();\n  }\n\n  return {\n    json: {\n      ...d,\n      pickupTime: pickupTime,\n      dropOffTime: dropOffTime,\n      transitTime: transit,\n      appointmentLength: length\n    }\n  };\n});\n// v3.0.0 - Type-aware timing calculations"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 240],
+      "id": "aaa-cd03-0001-4000-8000-000000000007",
+      "name": "Calculate Times - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine Notes - v3.0.0\n// Merges driver_instructions + scheduling_notes\n\nconst items = $input.all();\n\nreturn items.map(item => {\n  const d = item.json;\n  const instr = (d.driver_instructions || '').trim();\n  const sched = (d.scheduling_notes || '').trim();\n\n  let combined = '';\n  if (instr && sched) {\n    combined = `${instr}. ${sched}`;\n  } else if (instr) {\n    combined = instr;\n  } else {\n    combined = sched;\n  }\n\n  return {\n    json: {\n      ...d,\n      scheduling_notes: combined\n    }\n  };\n});\n// v3.0.0 - Passes through type fields"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 240],
+      "id": "aaa-cd04-0001-4000-8000-000000000008",
+      "name": "Combine Notes - Code"
+    },
+    {
+      "parameters": {
+        "tableId": "appointments",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "knumber", "fieldValue": "={{ $json.knumber }}" },
+            { "fieldId": "appointmenttime", "fieldValue": "={{ $json.appointmentDateTime }}" },
+            { "fieldId": "pickuptime", "fieldValue": "={{ $json.pickupTime }}" },
+            { "fieldId": "dropOffTime", "fieldValue": "={{ $json.dropOffTime }}" },
+            { "fieldId": "locationname", "fieldValue": "={{ $json.location }}" },
+            { "fieldId": "locationaddress", "fieldValue": "={{ $json.locationAddress }}" },
+            { "fieldId": "clinic_id", "fieldValue": "={{ $json.clinic_id }}" },
+            { "fieldId": "transittime", "fieldValue": "={{ $json.transitTime }}" },
+            { "fieldId": "this_appointment_length", "fieldValue": "={{ $json.appointmentLength }}" },
+            { "fieldId": "scheduling_notes", "fieldValue": "={{ $json.scheduling_notes }}" },
+            { "fieldId": "notes", "fieldValue": "={{ $json.notes }}" },
+            { "fieldId": "driver_instructions", "fieldValue": "={{ $json.driver_instructions }}" },
+            { "fieldId": "pickup_address", "fieldValue": "={{ $json.pickup_address }}" },
+            { "fieldId": "appointmentstatus", "fieldValue": "pending" },
+            { "fieldId": "operation_status", "fieldValue": "pending" },
+            { "fieldId": "custom_rate", "fieldValue": "={{ $json.customRate }}" },
+            { "fieldId": "client_notification_sent", "fieldValue": "=false" },
+            { "fieldId": "driver_notification_sent", "fieldValue": "=false" },
+            { "fieldId": "reminder_sent_client", "fieldValue": "=false" },
+            { "fieldId": "reminder_sent_driver", "fieldValue": "=false" },
+            { "fieldId": "driver_assigned", "fieldValue": "={{ $json.driver_assigned }}" },
+            { "fieldId": "driver_first_name", "fieldValue": "={{ $json.driver_first_name }}" },
+            { "fieldId": "managed_by", "fieldValue": "={{ $json.managed_by }}" },
+            { "fieldId": "managed_by_name", "fieldValue": "={{ $json.managed_by_name }}" },
+            { "fieldId": "appointment_type", "fieldValue": "={{ $json.appointment_type }}" },
+            { "fieldId": "trip_direction", "fieldValue": "={{ $json.trip_direction }}" },
+            { "fieldId": "event_name", "fieldValue": "={{ $json.event_name }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-480, 240],
+      "id": "aaa-sb02-0001-4000-8000-000000000009",
+      "name": "Insert Appointment - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check Traffic Calc Needed - v1.0.0\n// Determines if async traffic calc is needed\n\nconst items = $input.all();\nconst user = items[0]?.json?.user\n  || $('Validate Request - Code').first().json.user;\n\nconst needsTraffic = [];\nconst noTraffic = [];\n\nitems.forEach(item => {\n  const d = item.json;\n  const wantTraffic =\n    d.calculate_traffic_transit === 'true';\n  const isSupport = d.appointment_type === 'support';\n  const hasAddresses = d.pickup_address\n    && d.locationaddress;\n\n  if (wantTraffic && !isSupport && hasAddresses) {\n    needsTraffic.push(d);\n  } else {\n    noTraffic.push(d);\n  }\n});\n\nconst allResults = items.map(item => ({\n  id: item.json.id,\n  knumber: item.json.knumber,\n  appointmenttime: item.json.appointmenttime,\n  pickuptime: item.json.pickuptime,\n  location: item.json.locationname,\n  appointment_type: item.json.appointment_type\n    || 'round_trip',\n  trip_direction: item.json.trip_direction || null,\n  event_name: item.json.event_name || null\n}));\n\nconst hasTrafficNeeded = needsTraffic.length > 0;\n\nreturn [{\n  json: {\n    _route: hasTrafficNeeded ? 'async' : 'sync',\n    allResults: allResults,\n    trafficAppointments: needsTraffic,\n    successCount: items.length,\n    totalCount: items.length,\n    user: user\n  }\n}];\n// v1.0.0 - Traffic calc routing"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-240, 240],
+      "id": "aaa-cd05-0001-4000-8000-000000000010",
+      "name": "Check Traffic Calc Needed - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "async",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw03-cond-async"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Async"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "sync",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw03-cond-sync"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sync"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [0, 240],
+      "id": "aaa-sw03-0001-4000-8000-000000000011",
+      "name": "Traffic Route - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create Background Tasks - v1.0.0\n// Creates task rows for traffic calc\n\nconst data = $input.first().json;\nconst appts = data.trafficAppointments;\nconst user = data.user;\n\nconst tasks = appts.map(apt => ({\n  json: {\n    entity_type: 'appointment',\n    entity_id: String(apt.id),\n    entity_label: apt.knumber + ' - '\n      + (apt.locationname || apt.event_name || 'Appt'),\n    task_type: 'calculate_traffic_transit',\n    status: 'pending',\n    created_by: user?.id || null,\n    appointmentData: apt\n  }\n}));\n\nreturn tasks;\n// v1.0.0 - Create traffic calc tasks"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 80],
+      "id": "aaa-cd06-0001-4000-8000-000000000012",
+      "name": "Prepare Background Tasks - Code"
+    },
+    {
+      "parameters": {
+        "tableId": "background_tasks",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "entity_type", "fieldValue": "={{ $json.entity_type }}" },
+            { "fieldId": "entity_id", "fieldValue": "={{ $json.entity_id }}" },
+            { "fieldId": "entity_label", "fieldValue": "={{ $json.entity_label }}" },
+            { "fieldId": "task_type", "fieldValue": "={{ $json.task_type }}" },
+            { "fieldId": "status", "fieldValue": "={{ $json.status }}" },
+            { "fieldId": "created_by", "fieldValue": "={{ $json.created_by }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [480, 80],
+      "id": "aaa-sb03-0001-4000-8000-000000000013",
+      "name": "Create Task - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Async Response - v1.0.0\n// Returns appointments + background task IDs\n\nconst taskResults = $input.all();\nconst routeData = $('Check Traffic Calc Needed - Code')\n  .first().json;\n\nconst taskMap = {};\ntaskResults.forEach(item => {\n  const t = item.json;\n  if (t.entity_id && t.id) {\n    if (!taskMap[t.entity_id]) taskMap[t.entity_id] = {};\n    taskMap[t.entity_id][t.task_type] = t.id;\n  }\n});\n\nreturn [{\n  json: {\n    success: true,\n    message: routeData.successCount + ' of '\n      + routeData.totalCount\n      + ' appointment(s) saved successfully',\n    data: {\n      appointments: routeData.allResults,\n      backgroundTasks: taskMap\n    },\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Async response with task IDs"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 80],
+      "id": "aaa-cd07-0001-4000-8000-000000000014",
+      "name": "Format Async Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Simple Response - v1.0.0\n// No background tasks needed\n\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    success: true,\n    message: data.successCount + ' of '\n      + data.totalCount\n      + ' appointment(s) saved successfully',\n    data: {\n      appointments: data.allResults,\n      backgroundTasks: {}\n    },\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Simple sync response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 400],
+      "id": "aaa-cd08-0001-4000-8000-000000000015",
+      "name": "Format Simple Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Error Response - v1.0.0\n\nconst err = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: err.message || 'Failed to save appointment',\n    error: err.error || 'Unknown error',\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Standard error response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 560],
+      "id": "aaa-cd09-0001-4000-8000-000000000016",
+      "name": "Format Error Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Unauthorized Response - v1.0.0\n\nconst err = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    error: {\n      message: err.message || 'Unauthorized access',\n      statusCode: err.statusCode || 401\n    },\n    timestamp: err.timestamp\n      || new Date().toISOString()\n  }\n}];\n// v1.0.0 - Unauthorized error response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1440, 560],
+      "id": "aaa-cd10-0001-4000-8000-000000000017",
+      "name": "Unauthorized Response - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [960, 400],
+      "id": "aaa-rw01-0001-4000-8000-000000000018",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Traffic API Requests - v1.0.0\n// Builds Maps API params for each appointment\n\nconst taskItems = $input.all();\nconst mapsKey = $('Get Maps API Key - Supabase')\n  .first().json.value;\n\nif (!mapsKey) {\n  console.error('Google Maps API key not found');\n  return taskItems.map(item => ({\n    json: {\n      taskId: item.json.id,\n      branchError: 'true',\n      errorMessage: 'Google Maps API key not found'\n    }\n  }));\n}\n\nreturn taskItems.map(item => {\n  const t = item.json;\n  const apt = $('Prepare Background Tasks - Code').all()\n    .find(i =>\n      String(i.json.entity_id) === String(t.entity_id)\n    )?.json?.appointmentData;\n\n  if (!apt) {\n    return {\n      json: {\n        taskId: t.id,\n        branchError: 'true',\n        errorMessage: 'Appointment data not found'\n      }\n    };\n  }\n\n  const aptType = apt.appointment_type || 'round_trip';\n  const dir = apt.trip_direction || 'to_clinic';\n\n  let origins, destinations;\n  if (aptType === 'one_way' && dir === 'to_home') {\n    origins = apt.locationaddress;\n    destinations = apt.pickup_address;\n  } else {\n    origins = apt.pickup_address;\n    destinations = apt.locationaddress;\n  }\n\n  const apptDT = new Date(apt.appointmenttime);\n  const depTime = Math.floor(apptDT.getTime() / 1000);\n\n  return {\n    json: {\n      taskId: t.id,\n      appointmentId: t.entity_id,\n      branchError: 'false',\n      origins: origins,\n      destinations: destinations,\n      apiKey: mapsKey,\n      departureTime: depTime,\n      appointmentType: aptType,\n      tripDirection: dir,\n      appointmentDateTime: apt.appointmenttime,\n      appointmentLength: apt.this_appointment_length\n        || parseInt(apt.appointmentLength) || 120\n    }\n  };\n});\n// v1.0.0 - Prepare traffic calc requests"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, -160],
+      "id": "aaa-cd11-0001-4000-8000-000000000019",
+      "name": "Prepare Traffic Requests - Code"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"origins\": \"{{ $json.origins }}\",\n  \"destinations\": \"{{ $json.destinations }}\",\n  \"key\": \"{{ $json.apiKey }}\",\n  \"mode\": \"driving\",\n  \"units\": \"metric\",\n  \"departure_time\": \"{{ $json.departureTime }}\",\n  \"traffic_model\": \"pessimistic\"\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1440, -160],
+      "id": "aaa-hr01-0001-4000-8000-000000000020",
+      "name": "Maps API Traffic - HTTP Request",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate P75 Transit Time - v1.0.0\n// Uses duration (no traffic) + duration_in_traffic\n\nconst items = $input.all();\nconst origReqs = $('Prepare Traffic Requests - Code')\n  .all();\n\nreturn items.map((item, i) => {\n  const req = origReqs[i]?.json;\n  if (!req || req.branchError === 'true') {\n    return {\n      json: {\n        taskId: req?.taskId,\n        appointmentId: req?.appointmentId,\n        calcError: 'true',\n        errorMessage: req?.errorMessage\n          || 'Preparation failed'\n      }\n    };\n  }\n\n  const m = item.json;\n  const el = m.rows?.[0]?.elements?.[0];\n\n  if (!el || el.status !== 'OK') {\n    return {\n      json: {\n        taskId: req.taskId,\n        appointmentId: req.appointmentId,\n        calcError: 'true',\n        errorMessage: 'Maps API returned '\n          + (el?.status || 'no data')\n      }\n    };\n  }\n\n  const noTraffic = el.duration.value;\n  const pessimistic = el.duration_in_traffic\n    ? el.duration_in_traffic.value : noTraffic;\n\n  const p75sec = noTraffic\n    + (pessimistic - noTraffic) * 0.75;\n  const p75min = Math.ceil(p75sec / 60);\n  const rounded = Math.ceil(p75min / 5) * 5;\n  const newTransit = Math.max(rounded, 5);\n\n  const apptDT = new Date(req.appointmentDateTime);\n  const length = req.appointmentLength;\n  const aptType = req.appointmentType;\n  const dir = req.tripDirection;\n\n  let pickupTime, dropOffTime;\n\n  if (aptType === 'one_way') {\n    if (dir === 'to_home') {\n      pickupTime = apptDT.toISOString();\n      const d = new Date(\n        apptDT.getTime() + (newTransit * 60000)\n      );\n      dropOffTime = d.toISOString();\n    } else {\n      const p = new Date(\n        apptDT.getTime() - (newTransit * 60000)\n      );\n      pickupTime = p.toISOString();\n      dropOffTime = apptDT.toISOString();\n    }\n  } else {\n    const p = new Date(\n      apptDT.getTime() - (newTransit * 60000)\n    );\n    pickupTime = p.toISOString();\n    const total = length + newTransit;\n    const d = new Date(\n      apptDT.getTime() + (total * 60000)\n    );\n    dropOffTime = d.toISOString();\n  }\n\n  const distKm = el.distance\n    ? parseFloat(\n        (el.distance.value / 1000).toFixed(2)\n      )\n    : null;\n\n  return {\n    json: {\n      taskId: req.taskId,\n      appointmentId: req.appointmentId,\n      calcError: 'false',\n      newTransitTime: newTransit,\n      pickupTime: pickupTime,\n      dropOffTime: dropOffTime,\n      driverTotalDistance: distKm,\n      durationNoTraffic: Math.round(noTraffic / 60),\n      durationPessimistic: Math.round(\n        pessimistic / 60\n      ),\n      p75Minutes: p75min\n    }\n  };\n});\n// v1.0.0 - P75 transit time calculation"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, -160],
+      "id": "aaa-cd12-0001-4000-8000-000000000021",
+      "name": "Calculate P75 Transit - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.calcError }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw04-cond-ok"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Success"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.calcError }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aaa-sw04-cond-err"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [1920, -160],
+      "id": "aaa-sw04-0001-4000-8000-000000000022",
+      "name": "Traffic Calc Result - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "appointments",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.appointmentId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "transittime", "fieldValue": "={{ $json.newTransitTime }}" },
+            { "fieldId": "pickuptime", "fieldValue": "={{ $json.pickupTime }}" },
+            { "fieldId": "dropOffTime", "fieldValue": "={{ $json.dropOffTime }}" },
+            { "fieldId": "driver_total_distance", "fieldValue": "={{ $json.driverTotalDistance }}" },
+            { "fieldId": "traffic_aware_transit", "fieldValue": true }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2160, -240],
+      "id": "aaa-sb04-0001-4000-8000-000000000023",
+      "name": "Update Appointment Times - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mark Task Completed - v1.0.0\n\nconst d = $input.first().json;\nconst calcData = $('Calculate P75 Transit - Code')\n  .all().find(i =>\n    String(i.json.appointmentId)\n      === String(d.id || d.appointmentId)\n  )?.json;\n\nreturn [{\n  json: {\n    taskId: calcData?.taskId || d.taskId,\n    status: 'completed',\n    completed_at: new Date().toISOString(),\n    result: JSON.stringify({\n      transit_minutes: calcData?.newTransitTime,\n      distance_km: calcData?.driverTotalDistance,\n      duration_no_traffic: calcData?.durationNoTraffic,\n      duration_pessimistic:\n        calcData?.durationPessimistic,\n      p75_minutes: calcData?.p75Minutes\n    }),\n    error_message: null\n  }\n}];\n// v1.0.0 - Mark task completed with result"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, -240],
+      "id": "aaa-cd13-0001-4000-8000-000000000024",
+      "name": "Mark Task Complete - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mark Task Failed - v1.0.0\n\nconst d = $input.first().json;\n\nreturn [{\n  json: {\n    taskId: d.taskId,\n    status: 'failed',\n    completed_at: new Date().toISOString(),\n    result: null,\n    error_message: d.errorMessage\n      || 'Traffic calculation failed'\n  }\n}];\n// v1.0.0 - Mark task failed with error"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, -80],
+      "id": "aaa-cd14-0001-4000-8000-000000000025",
+      "name": "Mark Task Failed - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "background_tasks",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.taskId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "status", "fieldValue": "={{ $json.status }}" },
+            { "fieldId": "completed_at", "fieldValue": "={{ $json.completed_at }}" },
+            { "fieldId": "result", "fieldValue": "={{ $json.result }}" },
+            { "fieldId": "error_message", "fieldValue": "={{ $json.error_message }}" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2640, -160],
+      "id": "aaa-sb05-0001-4000-8000-000000000026",
+      "name": "Update Task Status - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "app_config",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "keyValue": "google_maps_api_key"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [960, -160],
+      "id": "aaa-sb06-0001-4000-8000-000000000027",
+      "name": "Get Maps API Key - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Save Appointment": {
+      "main": [
+        [
+          {
+            "node": "Get JWT Secret - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JWT Secret - Supabase": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Route - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Route - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate Request - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request - Code": {
+      "main": [
+        [
+          {
+            "node": "Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Calculate Times - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Times - Code": {
+      "main": [
+        [
+          {
+            "node": "Combine Notes - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Notes - Code": {
+      "main": [
+        [
+          {
+            "node": "Insert Appointment - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Appointment - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Check Traffic Calc Needed - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Traffic Calc Needed - Code": {
+      "main": [
+        [
+          {
+            "node": "Traffic Route - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traffic Route - Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Background Tasks - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Simple Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Background Tasks - Code": {
+      "main": [
+        [
+          {
+            "node": "Create Task - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Task - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Async Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Async Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Maps API Key - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Simple Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Maps API Key - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Prepare Traffic Requests - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Traffic Requests - Code": {
+      "main": [
+        [
+          {
+            "node": "Maps API Traffic - HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Maps API Traffic - HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Calculate P75 Transit - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate P75 Transit - Code": {
+      "main": [
+        [
+          {
+            "node": "Traffic Calc Result - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traffic Calc Result - Switch": {
+      "main": [
+        [
+          {
+            "node": "Update Appointment Times - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Task Failed - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Appointment Times - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Mark Task Complete - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Task Complete - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Task Status - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Task Failed - Code": {
+      "main": [
+        [
+          {
+            "node": "Update Task Status - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aaa-version-1-0-0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "id": "APPT-Add-Appointment-Async",
+  "tags": [
+    {
+      "id": "3od10wQiA1OAAozv",
+      "name": "Appointment Management"
+    },
+    {
+      "id": "Gm2wdYiA4AnCKH8r",
+      "name": "with JWT"
+    }
+  ]
+}
