@@ -214,7 +214,7 @@ async function secureSaveAppointment(appointmentData) {
     const safeData = createSecureAppointmentUpdate(appointmentData);
     
     return await secureApiRequest(
-        'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment',
+        'https://webhook-processor-production-3bb8.up.railway.app/webhook/save-appointment-v5',
         { method: 'POST' },
         safeData
     );
@@ -227,7 +227,7 @@ async function secureUpdateAppointment(appointmentData) {
     const safeData = createSecureAppointmentUpdate(appointmentData);
 
     return await secureApiRequest(
-        'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete',
+        'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete-v5',
         { method: 'POST' },
         safeData
     );

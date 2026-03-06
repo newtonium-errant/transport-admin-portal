@@ -2,8 +2,12 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v3.1.0
+ * Version: v3.2.0
  * Changes:
+ * - v3.2.0: Added traffic-aware transit time checkbox (calculate_traffic_transit)
+ * - v3.2.0: Checkbox inside transitTimeRow, hidden for support type, visible in add+edit
+ * - v3.2.0: When checked, shows hint and changes badge to "Traffic override"
+ * - v3.2.0: Pre-checks checkbox in edit mode if appointment.traffic_aware_transit is true
  * - v3.1.0: Replaced client search-only input with searchable dropdown list
  * - v3.1.0: Search filter input above dropdown for type-to-filter behavior
  * - v3.1.0: Dropdown pre-populated with all active clients on modal open
@@ -58,6 +62,7 @@ class AppointmentModal {
         this.selectedClient = null; // Store selected client data including clinic_travel_times
         this.appointmentType = 'round_trip'; // 'round_trip', 'one_way', 'support'
         this.originalAppointmentType = null; // For edit mode type change restrictions
+        this._missingTravelTime = false; // Track missing travel time for yellow indicator
         // Store original values for edit mode to detect changes
         this.originalSchedulingNotes = null;
         this.originalAppointmentDateTime = null;
@@ -134,24 +139,6 @@ class AppointmentModal {
                                     </div>
                                 </div>
 
-                                <!-- Transit Time (Now visible in all modes) -->
-                                <div class="row" id="transitTimeRow">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="transitTime" class="form-label">
-                                            Transit Time (minutes)
-                                            <span class="badge bg-info text-dark">Auto-filled</span>
-                                        </label>
-                                        <input type="number" class="form-control" id="transitTime" min="1" max="300">
-                                        <small class="text-muted">Auto-populated from client travel times (editable)</small>
-                                        <small class="text-info d-none" id="transitTimeCalculatingHint"><i class="bi bi-hourglass-split me-1"></i>Travel times are still being calculated for this client. You may need to enter transit time manually.</small>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="pickupTime" class="form-label">Pickup Time (Calculated)</label>
-                                        <input type="datetime-local" class="form-control" id="pickupTime" disabled>
-                                        <small class="text-muted">Auto-calculated from appointment time - transit time</small>
-                                    </div>
-                                </div>
-
                                 <!-- Location -->
                                 <div class="row">
                                     <div class="col-md-12 mb-3">
@@ -202,6 +189,32 @@ class AppointmentModal {
                                     </div>
                                 </div>
 
+                                <!-- Transit Time (Now visible in all modes) -->
+                                <div class="row" id="transitTimeRow">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="transitTime" class="form-label">
+                                            Transit Time (minutes)
+                                            <span class="badge bg-info text-dark">Auto-filled</span>
+                                        </label>
+                                        <input type="number" class="form-control" id="transitTime" min="1" max="300">
+                                        <small class="text-muted" id="transitTimeDefaultHint">Auto-populated from client travel times (editable)</small>
+                                        <small class="text-warning d-none" id="trafficAwareHint"><i class="bi bi-info-circle me-1"></i>Transit time will be recalculated based on traffic at appointment time. Current value used as fallback.</small>
+                                        <small class="text-warning d-none" id="missingTravelTimeHint"><i class="bi bi-exclamation-triangle me-1"></i>No stored travel time for this clinic. Transit time will be calculated on save.</small>
+                                        <small class="text-info d-none" id="transitTimeCalculatingHint"><i class="bi bi-hourglass-split me-1"></i>Travel times are still being calculated for this client. You may need to enter transit time manually.</small>
+                                        <div class="form-check mt-2" id="trafficAwareRow">
+                                            <input class="form-check-input" type="checkbox" id="trafficAwareTransit">
+                                            <label class="form-check-label" for="trafficAwareTransit">
+                                                <i class="bi bi-clock-history me-1"></i>Use traffic-aware transit time
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="pickupTime" class="form-label">Pickup Time (Calculated)</label>
+                                        <input type="datetime-local" class="form-control" id="pickupTime" disabled>
+                                        <small class="text-muted">Auto-calculated from appointment time - transit time</small>
+                                    </div>
+                                </div>
+
                                 <!-- Cost Information (hidden for booking agents) -->
                                 <div class="row" id="costInformation" data-cost-field>
                                     <div class="col-md-6 mb-3">
@@ -242,7 +255,7 @@ class AppointmentModal {
                                         Driver Instructions
                                         <span class="badge bg-secondary">Optional</span>
                                     </label>
-                                    <input type="text" class="form-control" id="driverInstructions" placeholder="e.g., Ring the doorbell, Call upon arrival">
+                                    <textarea class="form-control" id="driverInstructions" rows="3" placeholder="e.g., Ring the doorbell, Call upon arrival"></textarea>
                                     <small class="text-muted">Special instructions for the driver (pickup location, access notes, etc.)</small>
                                 </div>
 
@@ -307,6 +320,9 @@ class AppointmentModal {
 
         // Setup appointment type selector
         this.setupTypeSelector();
+
+        // Setup traffic-aware transit checkbox
+        this.setupTrafficAwareCheckbox();
     }
     
     setupPickupTimeCalculation() {
@@ -346,6 +362,71 @@ class AppointmentModal {
         });
     }
 
+    setupTrafficAwareCheckbox() {
+        const checkbox = document.getElementById('trafficAwareTransit');
+        if (!checkbox) return;
+
+        checkbox.addEventListener('change', () => {
+            this.updateTrafficAwareUI(checkbox.checked);
+        });
+    }
+
+    /**
+     * Update UI elements based on traffic-aware checkbox state.
+     * Shows/hides hint text and swaps the transit time badge.
+     */
+    updateTrafficAwareUI(checked) {
+        const defaultHint = document.getElementById('transitTimeDefaultHint');
+        const trafficHint = document.getElementById('trafficAwareHint');
+        const missingHint = document.getElementById('missingTravelTimeHint');
+        const calculatingHint = document.getElementById('transitTimeCalculatingHint');
+        const badge = document.querySelector('#transitTimeRow .badge');
+
+        if (checked) {
+            // Traffic-aware takes priority over all other indicators
+            if (defaultHint) defaultHint.classList.add('d-none');
+            if (missingHint) missingHint.classList.add('d-none');
+            if (calculatingHint) calculatingHint.classList.add('d-none');
+            if (trafficHint) trafficHint.classList.remove('d-none');
+            if (badge) {
+                badge.className = 'badge bg-warning text-dark';
+                badge.textContent = 'Traffic override';
+            }
+        } else if (this._missingTravelTime) {
+            // Not traffic-aware but travel time is missing — show missing indicator only
+            if (defaultHint) defaultHint.classList.add('d-none');
+            if (trafficHint) trafficHint.classList.add('d-none');
+            if (calculatingHint) calculatingHint.classList.add('d-none');
+            if (missingHint) missingHint.classList.remove('d-none');
+            if (badge) {
+                badge.className = 'badge bg-warning text-dark';
+                badge.textContent = 'No travel data';
+            }
+        } else {
+            if (defaultHint) defaultHint.classList.remove('d-none');
+            if (trafficHint) trafficHint.classList.add('d-none');
+            if (missingHint) missingHint.classList.add('d-none');
+            if (calculatingHint) calculatingHint.classList.add('d-none');
+            if (badge) {
+                badge.className = 'badge bg-info text-dark';
+                badge.textContent = 'Auto-filled';
+            }
+        }
+    }
+
+    /**
+     * Show/hide the missing travel time yellow indicator.
+     * When missing=true, shows warning badge and hint unless traffic-aware is checked.
+     * When missing=false, restores default state unless traffic-aware is checked.
+     */
+    updateMissingTravelTimeUI(missing) {
+        this._missingTravelTime = missing;
+        const trafficCheckbox = document.getElementById('trafficAwareTransit');
+        const isTrafficAware = trafficCheckbox?.checked || false;
+        // Let updateTrafficAwareUI handle the combined state
+        this.updateTrafficAwareUI(isTrafficAware);
+    }
+
     /**
      * Show/hide fields based on current appointment type.
      * Called when type changes and when modal opens.
@@ -380,8 +461,10 @@ class AppointmentModal {
             // Hide transit time row in support mode
             if (transitTimeRow) transitTimeRow.style.display = 'none';
 
-            // Hide pickup address row in support mode
+            // Hide pickup address row in support mode and remove required validation
             if (pickupAddressRow) pickupAddressRow.style.display = 'none';
+            const pickupAddressSelect = document.getElementById('appointmentPickupAddress');
+            if (pickupAddressSelect) pickupAddressSelect.required = false;
 
             // Change clinic label to "Event Venue"
             if (clinicLabel) clinicLabel.innerHTML = 'Event Venue <span class="text-danger">*</span>';
@@ -397,9 +480,17 @@ class AppointmentModal {
             // Restore clinic label
             if (clinicLabel) clinicLabel.innerHTML = 'Clinic Location <span class="text-danger">*</span>';
 
-            // Show transit time in edit mode
-            if (transitTimeRow && this.mode === 'edit') {
+            // Show transit time row (visible in both add and edit modes)
+            if (transitTimeRow) {
                 transitTimeRow.style.display = 'block';
+            }
+
+            // Restore pickup address required attribute in edit mode
+            if (this.mode === 'edit') {
+                const pickupAddressRow = document.getElementById('pickupAddressRow');
+                const pickupAddressSelect = document.getElementById('appointmentPickupAddress');
+                if (pickupAddressRow) pickupAddressRow.style.display = 'block';
+                if (pickupAddressSelect) pickupAddressSelect.required = true;
             }
 
             // If switching back from support, clear the auto-set K0000
@@ -671,14 +762,19 @@ class AppointmentModal {
                         transitField.value = transitMinutes;
                         console.log(`[Transit Time] ✅ Set transit time field to ${transitMinutes} minutes for ${clinicName}`);
 
+                        // Travel time found — clear missing indicator (unless traffic-aware is checked)
+                        this.updateMissingTravelTimeUI(false);
+
                         // Trigger pickup time recalculation by dispatching input event
                         transitField.dispatchEvent(new Event('input', { bubbles: true }));
                     } else {
                         console.warn(`[Transit Time] No duration_minutes found in travel time data`);
+                        this.updateMissingTravelTimeUI(true);
                     }
                 } else {
                     console.warn(`[Transit Time] No travel time found for clinic: ${clinicName}`);
                     console.log(`[Transit Time] Available clinics in travel times:`, typeof travelTimes === 'string' ? 'string - needs parsing' : Object.keys(travelTimes));
+                    this.updateMissingTravelTimeUI(true);
                 }
             } else {
                 if (!this.selectedClient) {
@@ -687,6 +783,7 @@ class AppointmentModal {
                     // Show hint that travel times may still be calculating
                     if (calculatingHint) calculatingHint.classList.remove('d-none');
                     console.warn(`[Transit Time] Client ${this.selectedClient.knumber} has no clinic_travel_times`);
+                    this.updateMissingTravelTimeUI(true);
                 }
             }
 
@@ -1337,7 +1434,7 @@ class AppointmentModal {
             cancelBtn.style.display = 'none';
             saveBtn.textContent = 'Save Appointment';
             saveBtn.onclick = () => this.saveAppointment();
-            transitTimeRow.style.display = 'none'; // Hide in add mode
+            transitTimeRow.style.display = 'block'; // Show in add mode (for traffic-aware checkbox access)
             if (driverFieldContainer) driverFieldContainer.style.display = 'none'; // Hide driver in add mode
 
             // Hide pickup address selection in add mode (auto-determined)
@@ -1461,6 +1558,12 @@ class AppointmentModal {
             // Reset appointment type fields
             document.getElementById('tripDirection').value = '';
             document.getElementById('eventName').value = '';
+
+            // Reset traffic-aware checkbox, missing travel time flag, and UI
+            this._missingTravelTime = false;
+            const trafficCheckbox = document.getElementById('trafficAwareTransit');
+            if (trafficCheckbox) trafficCheckbox.checked = false;
+            this.updateTrafficAwareUI(false);
 
             // Hide travel times calculating hint
             const calculatingHint = document.getElementById('transitTimeCalculatingHint');
@@ -1714,6 +1817,14 @@ class AppointmentModal {
         // Store original for change detection
         this.originalTransitTime = String(transitTime);
 
+        // Set traffic-aware checkbox state from appointment data
+        const trafficCheckbox = document.getElementById('trafficAwareTransit');
+        if (trafficCheckbox) {
+            const isTrafficAware = appointment.traffic_aware_transit === true;
+            trafficCheckbox.checked = isTrafficAware;
+            this.updateTrafficAwareUI(isTrafficAware);
+        }
+
         if (appointment.pickupTime) {
             // Convert UTC time to Halifax time for datetime-local input
             const pickupDate = new Date(appointment.pickupTime);
@@ -1933,7 +2044,11 @@ class AppointmentModal {
             // Appointment type fields
             appointment_type: this.appointmentType,
             trip_direction: this.appointmentType === 'one_way' ? document.getElementById('tripDirection').value : null,
-            event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null
+            event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null,
+            // Traffic-aware transit time
+            calculate_traffic_transit: document.getElementById('trafficAwareTransit')?.checked || false,
+            // Flag for backend to calculate transit time when no stored travel data exists
+            needs_fallback_transit: this._missingTravelTime === true
         };
 
         // Include driver assignment if user has permission
@@ -2077,7 +2192,8 @@ class AppointmentModal {
             'appointmentPickupAddress',
             'managingAgent',
             'tripDirection',
-            'eventName'
+            'eventName',
+            'trafficAwareTransit'
         ];
 
         // Also disable type selector radios
@@ -2273,11 +2389,15 @@ class AppointmentModal {
                 // Preserve appointment type fields
                 appointment_type: this.appointmentType,
                 trip_direction: this.appointmentType === 'one_way' ? document.getElementById('tripDirection').value : null,
-                event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null
+                event_name: this.appointmentType === 'support' ? document.getElementById('eventName').value.trim() : null,
+                // Preserve traffic-aware transit flag
+                calculate_traffic_transit: document.getElementById('trafficAwareTransit')?.checked || false,
+                // Flag for backend to calculate transit time when no stored travel data exists
+                needs_fallback_transit: this._missingTravelTime === true
             };
 
             // Use update appointment endpoint with complete data
-            const response = await fetch(`${apiBaseUrl}/update-appointment-complete`, {
+            const response = await fetch(`${apiBaseUrl}/update-appointment-complete-v5`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
