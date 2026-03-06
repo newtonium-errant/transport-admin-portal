@@ -2397,7 +2397,7 @@ class AppointmentModal {
             };
 
             // Use update appointment endpoint with complete data
-            const response = await fetch(`${apiBaseUrl}/update-appointment-complete-test`, {
+            const response = await fetch(`${apiBaseUrl}/update-appointment-complete-v5`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

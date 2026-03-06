@@ -1,0 +1,2462 @@
+{
+  "name": "DEST - Update Destination Async",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "PUT",
+        "path": "update-destination",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "du-wh01-0001-4000-8000-000000000001",
+      "name": "PUT Update Destination - Webhook",
+      "webhookId": "du-wh01-0001-4000-8000-00000000000w"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "app_config",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "jwt_secret"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "id": "du-jwt01-0001-4000-8000-000000000002",
+      "name": "Get JWT Secret - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// JWT Token Validation - v2.0.0\n// v2.0.0: Fetch JWT_SECRET from app_config\nconst webhookData = $('PUT Update Destination - Webhook').first().json;\nconst jwtSecret = $('Get JWT Secret - Supabase').first().json.value;\n\nif (!jwtSecret) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'JWT secret not configured',\n      statusCode: 500,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst authHeader = webhookData.headers?.authorization || webhookData.headers?.Authorization;\n\nif (!authHeader) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Missing authorization header',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (!authHeader.startsWith('Bearer ')) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Invalid authorization format',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst token = authHeader.substring(7);\n\nfunction simpleHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return hash.toString(36);\n}\n\nfunction verifyJWT(token, secret) {\n  try {\n    const parts = token.split('.');\n    if (parts.length !== 3) {\n      return { valid: false, error: 'Invalid token format' };\n    }\n    const [header, payload, sig] = parts;\n    const expected = simpleHash(`${header}.${payload}.${secret}`);\n    if (sig !== expected) {\n      return { valid: false, error: 'Invalid token signature' };\n    }\n    const decoded = JSON.parse(atob(payload));\n    const now = Math.floor(Date.now() / 1000);\n    if (decoded.exp && decoded.exp < now) {\n      return { valid: false, error: 'Token expired' };\n    }\n    return { valid: true, payload: decoded };\n  } catch (e) {\n    return { valid: false, error: 'Token verification failed' };\n  }\n}\n\nconst result = verifyJWT(token, jwtSecret);\n\nif (!result.valid) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: result.error || 'Invalid token',\n      statusCode: 401,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst p = result.payload;\n\nif (p.type === 'limited') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Full authentication required',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nif (p.type === 'refresh') {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Refresh tokens cannot be used here',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nconst allowedRoles = ['admin', 'supervisor'];\nif (!allowedRoles.includes(p.role)) {\n  return [{\n    json: {\n      _route: 'unauthorized',\n      success: false,\n      message: 'Insufficient permissions',\n      statusCode: 403,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    _route: 'authorized',\n    authenticated: true,\n    user: {\n      id: p.user_id || null,\n      username: p.sub,\n      role: p.role,\n      tokenType: p.type\n    },\n    requestBody: webhookData.body,\n    timestamp: new Date().toISOString()\n  }\n}];\n// v2.0.0 - Dynamic JWT secret + RBAC"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "du-jwt02-0001-4000-8000-000000000003",
+      "name": "JWT Validation - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "authorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw01-auth"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Authorized"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._route }}",
+                    "rightValue": "unauthorized",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw01-unauth"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [660, 0],
+      "id": "du-sw01-0001-4000-8000-000000000004",
+      "name": "JWT Route - Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate Update Data - v1.0.0\n// Validates incoming update data, builds updateFields object\nconst data = $json.requestBody || {};\nconst user = $('JWT Validation - Code').first().json.user;\nconst errors = [];\n\n// id is required for update\nif (!data.id && data.id !== 0) {\n  errors.push('Destination id is required');\n}\n\nconst destinationId = parseInt(data.id);\nif (isNaN(destinationId) || destinationId <= 0) {\n  errors.push('Destination id must be a positive integer');\n}\n\n// Email format validation (if provided)\nif (data.email !== undefined && data.email !== null && data.email !== '') {\n  if (!data.email.includes('@')) {\n    errors.push('Invalid email format');\n  }\n}\n\n// Contacts JSONB validation (if provided)\nlet parsedContacts = undefined;\nif (data.contacts !== undefined) {\n  if (data.contacts === null) {\n    parsedContacts = [];\n  } else if (typeof data.contacts === 'string') {\n    try {\n      parsedContacts = JSON.parse(data.contacts);\n    } catch (e) {\n      errors.push('Contacts must be valid JSON');\n    }\n  } else {\n    parsedContacts = data.contacts;\n  }\n  if (parsedContacts !== undefined && !Array.isArray(parsedContacts)) {\n    errors.push('Contacts must be an array');\n  }\n}\n\nif (errors.length > 0) {\n  return [{\n    json: {\n      success: 'false',\n      errors: errors,\n      message: 'Validation failed: ' + errors.join(', '),\n      skipSupabase: true\n    }\n  }];\n}\n\n// Build update object with only provided fields\nconst updateFields = {};\n\nif (data.name !== undefined) {\n  updateFields.name = data.name ? data.name.trim() : '';\n}\nif (data.address !== undefined) {\n  updateFields.address = data.address ? data.address.trim() : '';\n}\nif (data.city !== undefined) {\n  updateFields.city = data.city ? data.city.trim() : '';\n}\nif (data.province !== undefined) {\n  updateFields.province = data.province ? data.province.trim().toUpperCase() : '';\n}\nif (data.postal_code !== undefined) {\n  updateFields.postal_code = data.postal_code ? data.postal_code.trim().toUpperCase() : '';\n}\nif (data.phone !== undefined) {\n  updateFields.phone = data.phone ? data.phone.trim() : null;\n}\nif (data.email !== undefined) {\n  updateFields.email = data.email ? data.email.trim().toLowerCase() : null;\n}\nif (parsedContacts !== undefined) {\n  updateFields.contacts = parsedContacts;\n}\nif (data.notes !== undefined) {\n  updateFields.notes = data.notes ? data.notes.trim() : null;\n}\nif (data.active !== undefined) {\n  updateFields.active = data.active;\n}\n\n// Auto-extract first contact's phone/email if contacts updated\nif (parsedContacts !== undefined && parsedContacts.length > 0) {\n  if (updateFields.phone === undefined && parsedContacts[0].phone) {\n    updateFields.phone = parsedContacts[0].phone.trim();\n  }\n  if (updateFields.email === undefined && parsedContacts[0].email) {\n    updateFields.email = parsedContacts[0].email.trim().toLowerCase();\n  }\n}\n\nupdateFields.updated_at = new Date().toISOString();\n\nconst fieldCount = Object.keys(updateFields).length;\nif (fieldCount <= 1) {\n  return [{\n    json: {\n      success: 'false',\n      errors: ['No fields provided to update'],\n      message: 'No fields provided to update',\n      skipSupabase: true\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    success: 'true',\n    destinationId: destinationId,\n    updateFields: updateFields,\n    userId: user?.id || null,\n    userName: user?.username || 'unknown',\n    userRole: user?.role || 'unknown'\n  }\n}];\n// v1.0.0 - Validate update data with user context"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, -120],
+      "id": "du-val01-0001-4000-8000-000000000005",
+      "name": "Validate Update Data - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.success }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw02-true"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "True"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.success }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw02-false"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "False"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [1100, -120],
+      "id": "du-sw02-0001-4000-8000-000000000006",
+      "name": "Check Validation - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "destinations",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.destinationId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1320, -240],
+      "id": "du-getdest-0001-4000-8000-000000000007",
+      "name": "Get Existing Destination - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Detect Changes - v1.0.0\n// Compares old destination with update fields to detect address/name changes\nconst validData = $('Validate Update Data - Code').first().json;\nconst existingDest = $input.first().json;\n\nif (!existingDest || !existingDest.id) {\n  return [{\n    json: {\n      success: 'false',\n      notFound: 'true',\n      message: 'Destination not found'\n    }\n  }];\n}\n\nconst uf = validData.updateFields;\n\n// Detect address change (any of address, city, province, postal_code)\nconst addressFields = ['address', 'city', 'province', 'postal_code'];\nlet addressChanged = false;\naddressFields.forEach(f => {\n  if (uf[f] !== undefined) {\n    const oldVal = (existingDest[f] || '').toString().trim().toLowerCase();\n    const newVal = (uf[f] || '').toString().trim().toLowerCase();\n    if (oldVal !== newVal) addressChanged = true;\n  }\n});\n\n// Detect name change\nconst oldName = (existingDest.name || '').trim();\nconst newName = uf.name !== undefined ? (uf.name || '').trim() : oldName;\nconst nameChanged = oldName !== newName;\n\n// Detect deactivation\nconst isBeingDeactivated = uf.active === false && existingDest.active === true;\nconst willBeActive = uf.active !== undefined ? uf.active : existingDest.active;\n\n// Build full destination address (post-update)\nconst finalAddress = uf.address !== undefined ? uf.address : existingDest.address;\nconst finalCity = uf.city !== undefined ? uf.city : existingDest.city;\nconst finalProvince = uf.province !== undefined ? uf.province : existingDest.province;\nconst finalPostalCode = uf.postal_code !== undefined ? uf.postal_code : existingDest.postal_code;\nconst destAddress = [finalAddress, finalCity, finalProvince, finalPostalCode].filter(Boolean).join(', ');\n\nreturn [{\n  json: {\n    success: 'true',\n    destinationId: validData.destinationId,\n    updateFields: uf,\n    existingDest: existingDest,\n    oldName: oldName,\n    newName: newName,\n    nameChanged: nameChanged ? 'true' : 'false',\n    addressChanged: addressChanged ? 'true' : 'false',\n    isBeingDeactivated: isBeingDeactivated ? 'true' : 'false',\n    willBeActive: willBeActive ? 'true' : 'false',\n    destAddress: destAddress,\n    destLabel: newName + ' (' + destAddress + ')',\n    needsAsync: (addressChanged && !isBeingDeactivated && willBeActive) ? 'true' : 'false',\n    needsNameRename: nameChanged ? 'true' : 'false',\n    userId: validData.userId,\n    userName: validData.userName,\n    userRole: validData.userRole\n  }\n}];\n// v1.0.0 - Detect address/name changes for async branching"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, -240],
+      "id": "du-detect-0001-4000-8000-000000000008",
+      "name": "Detect Changes - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.success }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw03-found"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.notFound }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw03-notfound"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not Found"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [1760, -240],
+      "id": "du-sw03-0001-4000-8000-000000000009",
+      "name": "Dest Exists - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "destinations",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.destinationId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.updateFields.name !== undefined ? $json.updateFields.name : undefined }}"
+            },
+            {
+              "fieldId": "address",
+              "fieldValue": "={{ $json.updateFields.address !== undefined ? $json.updateFields.address : undefined }}"
+            },
+            {
+              "fieldId": "city",
+              "fieldValue": "={{ $json.updateFields.city !== undefined ? $json.updateFields.city : undefined }}"
+            },
+            {
+              "fieldId": "province",
+              "fieldValue": "={{ $json.updateFields.province !== undefined ? $json.updateFields.province : undefined }}"
+            },
+            {
+              "fieldId": "postal_code",
+              "fieldValue": "={{ $json.updateFields.postal_code !== undefined ? $json.updateFields.postal_code : undefined }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $json.updateFields.phone != null ? $json.updateFields.phone : null }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.updateFields.email != null ? $json.updateFields.email : null }}"
+            },
+            {
+              "fieldId": "contacts",
+              "fieldValue": "={{ $json.updateFields.contacts !== undefined ? JSON.stringify($json.updateFields.contacts) : undefined }}"
+            },
+            {
+              "fieldId": "notes",
+              "fieldValue": "={{ $json.updateFields.notes != null ? $json.updateFields.notes : null }}"
+            },
+            {
+              "fieldId": "active",
+              "fieldValue": "={{ $json.updateFields.active !== undefined ? $json.updateFields.active : undefined }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $json.updateFields.updated_at }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1980, -400],
+      "id": "du-upd01-0001-4000-8000-000000000010",
+      "name": "Update Destination - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Detect Changes - Code').first().json.needsAsync }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw04-async"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Needs Async"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Detect Changes - Code').first().json.needsAsync }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw04-rename-guard"
+                  },
+                  {
+                    "leftValue": "={{ $('Detect Changes - Code').first().json.needsNameRename }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw04-rename"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Name Rename Only"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Detect Changes - Code').first().json.needsAsync === 'false' && $('Detect Changes - Code').first().json.needsNameRename === 'false' ? 'true' : 'false' }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw04-noasync"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Async"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [2200, -400],
+      "id": "du-sw04-0001-4000-8000-000000000011",
+      "name": "Needs Async - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "clients",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2420, -720],
+      "id": "du-gc01-0001-4000-8000-000000000012",
+      "name": "Get Active Clients - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "drivers",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2420, -560],
+      "id": "du-gd01-0001-4000-8000-000000000013",
+      "name": "Get Active Drivers - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "app_config",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "google_maps_api_key"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2420, -400],
+      "id": "du-gm01-0001-4000-8000-000000000014",
+      "name": "Get Maps API Key - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [2640, -560],
+      "id": "du-mrg01-0001-4000-8000-000000000015",
+      "name": "Merge Async Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Tasks and Branches - v1.0.0\n// Prepares data for async distance + travel time recalculation\nconst mergedInput = $input.all().map(item => item.json);\nconst detectData = $('Detect Changes - Code').first().json;\n\nconst clients = mergedInput.filter(item =>\n  item.knumber !== undefined && item.civicaddress !== undefined\n);\n\nconst drivers = mergedInput.filter(item =>\n  item.home_address !== undefined && !item.knumber && !item.address\n);\n\nreturn [{\n  json: {\n    destinationId: detectData.destinationId,\n    destinationName: detectData.newName,\n    oldName: detectData.oldName,\n    nameChanged: detectData.nameChanged,\n    destAddress: detectData.destAddress,\n    destLabel: detectData.destLabel,\n    clients: clients,\n    drivers: drivers,\n    userId: detectData.userId,\n    userName: detectData.userName,\n    userRole: detectData.userRole\n  }\n}];\n// v1.0.0 - Prepare async branch data"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, -560],
+      "id": "du-prep01-0001-4000-8000-000000000016",
+      "name": "Prepare Tasks and Branches - Code"
+    },
+    {
+      "parameters": {
+        "tableId": "background_tasks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "entity_type",
+              "fieldValue": "destination"
+            },
+            {
+              "fieldId": "entity_id",
+              "fieldValue": "={{ String($json.destinationId) }}"
+            },
+            {
+              "fieldId": "entity_label",
+              "fieldValue": "={{ $json.destLabel }}"
+            },
+            {
+              "fieldId": "task_type",
+              "fieldValue": "recalculate_distances"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "created_by",
+              "fieldValue": "={{ $json.userId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3080, -720],
+      "id": "du-task01-0001-4000-8000-000000000017",
+      "name": "Create Task: Distances - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "background_tasks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "entity_type",
+              "fieldValue": "destination"
+            },
+            {
+              "fieldId": "entity_id",
+              "fieldValue": "={{ $('Prepare Tasks and Branches - Code').first().json.destinationId + '' }}"
+            },
+            {
+              "fieldId": "entity_label",
+              "fieldValue": "={{ $('Prepare Tasks and Branches - Code').first().json.destLabel }}"
+            },
+            {
+              "fieldId": "task_type",
+              "fieldValue": "recalculate_travel_times"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "created_by",
+              "fieldValue": "={{ $('Prepare Tasks and Branches - Code').first().json.userId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3080, -560],
+      "id": "du-task02-0001-4000-8000-000000000018",
+      "name": "Create Task: Travel Times - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [3300, -640],
+      "id": "du-mrg02-0001-4000-8000-000000000019",
+      "name": "Merge Task IDs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect Task IDs - v1.0.0\nconst taskItems = $input.all().map(item => item.json);\nconst branchData = $('Prepare Tasks and Branches - Code').first().json;\n\nconst taskMap = {};\ntaskItems.forEach(task => {\n  if (task.task_type && task.id) {\n    taskMap[task.task_type] = task.id;\n  }\n});\n\nreturn [{\n  json: {\n    ...branchData,\n    taskIds: taskMap\n  }\n}];\n// v1.0.0 - Collect task IDs"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3520, -640],
+      "id": "du-coll01-0001-4000-8000-000000000020",
+      "name": "Collect Task IDs - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Async Response - v1.0.0\nconst detectData = $('Detect Changes - Code').first().json;\nconst updatedDest = $('Update Destination - Supabase').first().json;\nconst input = $input.first().json;\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Destination updated. Background tasks started for distance recalculation.',\n    data: {\n      destination: updatedDest,\n      addressChanged: detectData.addressChanged === 'true',\n      nameChanged: detectData.nameChanged === 'true',\n      backgroundTasks: input.taskIds || {}\n    },\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Async response with task IDs"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3740, -800],
+      "id": "du-resp01-0001-4000-8000-000000000021",
+      "name": "Format Async Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Simple Response - v1.0.0\n// No async needed — just return the updated destination\nconst updatedDest = $('Update Destination - Supabase').first().json;\nconst detectData = $('Detect Changes - Code').first().json;\n\nif (!updatedDest || updatedDest.error || !updatedDest.id) {\n  return [{\n    json: {\n      success: false,\n      message: updatedDest?.error ? 'Database error' : 'Destination not found',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Destination updated successfully.',\n    data: {\n      destination: updatedDest,\n      addressChanged: false,\n      nameChanged: detectData.nameChanged === 'true',\n      backgroundTasks: {}\n    },\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Simple response (no async)"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, -240],
+      "id": "du-resp02-0001-4000-8000-000000000022",
+      "name": "Format Simple Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Name-Only Response - v1.0.0\n// Name changed but address didn't — respond with rename task info\nconst detectData = $('Detect Changes - Code').first().json;\nconst updatedDest = $('Update Destination - Supabase').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    message: 'Destination updated. Renaming travel time keys in background.',\n    data: {\n      destination: updatedDest,\n      addressChanged: false,\n      nameChanged: true,\n      backgroundTasks: { rename_travel_times: 'inline' }\n    },\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Name-only rename response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, -80],
+      "id": "du-resp03-0001-4000-8000-000000000023",
+      "name": "Format Name Rename Response - Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [3960, -800],
+      "id": "du-resp04-0001-4000-8000-000000000024",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Error Response - v1.0.0\nconst errorData = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: errorData.message || 'Validation failed',\n    errors: errorData.errors || [],\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Validation error response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 0],
+      "id": "du-err01-0001-4000-8000-000000000025",
+      "name": "Validation Error Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Unauthorized Response - v1.0.0\nconst data = $input.first().json;\n\nreturn [{\n  json: {\n    success: false,\n    message: data.message || 'Unauthorized',\n    statusCode: data.statusCode || 401,\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0 - Unauthorized error response"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 120],
+      "id": "du-err02-0001-4000-8000-000000000026",
+      "name": "Unauthorized Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Not Found Response - v1.0.0\nreturn [{\n  json: {\n    success: false,\n    message: 'Destination not found',\n    timestamp: new Date().toISOString()\n  }\n}];\n// v1.0.0"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, -120],
+      "id": "du-err03-0001-4000-8000-000000000027",
+      "name": "Not Found Response - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch A: Prepare Distance Requests (Batched) - v1.0.0\n// Batches up to 25 origins per Maps API call for distance recalc\nconst data = $input.first().json;\nconst apiKey = $('Get Maps API Key - Supabase').first().json.value;\nconst taskId = data.taskIds.recalculate_distances;\n\nif (!apiKey) {\n  console.error('Google Maps API key not found');\n  return [{\n    json: {\n      taskId: taskId,\n      branchError: 'true',\n      errorMessage: 'Google Maps API key not found'\n    }\n  }];\n}\n\nconst destAddr = data.destAddress;\nconst BATCH_SIZE = 25;\nconst allReqs = [];\n\n// Client -> destination distances\ndata.clients.forEach(client => {\n  const priAddr = [client.civicaddress, client.city, client.prov, client.postalcode].filter(Boolean).join(', ');\n  if (!priAddr) return;\n\n  allReqs.push({\n    type: 'client_destination',\n    entityId: client.id,\n    destinationId: data.destinationId,\n    origin: priAddr,\n    addressType: 'primary'\n  });\n\n  if (client.secondary_civic_address) {\n    const secAddr = [client.secondary_civic_address, client.secondary_city, client.secondary_province, client.secondary_postal_code].filter(Boolean).join(', ');\n    if (secAddr) {\n      allReqs.push({\n        type: 'client_destination',\n        entityId: client.id,\n        destinationId: data.destinationId,\n        origin: secAddr,\n        addressType: 'secondary'\n      });\n    }\n  }\n});\n\n// Driver -> destination distances\ndata.drivers.forEach(driver => {\n  if (!driver.home_address) return;\n  allReqs.push({\n    type: 'driver_destination',\n    entityId: driver.id,\n    destinationId: data.destinationId,\n    origin: driver.home_address,\n    addressType: 'primary'\n  });\n});\n\nif (allReqs.length === 0) {\n  return [{\n    json: {\n      taskId: taskId,\n      branchError: 'true',\n      errorMessage: 'No distances to calculate'\n    }\n  }];\n}\n\nconst batches = [];\nfor (let i = 0; i < allReqs.length; i += BATCH_SIZE) {\n  const batch = allReqs.slice(i, i + BATCH_SIZE);\n  const origins = batch.map(r => r.origin).join('|');\n  batches.push({\n    json: {\n      origins: origins,\n      destinations: destAddr,\n      apiKey: apiKey,\n      taskId: taskId,\n      batchMeta: batch,\n      batchIndex: Math.floor(i / BATCH_SIZE)\n    }\n  });\n}\n\nreturn batches;\n// v1.0.0 - Batched distance requests (25 per call)"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3740, -480],
+      "id": "du-brA01-0001-4000-8000-000000000028",
+      "name": "Branch A: Prepare Distances - Code"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"origins\": \"{{ $json.origins }}\",\n  \"destinations\": \"{{ $json.destinations }}\",\n  \"key\": \"{{ $json.apiKey }}\",\n  \"mode\": \"driving\",\n  \"units\": \"metric\"\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [3960, -480],
+      "id": "du-brA02-0001-4000-8000-000000000029",
+      "name": "Branch A: Maps API - HTTP Request",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch A: Process Batch Results - v2.0.0\n// v2.0.0: Add hasResults flag for delete-after-success pattern\nconst results = $input.all();\nconst origBatches = $('Branch A: Prepare Distances - Code').all();\nconst taskId = origBatches[0]?.json?.taskId;\n\nif (origBatches[0]?.json?.branchError === 'true') {\n  return [{\n    json: {\n      hasResults: 'false',\n      tableType: 'error',\n      taskId: taskId,\n      errorMessage: origBatches[0].json.errorMessage\n    }\n  }];\n}\n\nconst cdMap = {};\nconst ddMap = {};\n\nresults.forEach((result, batchIdx) => {\n  const batch = origBatches[batchIdx]?.json;\n  if (!batch || !batch.batchMeta) return;\n  const meta = batch.batchMeta;\n  const rows = result.json.rows || [];\n\n  rows.forEach((row, rowIdx) => {\n    const req = meta[rowIdx];\n    if (!req) return;\n    const el = row.elements?.[0];\n    let distKm = null;\n    let durMin = null;\n    if (el && el.status === 'OK') {\n      distKm = parseFloat((el.distance.value / 1000).toFixed(2));\n      durMin = Math.ceil(el.duration.value / 60);\n    }\n\n    if (req.type === 'client_destination') {\n      const k = req.entityId + '_' + req.destinationId;\n      if (!cdMap[k]) {\n        cdMap[k] = { client_id: req.entityId, destination_id: req.destinationId };\n      }\n      if (req.addressType === 'primary') {\n        cdMap[k].primary_distance_km = distKm;\n        cdMap[k].primary_duration_minutes = durMin;\n      } else {\n        cdMap[k].secondary_distance_km = distKm;\n        cdMap[k].secondary_duration_minutes = durMin;\n      }\n    } else if (req.type === 'driver_destination') {\n      const k = req.entityId + '_' + req.destinationId;\n      ddMap[k] = {\n        driver_id: req.entityId,\n        destination_id: req.destinationId,\n        distance_km: distKm,\n        duration_minutes: durMin\n      };\n    }\n  });\n});\n\nconst now = new Date().toISOString();\nconst outputs = [];\n\nObject.values(cdMap).forEach(rec => {\n  outputs.push({\n    json: {\n      hasResults: 'true',\n      tableType: 'client_destination',\n      taskId: taskId,\n      client_id: rec.client_id,\n      destination_id: rec.destination_id,\n      primary_distance_km: rec.primary_distance_km,\n      primary_duration_minutes: rec.primary_duration_minutes,\n      secondary_distance_km: rec.secondary_distance_km || null,\n      secondary_duration_minutes: rec.secondary_duration_minutes || null,\n      calculated_at: now,\n      calculation_source: 'google_maps'\n    }\n  });\n});\n\nObject.values(ddMap).forEach(rec => {\n  outputs.push({\n    json: {\n      hasResults: 'true',\n      tableType: 'driver_destination',\n      taskId: taskId,\n      driver_id: rec.driver_id,\n      destination_id: rec.destination_id,\n      distance_km: rec.distance_km,\n      duration_minutes: rec.duration_minutes,\n      calculated_at: now,\n      calculation_source: 'google_maps'\n    }\n  });\n});\n\nif (outputs.length === 0) {\n  return [{ json: { hasResults: 'false', tableType: 'none', taskId: taskId } }];\n}\n\nreturn outputs;\n// v2.0.0 - Add hasResults flag, delete-after-success"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4180, -480],
+      "id": "du-brA03-0001-4000-8000-000000000030",
+      "name": "Branch A: Process Results - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.hasResults }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw05-hasres-true"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has Results"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.hasResults }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw05-hasres-false"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No Results"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [4400, -480],
+      "id": "du-sw05-0001-4000-8000-000000000031",
+      "name": "Branch A: Has Results - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "client_destination_distances",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "destination_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Prepare Tasks and Branches - Code').first().json.destinationId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [4620, -480],
+      "id": "du-brA04-0001-4000-8000-000000000032",
+      "name": "Delete Existing Client Dest - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "driver_destination_distances",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "destination_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Prepare Tasks and Branches - Code').first().json.destinationId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [4840, -480],
+      "id": "du-brA05-0001-4000-8000-000000000033",
+      "name": "Delete Existing Driver Dest - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Restore Distance Data - v1.0.0\n// Delete nodes lose input; re-read from Process Results\nreturn $('Branch A: Process Results - Code').all();\n// v1.0.0 - Restore data after delete"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5060, -480],
+      "id": "du-brA06-0001-4000-8000-000000000034",
+      "name": "Restore Distance Data - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tableType }}",
+                    "rightValue": "client_destination",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw06-cd"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Client Destination"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tableType }}",
+                    "rightValue": "driver_destination",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw06-dd"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Driver Destination"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tableType }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw06-err"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tableType }}",
+                    "rightValue": "none",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw06-none"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "None"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [5280, -480],
+      "id": "du-sw06-0001-4000-8000-000000000035",
+      "name": "Branch A: Route by Table - Switch"
+    },
+    {
+      "parameters": {
+        "tableId": "client_destination_distances",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "client_id",
+              "fieldValue": "={{ $json.client_id }}"
+            },
+            {
+              "fieldId": "destination_id",
+              "fieldValue": "={{ $json.destination_id }}"
+            },
+            {
+              "fieldId": "primary_distance_km",
+              "fieldValue": "={{ $json.primary_distance_km != null ? $json.primary_distance_km : null }}"
+            },
+            {
+              "fieldId": "primary_duration_minutes",
+              "fieldValue": "={{ $json.primary_duration_minutes != null ? $json.primary_duration_minutes : null }}"
+            },
+            {
+              "fieldId": "secondary_distance_km",
+              "fieldValue": "={{ $json.secondary_distance_km != null ? $json.secondary_distance_km : null }}"
+            },
+            {
+              "fieldId": "secondary_duration_minutes",
+              "fieldValue": "={{ $json.secondary_duration_minutes != null ? $json.secondary_duration_minutes : null }}"
+            },
+            {
+              "fieldId": "calculated_at",
+              "fieldValue": "={{ $json.calculated_at }}"
+            },
+            {
+              "fieldId": "calculation_source",
+              "fieldValue": "={{ $json.calculation_source }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5500, -640],
+      "id": "du-brA07-0001-4000-8000-000000000036",
+      "name": "Branch A: Insert Client Dest - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "driver_destination_distances",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "driver_id",
+              "fieldValue": "={{ $json.driver_id }}"
+            },
+            {
+              "fieldId": "destination_id",
+              "fieldValue": "={{ $json.destination_id }}"
+            },
+            {
+              "fieldId": "distance_km",
+              "fieldValue": "={{ $json.distance_km != null ? $json.distance_km : null }}"
+            },
+            {
+              "fieldId": "duration_minutes",
+              "fieldValue": "={{ $json.duration_minutes != null ? $json.duration_minutes : null }}"
+            },
+            {
+              "fieldId": "calculated_at",
+              "fieldValue": "={{ $json.calculated_at }}"
+            },
+            {
+              "fieldId": "calculation_source",
+              "fieldValue": "={{ $json.calculation_source }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5500, -480],
+      "id": "du-brA08-0001-4000-8000-000000000037",
+      "name": "Branch A: Insert Driver Dest - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch A: Mark Task Status - v2.0.0\n// v2.0.0: Handle no-results path from Has Results Switch\nconst allResults = $input.all();\nconst prepNode = $('Branch A: Prepare Distances - Code').first().json;\nconst taskId = prepNode.taskId;\nconst firstInput = allResults[0]?.json || {};\n\n// Error path\nif (prepNode.branchError === 'true' || firstInput.tableType === 'error') {\n  const errMsg = firstInput.errorMessage || prepNode.errorMessage || 'Unknown error';\n  return [{\n    json: {\n      taskId: taskId,\n      status: 'failed',\n      error_message: errMsg,\n      completed_at: new Date().toISOString(),\n      result: JSON.stringify({ error: errMsg }),\n      branch: 'A'\n    }\n  }];\n}\n\n// No results path\nif (firstInput.hasResults === 'false' || firstInput.tableType === 'none') {\n  return [{\n    json: {\n      taskId: taskId,\n      status: 'completed',\n      error_message: null,\n      completed_at: new Date().toISOString(),\n      result: JSON.stringify({ distances_inserted: 0, note: 'No results from Maps API' }),\n      branch: 'A'\n    }\n  }];\n}\n\n// Success path\nreturn [{\n  json: {\n    taskId: taskId,\n    status: 'completed',\n    error_message: null,\n    completed_at: new Date().toISOString(),\n    result: JSON.stringify({ distances_inserted: allResults.length }),\n    branch: 'A'\n  }\n}];\n// v2.0.0 - Handle no-results + error paths"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5720, -560],
+      "id": "du-brA09-0001-4000-8000-000000000038",
+      "name": "Branch A: Mark Task - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "background_tasks",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.taskId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "completed_at",
+              "fieldValue": "={{ $json.completed_at }}"
+            },
+            {
+              "fieldId": "result",
+              "fieldValue": "={{ $json.result }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5940, -560],
+      "id": "du-brA10-0001-4000-8000-000000000039",
+      "name": "Branch A: Update Task - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch B: Prepare Travel Time Requests (Batched) - v1.0.0\n// Batches up to 25 client addresses per Maps API call\nconst data = $input.first().json;\nconst apiKey = $('Get Maps API Key - Supabase').first().json.value;\nconst taskId = data.taskIds.recalculate_travel_times;\n\nif (!apiKey) {\n  console.error('Google Maps API key not found');\n  return [{\n    json: {\n      taskId: taskId,\n      branchError: 'true',\n      errorMessage: 'Google Maps API key not found'\n    }\n  }];\n}\n\nconst destAddr = data.destAddress;\nconst destName = data.destinationName;\nconst destId = data.destinationId;\nconst BATCH_SIZE = 25;\nconst allReqs = [];\n\ndata.clients.forEach(client => {\n  const priAddr = [client.civicaddress, client.city, client.prov, client.postalcode].filter(Boolean).join(', ');\n  if (!priAddr) return;\n\n  allReqs.push({\n    clientId: client.id,\n    knumber: client.knumber,\n    clientAddress: priAddr,\n    addressType: 'primary'\n  });\n\n  if (client.secondary_civic_address) {\n    const secAddr = [client.secondary_civic_address, client.secondary_city, client.secondary_province, client.secondary_postal_code].filter(Boolean).join(', ');\n    if (secAddr) {\n      allReqs.push({\n        clientId: client.id,\n        knumber: client.knumber,\n        clientAddress: secAddr,\n        addressType: 'secondary'\n      });\n    }\n  }\n});\n\nif (allReqs.length === 0) {\n  return [{\n    json: {\n      taskId: taskId,\n      branchError: 'true',\n      errorMessage: 'No clients for travel times'\n    }\n  }];\n}\n\nconst batches = [];\nfor (let i = 0; i < allReqs.length; i += BATCH_SIZE) {\n  const batch = allReqs.slice(i, i + BATCH_SIZE);\n  const origins = batch.map(r => r.clientAddress).join('|');\n  batches.push({\n    json: {\n      origins: origins,\n      destinations: destAddr,\n      apiKey: apiKey,\n      taskId: taskId,\n      destinationName: destName,\n      destinationId: destId,\n      batchMeta: batch,\n      batchIndex: Math.floor(i / BATCH_SIZE)\n    }\n  });\n}\n\nreturn batches;\n// v1.0.0 - Batched travel time requests"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3740, -160],
+      "id": "du-brB01-0001-4000-8000-000000000040",
+      "name": "Branch B: Prepare Requests - Code"
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"origins\": \"{{ $json.origins }}\",\n  \"destinations\": \"{{ $json.destinations }}\",\n  \"key\": \"{{ $json.apiKey }}\",\n  \"mode\": \"driving\",\n  \"units\": \"metric\"\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [3960, -160],
+      "id": "du-brB02-0001-4000-8000-000000000041",
+      "name": "Branch B: Maps API - HTTP Request",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch B: Aggregate Travel Times - v1.0.0\nconst mapsResults = $input.all();\nconst origBatches = $('Branch B: Prepare Requests - Code').all();\nconst taskId = origBatches[0]?.json?.taskId;\nconst destName = origBatches[0]?.json?.destinationName;\n\nif (origBatches[0]?.json?.branchError === 'true') {\n  return [{\n    json: {\n      taskId: taskId,\n      branchError: 'true',\n      errorMessage: origBatches[0].json.errorMessage\n    }\n  }];\n}\n\nconst clientTravelTimes = {};\nlet successCount = 0;\nlet failCount = 0;\n\nmapsResults.forEach((result, batchIdx) => {\n  const batch = origBatches[batchIdx]?.json;\n  if (!batch || !batch.batchMeta) return;\n  const meta = batch.batchMeta;\n  const rows = result.json.rows || [];\n\n  rows.forEach((row, rowIdx) => {\n    const req = meta[rowIdx];\n    if (!req) return;\n    const el = row.elements?.[0];\n    const cid = req.clientId;\n    const addr = req.addressType;\n\n    if (!clientTravelTimes[cid]) {\n      clientTravelTimes[cid] = { clientId: cid };\n    }\n\n    if (el && el.status === 'OK') {\n      const rawMin = Math.ceil(el.duration.value / 60);\n      const durMin = Math.ceil((rawMin + 5) / 5) * 5;\n      const distKm = parseFloat((el.distance.value / 1000).toFixed(2));\n      clientTravelTimes[cid][addr] = {\n        duration_minutes: durMin,\n        distance_km: distKm,\n        calculated_at: new Date().toISOString()\n      };\n      successCount++;\n    } else {\n      clientTravelTimes[cid][addr] = {\n        duration_minutes: null,\n        distance_km: null,\n        calculated_at: new Date().toISOString(),\n        error: 'Maps API failed'\n      };\n      failCount++;\n    }\n  });\n});\n\nif (failCount > 0) {\n  console.error('Branch B: ' + failCount + ' travel time calcs failed');\n}\n\nconst outputs = Object.values(clientTravelTimes).map(ct => ({\n  json: {\n    clientId: ct.clientId,\n    destName: destName,\n    travelData: ct,\n    taskId: taskId\n  }\n}));\n\nif (outputs.length === 0) {\n  return [{\n    json: {\n      taskId: taskId,\n      branchError: 'true',\n      errorMessage: 'No travel times calculated'\n    }\n  }];\n}\n\noutputs[0].json.successCount = successCount;\noutputs[0].json.failCount = failCount;\n\nreturn outputs;\n// v1.0.0 - Aggregate batched travel times"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4180, -160],
+      "id": "du-brB03-0001-4000-8000-000000000042",
+      "name": "Branch B: Aggregate Travel Times - Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch B: Prepare Merge - v2.0.0\n// v2.0.0: Handle name rename — replace old key with new key\nconst item = $input.first().json;\nconst clientId = item.clientId;\nconst destName = item.destName;\nconst td = item.travelData;\nconst detectData = $('Detect Changes - Code').first().json;\nconst oldName = detectData.oldName;\nconst nameChanged = detectData.nameChanged === 'true';\n\nconst newEntry = {};\nif (td.primary) newEntry.primary = td.primary;\nif (td.secondary) newEntry.secondary = td.secondary;\n\nreturn [{\n  json: {\n    clientId: clientId,\n    destName: destName,\n    oldName: oldName,\n    nameChanged: nameChanged ? 'true' : 'false',\n    newTravelEntry: newEntry,\n    taskId: item.taskId,\n    successCount: item.successCount || 0,\n    failCount: item.failCount || 0\n  }\n}];\n// v2.0.0 - Carry name rename info"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4400, -160],
+      "id": "du-brB04-0001-4000-8000-000000000043",
+      "name": "Branch B: Prepare Merge - Code"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "clients",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.clientId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [4620, -160],
+      "id": "du-brB05-0001-4000-8000-000000000044",
+      "name": "Branch B: Get Client - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch B: Merge Travel Times - v2.0.0\n// v2.0.0: Handle name rename — remove old key, add new key\nconst prepData = $('Branch B: Prepare Merge - Code').first().json;\nconst client = $input.first().json;\nconst destName = prepData.destName;\nconst oldName = prepData.oldName;\nconst nameChanged = prepData.nameChanged === 'true';\nconst newEntry = prepData.newTravelEntry;\n\nlet travelTimes = client.clinic_travel_times || {};\nif (typeof travelTimes === 'string') {\n  try { travelTimes = JSON.parse(travelTimes); }\n  catch(e) { travelTimes = {}; }\n}\n\n// If name changed and old key exists, remove it\nif (nameChanged && oldName && oldName !== destName && travelTimes[oldName]) {\n  delete travelTimes[oldName];\n}\n\n// Write new travel times under the (possibly new) name\ntravelTimes[destName] = {\n  ...(travelTimes[destName] || {}),\n  ...newEntry\n};\n\nreturn [{\n  json: {\n    clientId: prepData.clientId,\n    mergedTravelTimes: travelTimes,\n    taskId: prepData.taskId,\n    successCount: prepData.successCount || 0,\n    failCount: prepData.failCount || 0\n  }\n}];\n// v2.0.0 - Handle name rename in travel times merge"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4840, -160],
+      "id": "du-brB06-0001-4000-8000-000000000045",
+      "name": "Branch B: Merge Travel Times - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "clients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.clientId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "clinic_travel_times",
+              "fieldValue": "={{ $json.mergedTravelTimes }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5060, -160],
+      "id": "du-brB07-0001-4000-8000-000000000046",
+      "name": "Branch B: Update Client TT - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch B: Mark Task Status - v1.0.0\nconst aggData = $('Branch B: Aggregate Travel Times - Code').first().json;\nconst taskId = aggData.taskId;\n\nif (aggData.branchError === 'true') {\n  return [{\n    json: {\n      taskId: taskId,\n      status: 'failed',\n      error_message: aggData.errorMessage,\n      completed_at: new Date().toISOString(),\n      result: JSON.stringify({ error: aggData.errorMessage }),\n      branch: 'B'\n    }\n  }];\n}\n\nconst sc = aggData.successCount || 0;\nconst fc = aggData.failCount || 0;\n\nreturn [{\n  json: {\n    taskId: taskId,\n    status: 'completed',\n    error_message: null,\n    completed_at: new Date().toISOString(),\n    result: JSON.stringify({ clients_updated: sc, failed: fc }),\n    branch: 'B'\n  }\n}];\n// v1.0.0 - Mark travel times task status"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5280, -160],
+      "id": "du-brB08-0001-4000-8000-000000000047",
+      "name": "Branch B: Mark Task - Code"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "background_tasks",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.taskId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "completed_at",
+              "fieldValue": "={{ $json.completed_at }}"
+            },
+            {
+              "fieldId": "result",
+              "fieldValue": "={{ $json.result }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [5500, -160],
+      "id": "du-brB09-0001-4000-8000-000000000048",
+      "name": "Branch B: Update Task - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 2
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [6160, -320],
+      "id": "du-mrg03-0001-4000-8000-000000000049",
+      "name": "Wait For All Branches - Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Update Driver Clinic Preferences - v1.0.0\n// Merge recalculated destination distances into driver clinic_preferences\nconst branchData = $('Prepare Tasks and Branches - Code').first().json;\nconst destId = String(branchData.destinationId);\nconst drivers = branchData.drivers;\n\nconst ddResults = $('Branch A: Process Results - Code').all().filter(item => item.json.tableType === 'driver_destination');\n\nconst ddMap = {};\nddResults.forEach(item => {\n  const d = item.json;\n  ddMap[String(d.driver_id)] = {\n    distance_km: d.distance_km,\n    duration_minutes: d.duration_minutes\n  };\n});\n\nconst outputs = [];\n\ndrivers.forEach(driver => {\n  let prefs = driver.clinic_preferences || {};\n  if (typeof prefs === 'string') {\n    try { prefs = JSON.parse(prefs); } catch(e) { prefs = {}; }\n  }\n\n  // Only update drivers that have explicit preferences\n  if (Object.keys(prefs).length === 0) return;\n\n  // Only update if this destination already exists in their prefs\n  // (for update workflow, don't add new entries — only recalculate existing)\n  if (!prefs[destId]) return;\n\n  const dd = ddMap[String(driver.id)] || {};\n  prefs[destId] = {\n    ...prefs[destId],\n    distance_km: dd.distance_km || null,\n    drive_time_min: dd.duration_minutes || null\n  };\n\n  outputs.push({\n    json: {\n      driverId: driver.id,\n      clinic_preferences: prefs\n    }\n  });\n});\n\nif (outputs.length === 0) {\n  return [{\n    json: {\n      skipDriverUpdate: 'true',\n      message: 'No drivers need preference updates'\n    }\n  }];\n}\n\nreturn outputs;\n// v1.0.0 - Update existing driver clinic_preferences"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [6380, -320],
+      "id": "du-drv01-0001-4000-8000-000000000050",
+      "name": "Update Driver Clinic Preferences - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.skipDriverUpdate }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw07-skip"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Skip"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.driverId != null ? 'true' : 'false' }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw07-update"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Update"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [6600, -320],
+      "id": "du-sw07-0001-4000-8000-000000000051",
+      "name": "Has Driver Updates - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "drivers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.driverId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "clinic_preferences",
+              "fieldValue": "={{ $json.clinic_preferences }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [6820, -400],
+      "id": "du-drv02-0001-4000-8000-000000000052",
+      "name": "Update Driver Prefs - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "audit_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "username",
+              "fieldValue": "={{ $('Detect Changes - Code').first().json.userName }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "={{ $('Detect Changes - Code').first().json.userRole }}"
+            },
+            {
+              "fieldId": "action",
+              "fieldValue": "destination_update"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Detect Changes - Code').first().json.userId != null ? $('Detect Changes - Code').first().json.userId : null }}"
+            },
+            {
+              "fieldId": "resource_type",
+              "fieldValue": "destination"
+            },
+            {
+              "fieldId": "resource_id",
+              "fieldValue": "={{ String($('Detect Changes - Code').first().json.destinationId) }}"
+            },
+            {
+              "fieldId": "details",
+              "fieldValue": "={{ JSON.stringify({ name: $('Detect Changes - Code').first().json.newName, addressChanged: $('Detect Changes - Code').first().json.addressChanged === 'true', nameChanged: $('Detect Changes - Code').first().json.nameChanged === 'true', oldName: $('Detect Changes - Code').first().json.oldName }) }}"
+            },
+            {
+              "fieldId": "success",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [7040, -320],
+      "id": "du-aud01-0001-4000-8000-000000000053",
+      "name": "Log Audit - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch C: Rename Travel Time Keys - v1.0.0\n// When only name changed (no address change), rename JSONB key\n// in all active clients' clinic_travel_times\nconst detectData = $('Detect Changes - Code').first().json;\nconst oldName = detectData.oldName;\nconst newName = detectData.newName;\n\n// Get all active clients that were fetched earlier\n// For name-rename-only path, we need to fetch clients\n// This node outputs items for the Get Clients node\nreturn [{\n  json: {\n    oldName: oldName,\n    newName: newName,\n    destinationId: detectData.destinationId\n  }\n}];\n// v1.0.0 - Prepare name rename data"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, 120],
+      "id": "du-brC01-0001-4000-8000-000000000054",
+      "name": "Branch C: Prepare Rename - Code"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "clients",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2640, 120],
+      "id": "du-brC02-0001-4000-8000-000000000055",
+      "name": "Branch C: Get All Clients - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch C: Rename JSONB Keys - v1.0.0\n// Iterates all clients, renames oldName key to newName in clinic_travel_times\nconst renameData = $('Branch C: Prepare Rename - Code').first().json;\nconst oldName = renameData.oldName;\nconst newName = renameData.newName;\nconst clients = $input.all().map(item => item.json);\n\nconst outputs = [];\nlet renameCount = 0;\n\nclients.forEach(client => {\n  let tt = client.clinic_travel_times || {};\n  if (typeof tt === 'string') {\n    try { tt = JSON.parse(tt); } catch(e) { tt = {}; }\n  }\n\n  // Only rename if this client has the old key\n  if (!tt[oldName]) return;\n\n  // Copy old key data to new key, preserving any existing new key data\n  tt[newName] = { ...(tt[newName] || {}), ...tt[oldName] };\n  delete tt[oldName];\n\n  outputs.push({\n    json: {\n      clientId: client.id,\n      mergedTravelTimes: tt\n    }\n  });\n  renameCount++;\n});\n\nif (outputs.length === 0) {\n  return [{\n    json: {\n      skipRename: 'true',\n      message: 'No clients had travel times for old name',\n      renameCount: 0\n    }\n  }];\n}\n\n// Add rename count to first item\noutputs[0].json.renameCount = renameCount;\n\nreturn outputs;\n// v1.0.0 - Rename clinic_travel_times JSONB keys"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 120],
+      "id": "du-brC03-0001-4000-8000-000000000056",
+      "name": "Branch C: Rename Keys - Code"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.skipRename }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw08-skip"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Skip"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.clientId != null ? 'true' : 'false' }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "du-sw08-rename"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Rename"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [3080, 120],
+      "id": "du-sw08-0001-4000-8000-000000000057",
+      "name": "Branch C: Has Renames - Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "clients",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.clientId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "clinic_travel_times",
+              "fieldValue": "={{ $json.mergedTravelTimes }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3300, 60],
+      "id": "du-brC04-0001-4000-8000-000000000058",
+      "name": "Branch C: Update Client TT - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "audit_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "username",
+              "fieldValue": "={{ $('Detect Changes - Code').first().json.userName }}"
+            },
+            {
+              "fieldId": "role",
+              "fieldValue": "={{ $('Detect Changes - Code').first().json.userRole }}"
+            },
+            {
+              "fieldId": "action",
+              "fieldValue": "destination_rename"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Detect Changes - Code').first().json.userId != null ? $('Detect Changes - Code').first().json.userId : null }}"
+            },
+            {
+              "fieldId": "resource_type",
+              "fieldValue": "destination"
+            },
+            {
+              "fieldId": "resource_id",
+              "fieldValue": "={{ String($('Detect Changes - Code').first().json.destinationId) }}"
+            },
+            {
+              "fieldId": "details",
+              "fieldValue": "={{ JSON.stringify({ oldName: $('Detect Changes - Code').first().json.oldName, newName: $('Detect Changes - Code').first().json.newName, clientsRenamed: $('Branch C: Rename Keys - Code').first().json.renameCount || 0 }) }}"
+            },
+            {
+              "fieldId": "success",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3520, 120],
+      "id": "du-brC05-0001-4000-8000-000000000059",
+      "name": "Branch C: Log Audit - Supabase",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "SEqiOYHTdU9Hm0pI",
+          "name": "Supabase Service Role"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "PUT Update Destination - Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get JWT Secret - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JWT Secret - Supabase": {
+      "main": [
+        [
+          {
+            "node": "JWT Validation - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Validation - Code": {
+      "main": [
+        [
+          {
+            "node": "JWT Route - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT Route - Switch": {
+      "main": [
+        [
+          {
+            "node": "Validate Update Data - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unauthorized Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Update Data - Code": {
+      "main": [
+        [
+          {
+            "node": "Check Validation - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Validation - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Destination - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Destination - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Detect Changes - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Changes - Code": {
+      "main": [
+        [
+          {
+            "node": "Dest Exists - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dest Exists - Switch": {
+      "main": [
+        [
+          {
+            "node": "Update Destination - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Found Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Destination - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Needs Async - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Async - Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Active Clients - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Active Drivers - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Maps API Key - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Branch C: Prepare Rename - Code",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Name Rename Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Simple Response - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Clients - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Async Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Drivers - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Async Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Maps API Key - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Async Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge Async Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Tasks and Branches - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Tasks and Branches - Code": {
+      "main": [
+        [
+          {
+            "node": "Create Task: Distances - Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Task: Travel Times - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Task: Distances - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Task IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Task: Travel Times - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Merge Task IDs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Task IDs": {
+      "main": [
+        [
+          {
+            "node": "Collect Task IDs - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Task IDs - Code": {
+      "main": [
+        [
+          {
+            "node": "Format Async Response - Code",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Branch A: Prepare Distances - Code",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Branch B: Prepare Requests - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Async Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Simple Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Name Rename Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Error Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unauthorized Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Found Response - Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Prepare Distances - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Maps API - HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Maps API - HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Process Results - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Process Results - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Has Results - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Has Results - Switch": {
+      "main": [
+        [
+          {
+            "node": "Delete Existing Client Dest - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Branch A: Mark Task - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Existing Client Dest - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Delete Existing Driver Dest - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Existing Driver Dest - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Restore Distance Data - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Distance Data - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Route by Table - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Route by Table - Switch": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Insert Client Dest - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Branch A: Insert Driver Dest - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Branch A: Mark Task - Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Branch A: Mark Task - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Insert Client Dest - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Mark Task - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Insert Driver Dest - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Mark Task - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Mark Task - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch A: Update Task - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch A: Update Task - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Wait For All Branches - Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Prepare Requests - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Maps API - HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Maps API - HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Aggregate Travel Times - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Aggregate Travel Times - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Prepare Merge - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Prepare Merge - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Get Client - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Get Client - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Merge Travel Times - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Merge Travel Times - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Update Client TT - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Update Client TT - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Mark Task - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Mark Task - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch B: Update Task - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch B: Update Task - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Wait For All Branches - Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait For All Branches - Merge": {
+      "main": [
+        [
+          {
+            "node": "Update Driver Clinic Preferences - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Driver Clinic Preferences - Code": {
+      "main": [
+        [
+          {
+            "node": "Has Driver Updates - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Driver Updates - Switch": {
+      "main": [
+        [
+          {
+            "node": "Log Audit - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Driver Prefs - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Driver Prefs - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Log Audit - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch C: Prepare Rename - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch C: Get All Clients - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch C: Get All Clients - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Branch C: Rename Keys - Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch C: Rename Keys - Code": {
+      "main": [
+        [
+          {
+            "node": "Branch C: Has Renames - Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch C: Has Renames - Switch": {
+      "main": [
+        [
+          {
+            "node": "Branch C: Log Audit - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Branch C: Update Client TT - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Branch C: Update Client TT - Supabase": {
+      "main": [
+        [
+          {
+            "node": "Branch C: Log Audit - Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dest-update-async-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "62fe1973b06b53c2a918f891d003328ecd43cc9389e3ac0f24384782e956f6ca"
+  },
+  "tags": [
+    {
+      "name": "Destination Management"
+    }
+  ]
+}

@@ -292,8 +292,8 @@ const AppointmentsAPI = {
     getAll: () => APIClient.get('/get-all-appointments'),
     getActive: () => APIClient.get('/get-active-present-future-appointments'),
     getOperations: () => APIClient.get('/get-operations-appointments'),
-    save: (data) => APIClient.post('/save-appointment-test', data),
-    update: (data) => APIClient.post('/update-appointment-complete-test', data),
+    save: (data) => APIClient.post('/save-appointment-v5', data),
+    update: (data) => APIClient.post('/update-appointment-complete-v5', data),
     delete: (id) => APIClient.post('/delete-appointment-with-calendar', { id })
 };
 
