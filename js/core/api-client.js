@@ -306,8 +306,8 @@ const ClientsAPI = {
 
 const DriversAPI = {
     getAll: () => APIClient.get('/get-all-drivers'),
-    add: (data) => APIClient.post('/add-driver-with-calendar', data),
-    update: (data) => APIClient.post('/update-driver', data)
+    add: (data) => APIClient.post('/add-driver-v5', data),
+    update: (data) => APIClient.post('/update-driver-v5', data)
 };
 
 const UsersAPI = {

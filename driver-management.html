@@ -1048,6 +1048,72 @@
                                 </div>
                             </div>
 
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="driverWorkPhone">Work Phone</label>
+                                    <input type="tel" id="driverWorkPhone" placeholder="Quo number">
+                                </div>
+                                <div class="form-group">
+                                    <label for="driverVehicle">Vehicle Description</label>
+                                    <input type="text" id="driverVehicle" placeholder="e.g., white Honda CRV">
+                                </div>
+                            </div>
+
+                            <!-- Home Address Section -->
+                            <div class="form-section">
+                                <h4 style="margin-bottom: 15px; color: #34495e; border-bottom: 1px solid #ecf0f1; padding-bottom: 8px;">🏠 Home Address</h4>
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 2;">
+                                        <label for="driverHomeAddress">Street Address</label>
+                                        <input type="text" id="driverHomeAddress" placeholder="123 Main St">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="driverHomeCity">City</label>
+                                        <input type="text" id="driverHomeCity">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="driverHomeProvince">Province</label>
+                                        <select id="driverHomeProvince">
+                                            <option value="NS" selected>Nova Scotia</option>
+                                            <option value="NB">New Brunswick</option>
+                                            <option value="PE">Prince Edward Island</option>
+                                            <option value="NL">Newfoundland and Labrador</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="driverHomePostalCode">Postal Code</label>
+                                        <input type="text" id="driverHomePostalCode" placeholder="A1B 2C3">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Create User Account Section (admin/supervisor only) -->
+                            <div class="form-section" id="createUserAccountSection" style="display: none;">
+                                <h4 style="margin-bottom: 15px; color: #34495e; border-bottom: 1px solid #ecf0f1; padding-bottom: 8px;">👤 User Account</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="createUserAccount" onchange="toggleUserAccountFields()">
+                                            Also create a user account for this driver
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="userAccountFields" style="display: none;">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="driverUsername">Username</label>
+                                            <input type="text" id="driverUsername" placeholder="Will use driver email">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="driverTempPassword">Temporary Password</label>
+                                            <input type="text" id="driverTempPassword" readonly style="background-color: #f8f9fa;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Weekly Schedule Section -->
                             <div class="form-section">
                                 <h4 style="margin-bottom: 15px; color: #34495e; border-bottom: 1px solid #ecf0f1; padding-bottom: 8px;">📅 Weekly Work Schedule</h4>
@@ -1261,6 +1327,36 @@
                             <div class="col-md-4">
                                 <label for="editDriverVehicle" class="form-label">Vehicle Description</label>
                                 <input type="text" class="form-control" id="editDriverVehicle" placeholder="e.g., white Honda CRV">
+                            </div>
+                        </div>
+
+                        <!-- Home Address Section for Edit Modal -->
+                        <div class="mb-4">
+                            <h5 style="margin-bottom: 15px; color: #34495e; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;">🏠 Home Address</h5>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="editDriverHomeAddress" class="form-label">Street Address</label>
+                                    <input type="text" class="form-control" id="editDriverHomeAddress" placeholder="123 Main St">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="editDriverHomeCity" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="editDriverHomeCity">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="editDriverHomeProvince" class="form-label">Province</label>
+                                    <select class="form-select" id="editDriverHomeProvince">
+                                        <option value="NS" selected>Nova Scotia</option>
+                                        <option value="NB">New Brunswick</option>
+                                        <option value="PE">Prince Edward Island</option>
+                                        <option value="NL">Newfoundland and Labrador</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="editDriverHomePostalCode" class="form-label">Postal Code</label>
+                                    <input type="text" class="form-control" id="editDriverHomePostalCode" placeholder="A1B 2C3">
+                                </div>
                             </div>
                         </div>
 
@@ -1657,8 +1753,8 @@
         // API Configuration - Updated with Production Endpoints
         const API_ENDPOINTS = {
             DRIVERS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/allDrivers',
-            ADD_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/add-driver',
-            UPDATE_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver',
+            ADD_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/add-driver-v5',
+            UPDATE_DRIVER: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-driver-v5',
             GET_ASSIGNMENTS: 'https://webhook-processor-production-3bb8.up.railway.app/webhook/get-all-appointments'
         };
 
@@ -1673,6 +1769,14 @@
             // Check JWT authentication (redirects if not authenticated)
             if (!(await requireAuth())) {
                 return;
+            }
+
+            // Show user account section for admin/supervisor
+            const currentUser = JSON.parse(sessionStorage.getItem('rrts_user') || '{}');
+            const currentRole = (currentUser.role || '').toLowerCase();
+            if (currentRole === 'admin' || currentRole === 'supervisor') {
+                const userAcctSection = document.getElementById('createUserAccountSection');
+                if (userAcctSection) userAcctSection.style.display = 'block';
             }
 
             loadDrivers();
@@ -1804,6 +1908,32 @@
             }
         }
 
+        // Toggle user account fields visibility
+        function toggleUserAccountFields() {
+            const checkbox = document.getElementById('createUserAccount');
+            const fields = document.getElementById('userAccountFields');
+            if (checkbox.checked) {
+                fields.style.display = 'block';
+                // Pre-fill username with driver email
+                const email = document.getElementById('driverEmail').value;
+                document.getElementById('driverUsername').value = email;
+                // Generate random temp password
+                document.getElementById('driverTempPassword').value = generateTempPassword();
+            } else {
+                fields.style.display = 'none';
+            }
+        }
+
+        // Generate a random temporary password
+        function generateTempPassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+
         // Update workload percentage based on selection (for add form)
         function updateWorkloadPercentage() {
             const workloadSelect = document.getElementById('driverWorkload');
@@ -1840,7 +1970,14 @@
         function clearForm() {
             document.getElementById('driverForm').reset();
             document.getElementById('driverWorkloadPct').value = '';
-            
+            // Reset province default
+            document.getElementById('driverHomeProvince').value = 'NS';
+            // Reset user account section
+            const userAcctFields = document.getElementById('userAccountFields');
+            if (userAcctFields) userAcctFields.style.display = 'none';
+            const createUserCb = document.getElementById('createUserAccount');
+            if (createUserCb) createUserCb.checked = false;
+
             // Reset weekly schedule to defaults
             const defaultSchedule = {
                 monday: {available: true, start: '08:00', end: '16:00'},
@@ -1994,7 +2131,7 @@
                 const formData = {
                     first_name: document.getElementById('driverFirstName').value,
                     last_name: document.getElementById('driverLastName').value,
-                    name: document.getElementById('driverLegalName').value || 
+                    name: document.getElementById('driverLegalName').value ||
                           `${document.getElementById('driverFirstName').value} ${document.getElementById('driverLastName').value}`.trim(),
                     email: document.getElementById('driverEmail').value,
                     phone: document.getElementById('driverPhone').value,
@@ -2004,8 +2141,22 @@
                     preferred_calendar_type: document.getElementById('driverCalendarType').value,
                     status: document.getElementById('driverStatus').value,
                     active: true,
-                    weekly_hours: getWeeklyHoursData()
+                    weekly_hours: getWeeklyHoursData(),
+                    work_phone: document.getElementById('driverWorkPhone').value || null,
+                    vehicle_description: document.getElementById('driverVehicle').value || null,
+                    home_address: document.getElementById('driverHomeAddress').value || null,
+                    home_city: document.getElementById('driverHomeCity').value || null,
+                    home_province: document.getElementById('driverHomeProvince').value || 'NS',
+                    home_postal_code: document.getElementById('driverHomePostalCode').value || null
                 };
+
+                // Add user account fields if checked
+                const createUserCheckbox = document.getElementById('createUserAccount');
+                if (createUserCheckbox && createUserCheckbox.checked) {
+                    formData.create_user_account = true;
+                    formData.username = document.getElementById('driverUsername').value || formData.email;
+                    formData.temp_password = document.getElementById('driverTempPassword').value;
+                }
 
                 // Validate required fields
                 if (!formData.first_name || !formData.last_name || !formData.email || !formData.gender || !formData.workload_preference) {
@@ -2020,18 +2171,27 @@
                     body: JSON.stringify(formData)
                 });
 
-                const result = await response.json();
+                const rawResult = await response.json();
+                // Handle async response: unwrap array if needed
+                const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
                 console.log('Save response:', result);
 
                 if (result.success) {
-                    showToast('Driver added successfully!', 'success');
+                    // Show background task info if present
+                    const bgTasks = result.data && result.data.backgroundTasks;
+                    if (bgTasks && Object.keys(bgTasks).length > 0) {
+                        const taskNames = Object.keys(bgTasks).map(t => t.replace(/_/g, ' ')).join(', ');
+                        showToast(`Driver added. Background tasks running: ${taskNames}.`, 'success');
+                    } else {
+                        showToast('Driver added successfully!', 'success');
+                    }
                     clearForm();
-                    
+
                     // Collapse form after successful save
                     if (addDriverFormExpanded) {
                         toggleAddDriverForm();
                     }
-                    
+
                     loadDrivers(); // Reload the list
                 } else {
                     throw new Error(result.message || 'Failed to save driver');
@@ -2066,6 +2226,12 @@
             document.getElementById('editDriverActive').value = driver.active !== false ? 'true' : 'false';
             document.getElementById('editDriverWorkPhone').value = driver.work_phone || '';
             document.getElementById('editDriverVehicle').value = driver.vehicle_description || '';
+
+            // Populate home address fields
+            document.getElementById('editDriverHomeAddress').value = driver.home_address || '';
+            document.getElementById('editDriverHomeCity').value = driver.home_city || '';
+            document.getElementById('editDriverHomeProvince').value = driver.home_province || 'NS';
+            document.getElementById('editDriverHomePostalCode').value = driver.home_postal_code || '';
 
             // Populate Calendar Links section
             const calendarSection = document.getElementById('calendarLinksSection');
@@ -2128,7 +2294,7 @@
                     id: parseInt(driverId),
                     first_name: document.getElementById('editDriverFirstName').value,
                     last_name: document.getElementById('editDriverLastName').value,
-                    name: document.getElementById('editDriverLegalName').value || 
+                    name: document.getElementById('editDriverLegalName').value ||
                           `${document.getElementById('editDriverFirstName').value} ${document.getElementById('editDriverLastName').value}`.trim(),
                     email: document.getElementById('editDriverEmail').value,
                     phone: document.getElementById('editDriverPhone').value,
@@ -2141,7 +2307,11 @@
                     work_phone: document.getElementById('editDriverWorkPhone').value,
                     vehicle_description: document.getElementById('editDriverVehicle').value,
                     calendar_ical_url: document.getElementById('editSecretIcalUrl').value || null,
-                    weekly_hours: getWeeklyHoursData('edit-')
+                    weekly_hours: getWeeklyHoursData('edit-'),
+                    home_address: document.getElementById('editDriverHomeAddress').value || null,
+                    home_city: document.getElementById('editDriverHomeCity').value || null,
+                    home_province: document.getElementById('editDriverHomeProvince').value || 'NS',
+                    home_postal_code: document.getElementById('editDriverHomePostalCode').value || null
                 };
 
                 // Validate required fields
@@ -2157,12 +2327,20 @@
                     body: JSON.stringify(formData)
                 });
 
-                const result = await response.json();
+                const rawResult = await response.json();
+                // Handle async response: unwrap array if needed
+                const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
                 console.log('Update response:', result);
 
                 if (result.success) {
-                    // Show success message first
-                    showToast('Driver updated successfully!', 'success');
+                    // Show background task info if present
+                    const bgTasks = result.data && result.data.backgroundTasks;
+                    if (bgTasks && Object.keys(bgTasks).length > 0) {
+                        const taskNames = Object.keys(bgTasks).map(t => t.replace(/_/g, ' ')).join(', ');
+                        showToast(`Driver updated. Background tasks running: ${taskNames}.`, 'success');
+                    } else {
+                        showToast('Driver updated successfully!', 'success');
+                    }
 
                     // Close modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('editDriverModal'));
