@@ -1995,34 +1995,36 @@
         async function loadDrivers() {
             try {
                 console.log('Loading drivers from API...');
-                const [driversResponse, appointmentsResponse] = await Promise.all([
-                    authenticatedFetch(API_ENDPOINTS.DRIVERS),
-                    authenticatedFetch(API_ENDPOINTS.GET_ASSIGNMENTS)
-                ]);
+                const driversResponse = await authenticatedFetch(API_ENDPOINTS.DRIVERS);
 
                 if (!driversResponse.ok) {
                     throw new Error(`Drivers API Error: ${driversResponse.status}`);
                 }
 
                 const driversResult = await driversResponse.json();
-                driversData = driversResult.drivers || [];
+                driversData = Array.isArray(driversResult) ? driversResult : (driversResult.drivers || driversResult.data || []);
                 displayDrivers(driversData);
 
-                // Parse today's appointments to find assigned drivers
+                // Load appointments separately (non-blocking for driver display)
                 let todaysAssignedDriverIds = new Set();
-                if (appointmentsResponse.ok) {
-                    const aptsResult = await appointmentsResponse.json();
-                    const allApts = aptsResult.appointments || aptsResult.data || aptsResult || [];
-                    const todayHalifax = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
+                try {
+                    const appointmentsResponse = await authenticatedFetch(API_ENDPOINTS.GET_ASSIGNMENTS);
+                    if (appointmentsResponse.ok) {
+                        const aptsResult = await appointmentsResponse.json();
+                        const allApts = aptsResult.appointments || aptsResult.data || aptsResult || [];
+                        const todayHalifax = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
 
-                    (Array.isArray(allApts) ? allApts : []).forEach(apt => {
-                        const aptDate = apt.appointmenttime || apt.appointmentDateTime;
-                        if (!aptDate) return;
-                        const aptDayHalifax = new Date(aptDate).toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
-                        if (aptDayHalifax === todayHalifax && (apt.driver_assigned || apt.driverAssigned)) {
-                            todaysAssignedDriverIds.add(apt.driver_assigned || apt.driverAssigned);
-                        }
-                    });
+                        (Array.isArray(allApts) ? allApts : []).forEach(apt => {
+                            const aptDate = apt.appointmenttime || apt.appointmentDateTime;
+                            if (!aptDate) return;
+                            const aptDayHalifax = new Date(aptDate).toLocaleDateString('en-CA', { timeZone: 'America/Halifax' });
+                            if (aptDayHalifax === todayHalifax && (apt.driver_assigned || apt.driverAssigned)) {
+                                todaysAssignedDriverIds.add(apt.driver_assigned || apt.driverAssigned);
+                            }
+                        });
+                    }
+                } catch (aptsError) {
+                    console.warn('Failed to load appointments for stats:', aptsError);
                 }
 
                 updateDriverStats(driversData, todaysAssignedDriverIds);
