@@ -138,7 +138,7 @@
                 '<div class="d-flex align-items-center gap-4">' +
                 '<div class="text-end">' +
                 '<div class="small text-muted">Subtotal: ' + FinanceUtils.formatCurrency(subtotal) + '</div>' +
-                '<div class="small text-muted">HST (14%): ' + FinanceUtils.formatCurrency(hst) + '</div>' +
+                '<div class="small text-muted">HST (' + Math.round(hstRate * 100) + '%): ' + FinanceUtils.formatCurrency(hst) + '</div>' +
                 '<div><strong>' + FinanceUtils.formatCurrency(total) + '</strong></div>' +
                 '</div>' +
                 '<button class="btn btn-primary btn-sm btn-create-invoice" ' +
@@ -369,6 +369,8 @@
 
         document.getElementById('invoiceAppointmentsList').innerHTML = listHtml;
         document.getElementById('invoiceSubtotal').textContent = FinanceUtils.formatCurrency(subtotal);
+        var hstLabel = document.getElementById('invoiceHstLabel');
+        if (hstLabel) hstLabel.textContent = 'HST (' + Math.round(hstRate * 100) + '%):';
         document.getElementById('invoiceTax').textContent = FinanceUtils.formatCurrency(subtotal * hstRate);
         document.getElementById('invoiceTotal').textContent = FinanceUtils.formatCurrency(subtotal * (1 + hstRate));
 

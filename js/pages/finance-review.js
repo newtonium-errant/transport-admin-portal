@@ -162,7 +162,7 @@
             var mileageDisplay = mileage > 0 ? mileage.toFixed(1) : '\u2014';
 
             var rate = parseFloat(apt.customRate || apt.custom_rate) || 0;
-            var isSelected = selected.has(aptId);
+            var isSelected = selected.has(String(aptId));
 
             var dateStr = aptDate.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', timeZone: 'America/Halifax' });
 

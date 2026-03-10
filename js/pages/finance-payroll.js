@@ -211,7 +211,7 @@
         });
 
         FinanceState.users.forEach(function(user) {
-            if (user.role === 'booking_agent' && user.active !== false) {
+            if (user.role === 'booking_agent' && user.is_active !== false && user.active !== false) {
                 var apptCount = agentAppts[user.id] || 0;
                 var hours = apptCount * 2;
                 var mileageEntries = payrollData.staffMileage[user.id] || [];
@@ -238,7 +238,7 @@
         var businessDays = countBusinessDays(period.start, period.end);
 
         FinanceState.users.forEach(function(user) {
-            if (user.role === 'supervisor' && user.active !== false) {
+            if (user.role === 'supervisor' && user.is_active !== false && user.active !== false) {
                 var hours = businessDays * 8;
                 var mileageEntries = payrollData.staffMileage[user.id] || [];
                 var totalMileage = 0;

@@ -816,12 +816,13 @@ class AppointmentModal {
             const visibleOptions = Array.from(options).filter(o => o.value && o.style.display !== 'none');
             if (visibleOptions.length === 1 && searchTerm.length >= 2) {
                 dropdown.value = visibleOptions[0].value;
-                // Do NOT auto-trigger change here; let user confirm by clicking
+                // Auto-trigger change to update hidden knumber field
+                dropdown.dispatchEvent(new Event('change'));
             }
         });
 
         // When a client is selected from dropdown, trigger selectClient
-        dropdown.addEventListener('change', () => {
+        dropdown.addEventListener('change', (e) => {
             const knumber = dropdown.value;
             if (!knumber) {
                 // Reset client selection
@@ -834,11 +835,17 @@ class AppointmentModal {
             const selectedOption = dropdown.selectedOptions[0];
             const fullName = selectedOption ? selectedOption.dataset.fullname : '';
             this.selectClient(knumber, fullName);
+            // Clear client validation error if present
+            dropdown.classList.remove('is-invalid');
+            var feedback = document.getElementById('clientValidationFeedback');
+            if (feedback) feedback.classList.remove('d-block');
 
-            // Clear the search filter after selection
-            filterInput.value = '';
-            // Show all options again
-            dropdown.querySelectorAll('option').forEach(o => o.style.display = '');
+            // Clear the search filter after manual selection (not auto-select from search)
+            if (e.isTrusted) {
+                filterInput.value = '';
+                // Show all options again
+                dropdown.querySelectorAll('option').forEach(o => o.style.display = '');
+            }
         });
     }
 
@@ -902,6 +909,10 @@ class AppointmentModal {
         if (dropdown && dropdown.value !== knumber) {
             dropdown.value = knumber;
         }
+        // Clear client validation error if present
+        if (dropdown) dropdown.classList.remove('is-invalid');
+        var feedback = document.getElementById('clientValidationFeedback');
+        if (feedback) feedback.classList.remove('d-block');
 
         // Store the full client object including clinic_travel_times
         // Check both knumber and k_number field names for compatibility
@@ -1948,6 +1959,36 @@ class AppointmentModal {
             if (!tripDirection) {
                 document.getElementById('tripDirection').focus();
                 alert('Please select a trip direction for one-way appointments.');
+                return;
+            }
+        }
+        // Safety sync: ensure hidden input and selectedClient match dropdown before save
+        var syncDropdown = document.getElementById('appointmentClientDropdown');
+        var syncHidden = document.getElementById('appointmentClientId');
+        if (syncDropdown && syncDropdown.value && syncDropdown.value !== (syncHidden ? syncHidden.value : '')){ 
+            var syncOption = syncDropdown.selectedOptions[0];
+            this.selectClient(syncDropdown.value, syncOption && syncOption.dataset ? syncOption.dataset.fullname || '' : ');
+        }
+        // Client selection required for round_trip and one_way
+        if (this.appointmentType !== 'support') {
+            const knumberValue = document.getElementById('appointmentClientId').value;
+            if (!knumberValue || knumberValue.trim() === '') {
+                const clientRow = document.getElementById('clientSelectionRow');
+                const dropdown = document.getElementById('appointmentClientDropdown');
+                if (dropdown) {
+                    dropdown.classList.add('is-invalid');
+                    dropdown.focus();
+                }
+                let feedback = document.getElementById('clientValidationFeedback');
+                if (!feedback && clientRow) {
+                    feedback = document.createElement('div');
+                    feedback.id = 'clientValidationFeedback';
+                    feedback.className = 'invalid-feedback d-block';
+                    feedback.textContent = 'Client selection is required for this appointment type.';
+                    clientRow.appendChild(feedback);
+                } else if (feedback) {
+                    feedback.classList.add('d-block');
+                }
                 return;
             }
         }
