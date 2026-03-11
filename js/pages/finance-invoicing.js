@@ -979,7 +979,7 @@
             var billProgram = totalWithTax - defaultAmountProv;
 
             trySetField(form, 'DateServiceRow' + rowNum,
-                FinanceUtils.formatDateShort(FinanceUtils.getAppointmentDate(appt)));
+                FinanceUtils.formatDateDMY(FinanceUtils.getAppointmentDate(appt)));
             trySetField(form, 'BenefitCodeRow' + rowNum, defaultBenefitCode);
             trySetField(form, 'PrescriberRow' + rowNum, defaultPrescriber);
             trySetField(form, 'TotalRow' + rowNum, totalWithTax.toFixed(2));

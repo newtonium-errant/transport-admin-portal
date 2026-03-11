@@ -661,6 +661,7 @@
                 </div>
                 <div class="modal-body py-2">
                     <input type="hidden" id="qeAppointmentId">
+                    <input type="hidden" id="qeSource" value="review">
                     <div class="mb-2">
                         <small class="text-muted">Client</small>
                         <div class="fw-bold" id="qeClientInfo"></div>
@@ -693,6 +694,8 @@
                 </div>
                 <div class="modal-footer py-2">
                     <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-outline-primary btn-sm d-none" id="btnQeSave"><i class="bi bi-floppy"></i> Save</button>
+                    <button class="btn btn-warning btn-sm d-none" id="btnQeComplete"><i class="bi bi-check2-circle"></i> Complete</button>
                     <button class="btn btn-success btn-sm" id="btnQeApprove"><i class="bi bi-check-lg"></i> Approve</button>
                 </div>
             </div>
