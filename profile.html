@@ -906,6 +906,85 @@
             100% { background-position: -200% 0; }
         }
 
+        /* Stats Tab Styles */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: 100%;
+        }
+
+        .stat-card-secondary {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            line-height: 1.2;
+        }
+
+        .stat-value-sm {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .stat-sublabel {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .stat-skeleton {
+            display: inline-block;
+            height: 1.8rem;
+            width: 100px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
+        .stat-skeleton-sm {
+            height: 1.3rem;
+            width: 60px;
+        }
+
         /* Modal styles */
         .modal-header-danger {
             background: linear-gradient(135deg, var(--color-danger) 0%, #c0392b 100%);
@@ -1532,6 +1611,11 @@
                         <i class="bi bi-clock-history me-1"></i>Upcoming Drives
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-stats" data-bs-toggle="tab" data-bs-target="#pane-stats" type="button" role="tab" aria-controls="pane-stats" aria-selected="false">
+                        <i class="bi bi-speedometer2 me-1"></i>My Stats
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -1772,6 +1856,133 @@
                 <div class="schedule-card-body" id="appointmentsList"></div>
             </div>
         </div><!-- /pane-appointments (Tab 3) -->
+
+        <!-- Tab 4: Stats (drivers only) -->
+        <div class="tab-pane fade" id="pane-stats" role="tabpanel" aria-labelledby="tab-stats">
+
+            <!-- Empty state for new drivers -->
+            <div id="statsEmptyState" style="display: none;">
+                <div class="profile-card">
+                    <div class="profile-card-body text-center py-5">
+                        <i class="bi bi-speedometer2" style="font-size: 3rem; color: #ccc;"></i>
+                        <h4 class="mt-3" style="color: #666;">No Driving Data Yet</h4>
+                        <p class="text-muted mb-0">Stats will appear here after your first completed appointment.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats content (hidden when empty) -->
+            <div id="statsContent">
+
+            <!-- Stats Cards Row -->
+            <div class="row g-4 mb-4">
+                <!-- YTD Mileage Card -->
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Year-to-Date</div>
+                            <div class="stat-value" id="statYtdMileage">
+                                <span class="stat-skeleton"></span>
+                            </div>
+                            <div class="stat-sublabel">Jan 1 - Today</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All-Time Mileage Card -->
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-trophy"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">All-Time</div>
+                            <div class="stat-value" id="statLifetimeMileage">
+                                <span class="stat-skeleton"></span>
+                            </div>
+                            <div class="stat-sublabel" id="statStartedDate">Since ...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- This Month Card -->
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-calendar-month"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">This Month</div>
+                            <div class="stat-value" id="statCurrentMonth">
+                                <span class="stat-skeleton"></span>
+                            </div>
+                            <div class="stat-sublabel" id="statCurrentMonthName"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Stats Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card stat-card-secondary">
+                        <div class="stat-label">YTD Trips</div>
+                        <div class="stat-value-sm" id="statYtdTrips">
+                            <span class="stat-skeleton stat-skeleton-sm"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card stat-card-secondary">
+                        <div class="stat-label">All-Time Trips</div>
+                        <div class="stat-value-sm" id="statLifetimeTrips">
+                            <span class="stat-skeleton stat-skeleton-sm"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card stat-card-secondary">
+                        <div class="stat-label">Avg per Trip</div>
+                        <div class="stat-value-sm" id="statAvgPerTrip">
+                            <span class="stat-skeleton stat-skeleton-sm"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Breakdown Table -->
+            <div class="profile-card">
+                <div class="profile-card-header">
+                    <i class="bi bi-bar-chart-line"></i>
+                    <h2>Monthly Breakdown</h2>
+                </div>
+                <div class="profile-card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="monthlyStatsTable">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th class="text-end">Distance (km)</th>
+                                    <th class="text-end">Trips</th>
+                                    <th class="text-end">Avg/Trip</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthlyStatsBody">
+                                <tr><td><span class="skeleton-block" style="width:80px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:60px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:30px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:50px;height:14px;display:inline-block;"></span></td></tr>
+                                <tr><td><span class="skeleton-block" style="width:80px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:60px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:30px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:50px;height:14px;display:inline-block;"></span></td></tr>
+                                <tr><td><span class="skeleton-block" style="width:80px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:60px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:30px;height:14px;display:inline-block;"></span></td><td class="text-end"><span class="skeleton-block" style="width:50px;height:14px;display:inline-block;"></span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            </div><!-- /statsContent -->
+
+        </div><!-- /pane-stats (Tab 4) -->
 
         </div><!-- /tab-content -->
     </div><!-- /container -->
@@ -3625,6 +3836,129 @@
                 if (textEl) textEl.classList.remove('d-none');
                 if (loadingEl) loadingEl.classList.add('d-none');
             }
+        }
+
+        // ========== Stats Tab ==========
+        let statsLoaded = false;
+
+        document.getElementById('tab-stats')?.addEventListener('shown.bs.tab', async () => {
+            if (!statsLoaded) {
+                await loadDriverStats();
+                statsLoaded = true;
+            }
+        });
+
+        async function loadDriverStats() {
+            const driverId = (driverData && driverData.id) || currentUser.driver_id;
+            if (!driverId) {
+                console.warn('No driver_id found for current user');
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(
+                    `${API_BASE}/get-driver-mileage-stats?driver_id=${driverId}`
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch stats');
+                }
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.message || 'Stats fetch failed');
+                }
+
+                const stats = result.data;
+
+                // Show empty state for new drivers with no data
+                if (stats.lifetime_mileage_km === 0 && stats.lifetime_trips_completed === 0) {
+                    document.getElementById('statsContent').style.display = 'none';
+                    document.getElementById('statsEmptyState').style.display = 'block';
+                    return;
+                }
+
+                // Update main stat cards
+                document.getElementById('statYtdMileage').textContent =
+                    formatMileage(stats.ytd_mileage_km) + ' km';
+                document.getElementById('statLifetimeMileage').textContent =
+                    formatMileage(stats.lifetime_mileage_km) + ' km';
+                document.getElementById('statCurrentMonth').textContent =
+                    formatMileage(stats.current_month_mileage_km) + ' km';
+
+                // Update sublabels
+                if (stats.started_date) {
+                    const startDate = new Date(stats.started_date + 'T00:00:00');
+                    document.getElementById('statStartedDate').textContent =
+                        'Since ' + startDate.toLocaleDateString('en-CA', { month: 'short', year: 'numeric' });
+                }
+
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const now = new Date();
+                document.getElementById('statCurrentMonthName').textContent =
+                    monthNames[now.getMonth()] + ' ' + now.getFullYear();
+
+                // Update secondary stats
+                document.getElementById('statYtdTrips').textContent = stats.ytd_trips_completed;
+                document.getElementById('statLifetimeTrips').textContent = stats.lifetime_trips_completed;
+                document.getElementById('statAvgPerTrip').textContent =
+                    formatMileage(stats.lifetime_avg_per_trip_km) + ' km';
+
+                // Build monthly breakdown table
+                renderMonthlyStatsTable(stats.monthly_breakdown);
+
+            } catch (error) {
+                console.error('Error loading driver stats:', error);
+                showToast('Failed to load statistics. Please try again.', 'error');
+                // Clear skeletons on error
+                ['statYtdMileage', 'statLifetimeMileage', 'statCurrentMonth',
+                 'statYtdTrips', 'statLifetimeTrips', 'statAvgPerTrip'].forEach(id => {
+                    document.getElementById(id).textContent = '--';
+                });
+                document.getElementById('monthlyStatsBody').innerHTML =
+                    '<tr><td colspan="4" class="text-center text-muted py-4">Failed to load data</td></tr>';
+            }
+        }
+
+        function renderMonthlyStatsTable(breakdown) {
+            const tbody = document.getElementById('monthlyStatsBody');
+            const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            if (!breakdown || breakdown.length === 0) {
+                tbody.innerHTML =
+                    '<tr><td colspan="4" class="text-center text-muted py-4">No driving data recorded yet</td></tr>';
+                return;
+            }
+
+            // Sort by year desc, month desc
+            breakdown.sort((a, b) => {
+                if (b.year !== a.year) return b.year - a.year;
+                return parseInt(b.month) - parseInt(a.month);
+            });
+
+            // Show last 12 months
+            const recent = breakdown.slice(0, 12);
+
+            tbody.innerHTML = recent.map(row => {
+                const monthNum = parseInt(row.month);
+                const avg = row.trips > 0 ? formatMileage(row.mileage_km / row.trips) : '0.0';
+                return '<tr>' +
+                    '<td>' + escapeHtml(monthNames[monthNum] + ' ' + row.year) + '</td>' +
+                    '<td class="text-end">' + formatMileage(row.mileage_km) + '</td>' +
+                    '<td class="text-end">' + row.trips + '</td>' +
+                    '<td class="text-end">' + avg + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function formatMileage(num) {
+            if (num == null || isNaN(num)) return '0.0';
+            return parseFloat(num).toLocaleString('en-CA', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
         }
 
         // ========== Toast Notifications ==========

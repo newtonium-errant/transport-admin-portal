@@ -1,6 +1,6 @@
 /**
  * Finance Invoicing Tab - Client invoicing, PDF generation, invoice management
- * Version: 6.0.0
+ * Version: 6.2.0
  */
 (function() {
     'use strict';
@@ -21,6 +21,8 @@
         direction: 'desc'
     };
 
+    var invoiceStatusFilter = ['created', 'sent', 'paid'];
+
     // =============================================
     // TAB LOADER
     // =============================================
@@ -29,25 +31,40 @@
         showSkeleton(true);
 
         try {
+            // Fetch appointments (need fresh data for invoice_status) and invoices in parallel
             var results = await Promise.all([
-                APIClient.get('/get-finance-appointments').catch(function(err) {
+                APIClient.get('/get-finance-appointments?tab=invoicing').catch(function(err) {
                     console.warn('[Finance Invoicing] Error loading appointments:', err);
                     return { data: [] };
                 }),
-                APIClient.get('/get-invoices').catch(function(err) {
+                APIClient.get('/get-invoices-v5').catch(function(err) {
                     console.warn('[Finance Invoicing] Error loading invoices:', err);
                     return { data: [] };
                 })
             ]);
 
-            // Update shared appointment state
+            // Parse appointments (handle array-wrapped n8n responses)
             var apptData = results[0];
-            var raw = apptData.data || apptData.appointments || apptData || [];
+            var raw = [];
+            if (Array.isArray(apptData) && apptData.length > 0 && apptData[0].data) {
+                raw = apptData[0].data.appointments || apptData[0].data || [];
+            } else if (apptData && apptData.data && apptData.data.appointments) {
+                raw = apptData.data.appointments;
+            } else if (apptData && apptData.data && Array.isArray(apptData.data)) {
+                raw = apptData.data;
+            } else if (apptData && apptData.appointments) {
+                raw = apptData.appointments;
+            } else if (Array.isArray(apptData)) {
+                raw = apptData;
+            }
             if (!Array.isArray(raw)) raw = [];
             FinanceState.appointments = raw;
 
-            // Parse invoices
+            // Parse invoices (handle array-wrapped n8n responses)
             var invData = results[1];
+            if (Array.isArray(invData) && invData.length > 0 && invData[0] && typeof invData[0] === 'object' && !Array.isArray(invData[0])) {
+                invData = invData[0];
+            }
             var invRaw;
             if (invData.data && invData.data.invoices) invRaw = invData.data.invoices;
             else if (invData.invoices) invRaw = invData.invoices;
@@ -85,7 +102,7 @@
             if (!grouped[k]) {
                 grouped[k] = {
                     knumber: k,
-                    clientName: ((apt.clientFirstName || apt.client_first_name || '') + ' ' +
+                    clientName: apt.client_name || ((apt.clientFirstName || apt.client_first_name || '') + ' ' +
                                 (apt.clientLastName || apt.client_last_name || '')).trim() || 'Unknown',
                     appointments: []
                 };
@@ -115,11 +132,42 @@
             return;
         }
 
-        var html = '';
+        // Calculate grand total across all groups
+        var grandSubtotal = 0;
+        var grandApptCount = 0;
+        groups.forEach(function(g) {
+            g.appointments.forEach(function(apt) {
+                grandSubtotal += parseFloat(apt.billed_amount || apt.customRate || apt.custom_rate) || 0;
+            });
+            grandApptCount += g.appointments.length;
+        });
+        var grandHst = grandSubtotal * hstRate;
+        var grandTotal = grandSubtotal + grandHst;
+
+        var html = '<div class="alert alert-success d-flex justify-content-between align-items-center mb-3 py-2">' +
+            '<div><i class="bi bi-cash-stack me-2"></i><strong>Ready to Invoice</strong>' +
+            '<span class="text-muted ms-2">' + grandApptCount + ' appointment' + (grandApptCount !== 1 ? 's' : '') +
+            ' across ' + groups.length + ' client' + (groups.length !== 1 ? 's' : '') + '</span></div>' +
+            '<div class="d-flex align-items-center gap-3">' +
+            '<span class="text-muted">Subtotal: ' + FinanceUtils.formatCurrency(grandSubtotal) +
+            ' + HST: ' + FinanceUtils.formatCurrency(grandHst) + '</span>' +
+            '<strong class="fs-5">' + FinanceUtils.formatCurrency(grandTotal) + '</strong></div></div>';
+
+        html += '<div id="bulkInvoiceBar" class="alert alert-primary py-2 mb-2" style="display:none">' +
+            '<div class="d-flex justify-content-between align-items-center">' +
+            '<div><input type="checkbox" class="form-check-input me-2" id="clientGroupSelectAll">' +
+            '<strong id="clientGroupBulkCount">0</strong> client(s) selected</div>' +
+            '<div class="d-flex gap-2">' +
+            '<button class="btn btn-sm btn-outline-warning" id="btnBulkUnapprove">' +
+            '<i class="bi bi-arrow-counterclockwise"></i> Unapprove Selected</button>' +
+            '<button class="btn btn-sm btn-primary" id="btnBulkCreateInvoices">' +
+            '<i class="bi bi-file-earmark-plus"></i> Create Invoices for Selected</button>' +
+            '</div></div></div>';
+
         groups.forEach(function(group, idx) {
             var subtotal = 0;
             group.appointments.forEach(function(apt) {
-                subtotal += parseFloat(apt.customRate || apt.custom_rate) || 0;
+                subtotal += parseFloat(apt.billed_amount || apt.customRate || apt.custom_rate) || 0;
             });
             var hst = subtotal * hstRate;
             var total = subtotal + hst;
@@ -129,18 +177,23 @@
             html += '<div class="card mb-2">' +
                 '<div class="card-body py-2 px-3">' +
                 '<div class="d-flex justify-content-between align-items-center">' +
-                '<div class="d-flex align-items-center gap-3 cursor-pointer flex-grow-1" data-bs-toggle="collapse" data-bs-target="#' + expandId + '">' +
+                '<div class="d-flex align-items-center gap-3 flex-grow-1">' +
+                '<input type="checkbox" class="form-check-input client-group-cb" data-group-idx="' + idx + '">' +
+                '<div class="d-flex align-items-center gap-2 cursor-pointer flex-grow-1" data-bs-toggle="collapse" data-bs-target="#' + expandId + '">' +
                 '<i class="bi bi-chevron-right collapse-icon"></i>' +
                 '<div><strong>' + FinanceUtils.escapeHtml(group.knumber) + '</strong> \u2014 ' +
                 FinanceUtils.escapeHtml(group.clientName) +
                 '<span class="text-muted ms-2">(' + apptCount + ' appt' + (apptCount !== 1 ? 's' : '') + ')</span></div>' +
-                '</div>' +
+                '</div></div>' +
                 '<div class="d-flex align-items-center gap-4">' +
                 '<div class="text-end">' +
                 '<div class="small text-muted">Subtotal: ' + FinanceUtils.formatCurrency(subtotal) + '</div>' +
                 '<div class="small text-muted">HST (' + Math.round(hstRate * 100) + '%): ' + FinanceUtils.formatCurrency(hst) + '</div>' +
                 '<div><strong>' + FinanceUtils.formatCurrency(total) + '</strong></div>' +
                 '</div>' +
+                '<button class="btn btn-outline-warning btn-sm me-1 btn-unapprove-group" ' +
+                'data-group-idx="' + idx + '" title="Send back to Review">' +
+                '<i class="bi bi-arrow-counterclockwise"></i> Unapprove</button>' +
                 '<button class="btn btn-primary btn-sm btn-create-invoice" ' +
                 'data-knumber="' + FinanceUtils.escapeHtml(group.knumber) + '" ' +
                 'data-client-name="' + FinanceUtils.escapeHtml(group.clientName) + '" ' +
@@ -149,21 +202,26 @@
                 '</div></div>' +
                 '<div class="collapse" id="' + expandId + '">' +
                 '<table class="table table-sm table-bordered mt-2 mb-0">' +
-                '<thead><tr><th>Date</th><th>Location</th><th>Type</th><th class="text-end">Amount</th></tr></thead>' +
+                '<thead><tr><th>Date</th><th>Location</th><th>Type</th><th class="text-end" style="width:120px">Amount</th><th style="width:40px"></th></tr></thead>' +
                 '<tbody>';
 
             group.appointments.forEach(function(apt) {
                 var aptDate = FinanceUtils.formatDateShort(FinanceUtils.getAppointmentDate(apt));
-                var location = apt.location || apt.clinic || 'Unknown';
+                var location = apt.location_name || apt.location || apt.clinic || 'Unknown';
                 var apptType = apt.appointment_type || apt.appointmentType || 'round_trip';
                 var typeLabel = apptType === 'one_way' ? 'One-Way' : apptType === 'support' ? 'Support' : 'Round Trip';
-                var rate = parseFloat(apt.customRate || apt.custom_rate) || 0;
+                var rate = parseFloat(apt.billed_amount || apt.customRate || apt.custom_rate) || 0;
 
                 html += '<tr>' +
                     '<td>' + FinanceUtils.escapeHtml(aptDate) + '</td>' +
                     '<td>' + FinanceUtils.escapeHtml(location) + '</td>' +
                     '<td>' + FinanceUtils.escapeHtml(typeLabel) + '</td>' +
-                    '<td class="text-end">' + FinanceUtils.formatCurrency(rate) + '</td>' +
+                    '<td class="text-end p-1"><input type="number" class="form-control form-control-sm text-end inv-amount-override" ' +
+                    'data-apt-id="' + apt.id + '" data-group-idx="' + idx + '" ' +
+                    'value="' + rate.toFixed(2) + '" step="0.01" min="0" style="width:100px;display:inline-block"></td>' +
+                    '<td class="text-center p-1"><button class="btn btn-outline-warning btn-sm btn-unapprove-single py-0 px-1" ' +
+                    'data-apt-id="' + apt.id + '" title="Send back to Review">' +
+                    '<i class="bi bi-arrow-counterclockwise"></i></button></td>' +
                     '</tr>';
             });
 
@@ -193,6 +251,236 @@
                 if (group) openCreateInvoiceModal(group);
             });
         });
+
+        // Amount override handlers
+        container.querySelectorAll('.inv-amount-override').forEach(function(input) {
+            input.addEventListener('change', function() {
+                var aptId = input.dataset.aptId;
+                var groupIdx = parseInt(input.dataset.groupIdx);
+                var newVal = parseFloat(input.value) || 0;
+
+                // Update the appointment's billed_amount in local state
+                var apt = FinanceState.appointments.find(function(a) { return String(a.id) === String(aptId); });
+                if (apt) apt.billed_amount = newVal;
+
+                // Also update in the group
+                var group = invoiceData.clientGroups[groupIdx];
+                if (group) {
+                    var gApt = group.appointments.find(function(a) { return String(a.id) === String(aptId); });
+                    if (gApt) gApt.billed_amount = newVal;
+                }
+
+                // Recalculate group totals in the card header
+                if (group) {
+                    var hstRate = FinanceState.appConfig.hst_rate || 0.14;
+                    var newSubtotal = 0;
+                    group.appointments.forEach(function(a) {
+                        newSubtotal += parseFloat(a.billed_amount || 0);
+                    });
+                    var newHst = newSubtotal * hstRate;
+                    var newTotal = newSubtotal + newHst;
+
+                    var card = input.closest('.card');
+                    if (card) {
+                        var totalsDiv = card.querySelector('.text-end');
+                        if (totalsDiv && totalsDiv.querySelector('.small')) {
+                            totalsDiv.innerHTML =
+                                '<div class="small text-muted">Subtotal: ' + FinanceUtils.formatCurrency(newSubtotal) + '</div>' +
+                                '<div class="small text-muted">HST (' + Math.round(hstRate * 100) + '%): ' + FinanceUtils.formatCurrency(newHst) + '</div>' +
+                                '<div><strong>' + FinanceUtils.formatCurrency(newTotal) + '</strong></div>';
+                        }
+                    }
+                }
+
+                // Recalculate grand total banner
+                recalcGrandTotal();
+            });
+        });
+
+        // Client group checkboxes for bulk invoice creation
+        container.querySelectorAll('.client-group-cb').forEach(function(cb) {
+            cb.addEventListener('change', updateClientGroupBulkBar);
+        });
+
+        var cgSelectAll = document.getElementById('clientGroupSelectAll');
+        if (cgSelectAll) {
+            cgSelectAll.addEventListener('change', function() {
+                container.querySelectorAll('.client-group-cb').forEach(function(cb) {
+                    cb.checked = cgSelectAll.checked;
+                });
+                updateClientGroupBulkBar();
+            });
+        }
+
+        var bulkCreateBtn = document.getElementById('btnBulkCreateInvoices');
+        if (bulkCreateBtn) {
+            bulkCreateBtn.addEventListener('click', bulkCreateInvoices);
+        }
+
+        // Per-appointment unapprove buttons
+        container.querySelectorAll('.btn-unapprove-single').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var aptId = btn.dataset.aptId;
+                if (aptId) unapproveAppointments([aptId]);
+            });
+        });
+
+        // Per-group unapprove buttons
+        container.querySelectorAll('.btn-unapprove-group').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = parseInt(btn.dataset.groupIdx);
+                var group = invoiceData.clientGroups[idx];
+                if (!group) return;
+                var count = group.appointments.length;
+                if (!confirm('Unapprove all ' + count + ' appointment' + (count !== 1 ? 's' : '') +
+                    ' for ' + group.knumber + ' \u2014 ' + group.clientName + '? They will return to the Review tab.')) return;
+                var ids = group.appointments.map(function(a) { return a.id; });
+                unapproveAppointments(ids);
+            });
+        });
+
+        // Bulk unapprove button
+        var bulkUnapproveBtn = document.getElementById('btnBulkUnapprove');
+        if (bulkUnapproveBtn) {
+            bulkUnapproveBtn.addEventListener('click', function() {
+                var checkedBoxes = document.querySelectorAll('.client-group-cb:checked');
+                if (checkedBoxes.length === 0) return;
+                var allIds = [];
+                checkedBoxes.forEach(function(cb) {
+                    var idx = parseInt(cb.dataset.groupIdx);
+                    var group = invoiceData.clientGroups[idx];
+                    if (group) {
+                        group.appointments.forEach(function(a) { allIds.push(a.id); });
+                    }
+                });
+                if (allIds.length === 0) return;
+                if (!confirm('Unapprove all appointments for ' + checkedBoxes.length + ' selected client' +
+                    (checkedBoxes.length !== 1 ? 's' : '') + ' (' + allIds.length + ' appointment' +
+                    (allIds.length !== 1 ? 's' : '') + ')? They will return to the Review tab.')) return;
+                unapproveAppointments(allIds);
+            });
+        }
+
+        // Show bulk bar if groups exist
+        updateClientGroupBulkBar();
+    }
+
+    function updateClientGroupBulkBar() {
+        var checked = document.querySelectorAll('.client-group-cb:checked');
+        var bar = document.getElementById('bulkInvoiceBar');
+        var countEl = document.getElementById('clientGroupBulkCount');
+        if (bar) bar.style.display = checked.length > 0 ? 'block' : 'none';
+        if (countEl) countEl.textContent = checked.length;
+    }
+
+    // =============================================
+    // UNAPPROVE APPOINTMENTS
+    // =============================================
+    var isUnapproving = false;
+
+    async function unapproveAppointments(appointmentIds) {
+        if (isUnapproving) return;
+        if (!appointmentIds || appointmentIds.length === 0) return;
+        isUnapproving = true;
+
+        try {
+            await APIClient.post('/unapprove-appointments', {
+                appointmentIds: appointmentIds
+            });
+
+            await logFinanceAudit('unapprove_appointments', 'appointment', appointmentIds.join(','), {
+                action_type: appointmentIds.length === 1 ? 'single' : 'bulk',
+                count: appointmentIds.length
+            });
+
+            FinanceUtils.showToast(appointmentIds.length + ' appointment' +
+                (appointmentIds.length !== 1 ? 's' : '') + ' sent back to Review', 'success');
+
+            await window.loadTab_invoicing();
+            TabManager.markStale('review');
+            TabManager.markStale('payroll');
+
+        } catch (error) {
+            console.error('[Finance Invoicing] Error unapproving appointments:', error);
+            FinanceUtils.showToast('Failed to unapprove appointment' +
+                (appointmentIds.length !== 1 ? 's' : ''), 'danger');
+        } finally {
+            isUnapproving = false;
+        }
+    }
+
+    async function bulkCreateInvoices() {
+        var checkedBoxes = document.querySelectorAll('.client-group-cb:checked');
+        if (checkedBoxes.length === 0) return;
+
+        var indices = [];
+        checkedBoxes.forEach(function(cb) { indices.push(parseInt(cb.dataset.groupIdx)); });
+
+        var btn = document.getElementById('btnBulkCreateInvoices');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Creating...'; }
+
+        var created = 0;
+        var failed = 0;
+        var invoiceDate = new Date().toISOString().split('T')[0];
+
+        for (var i = 0; i < indices.length; i++) {
+            var group = invoiceData.clientGroups[indices[i]];
+            if (!group) continue;
+
+            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + (i + 1) + '/' + indices.length;
+
+            try {
+                var appointmentIds = group.appointments.map(function(a) { return a.id; });
+                await APIClient.post('/create-invoice', {
+                    knumber: group.knumber,
+                    appointment_ids: appointmentIds,
+                    invoice_date: invoiceDate,
+                    notes: ''
+                });
+                created++;
+            } catch (err) {
+                console.error('[Finance Invoicing] Error creating invoice for ' + group.knumber + ':', err);
+                failed++;
+            }
+        }
+
+        if (failed > 0) {
+            FinanceUtils.showToast(created + ' invoice(s) created, ' + failed + ' failed', 'warning');
+        } else {
+            FinanceUtils.showToast(created + ' invoice(s) created', 'success');
+        }
+
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-file-earmark-plus"></i> Create Invoices for Selected'; }
+        await window.loadTab_invoicing();
+        TabManager.markStale('review');
+    }
+
+    function recalcGrandTotal() {
+        var hstRate = FinanceState.appConfig.hst_rate || 0.14;
+        var grandSubtotal = 0;
+        var grandApptCount = 0;
+        invoiceData.clientGroups.forEach(function(g) {
+            g.appointments.forEach(function(apt) {
+                grandSubtotal += parseFloat(apt.billed_amount || 0);
+            });
+            grandApptCount += g.appointments.length;
+        });
+        var grandHst = grandSubtotal * hstRate;
+        var grandTotal = grandSubtotal + grandHst;
+        var groupCount = invoiceData.clientGroups.length;
+
+        var container = document.getElementById('uninvoicedContainer');
+        if (!container) return;
+        var banner = container.querySelector('.alert-success');
+        if (banner) {
+            banner.innerHTML =
+                '<div><i class="bi bi-cash-stack me-2"></i><strong>Ready to Invoice</strong>' +
+                '<span class="text-muted ms-2">' + grandApptCount + ' appointment' + (grandApptCount !== 1 ? 's' : '') +
+                ' across ' + groupCount + ' client' + (groupCount !== 1 ? 's' : '') + '</span></div>' +
+                '<div class="text-end"><span class="me-3 text-muted">Subtotal: ' + FinanceUtils.formatCurrency(grandSubtotal) +
+                ' + HST: ' + FinanceUtils.formatCurrency(grandHst) + '</span>' +
+                '<strong class="fs-5">' + FinanceUtils.formatCurrency(grandTotal) + '</strong></div>';
+        }
     }
 
     // =============================================
@@ -202,20 +490,81 @@
         var container = document.getElementById('invoicesListContainer');
         if (!container) return;
 
-        var invoices = invoiceData.invoices;
+        var allInvoices = invoiceData.invoices;
 
-        // Sort
-        invoices = sortInvoices(invoices, invoiceSortState.column, invoiceSortState.direction);
+        // Sort all invoices
+        allInvoices = sortInvoices(allInvoices, invoiceSortState.column, invoiceSortState.direction);
 
-        if (invoices.length === 0) {
+        if (allInvoices.length === 0) {
             container.innerHTML = '<div class="text-center py-4 text-muted">' +
                 '<i class="bi bi-file-earmark" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>' +
                 'No invoices created yet</div>';
             return;
         }
 
-        var html = '<table class="table table-hover">' +
+        // Calculate unpaid total from ALL invoices (unfiltered)
+        var unpaidTotal = 0;
+        var unpaidCount = 0;
+        allInvoices.forEach(function(inv) {
+            var status = inv.invoiceStatus || inv.invoice_status || 'created';
+            if (status !== 'paid' && status !== 'void') {
+                unpaidTotal += parseFloat(inv.invoiceTotal || inv.invoice_total) || 0;
+                unpaidCount++;
+            }
+        });
+
+        // Apply status filter
+        var invoices = allInvoices.filter(function(inv) {
+            var status = inv.invoiceStatus || inv.invoice_status || 'created';
+            return invoiceStatusFilter.indexOf(status) !== -1;
+        });
+
+        var html = '';
+        if (unpaidCount > 0) {
+            html += '<div class="alert alert-warning d-flex justify-content-between align-items-center mb-3 py-2">' +
+                '<div><i class="bi bi-exclamation-triangle me-2"></i><strong>Outstanding</strong>' +
+                '<span class="text-muted ms-2">' + unpaidCount + ' unpaid invoice' + (unpaidCount !== 1 ? 's' : '') + '</span></div>' +
+                '<strong class="fs-5">' + FinanceUtils.formatCurrency(unpaidTotal) + '</strong></div>';
+        }
+
+        // Status filter bar
+        var filterStatuses = [
+            { key: 'created', label: 'Created', badge: 'invoice-badge-created' },
+            { key: 'sent', label: 'Sent', badge: 'invoice-badge-sent' },
+            { key: 'paid', label: 'Paid', badge: 'invoice-badge-paid' },
+            { key: 'void', label: 'Voided', badge: 'invoice-badge-void' }
+        ];
+        html += '<div class="d-flex align-items-center gap-2 mb-2">' +
+            '<small class="text-muted fw-bold me-1">Filter:</small>';
+        filterStatuses.forEach(function(fs) {
+            var isActive = invoiceStatusFilter.indexOf(fs.key) !== -1;
+            var btnClass = isActive ? 'btn-sm btn ' + fs.badge : 'btn-sm btn btn-outline-secondary';
+            html += '<button class="' + btnClass + ' inv-status-filter-btn" data-status="' + fs.key + '"' +
+                ' style="opacity:' + (isActive ? '1' : '0.5') + '">' +
+                FinanceUtils.escapeHtml(fs.label) + '</button>';
+        });
+        html += '</div>';
+
+        if (invoices.length === 0) {
+            html += '<div class="text-center py-4 text-muted">' +
+                'No invoices match the current filter</div>';
+            container.innerHTML = html;
+            attachFilterHandlers(container);
+            return;
+        }
+
+        html += '<div id="invoiceBulkBar" class="alert alert-info py-2 mb-2" style="display:none">' +
+            '<div class="d-flex justify-content-between align-items-center">' +
+            '<span><strong id="invoiceBulkCount">0</strong> invoice(s) selected</span>' +
+            '<div>' +
+            '<button class="btn btn-sm btn-outline-secondary me-1" id="btnBulkPrint"><i class="bi bi-printer"></i> Print Selected</button>' +
+            '<button class="btn btn-sm btn-primary me-1" id="btnBulkDownload"><i class="bi bi-download"></i> Download Selected</button>' +
+            '<button class="btn btn-sm btn-outline-dark" id="btnBulkClear">Clear</button>' +
+            '</div></div></div>';
+
+        html += '<table class="table table-hover">' +
             '<thead><tr>' +
+            '<th style="width:30px"><input type="checkbox" class="form-check-input" id="invoiceSelectAll"></th>' +
             '<th class="sortable" data-sort="invoiceNumber">Invoice # <i class="bi bi-arrow-down-up"></i></th>' +
             '<th class="sortable" data-sort="client">Client <i class="bi bi-arrow-down-up"></i></th>' +
             '<th class="sortable" data-sort="invoiceDate">Date <i class="bi bi-arrow-down-up"></i></th>' +
@@ -243,6 +592,7 @@
             var actions = getInvoiceActions(inv);
 
             html += '<tr>' +
+                '<td><input type="checkbox" class="form-check-input invoice-select-cb" data-invoice-id="' + inv.id + '"></td>' +
                 '<td><strong>' + FinanceUtils.escapeHtml(invNumber) + '</strong></td>' +
                 '<td>' + clientDisplay + '</td>' +
                 '<td>' + FinanceUtils.escapeHtml(dateDisplay) + '</td>' +
@@ -272,6 +622,75 @@
             });
         });
 
+        // Select-all checkbox
+        var selectAll = container.querySelector('#invoiceSelectAll');
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                container.querySelectorAll('.invoice-select-cb').forEach(function(cb) {
+                    cb.checked = selectAll.checked;
+                });
+                updateInvoiceBulkBar();
+            });
+        }
+
+        // Individual checkboxes
+        container.querySelectorAll('.invoice-select-cb').forEach(function(cb) {
+            cb.addEventListener('change', updateInvoiceBulkBar);
+        });
+
+        // Bulk action buttons
+        var bulkDownBtn = document.getElementById('btnBulkDownload');
+        if (bulkDownBtn) bulkDownBtn.addEventListener('click', bulkDownloadPdfs);
+
+        var bulkPrintBtn = document.getElementById('btnBulkPrint');
+        if (bulkPrintBtn) bulkPrintBtn.addEventListener('click', bulkPrintPdfs);
+
+        var bulkClearBtn = document.getElementById('btnBulkClear');
+        if (bulkClearBtn) {
+            bulkClearBtn.addEventListener('click', function() {
+                container.querySelectorAll('.invoice-select-cb').forEach(function(cb) { cb.checked = false; });
+                if (selectAll) selectAll.checked = false;
+                updateInvoiceBulkBar();
+            });
+        }
+
+        // Status filter button handlers
+        attachFilterHandlers(container);
+    }
+
+    function attachFilterHandlers(container) {
+        container.querySelectorAll('.inv-status-filter-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var status = btn.dataset.status;
+                var idx = invoiceStatusFilter.indexOf(status);
+                if (idx !== -1) {
+                    if (invoiceStatusFilter.length === 1) {
+                        FinanceUtils.showToast('At least one filter must be active', 'warning');
+                        return;
+                    }
+                    invoiceStatusFilter.splice(idx, 1);
+                } else {
+                    invoiceStatusFilter.push(status);
+                }
+                renderInvoicesList();
+            });
+        });
+    }
+
+    function getSelectedInvoiceIds() {
+        var ids = [];
+        document.querySelectorAll('.invoice-select-cb:checked').forEach(function(cb) {
+            ids.push(cb.dataset.invoiceId);
+        });
+        return ids;
+    }
+
+    function updateInvoiceBulkBar() {
+        var selected = getSelectedInvoiceIds();
+        var bar = document.getElementById('invoiceBulkBar');
+        var countEl = document.getElementById('invoiceBulkCount');
+        if (bar) bar.style.display = selected.length > 0 ? 'block' : 'none';
+        if (countEl) countEl.textContent = selected.length;
     }
 
     function getStatusBadge(status) {
@@ -358,8 +777,8 @@
         var listHtml = '';
         group.appointments.forEach(function(apt) {
             var aptDate = FinanceUtils.formatDateShort(FinanceUtils.getAppointmentDate(apt));
-            var location = apt.location || apt.clinic || 'Unknown';
-            var rate = parseFloat(apt.customRate || apt.custom_rate) || 0;
+            var location = apt.location_name || apt.location || apt.clinic || 'Unknown';
+            var rate = parseFloat(apt.billed_amount || apt.customRate || apt.custom_rate) || 0;
             subtotal += rate;
 
             listHtml += '<div class="d-flex justify-content-between align-items-center border-bottom py-2">' +
@@ -392,8 +811,8 @@
 
                 var response = await APIClient.post('/create-invoice', {
                     knumber: group.knumber,
-                    appointmentIds: appointmentIds,
-                    invoiceDate: invoiceDate,
+                    appointment_ids: appointmentIds,
+                    invoice_date: invoiceDate,
                     notes: notes
                 });
 
@@ -533,10 +952,10 @@
         var clientName = ((client.firstname || client.first_name || '') + ' ' + (client.lastname || client.last_name || '')).trim();
         trySetField(form, 'ClientName', clientName);
         trySetField(form, 'kNumber', client.knumber || client.k_number || '');
-        trySetField(form, 'clientCivic', client.address || client.primary_address || '');
+        trySetField(form, 'clientCivic', client.civicaddress || client.address || client.primary_address || '');
         trySetField(form, 'clientCity', client.city || '');
         trySetField(form, 'clientProv', client.province || 'NS');
-        trySetField(form, 'clientPostalCode', client.postal_code || '');
+        trySetField(form, 'clientPostalCode', client.postalcode || client.postal_code || '');
         trySetField(form, 'ClientPhone', client.phone || '');
         trySetField(form, 'formDate', invData.invoice_date || invData.invoiceDate || '');
 
@@ -548,20 +967,22 @@
         var defaultAmountProv = parseFloat(defaults.amount_from_province) || 0;
 
         // Line items (max 10 per page)
+        var hstRate = FinanceState.appConfig.hst_rate || 0.14;
         var billProgramTotal = 0;
         var maxRows = Math.min(appointments.length, 10);
 
         for (var i = 0; i < maxRows; i++) {
             var appt = appointments[i];
             var rowNum = i + 1;
-            var billedAmount = parseFloat(appt.customRate || appt.custom_rate || appt.billed_amount) || 0;
-            var billProgram = billedAmount - defaultAmountProv;
+            var billedAmount = parseFloat(appt.billed_amount || appt.customRate || appt.custom_rate) || 0;
+            var totalWithTax = Math.round(billedAmount * (1 + hstRate) * 100) / 100;
+            var billProgram = totalWithTax - defaultAmountProv;
 
             trySetField(form, 'DateServiceRow' + rowNum,
                 FinanceUtils.formatDateShort(FinanceUtils.getAppointmentDate(appt)));
             trySetField(form, 'BenefitCodeRow' + rowNum, defaultBenefitCode);
             trySetField(form, 'PrescriberRow' + rowNum, defaultPrescriber);
-            trySetField(form, 'TotalRow' + rowNum, billedAmount.toFixed(2));
+            trySetField(form, 'TotalRow' + rowNum, totalWithTax.toFixed(2));
             trySetField(form, 'AmountProvRow' + rowNum, defaultAmountProv.toFixed(2));
             trySetField(form, 'BillProgramRow' + rowNum, billProgram.toFixed(2));
 
@@ -624,12 +1045,14 @@
             var chunkSize = 10;
             var totalPages = Math.ceil(invoiceAppts.length / chunkSize) || 1;
 
-            // Pre-calculate grand BillProgramTotal across all appointments
+            // Pre-calculate grand BillProgramTotal across all appointments (with tax)
             var defaultAmountProv = parseFloat((FinanceState.appConfig.insurance_form_defaults || {}).amount_from_province) || 0;
+            var pdfHstRate = FinanceState.appConfig.hst_rate || 0.14;
             var grandBillProgramTotal = 0;
             invoiceAppts.forEach(function(appt) {
-                var billedAmount = parseFloat(appt.customRate || appt.custom_rate || appt.billed_amount) || 0;
-                grandBillProgramTotal += billedAmount - defaultAmountProv;
+                var billedAmount = parseFloat(appt.billed_amount || appt.customRate || appt.custom_rate) || 0;
+                var totalWithTax = Math.round(billedAmount * (1 + pdfHstRate) * 100) / 100;
+                grandBillProgramTotal += totalWithTax - defaultAmountProv;
             });
 
             for (var p = 0; p < totalPages; p++) {
@@ -749,6 +1172,138 @@
     }
 
     // =============================================
+    // PRINT
+    // =============================================
+    function handlePrintPdf() {
+        var iframe = document.getElementById('pdfPreviewFrame');
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }
+    }
+
+    // =============================================
+    // BULK PDF OPERATIONS
+    // =============================================
+    async function generatePdfBytesForInvoice(invoice) {
+        var knumber = invoice.knumber || invoice.k_number;
+        var client = FinanceState.clients[knumber];
+        if (!client) return null;
+
+        var appointmentIds = invoice.appointmentIds || invoice.appointment_ids || [];
+        var invoiceAppts = FinanceState.appointments.filter(function(apt) {
+            return appointmentIds.includes(apt.id);
+        });
+        invoiceAppts.sort(function(a, b) {
+            return new Date(FinanceUtils.getAppointmentDate(a)) - new Date(FinanceUtils.getAppointmentDate(b));
+        });
+
+        var defaultAmountProv = parseFloat((FinanceState.appConfig.insurance_form_defaults || {}).amount_from_province) || 0;
+        var pdfHstRate = FinanceState.appConfig.hst_rate || 0.14;
+        var grandBillProgramTotal = 0;
+        invoiceAppts.forEach(function(appt) {
+            var billedAmount = parseFloat(appt.billed_amount || appt.customRate || appt.custom_rate) || 0;
+            var totalWithTax = Math.round(billedAmount * (1 + pdfHstRate) * 100) / 100;
+            grandBillProgramTotal += totalWithTax - defaultAmountProv;
+        });
+
+        var pages = [];
+        var chunkSize = 10;
+        var totalPages = Math.ceil(invoiceAppts.length / chunkSize) || 1;
+        for (var p = 0; p < totalPages; p++) {
+            var chunk = invoiceAppts.slice(p * chunkSize, (p + 1) * chunkSize);
+            var isLastPage = (p === totalPages - 1);
+            var pdfBytes = await fillInsuranceForm(invoice, chunk, client, isLastPage ? grandBillProgramTotal : null);
+            pages.push(pdfBytes);
+        }
+        return pages;
+    }
+
+    async function bulkDownloadPdfs() {
+        var ids = getSelectedInvoiceIds();
+        if (ids.length === 0) return;
+
+        var btn = document.getElementById('btnBulkDownload');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...'; }
+
+        try {
+            for (var i = 0; i < ids.length; i++) {
+                var inv = invoiceData.invoices.find(function(x) { return x.id === ids[i]; });
+                if (!inv) continue;
+
+                if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + (i + 1) + '/' + ids.length;
+
+                var pages = await generatePdfBytesForInvoice(inv);
+                if (!pages) continue;
+
+                var invNum = inv.invoiceNumber || inv.invoice_number || 'N-A';
+                for (var p = 0; p < pages.length; p++) {
+                    var blob = new Blob([pages[p]], { type: 'application/pdf' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Invoice-' + invNum + (pages.length > 1 ? '-Page' + (p + 1) : '') + '.pdf';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            }
+            FinanceUtils.showToast(ids.length + ' invoice PDF(s) downloaded', 'success');
+        } catch (err) {
+            console.error('[Finance Invoicing] Bulk download error:', err);
+            FinanceUtils.showToast('Failed to generate PDFs', 'danger');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-download"></i> Download Selected'; }
+        }
+    }
+
+    async function bulkPrintPdfs() {
+        var ids = getSelectedInvoiceIds();
+        if (ids.length === 0) return;
+
+        var btn = document.getElementById('btnBulkPrint');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...'; }
+
+        try {
+            // Generate all PDFs, merge into one blob for printing
+            var allPages = [];
+            for (var i = 0; i < ids.length; i++) {
+                var inv = invoiceData.invoices.find(function(x) { return x.id === ids[i]; });
+                if (!inv) continue;
+                if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + (i + 1) + '/' + ids.length;
+                var pages = await generatePdfBytesForInvoice(inv);
+                if (pages) allPages = allPages.concat(pages);
+            }
+
+            if (allPages.length === 0) return;
+
+            // Open each page in a print-friendly window
+            // For single page, use iframe print; for multiple, open new window
+            if (allPages.length === 1) {
+                var blob = new Blob([allPages[0]], { type: 'application/pdf' });
+                var blobUrl = URL.createObjectURL(blob);
+                var printWin = window.open(blobUrl, '_blank');
+                if (printWin) {
+                    printWin.addEventListener('load', function() { printWin.print(); });
+                }
+            } else {
+                // Download individually for multi-page (browser print can't merge PDFs)
+                for (var p = 0; p < allPages.length; p++) {
+                    var pBlob = new Blob([allPages[p]], { type: 'application/pdf' });
+                    var pUrl = URL.createObjectURL(pBlob);
+                    var pw = window.open(pUrl, '_blank');
+                    if (pw) pw.addEventListener('load', function() { this.print(); });
+                }
+            }
+            FinanceUtils.showToast('Print dialog opened for ' + ids.length + ' invoice(s)', 'success');
+        } catch (err) {
+            console.error('[Finance Invoicing] Bulk print error:', err);
+            FinanceUtils.showToast('Failed to generate PDFs for printing', 'danger');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-printer"></i> Print Selected'; }
+        }
+    }
+
+    // =============================================
     // SKELETON
     // =============================================
     function showSkeleton(show) {
@@ -780,6 +1335,9 @@
         }
 
         // PDF preview buttons
+        var printBtn = document.getElementById('btnPrintPdf');
+        if (printBtn) printBtn.addEventListener('click', handlePrintPdf);
+
         var dlBtn = document.getElementById('btnDownloadPdf');
         if (dlBtn) dlBtn.addEventListener('click', handleDownloadPdf);
 

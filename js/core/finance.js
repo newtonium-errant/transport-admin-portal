@@ -430,7 +430,7 @@
                     console.warn('[Finance v5] Error loading appointments:', err);
                     return { data: [] };
                 }),
-                APIClient.get('/get-invoices').catch(err => {
+                APIClient.get('/get-invoices-v5').catch(err => {
                     console.warn('[Finance v5] Error loading invoices:', err);
                     return { data: [] };
                 }),

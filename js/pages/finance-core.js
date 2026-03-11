@@ -507,8 +507,9 @@
                 var config = Object.assign({}, DEFAULT_CONFIG);
 
                 configArray.forEach(function(item) {
-                    var value = parseFloat(item.config_value);
-                    config[item.config_key] = isNaN(value) ? item.config_value : value;
+                    var raw = item.config_value;
+                    var value = parseFloat(raw);
+                    config[item.config_key] = (!isNaN(value) && String(value) === raw.trim()) ? value : raw;
                 });
 
                 FinanceState.appConfig = config;
@@ -522,11 +523,11 @@
         async loadSharedData() {
             try {
                 var results = await Promise.all([
-                    APIClient.get('/get-all-drivers').catch(function(err) {
+                    APIClient.get('/allDrivers').catch(function(err) {
                         console.warn('[Finance] Error loading drivers:', err);
                         return { data: [] };
                     }),
-                    APIClient.get('/get-all-clients').catch(function(err) {
+                    APIClient.get('/getAllClients').catch(function(err) {
                         console.warn('[Finance] Error loading clients:', err);
                         return { data: [] };
                     }),

@@ -473,14 +473,6 @@
                     </div>
                 </div>
 
-                <!-- Bulk Action Bar -->
-                <div id="bulkActionBar" class="mb-3">
-                    <button class="btn btn-success btn-sm" id="btnBulkApprove">
-                        <i class="bi bi-check-all"></i> Approve Selected (<span id="bulkSelectedCount">0</span>)
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" id="btnClearSelection">Clear Selection</button>
-                </div>
-
                 <!-- Skeleton -->
                 <div id="reviewSkeleton" style="display: none;">
                     <div class="card"><div class="card-body">
@@ -492,9 +484,57 @@
                     </div></div>
                 </div>
 
+
+                <!-- Needs Completion Section -->
+                <div id="needsCompletionSection" style="display: none;">
+                    <div class="card mb-3" style="border-left: 4px solid #f0ad4e;">
+                        <div class="card-header py-2" style="background-color: #fff8e1;">
+                            <strong>Needs Completion</strong>
+                            <span class="badge bg-warning text-dark ms-2" id="needsCompletionCount">0</span>
+                            <small class="text-muted ms-2">Past assigned appointments that need to be marked as completed</small>
+                        </div>
+                        <div id="completionBulkBar" class="px-3 py-2" style="background: #fff3cd; border-bottom: 1px solid #ffc107; display: none;">
+                            <button class="btn btn-warning btn-sm" id="btnBulkComplete">
+                                <i class="bi bi-check2-all"></i> Complete Selected (<span id="completionSelectedCount">0</span>)
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm ms-2" id="btnClearCompletionSelection">Clear Selection</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="completionSelectAll" title="Select All">
+                                        </th>
+                                        <th>Date</th>
+                                        <th>Client</th>
+                                        <th>Driver</th>
+                                        <th>Type</th>
+                                        <th>Duration</th>
+                                        <th>Mileage</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="needsCompletionTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Action Bar -->
+                <div id="bulkActionBar" class="mb-3" style="display: none;">
+                    <button class="btn btn-success btn-sm" id="btnBulkApprove">
+                        <i class="bi bi-check-all"></i> Approve Selected (<span id="bulkSelectedCount">0</span>)
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm ms-2" id="btnClearSelection">Clear Selection</button>
+                </div>
+
                 <!-- Review Table -->
                 <div id="reviewContent">
                     <div class="card">
+                        <div class="card-header py-2"><strong>Ready for Review</strong></div>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead>
@@ -610,6 +650,54 @@
     </div>
 
     <!-- ==================== MODALS ==================== -->
+
+    <!-- Finance Quick Edit Modal -->
+    <div class="modal fade" id="financeQuickEditModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title"><i class="bi bi-pencil-square"></i> Review Appointment</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-2">
+                    <input type="hidden" id="qeAppointmentId">
+                    <div class="mb-2">
+                        <small class="text-muted">Client</small>
+                        <div class="fw-bold" id="qeClientInfo"></div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Date / Location</small>
+                        <div id="qeDateLocation"></div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Type</small>
+                        <div id="qeAppointmentType"></div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="mb-2">
+                        <label class="form-label mb-1" for="qeDriver">Driver</label>
+                        <select class="form-select form-select-sm" id="qeDriver"></select>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label mb-1" for="qeHours">Total Trip Hours</label>
+                            <input type="number" class="form-control form-control-sm" id="qeHours" step="0.1" min="0" max="24">
+                            <small class="text-muted" id="qeHoursCalc"></small>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label mb-1" for="qeMileage">Driver Mileage (km)</label>
+                            <input type="number" class="form-control form-control-sm" id="qeMileage" step="0.1" min="0" max="9999">
+                            <small class="text-muted" id="qeMileageCalc"></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success btn-sm" id="btnQeApprove"><i class="bi bi-check-lg"></i> Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Create Invoice Modal -->
     <div class="modal fade" id="createInvoiceModal" tabindex="-1">
@@ -743,6 +831,9 @@
                         </button>
                     </div>
                     <div>
+                        <button class="btn btn-outline-secondary btn-sm" id="btnPrintPdf">
+                            <i class="bi bi-printer"></i> Print
+                        </button>
                         <button class="btn btn-primary btn-sm" id="btnDownloadPdf">
                             <i class="bi bi-download"></i> Download PDF
                         </button>
@@ -761,12 +852,10 @@
 
     <!-- Scripts -->
     <script src="js/auth/jwt-auth.js"></script>
-    <script src="js/auth/jwt-manager.js"></script>
     <script src="js/auth/session-manager.js"></script>
     <script src="js/components/navigation.js"></script>
     <script src="js/core/api-client.js"></script>
     <script src="js/core/api-security.js"></script>
-    <script src="js/components/appointment-modal.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Finance Scripts -->

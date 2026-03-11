@@ -29,11 +29,23 @@
 
             // Ensure appointments loaded
             if (!FinanceState.appointments || FinanceState.appointments.length === 0) {
-                var response = await APIClient.get('/get-finance-appointments').catch(function(err) {
+                var response = await APIClient.get('/get-finance-appointments?tab=payroll').catch(function(err) {
                     console.warn('[Finance Payroll] Error loading appointments:', err);
                     return { data: [] };
                 });
-                var raw = response.data || response.appointments || response || [];
+                // Handle array-wrapped n8n responses
+                var raw = [];
+                if (Array.isArray(response) && response.length > 0 && response[0].data) {
+                    raw = response[0].data.appointments || response[0].data || [];
+                } else if (response && response.data && response.data.appointments) {
+                    raw = response.data.appointments;
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    raw = response.data;
+                } else if (response && response.appointments) {
+                    raw = response.appointments;
+                } else if (Array.isArray(response)) {
+                    raw = response;
+                }
                 if (!Array.isArray(raw)) raw = [];
                 FinanceState.appointments = raw;
             }
@@ -177,7 +189,7 @@
                 id: apt.id,
                 date: FinanceUtils.getAppointmentDate(apt),
                 knumber: apt.knumber || apt.k_number || '',
-                clientName: ((apt.clientFirstName || apt.client_first_name || '') + ' ' + (apt.clientLastName || apt.client_last_name || '')).trim(),
+                clientName: apt.client_name || apt.clientName || ((apt.clientFirstName || apt.client_first_name || '') + ' ' + (apt.clientLastName || apt.client_last_name || '')).trim() || 'Unknown',
                 payroll: payroll,
                 runningYtdAfter: stats.runningYtd
             });
