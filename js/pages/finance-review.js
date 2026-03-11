@@ -213,7 +213,7 @@
             var appointmentType = apt.appointment_type || apt.appointmentType || 'round_trip';
             var typeLabel = appointmentType === 'one_way' ? 'One-Way' : appointmentType === 'support' ? 'Support' : 'Round Trip';
 
-            var hours = parseFloat(apt.approved_hours || apt.driver_work_duration || apt.this_appointment_length || apt.appointmentLength || apt.appointment_length) || 0;
+            var hours = parseFloat(apt.approved_hours || apt.driver_work_duration) || 0;
             var hoursDisplay = hours > 0 ? (hours / 60).toFixed(1) : '\u2014';
 
             var mileage = parseFloat(apt.driver_total_distance || apt.driverMileage || apt.driver_mileage ||
@@ -278,7 +278,7 @@
             var appointmentType = apt.appointment_type || apt.appointmentType || 'round_trip';
             var typeLabel = appointmentType === 'one_way' ? 'One-Way' : appointmentType === 'support' ? 'Support' : 'Round Trip';
 
-            var hours = parseFloat(apt.approved_hours || apt.driver_work_duration || apt.this_appointment_length || apt.appointmentLength || apt.appointment_length) || 0;
+            var hours = parseFloat(apt.approved_hours || apt.driver_work_duration) || 0;
             var hoursDisplay = hours > 0 ? (hours / 60).toFixed(1) : '\u2014';
 
             var mileage = parseFloat(apt.driver_total_distance || apt.driverMileage || apt.driver_mileage ||
@@ -410,7 +410,7 @@
 
         // Hours — from driver_work_duration (minutes) or approved_hours
         // All hours rounded up to next whole hour for invoicing/payroll
-        var rawMinutes = parseFloat(apt.driver_work_duration || apt.this_appointment_length || 0);
+        var rawMinutes = parseFloat(apt.driver_work_duration) || 0;
         var rawHours = rawMinutes > 0 ? rawMinutes / 60 : 0;
         var currentHours = apt.approved_hours ? parseFloat(apt.approved_hours) : (rawHours > 0 ? Math.ceil(rawHours) : 0);
         document.getElementById('qeHours').value = currentHours > 0 ? currentHours : '';
