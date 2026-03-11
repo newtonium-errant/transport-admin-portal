@@ -2,8 +2,9 @@
  * Reusable Appointment Modal Component
  * Can be used on any page to add/edit/view appointments
  *
- * Version: v3.2.0
+ * Version: v3.3.0
  * Changes:
+ * - v3.3.0: Read-only mode for completed+approved appointments with unlock checkbox
  * - v3.2.0: Added traffic-aware transit time checkbox (calculate_traffic_transit)
  * - v3.2.0: Checkbox inside transitTimeRow, hidden for support type, visible in add+edit
  * - v3.2.0: When checked, shows hint and changes badge to "Traffic override"
@@ -63,6 +64,7 @@ class AppointmentModal {
         this.appointmentType = 'round_trip'; // 'round_trip', 'one_way', 'support'
         this.originalAppointmentType = null; // For edit mode type change restrictions
         this._missingTravelTime = false; // Track missing travel time for yellow indicator
+        this._isApprovedReadOnly = false; // Track if appointment is completed+approved (read-only with unlock)
         // Store original values for edit mode to detect changes
         this.originalSchedulingNotes = null;
         this.originalAppointmentDateTime = null;
@@ -275,6 +277,12 @@ class AppointmentModal {
                                     <button type="button" class="btn btn-dark me-auto" id="hardDeleteAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.hardDeleteAppointment()">
                                         <i class="bi bi-trash"></i> Hard Delete
                                     </button>
+                                    <div class="form-check me-auto" id="approvedUnlockContainer" style="display: none;">
+                                        <input class="form-check-input" type="checkbox" id="approvedUnlockCheckbox">
+                                        <label class="form-check-label text-warning" for="approvedUnlockCheckbox">
+                                            <i class="bi bi-unlock"></i> Enable editing (approved appointment)
+                                        </label>
+                                    </div>
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                     <button type="button" class="btn btn-warning" id="restoreAppointmentBtn" style="display: none;" onclick="appointmentModalInstance.restoreAppointment()">
                                         <i class="bi bi-arrow-counterclockwise"></i> Restore
@@ -323,6 +331,9 @@ class AppointmentModal {
 
         // Setup traffic-aware transit checkbox
         this.setupTrafficAwareCheckbox();
+
+        // Setup approved unlock checkbox
+        this.setupApprovedUnlockCheckbox();
     }
     
     setupPickupTimeCalculation() {
@@ -368,6 +379,38 @@ class AppointmentModal {
 
         checkbox.addEventListener('change', () => {
             this.updateTrafficAwareUI(checkbox.checked);
+        });
+    }
+
+    setupApprovedUnlockCheckbox() {
+        const checkbox = document.getElementById('approvedUnlockCheckbox');
+        if (!checkbox) return;
+
+        checkbox.addEventListener('change', () => {
+            if (!this._isApprovedReadOnly) return;
+            const unlock = checkbox.checked;
+            this.setFormFieldsDisabled(!unlock);
+            const saveBtn = document.getElementById('saveAppointmentBtn');
+            if (saveBtn) saveBtn.style.display = unlock ? 'inline-block' : 'none';
+
+            // Re-apply always-disabled fields
+            if (unlock) {
+                // Client dropdown stays locked in edit mode
+                const clientDropdown = document.getElementById('appointmentClientDropdown');
+                if (clientDropdown) {
+                    clientDropdown.disabled = true;
+                    clientDropdown.style.backgroundColor = '#e9ecef';
+                }
+                // Re-apply status RBAC for non-admins
+                const userRole = getUserRole();
+                if (userRole !== 'admin') {
+                    const statusField = document.getElementById('appointmentStatus');
+                    if (statusField) {
+                        statusField.disabled = true;
+                        statusField.style.backgroundColor = '#e9ecef';
+                    }
+                }
+            }
         });
     }
 
@@ -1347,6 +1390,9 @@ class AppointmentModal {
             reactivateBtn.style.display = 'none';
             archiveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
+            this._isApprovedReadOnly = false;
+            const unlockView = document.getElementById('approvedUnlockContainer');
+            if (unlockView) unlockView.style.display = 'none';
             saveBtn.textContent = 'Close';
             saveBtn.onclick = () => bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
             transitTimeRow.style.display = 'block'; // Show in view mode
@@ -1373,7 +1419,10 @@ class AppointmentModal {
                 reactivateBtn.style.display = 'none';
                 archiveBtn.style.display = 'none';
                 cancelBtn.style.display = 'none';
-                saveBtn.style.display = 'none'; // Hide Update button for archived appointments
+                saveBtn.style.display = 'none';
+                this._isApprovedReadOnly = false;
+                const unlockArchived = document.getElementById('approvedUnlockContainer');
+                if (unlockArchived) unlockArchived.style.display = 'none';
 
                 // Make all form fields read-only
                 this.setFormFieldsDisabled(true);
@@ -1383,7 +1432,10 @@ class AppointmentModal {
                 reactivateBtn.style.display = 'inline-block';
                 archiveBtn.style.display = 'none';
                 cancelBtn.style.display = 'none';
-                saveBtn.style.display = 'none'; // Hide Update button for cancelled appointments
+                saveBtn.style.display = 'none';
+                this._isApprovedReadOnly = false;
+                const unlockCancelled = document.getElementById('approvedUnlockContainer');
+                if (unlockCancelled) unlockCancelled.style.display = 'none';
 
                 // Make all form fields read-only
                 this.setFormFieldsDisabled(true);
@@ -1423,6 +1475,27 @@ class AppointmentModal {
                     statusField.disabled = true;
                     statusField.style.backgroundColor = '#e9ecef';
                 }
+
+                // Check if appointment is completed and approved (invoice_status beyond not_ready)
+                const opStatus = appointment?.operation_status || appointment?.operationStatus;
+                const invStatus = appointment?.invoice_status || appointment?.invoiceStatus;
+                const approvedStatuses = ['ready', 'created', 'sent', 'paid'];
+                const isCompletedApproved = opStatus === 'completed' && approvedStatuses.indexOf(invStatus) !== -1;
+
+                const approvedUnlockContainer = document.getElementById('approvedUnlockContainer');
+                const approvedUnlockCheckbox = document.getElementById('approvedUnlockCheckbox');
+
+                if (isCompletedApproved) {
+                    this._isApprovedReadOnly = true;
+                    this.setFormFieldsDisabled(true);
+                    saveBtn.style.display = 'none';
+                    if (approvedUnlockContainer) approvedUnlockContainer.style.display = 'block';
+                    if (approvedUnlockCheckbox) approvedUnlockCheckbox.checked = false;
+                } else {
+                    this._isApprovedReadOnly = false;
+                    if (approvedUnlockContainer) approvedUnlockContainer.style.display = 'none';
+                    if (approvedUnlockCheckbox) approvedUnlockCheckbox.checked = false;
+                }
             }
 
             transitTimeRow.style.display = 'block'; // Show in edit mode
@@ -1443,6 +1516,9 @@ class AppointmentModal {
             reactivateBtn.style.display = 'none';
             archiveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
+            this._isApprovedReadOnly = false;
+            const unlockAdd = document.getElementById('approvedUnlockContainer');
+            if (unlockAdd) unlockAdd.style.display = 'none';
             saveBtn.textContent = 'Save Appointment';
             saveBtn.onclick = () => this.saveAppointment();
             transitTimeRow.style.display = 'block'; // Show in add mode (for traffic-aware checkbox access)
@@ -1963,11 +2039,12 @@ class AppointmentModal {
             }
         }
         // Safety sync: ensure hidden input and selectedClient match dropdown before save
-        var syncDropdown = document.getElementById('appointmentClientDropdown');
-        var syncHidden = document.getElementById('appointmentClientId');
-        if (syncDropdown && syncDropdown.value && syncDropdown.value !== (syncHidden ? syncHidden.value : '')){ 
+        var syncDropdown = document.getElementById("appointmentClientDropdown");
+        var syncHidden = document.getElementById("appointmentClientId");
+        if (syncDropdown && syncDropdown.value && syncDropdown.value !== (syncHidden ? syncHidden.value : "")) {
             var syncOption = syncDropdown.selectedOptions[0];
-            this.selectClient(syncDropdown.value, syncOption && syncOption.dataset ? syncOption.dataset.fullname || '' : ');
+            var syncName = (syncOption && syncOption.dataset) ? (syncOption.dataset.fullname || "") : "";
+            this.selectClient(syncDropdown.value, syncName);
         }
         // Client selection required for round_trip and one_way
         if (this.appointmentType !== 'support') {
