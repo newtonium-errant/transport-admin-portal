@@ -1704,7 +1704,7 @@ class AppointmentModal {
         this.applyTypeVisibility();
 
         // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('appointmentModal'));
 
         // Ensure client dropdown state is correct after modal is shown
         document.getElementById('appointmentModal').addEventListener('shown.bs.modal', () => {
