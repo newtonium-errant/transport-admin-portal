@@ -1,0 +1,248 @@
+table_name,pos,column_name,data_type,udt_name,max_length,numeric_precision,numeric_scale,is_nullable,column_default,constraints,fk_references
+app_config,1,key,text,text,null,null,null,NO,null,PRIMARY KEY,null
+app_config,2,value,text,text,null,null,null,YES,null,null,null
+app_config,3,description,text,text,null,null,null,YES,null,null,null
+app_config,4,updated_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+appointments,1,id,uuid,uuid,null,null,null,NO,uuid_generate_v4(),PRIMARY KEY,null
+appointments,2,created_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+appointments,3,knumber,text,text,null,null,null,NO,null,FOREIGN KEY,clients.knumber
+appointments,4,appointmenttime,timestamp with time zone,timestamptz,null,null,null,NO,null,null,null
+appointments,5,pickuptime,timestamp with time zone,timestamptz,null,null,null,NO,null,null,null
+appointments,6,locationname,text,text,null,null,null,YES,null,null,null
+appointments,7,locationaddress,text,text,null,null,null,YES,null,null,null
+appointments,8,notes,text,text,null,null,null,YES,null,null,null
+appointments,9,transittime,integer,int4,null,32,0,YES,null,null,null
+appointments,10,appointmentstatus,text,text,null,null,null,YES,null,null,null
+appointments,11,custom_rate,numeric,numeric,null,null,null,YES,null,null,null
+appointments,12,maptraveltime,integer,int4,null,32,0,YES,null,null,null
+appointments,15,google_maps_success,boolean,bool,null,null,null,YES,true,null,null
+appointments,16,google_maps_error,text,text,null,null,null,YES,null,null,null
+appointments,21,is_existing,boolean,bool,null,null,null,YES,false,null,null
+appointments,23,driver_assigned,integer,int4,null,32,0,YES,null,FOREIGN KEY,drivers.id
+appointments,24,driver_email,text,text,null,null,null,YES,null,null,null
+appointments,27,driver_calendar_event_id,text,text,null,null,null,YES,null,null,null
+appointments,28,client_notification_sent,boolean,bool,null,null,null,YES,false,null,null
+appointments,29,driver_notification_sent,boolean,bool,null,null,null,YES,false,null,null
+appointments,30,reminder_sent_client,boolean,bool,null,null,null,YES,false,null,null
+appointments,31,reminder_sent_driver,boolean,bool,null,null,null,YES,false,null,null
+appointments,32,notification_status,jsonb,jsonb,null,null,null,YES,'{}'::jsonb,null,null
+appointments,33,scheduling_notes,text,text,null,null,null,YES,null,null,null
+appointments,34,preferred_driver,integer,int4,null,32,0,YES,null,FOREIGN KEY,drivers.id
+appointments,35,tripdistance,integer,int4,null,32,0,YES,null,null,null
+appointments,36,clinic_id,integer,int4,null,32,0,YES,null,FOREIGN KEY,destinations.id
+appointments,37,this_appointment_length,integer,int4,null,32,0,YES,120,null,null
+appointments,38,google_calendar_last_synced,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,39,google_calendar_sync_error,text,text,null,null,null,YES,null,null,null
+appointments,40,appointmentStatusUpdated,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,41,dropOffTime,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,42,reminder_1h_sent_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,43,reminder_1h_error,text,text,null,null,null,YES,null,null,null
+appointments,44,driver_first_name,text,text,null,null,null,YES,null,null,null
+appointments,45,operation_status,text,text,null,null,null,NO,null,null,null
+appointments,46,invoice_status,text,text,null,null,null,YES,'not_ready'::text,null,null
+appointments,47,deleted_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,48,cancelled_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,49,driver_paid_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,50,booking_agent_paid_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,51,invoice_created_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,52,invoice_sent_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,53,payment_received_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,54,cancelled_by,integer,int4,null,32,0,YES,null,FOREIGN KEY,users.id
+appointments,55,cancellation_reason,text,text,null,null,null,YES,null,null,null
+appointments,56,deleted_by,integer,int4,null,32,0,YES,null,FOREIGN KEY,users.id
+appointments,57,pickup_address,text,text,null,null,null,YES,null,null,null
+appointments,58,managed_by,integer,int4,null,32,0,YES,null,FOREIGN KEY,users.id
+appointments,59,managed_by_name,text,text,null,null,null,YES,null,null,null
+appointments,60,driver_instructions,text,text,null,null,null,YES,null,null,null
+appointments,61,invoice_id,uuid,uuid,null,null,null,YES,null,FOREIGN KEY,invoices.id
+appointments,62,driver_mileage,numeric,numeric,null,null,null,YES,null,null,null
+appointments,63,reminder_night_before_sent,boolean,bool,null,null,null,YES,false,null,null
+appointments,64,reminder_night_before_sent_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+appointments,65,reminder_night_before_error,text,text,null,null,null,YES,null,null,null
+appointments,66,driver_total_distance,numeric,numeric,null,8,2,YES,null,null,null
+audit_logs,1,id,integer,int4,null,32,0,NO,nextval('audit_logs_id_seq'::regclass),PRIMARY KEY,null
+audit_logs,2,timestamp,timestamp with time zone,timestamptz,null,null,null,NO,now(),null,null
+audit_logs,3,user_id,integer,int4,null,32,0,YES,null,FOREIGN KEY,users.id
+audit_logs,4,username,text,text,null,null,null,NO,null,null,null
+audit_logs,5,role,text,text,null,null,null,NO,null,null,null
+audit_logs,6,action,text,text,null,null,null,NO,null,null,null
+audit_logs,7,resource_type,text,text,null,null,null,YES,null,null,null
+audit_logs,8,resource_id,text,text,null,null,null,YES,null,null,null
+audit_logs,9,details,jsonb,jsonb,null,null,null,YES,'{}'::jsonb,null,null
+audit_logs,10,ip_address,inet,inet,null,null,null,YES,null,null,null
+audit_logs,11,user_agent,text,text,null,null,null,YES,null,null,null
+audit_logs,12,success,boolean,bool,null,null,null,YES,true,null,null
+audit_logs,13,error_message,text,text,null,null,null,YES,null,null,null
+audit_logs,14,created_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+client_destination_distances,1,id,integer,int4,null,32,0,NO,nextval('client_destination_distances_id_seq'::regclass),PRIMARY KEY,null
+client_destination_distances,2,client_id,uuid,uuid,null,null,null,NO,null,"FOREIGN KEY, UNIQUE",clients.id
+client_destination_distances,3,destination_id,integer,int4,null,32,0,NO,null,"FOREIGN KEY, UNIQUE",destinations.id
+client_destination_distances,4,primary_distance_km,numeric,numeric,null,8,2,YES,null,null,null
+client_destination_distances,5,primary_duration_minutes,integer,int4,null,32,0,YES,null,null,null
+client_destination_distances,6,secondary_distance_km,numeric,numeric,null,8,2,YES,null,null,null
+client_destination_distances,7,secondary_duration_minutes,integer,int4,null,32,0,YES,null,null,null
+client_destination_distances,8,calculated_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+client_destination_distances,9,calculation_source,character varying,varchar,50,null,null,YES,'google_maps'::character varying,null,null
+clients,1,id,uuid,uuid,null,null,null,NO,uuid_generate_v4(),PRIMARY KEY,null
+clients,2,created_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+clients,3,knumber,text,text,null,null,null,NO,null,UNIQUE,null
+clients,5,phone,text,text,null,null,null,YES,null,null,null
+clients,6,email,text,text,null,null,null,YES,null,null,null
+clients,9,firstname,text,text,null,null,null,YES,null,null,null
+clients,10,lastname,text,text,null,null,null,YES,null,null,null
+clients,11,civicaddress,text,text,null,null,null,YES,null,null,null
+clients,12,city,text,text,null,null,null,YES,null,null,null
+clients,13,prov,text,text,null,null,null,YES,null,null,null
+clients,14,postalcode,text,text,null,null,null,YES,null,null,null
+clients,15,notes,text,text,null,null,null,YES,null,null,null
+clients,16,emergency_contact_name,text,text,null,null,null,YES,null,null,null
+clients,17,emergency_contact_number,text,text,null,null,null,YES,null,null,null
+clients,19,driver_gender_requirement,text,text,null,null,null,YES,null,null,null
+clients,20,preferred_driver,integer,int4,null,32,0,YES,null,FOREIGN KEY,drivers.id
+clients,21,mapaddress,text,text,null,null,null,YES,null,null,null
+clients,22,active,boolean,bool,null,null,null,YES,true,null,null
+clients,23,appointment_length,integer,int4,null,32,0,YES,120,null,null
+clients,24,openphone_contact_id,text,text,null,null,null,YES,null,null,null
+clients,25,openphone_sync_status,text,text,null,null,null,YES,'pending'::text,null,null
+clients,26,openphone_sync_date,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+clients,27,status,character varying,varchar,20,null,null,YES,'active'::character varying,null,null
+clients,28,clinic_travel_times,jsonb,jsonb,null,null,null,YES,null,null,null
+clients,29,secondary_civic_address,text,text,null,null,null,YES,null,null,null
+clients,30,secondary_city,text,text,null,null,null,YES,null,null,null
+clients,31,secondary_province,text,text,null,null,null,YES,null,null,null
+clients,32,secondary_postal_code,text,text,null,null,null,YES,null,null,null
+clients,33,secondary_address_notes,text,text,null,null,null,YES,null,null,null
+clients,34,updated_at,timestamp with time zone,timestamptz,null,null,null,YES,CURRENT_TIMESTAMP,null,null
+destinations,1,id,integer,int4,null,32,0,NO,nextval('destinations_id_seq'::regclass),PRIMARY KEY,null
+destinations,2,name,text,text,null,null,null,NO,null,null,null
+destinations,3,address,text,text,null,null,null,NO,null,null,null
+destinations,4,city,text,text,null,null,null,YES,'Halifax'::text,null,null
+destinations,5,province,text,text,null,null,null,YES,'NS'::text,null,null
+destinations,6,postal_code,text,text,null,null,null,YES,null,null,null
+destinations,7,active,boolean,bool,null,null,null,YES,true,null,null
+destinations,8,created_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+destinations,9,phone,text,text,null,null,null,YES,null,null,null
+destinations,10,notes,text,text,null,null,null,YES,null,null,null
+destinations,11,updated_at,timestamp with time zone,timestamptz,null,null,null,YES,CURRENT_TIMESTAMP,null,null
+destinations,12,contacts,jsonb,jsonb,null,null,null,YES,'[]'::jsonb,null,null
+destinations,13,email,text,text,null,null,null,YES,null,null,null
+driver_client_distances,1,id,integer,int4,null,32,0,NO,nextval('driver_client_distances_id_seq'::regclass),PRIMARY KEY,null
+driver_client_distances,2,driver_id,integer,int4,null,32,0,NO,null,"FOREIGN KEY, UNIQUE",drivers.id
+driver_client_distances,3,client_id,uuid,uuid,null,null,null,NO,null,"FOREIGN KEY, UNIQUE",clients.id
+driver_client_distances,4,primary_distance_km,numeric,numeric,null,8,2,YES,null,null,null
+driver_client_distances,5,primary_duration_minutes,integer,int4,null,32,0,YES,null,null,null
+driver_client_distances,6,secondary_distance_km,numeric,numeric,null,8,2,YES,null,null,null
+driver_client_distances,7,secondary_duration_minutes,integer,int4,null,32,0,YES,null,null,null
+driver_client_distances,8,calculated_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+driver_client_distances,9,calculation_source,character varying,varchar,50,null,null,YES,'google_maps'::character varying,null,null
+driver_destination_distances,1,id,integer,int4,null,32,0,NO,nextval('driver_destination_distances_id_seq'::regclass),PRIMARY KEY,null
+driver_destination_distances,2,driver_id,integer,int4,null,32,0,NO,null,"FOREIGN KEY, UNIQUE",drivers.id
+driver_destination_distances,3,destination_id,integer,int4,null,32,0,NO,null,"FOREIGN KEY, UNIQUE",destinations.id
+driver_destination_distances,4,distance_km,numeric,numeric,null,8,2,YES,null,null,null
+driver_destination_distances,5,duration_minutes,integer,int4,null,32,0,YES,null,null,null
+driver_destination_distances,6,calculated_at,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+driver_destination_distances,7,calculation_source,character varying,varchar,50,null,null,YES,'google_maps'::character varying,null,null
+driver_time_off,1,id,integer,int4,null,32,0,NO,nextval('driver_time_off_id_seq'::regclass),PRIMARY KEY,null
+driver_time_off,2,driver_id,integer,int4,null,32,0,YES,null,FOREIGN KEY,drivers.id
+driver_time_off,3,start_date,date,date,null,null,null,NO,null,null,null
+driver_time_off,4,end_date,date,date,null,null,null,NO,null,null,null
+driver_time_off,5,start_time,time without time zone,time,null,null,null,YES,null,null,null
+driver_time_off,6,end_time,time without time zone,time,null,null,null,YES,null,null,null
+driver_time_off,7,reason,text,text,null,null,null,YES,null,null,null
+driver_time_off,8,notes,text,text,null,null,null,YES,null,null,null
+driver_time_off,9,all_day,boolean,bool,null,null,null,YES,true,null,null
+driver_time_off,10,created_at,timestamp without time zone,timestamp,null,null,null,YES,now(),null,null
+driver_time_off,11,entry_type,text,text,null,null,null,NO,'time_off'::text,null,null
+driver_time_off,12,created_by,integer,int4,null,32,0,YES,null,null,null
+drivers,1,id,integer,int4,null,32,0,NO,nextval('drivers_id_seq'::regclass),PRIMARY KEY,null
+drivers,2,name,text,text,null,null,null,NO,null,null,null
+drivers,3,email,text,text,null,null,null,NO,null,null,null
+drivers,4,phone,text,text,null,null,null,YES,null,null,null
+drivers,5,google_calendar_id,text,text,null,null,null,YES,null,null,null
+drivers,6,preferred_calendar_type,text,text,null,null,null,YES,'google'::text,null,null
+drivers,7,active,boolean,bool,null,null,null,YES,true,null,null
+drivers,8,weekly_hours,jsonb,jsonb,null,null,null,YES,"'{""friday"": {""end"": ""16:00"", ""start"": ""08:00"", ""available"": true}, ""monday"": {""end"": ""16:00"", ""start"": ""08:00"", ""available"": true}, ""sunday"": {""end"": null, ""start"": null, ""available"": false}, ""tuesday"": {""end"": ""16:00"", ""start"": ""08:00"", ""available"": true}, ""saturday"": {""end"": null, ""start"": null, ""available"": false}, ""thursday"": {""end"": ""16:00"", ""start"": ""08:00"", ""available"": true}, ""wednesday"": {""end"": ""16:00"", ""start"": ""08:00"", ""available"": true}}'::jsonb",null,null
+drivers,9,created_at,timestamp without time zone,timestamp,null,null,null,YES,now(),null,null
+drivers,10,updated_at,timestamp without time zone,timestamp,null,null,null,YES,now(),null,null
+drivers,11,gender,text,text,null,null,null,YES,null,null,null
+drivers,12,workload_preference,text,text,null,null,null,YES,'normal'::text,null,null
+drivers,13,workload_percentage,integer,int4,null,32,0,YES,100,null,null
+drivers,14,is_male,boolean,bool,null,null,null,YES,false,null,null
+drivers,15,first_name,text,text,null,null,null,YES,null,null,null
+drivers,16,last_name,text,text,null,null,null,YES,null,null,null
+drivers,17,google_calendar_access_token,text,text,null,null,null,YES,null,null,null
+drivers,18,google_calendar_refresh_token,text,text,null,null,null,YES,null,null,null
+drivers,19,google_calendar_connected,boolean,bool,null,null,null,YES,false,null,null
+drivers,20,google_calendar_connected_at,timestamp without time zone,timestamp,null,null,null,YES,null,null,null
+drivers,21,google_calendar_calendar_id,text,text,null,null,null,YES,'primary'::text,null,null
+drivers,22,work_phone,text,text,null,null,null,YES,null,null,null
+drivers,23,vehicle_description,text,text,null,null,null,YES,null,null,null
+drivers,24,calendar_ical_url,text,text,null,null,null,YES,null,null,null
+drivers,25,schedule_pattern,jsonb,jsonb,null,null,null,YES,null,null,null
+drivers,26,clinic_preferences,jsonb,jsonb,null,null,null,YES,'{}'::jsonb,null,null
+drivers,27,pay_tier,integer,int4,null,32,0,YES,2,null,null
+drivers,28,home_address,text,text,null,null,null,YES,null,null,null
+drivers,29,home_city,text,text,null,null,null,YES,null,null,null
+drivers,30,home_province,text,text,null,null,null,YES,'NS'::text,null,null
+drivers,31,home_postal_code,text,text,null,null,null,YES,null,null,null
+drivers,32,home_coordinates,point,point,null,null,null,YES,null,null,null
+drivers,33,mileage_ytd,jsonb,jsonb,null,null,null,YES,'{}'::jsonb,null,null
+invoices,1,id,uuid,uuid,null,null,null,NO,gen_random_uuid(),PRIMARY KEY,null
+invoices,2,invoice_number,text,text,null,null,null,NO,null,UNIQUE,null
+invoices,3,knumber,text,text,null,null,null,NO,null,FOREIGN KEY,clients.knumber
+invoices,4,invoice_status,text,text,null,null,null,NO,'created'::text,null,null
+invoices,5,invoice_date,date,date,null,null,null,NO,null,null,null
+invoices,6,invoice_subtotal,numeric,numeric,null,10,2,NO,0,null,null
+invoices,7,invoice_tax,numeric,numeric,null,10,2,NO,0,null,null
+invoices,8,invoice_total,numeric,numeric,null,10,2,NO,0,null,null
+invoices,9,invoice_created_at,timestamp with time zone,timestamptz,null,null,null,YES,CURRENT_TIMESTAMP,null,null
+invoices,10,invoice_sent_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+invoices,11,payment_received_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+invoices,12,qbo_invoice_id,text,text,null,null,null,YES,null,UNIQUE,null
+invoices,13,qbo_invoice_number,text,text,null,null,null,YES,null,null,null
+invoices,14,qbo_sync_status,text,text,null,null,null,YES,'pending'::text,null,null
+invoices,15,qbo_synced_at,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+invoices,16,qbo_error_message,text,text,null,null,null,YES,null,null,null
+invoices,17,notes,text,text,null,null,null,YES,null,null,null
+invoices,18,created_by,integer,int4,null,32,0,YES,null,FOREIGN KEY,users.id
+invoices,19,appointment_ids,jsonb,jsonb,null,null,null,YES,'[]'::jsonb,null,null
+system_logs,1,id,integer,int4,null,32,0,NO,nextval('system_logs_id_seq'::regclass),PRIMARY KEY,null
+system_logs,2,timestamp,timestamp with time zone,timestamptz,null,null,null,NO,CURRENT_TIMESTAMP,null,null
+system_logs,3,level,text,text,null,null,null,NO,null,null,null
+system_logs,4,message,text,text,null,null,null,NO,null,null,null
+system_logs,5,source,text,text,null,null,null,YES,'System'::text,null,null
+system_logs,6,user_id,text,text,null,null,null,YES,null,null,null
+system_logs,7,ip_address,text,text,null,null,null,YES,null,null,null
+system_logs,8,created_at,timestamp with time zone,timestamptz,null,null,null,YES,CURRENT_TIMESTAMP,null,null
+user_sessions,1,id,integer,int4,null,32,0,NO,nextval('user_sessions_id_seq'::regclass),PRIMARY KEY,null
+user_sessions,3,session_token,text,text,null,null,null,NO,null,UNIQUE,null
+user_sessions,4,expires_at,timestamp with time zone,timestamptz,null,null,null,NO,null,null,null
+user_sessions,5,ip_address,inet,inet,null,null,null,YES,null,null,null
+user_sessions,6,user_agent,text,text,null,null,null,YES,null,null,null
+user_sessions,7,created_at,timestamp with time zone,timestamptz,null,null,null,YES,CURRENT_TIMESTAMP,null,null
+user_sessions,8,username,text,text,null,null,null,NO,null,FOREIGN KEY,users.username
+user_sessions,9,refresh_token,text,text,null,null,null,YES,null,UNIQUE,null
+user_sessions,10,user_id,integer,int4,null,32,0,YES,null,FOREIGN KEY,users.id
+user_sessions,11,role,text,text,null,null,null,YES,null,null,null
+user_sessions,12,last_used,timestamp with time zone,timestamptz,null,null,null,YES,now(),null,null
+users,1,id,integer,int4,null,32,0,NO,nextval('users_id_seq'::regclass),PRIMARY KEY,null
+users,2,username,text,text,null,null,null,NO,null,UNIQUE,null
+users,3,email,text,text,null,null,null,NO,null,UNIQUE,null
+users,4,password_hash,text,text,null,null,null,NO,null,null,null
+users,5,full_name,text,text,null,null,null,NO,null,null,null
+users,6,role,text,text,null,null,null,YES,'user'::text,null,null
+users,7,is_active,boolean,bool,null,null,null,YES,true,null,null
+users,8,created_at,timestamp with time zone,timestamptz,null,null,null,YES,CURRENT_TIMESTAMP,null,null
+users,9,updated_at,timestamp with time zone,timestamptz,null,null,null,YES,CURRENT_TIMESTAMP,null,null
+users,10,last_login,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+users,11,password_reset_token,text,text,null,null,null,YES,null,null,null
+users,12,password_reset_expires,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+users,13,failed_login_attempts,integer,int4,null,32,0,YES,0,null,null
+users,14,locked_until,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+users,15,last_password_change,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+users,16,status,text,text,null,null,null,YES,'active'::text,null,null
+users,17,must_change_password,boolean,bool,null,null,null,YES,false,null,null
+users,18,last_activity,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+users,19,password_reset_attempts,integer,int4,null,32,0,YES,0,null,null
+users,20,password_reset_last_attempt,timestamp with time zone,timestamptz,null,null,null,YES,null,null,null
+users,21,driver_id,integer,int4,null,32,0,YES,null,FOREIGN KEY,drivers.id

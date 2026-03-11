@@ -1,7 +1,7 @@
 # Session Summary — 2026-03-06
 
 ## Overview
-Driver async workflows built and validated. Destination async workflows deployed to production (from prior session). Payroll data queried for Feb 15-28 pay period. Frontend updated for driver management async endpoints with home address fields and optional user account creation.
+Driver async workflows built, validated, and deployed to production. Destination async workflows deployed to production (from prior session). Payroll data queried for Feb 15-28 pay period. Frontend updated for driver management async endpoints with home address fields and optional user account creation. Get All Drivers workflow updated with new fields. All changes merged to main and pushed.
 
 ## Changes Made
 
@@ -69,15 +69,29 @@ Driver async workflows built and validated. Destination async workflows deployed
 ### Final Re-Review
 - Both testing-qa and supabase-db: ALL PASS, no regressions, no new issues
 
-## Files Modified (uncommitted on wip branch)
-- `driver-management.html` — home address, user account, async endpoints
+### n8n Workflows — Updated (production)
+
+#### Get All Drivers (`/webhook/allDrivers`)
+- **Final Processing Code node** updated to include 6 new fields: `home_address`, `home_city`, `home_province`, `home_postal_code`, `schedule_pattern`, `clinic_preferences`
+- Changed response format from multiple n8n items to single item wrapping `{ drivers: [...] }` array (fixes fetch parsing issue)
+
+### Production Deployment Fixes
+- **Add Driver Async — Insert User node:** Added missing `email` field (mapped to `username`) to fix NOT NULL constraint violation on `users.email`
+- **Get All Drivers — Final Processing:** Fixed `$input.all()` extraction to use `$input.all()[0].json.data` (wrapper object, not flat items)
+- **Frontend `loadDrivers()`:** Fixed response parsing to handle `{ drivers: [...] }` format; separated appointments fetch to be non-blocking
+
+## Files Modified (committed to all branches)
+- `driver-management.html` — home address, user account, async endpoints, loadDrivers response fix
 - `js/core/api-client.js` — DriversAPI v5 endpoints
-- `workflows/drivers/DRIVER - Add Driver Async.json` — new (58 nodes)
+- `workflows/drivers/DRIVER - Add Driver Async.json` — new (58 nodes), email field fix
 - `workflows/drivers/DRIVER - Update Driver Async.json` — new (50 nodes)
 
+## Git History
+- `b7af608` — Add driver async endpoints, home address fields, optional user account creation
+- `40532ae` — Fix driver management loadDrivers response parsing and non-blocking appointments fetch
+- Merged wip → staging → main, all pushed
+
 ## Pending / Next Steps
-- Import both driver workflow JSONs into n8n UI and activate
-- Test end-to-end: add driver with home address + optional user account, update driver with address change triggering async recalc
 - Consider moving Google Calendar creation from async to sync phase (currently creates after webhook response)
 - `update-driver-home-address` endpoint on profile.html — should also trigger async distance recalc (decided yes, not yet implemented)
 - `status` column on drivers table — frontend sends it but DB doesn't have it. Either add column or remove from frontend
