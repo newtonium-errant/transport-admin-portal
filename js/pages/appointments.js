@@ -1879,7 +1879,7 @@ class AppointmentsPage {
         return filtered;
     }
 
-    editAppointment(appointmentId) {
+    async editAppointment(appointmentId) {
         const editBtn = document.getElementById(`edit-btn-${appointmentId}`);
 
         try {
@@ -1897,48 +1897,20 @@ class AppointmentsPage {
                 throw new Error('Appointment not found');
             }
 
-            // Open modal
+            // Open modal — await to properly handle errors and loading state
             if (typeof appointmentModalInstance !== 'undefined') {
-                appointmentModalInstance.open('edit', appointment);
-
-                // Hide loading overlay when modal finishes opening
-                if (!editBtn) {
-                    const modalElement = document.getElementById('appointmentModal');
-                    if (modalElement) {
-                        let timeoutId;
-
-                        // Listen for Bootstrap modal shown event (fires when animation completes)
-                        const hideOverlayOnShow = () => {
-                            console.log('[Loading Overlay] Modal shown event fired');
-                            clearTimeout(timeoutId); // Cancel fallback timeout
-                            this.hideLoadingOverlay();
-                            modalElement.removeEventListener('shown.bs.modal', hideOverlayOnShow);
-                        };
-                        modalElement.addEventListener('shown.bs.modal', hideOverlayOnShow);
-
-                        // Fallback timeout in case event doesn't fire (increased to 3 seconds)
-                        timeoutId = setTimeout(() => {
-                            console.log('[Loading Overlay] Fallback timeout fired');
-                            this.hideLoadingOverlay();
-                            modalElement.removeEventListener('shown.bs.modal', hideOverlayOnShow);
-                        }, 3000);
-                    }
-                } else {
-                    // For edit button clicks, hide after short delay
-                    setTimeout(() => {
-                        this.setButtonLoading(editBtn, false);
-                    }, 400);
-                }
+                await appointmentModalInstance.open('edit', appointment);
             }
 
         } catch (error) {
             console.error('Error opening appointment:', error);
+            this.showToast('Failed to open appointment', 'error');
+        } finally {
             if (editBtn) {
                 this.setButtonLoading(editBtn, false);
             } else {
                 this.hideLoadingOverlay();
             }
-            this.showToast('Failed to open appointment', 'error');
         }
     }
 
