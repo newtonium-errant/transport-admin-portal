@@ -557,8 +557,9 @@
             '<div class="d-flex justify-content-between align-items-center">' +
             '<span><strong id="invoiceBulkCount">0</strong> invoice(s) selected</span>' +
             '<div>' +
+            '<button class="btn btn-sm btn-primary me-1" id="btnBulkMarkSent"><i class="bi bi-send"></i> Mark Sent</button>' +
             '<button class="btn btn-sm btn-outline-secondary me-1" id="btnBulkPrint"><i class="bi bi-printer"></i> Print Selected</button>' +
-            '<button class="btn btn-sm btn-primary me-1" id="btnBulkDownload"><i class="bi bi-download"></i> Download Selected</button>' +
+            '<button class="btn btn-sm btn-outline-secondary me-1" id="btnBulkDownload"><i class="bi bi-download"></i> Download Selected</button>' +
             '<button class="btn btn-sm btn-outline-dark" id="btnBulkClear">Clear</button>' +
             '</div></div></div>';
 
@@ -641,6 +642,9 @@
         // Bulk action buttons
         var bulkDownBtn = document.getElementById('btnBulkDownload');
         if (bulkDownBtn) bulkDownBtn.addEventListener('click', bulkDownloadPdfs);
+
+        var bulkMarkSentBtn = document.getElementById('btnBulkMarkSent');
+        if (bulkMarkSentBtn) bulkMarkSentBtn.addEventListener('click', bulkMarkSent);
 
         var bulkPrintBtn = document.getElementById('btnBulkPrint');
         if (bulkPrintBtn) bulkPrintBtn.addEventListener('click', bulkPrintPdfs);
@@ -863,6 +867,72 @@
             console.error('[Finance Invoicing] Error:', error);
             FinanceUtils.showToast('Failed to update invoice', 'danger');
         }
+    }
+
+    async function bulkMarkSent() {
+        var ids = getSelectedInvoiceIds();
+        if (ids.length === 0) return;
+
+        // Filter to only "created" invoices
+        var createdIds = ids.filter(function(id) {
+            var inv = FinanceState.invoices.find(function(i) { return String(i.id) === String(id); });
+            var status = inv && (inv.invoiceStatus || inv.invoice_status);
+            return status === 'created';
+        });
+
+        if (createdIds.length === 0) {
+            FinanceUtils.showToast('No selected invoices have "Created" status', 'warning');
+            return;
+        }
+
+        var selectedDate = await showDatePickerModal('Bulk Mark as Sent',
+            'When were these ' + createdIds.length + ' invoice(s) sent?');
+        if (!selectedDate) return;
+
+        var btn = document.getElementById('btnBulkMarkSent');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> 0/' + createdIds.length;
+        }
+
+        var sent = 0;
+        var failed = 0;
+
+        for (var i = 0; i < createdIds.length; i++) {
+            try {
+                await APIClient.post('/update-invoice-status-v2', {
+                    invoiceId: createdIds[i],
+                    status: 'sent',
+                    invoiceSentAt: selectedDate
+                });
+                sent++;
+            } catch (error) {
+                console.error('[Finance Invoicing] Error marking sent ' + createdIds[i] + ':', error);
+                failed++;
+            }
+            if (btn) {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + (i + 1) + '/' + createdIds.length;
+            }
+        }
+
+        if (sent > 0) {
+            await logFinanceAudit('bulk_mark_invoice_sent', 'invoice', createdIds.join(','), {
+                count: sent, sent_date: selectedDate
+            });
+        }
+
+        if (failed > 0) {
+            FinanceUtils.showToast(sent + ' marked sent, ' + failed + ' failed', 'warning');
+        } else {
+            FinanceUtils.showToast(sent + ' invoice(s) marked as sent', 'success');
+        }
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send"></i> Mark Sent';
+        }
+
+        await window.loadTab_invoicing();
     }
 
     async function markInvoicePaid(invoiceId) {
@@ -1264,36 +1334,36 @@
         if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...'; }
 
         try {
-            // Generate all PDFs, merge into one blob for printing
-            var allPages = [];
+            await loadPdfLib();
+
+            // Generate individual PDF bytes for each invoice
+            var pdfBytesList = [];
             for (var i = 0; i < ids.length; i++) {
                 var inv = invoiceData.invoices.find(function(x) { return x.id === ids[i]; });
                 if (!inv) continue;
                 if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + (i + 1) + '/' + ids.length;
                 var pages = await generatePdfBytesForInvoice(inv);
-                if (pages) allPages = allPages.concat(pages);
+                if (pages) pdfBytesList = pdfBytesList.concat(pages);
             }
 
-            if (allPages.length === 0) return;
+            if (pdfBytesList.length === 0) return;
 
-            // Open each page in a print-friendly window
-            // For single page, use iframe print; for multiple, open new window
-            if (allPages.length === 1) {
-                var blob = new Blob([allPages[0]], { type: 'application/pdf' });
-                var blobUrl = URL.createObjectURL(blob);
-                var printWin = window.open(blobUrl, '_blank');
-                if (printWin) {
-                    printWin.addEventListener('load', function() { printWin.print(); });
-                }
-            } else {
-                // Download individually for multi-page (browser print can't merge PDFs)
-                for (var p = 0; p < allPages.length; p++) {
-                    var pBlob = new Blob([allPages[p]], { type: 'application/pdf' });
-                    var pUrl = URL.createObjectURL(pBlob);
-                    var pw = window.open(pUrl, '_blank');
-                    if (pw) pw.addEventListener('load', function() { this.print(); });
-                }
+            // Merge all PDFs into a single document using pdf-lib
+            var mergedPdf = await PDFLib.PDFDocument.create();
+            for (var j = 0; j < pdfBytesList.length; j++) {
+                var srcDoc = await PDFLib.PDFDocument.load(pdfBytesList[j]);
+                var copiedPages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+                copiedPages.forEach(function(page) { mergedPdf.addPage(page); });
             }
+
+            var mergedBytes = await mergedPdf.save();
+            var blob = new Blob([mergedBytes], { type: 'application/pdf' });
+            var blobUrl = URL.createObjectURL(blob);
+            var printWin = window.open(blobUrl, '_blank');
+            if (printWin) {
+                printWin.addEventListener('load', function() { printWin.print(); });
+            }
+
             FinanceUtils.showToast('Print dialog opened for ' + ids.length + ' invoice(s)', 'success');
         } catch (err) {
             console.error('[Finance Invoicing] Bulk print error:', err);
