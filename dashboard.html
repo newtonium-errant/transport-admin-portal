@@ -1133,7 +1133,7 @@
 	let currentUser = null;
 
 		// Initialize the dashboard
-	document.addEventListener('DOMContentLoaded', function() {
+	document.addEventListener('DOMContentLoaded', async function() {
     	console.log('RRTS Dashboard loaded');
     	console.log('API Endpoints configured:', API_ENDPOINTS);
 
@@ -1157,12 +1157,18 @@
     	        try {
     	            currentUser = JSON.parse(savedUser);
     	            isLoggedIn = true;
-    	            
+
+    	            // Validate session: check inactivity timeout and refresh token if needed
+    	            if (typeof requireAuth === 'function') {
+    	                const authValid = await requireAuth();
+    	                if (!authValid) return; // requireAuth handles redirect
+    	            }
+
     	            // Enforce page access and filter navigation
     	            if (typeof enforcePageAccess !== 'undefined' && enforcePageAccess) {
     	                enforcePageAccess();
     	            }
-    	            
+
     	            showDashboard();
     	            loadDashboardData();
 
@@ -1309,7 +1315,7 @@
                     sessionStorage.setItem('rrts_user', JSON.stringify(currentUser));
                     sessionStorage.setItem('rrts_access_token', result.access_token);
                     sessionStorage.setItem('rrts_refresh_token', result.refresh_token);
-                    sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
+                    sessionStorage.setItem('rrts_token_expiry', Date.now() + ((result.expires_in || 3600) * 1000));
 
                     console.log('Login successful - tokens stored');
 
@@ -1876,8 +1882,8 @@
             document.getElementById('loginError').classList.add('hidden');
 
             // Clear token refresh timer if exists
-            if (window.tokenRefreshInterval) {
-                clearInterval(window.tokenRefreshInterval);
+            if (window.tokenRefreshTimeout) {
+                clearTimeout(window.tokenRefreshTimeout);
             }
 
             showLogin();
@@ -1976,7 +1982,7 @@
                     sessionStorage.setItem('rrts_user', JSON.stringify(currentUser));
                     sessionStorage.setItem('rrts_access_token', result.access_token);
                     sessionStorage.setItem('rrts_refresh_token', result.refresh_token);
-                    sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
+                    sessionStorage.setItem('rrts_token_expiry', Date.now() + ((result.expires_in || 3600) * 1000));
 
                     console.log('Password changed successfully - proceeding to dashboard');
 
@@ -2119,78 +2125,6 @@
             const className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
             messageDiv.innerHTML = `<div class="${className}" role="alert">${message}</div>`;
             messageDiv.classList.remove('hidden');
-        }
-
-        // Token refresh functions
-        function startTokenRefreshTimer() {
-            // Clear existing timer if any
-            if (window.tokenRefreshInterval) {
-                clearInterval(window.tokenRefreshInterval);
-            }
-
-            // Refresh token every 45 minutes (token expires in 1 hour)
-            window.tokenRefreshInterval = setInterval(async () => {
-                console.log('Token refresh timer triggered');
-                await refreshAccessToken();
-            }, 45 * 60 * 1000);
-
-            console.log('Token refresh timer started (45 min interval)');
-        }
-
-        async function refreshAccessToken() {
-            const refreshToken = sessionStorage.getItem('rrts_refresh_token');
-
-            if (!refreshToken) {
-                console.log('No refresh token found - user needs to login');
-                return;
-            }
-
-            try {
-                console.log('Refreshing access token...');
-
-                const response = await fetch(API_ENDPOINTS.REFRESH_TOKEN, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        refresh_token: refreshToken
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    // Update access token and expiry
-                    sessionStorage.setItem('rrts_access_token', result.access_token);
-                    sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
-
-                    console.log('Access token refreshed successfully');
-                } else {
-                    console.error('Token refresh failed:', result.message);
-                    // If refresh fails, logout user
-                    alert('Your session has expired. Please login again.');
-                    logout();
-                }
-            } catch (error) {
-                console.error('Token refresh error:', error);
-            }
-        }
-
-        // Helper function to get auth headers for API calls
-        function getAuthHeaders() {
-            const accessToken = sessionStorage.getItem('rrts_access_token');
-
-            if (accessToken) {
-                return {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                };
-            }
-
-            return {
-                'Content-Type': 'application/json'
-            };
         }
 
         // Time filter functionality

@@ -1058,7 +1058,7 @@
     <script src="js/auth/session-manager.js"></script>
     <script src="js/components/navigation.js"></script>
     <script src="js/components/client-modal.js"></script>
-    <script src="js/components/appointment-modal.js"></script>
+    <script src="js/components/appointment-modal.js?v=3.3.0"></script>
     <script>
         // Global variables
         let allClients = [];
@@ -1112,7 +1112,7 @@
 
                         if (mode === 'edit') {
                             // v7 Update endpoint with complete calendar management
-                            endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete-v5';
+                            endpoint = 'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete-v5_5';
                             payload = appointmentData;
                         } else {
                             // v7 Add endpoint - uses pre-calculated travel times
