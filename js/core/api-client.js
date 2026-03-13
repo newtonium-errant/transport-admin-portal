@@ -99,10 +99,33 @@ const APIClient = (function() {
             return data;
 
         } catch (error) {
-            // Handle authentication errors
+            // Handle authentication errors — attempt one refresh + retry before logout
             if (error.status === 401) {
-                console.error('[API] Authentication failed, logging out');
-                // Clear tokens and redirect (uses logout function from jwt-auth.js)
+                console.log('[API] Received 401, attempting token refresh...');
+                if (typeof refreshAccessToken === 'function') {
+                    const refreshed = await refreshAccessToken();
+                    if (refreshed) {
+                        // Retry the original request with the new token
+                        const retryToken = sessionStorage.getItem('rrts_access_token');
+                        const retryUrl = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
+                        const retryHeaders = {
+                            'Authorization': `Bearer ${retryToken}`,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json',
+                            ...options.headers
+                        };
+                        const retryResponse = await fetch(retryUrl, { ...options, headers: retryHeaders });
+                        if (retryResponse.ok) {
+                            const contentType = retryResponse.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                return await retryResponse.json();
+                            }
+                            return await retryResponse.text();
+                        }
+                    }
+                }
+                // Refresh failed or retry failed — logout
+                console.error('[API] Token refresh failed, logging out');
                 if (typeof logout === 'function') {
                     logout();
                 } else {
