@@ -1,7 +1,7 @@
 # Session Summary — 2026-03-13
 
 ## Overview
-Investigated and fixed null integer error in Update Appointment workflow, then redesigned the entire workflow from scratch (v10, 69 nodes). Discovered and standardized the Restore Context pattern for n8n data flow. Audited DB compatibility, updated frontend endpoints, and identified recurring bug patterns across multiple workflows.
+Investigated and fixed null integer error in Update Appointment workflow, then redesigned the entire workflow from scratch (v10, 69 nodes). Discovered and standardized the Restore Context pattern for n8n data flow. Audited DB compatibility, updated frontend endpoints, and identified recurring bug patterns across multiple workflows. Fixed 6 session logout bugs causing users to be logged out while active. v10 workflow validated and deployed to production. All changes merged to main.
 
 ## Team Structure
 Multi-agent team ("rrts-dev") with specialized agents:
@@ -117,20 +117,55 @@ Traffic takes priority over fallback (mutually exclusive by design). Traffic = d
 - `docs/instructions/N8N-FIX-LOOKUP-DRIVER-DISTANCE-NULL-GUARD.md` — Instruction doc for null guard fix
 - `Workflows/appointments/APPT - Update Appointment Async v10.json` — Complete redesigned workflow (69 nodes, 66 connections)
 
+### 7. Session Logout Bug Fixes (6 bugs)
+**Problem:** Users being logged out while actively using the website.
+
+**Root cause investigation:** frontend and testing-qa agents investigated independently, found 6 bugs:
+
+1. **(CRITICAL) Dashboard shadow functions** — `dashboard.html` had local copies of `startTokenRefreshTimer()` and `refreshAccessToken()` that shadowed the global `jwt-auth.js` versions. Local `refreshAccessToken()` did NOT store rotated refresh tokens, causing subsequent refreshes to fail with stale tokens. **Fix:** Deleted ~70 lines of duplicate code.
+
+2. **(HIGH) Dashboard missing `requireAuth()`** — Existing-session code path skipped `requireAuth()`, so token validation/refresh never ran on page load for returning users. **Fix:** Added `await requireAuth()` before `showDashboard()`, made DOMContentLoaded callback async.
+
+3. **(HIGH) Token refresh timer resets on navigation** — Fixed 45-min `setInterval` reset on every page navigation, allowing 1hr token to expire before refresh fires. **Fix:** Replaced with `setTimeout` scheduled 5min before actual `rrts_token_expiry`, re-schedules recursively after successful refresh.
+
+4. **(MEDIUM) APIClient 401 without refresh retry** — On 401, `api-client.js` immediately called `logout()` without attempting token refresh. **Fix:** Attempt `refreshAccessToken()` + retry original request; only logout if both fail.
+
+5. **(LOW) Missing `expires_in` fallback** — If backend omits `expires_in`, expiry calculation becomes `NaN`. **Fix:** Added `|| 3600` (1hr default) in all 3 locations.
+
+6. **(LOW) profile.html script load order** — `session-manager.js` loaded in `<head>` before `jwt-auth.js` at end of `<body>`, causing SessionManager auto-start to fail silently. **Fix:** Moved `session-manager.js` after `jwt-auth.js`.
+
+**QA verified all 6 fixes pass.**
+
+### 8. Update Appointment Async v10 — Validated in Production
+Workflow imported to n8n UI, tested, and validated. Now active in production with endpoint `update-appointment-complete-v5_5`.
+
+## Files Created
+- `docs/instructions/N8N-FIX-LOOKUP-DRIVER-DISTANCE-NULL-GUARD.md` — Instruction doc for null guard fix
+- `Workflows/appointments/APPT - Update Appointment Async v10.json` — Complete redesigned workflow (69 nodes, 66 connections)
+
 ## Files Modified
-- `js/core/api-client.js` — v5 → v5_5 endpoint
+- `js/core/api-client.js` — v5 → v5_5 endpoint, 401 refresh+retry
 - `js/core/api-security.js` — v5 → v5_5 endpoint
 - `js/components/appointment-modal.js` — v5 → v5_5 endpoint
 - `js/pages/appointments.js` — v5 → v5_5 endpoint
 - `clients.html` — v5 → v5_5 endpoint
+- `js/auth/jwt-auth.js` — Expiry-aware token refresh timer, rotated refresh token storage, expires_in fallback
+- `dashboard.html` — Removed shadow auth functions, added requireAuth(), expires_in fallback, clearTimeout fix
+- `profile.html` — Fixed session-manager.js script load order
 
 ## Memory Files Created/Updated
 - `n8n-supabase-json-context-loss.md` — Restore Context pattern (NEW STANDARD)
 
+## Commits
+- `915acb2` Finance quick edit source-aware routing, PDF date format, cache bust fix
+- `9c8c469` Add invoice bulk mark-sent button and merge PDFs for bulk print
+- `3950482` Update appointment endpoint to v5_5 for redesigned async workflow
+- `0261b90` Fix session logout bugs: expiry-aware token refresh, 401 retry, script order
+- `b769f89` Merge staging into main (production deploy)
+
 ## Pending / Next Steps
-1. **Import and test v10 workflow in n8n UI** — in progress
-2. **Apply fixes to other blocked workflows** — Approve, non-async Update, Finance Completion
-3. **Fix reminder workflows' theoretical null integer vulnerability** — low priority, practically safe
-4. **Backfill `driver_work_duration`** for existing appointments
-5. **Apply Restore Context pattern to other existing workflows** as they're updated
-6. **Commit frontend endpoint changes to git** — 5 files modified on wip branch
+1. **Apply fixes to other blocked workflows** — Approve, non-async Update, Finance Completion
+2. **Fix reminder workflows' theoretical null integer vulnerability** — low priority, practically safe
+3. **Backfill `driver_work_duration`** for existing appointments
+4. **Apply Restore Context pattern to other existing workflows** as they're updated
+5. **Browser test session fixes** — QA provided 5 manual test scenarios to confirm in-browser behavior
