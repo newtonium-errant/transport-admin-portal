@@ -1,6 +1,6 @@
 /**
  * Finance Review Tab - Appointment Review for finance approval
- * Version: 6.3.0
+ * Version: 6.4.0
  */
 (function() {
     'use strict';
@@ -370,14 +370,31 @@
     // =============================================
     var qeModal = null;
 
-    function openQuickEdit(appointmentId) {
+    function openQuickEdit(appointmentId, source) {
         var apt = FinanceState.appointments.find(function(a) { return String(a.id) === String(appointmentId); });
         if (!apt) {
             FinanceUtils.showToast('Appointment not found', 'danger');
             return;
         }
 
+        // Track which section opened the modal
+        var editSource = source || 'review';
         document.getElementById('qeAppointmentId').value = apt.id;
+        document.getElementById('qeSource').value = editSource;
+
+        // Toggle buttons based on source
+        var btnApprove = document.getElementById('btnQeApprove');
+        var btnSave = document.getElementById('btnQeSave');
+        var btnComplete = document.getElementById('btnQeComplete');
+        if (editSource === 'needs_completion') {
+            if (btnApprove) btnApprove.classList.add('d-none');
+            if (btnSave) btnSave.classList.remove('d-none');
+            if (btnComplete) btnComplete.classList.remove('d-none');
+        } else {
+            if (btnApprove) btnApprove.classList.remove('d-none');
+            if (btnSave) btnSave.classList.add('d-none');
+            if (btnComplete) btnComplete.classList.add('d-none');
+        }
 
         // Client info
         var clientName = apt.client_name || 'Unknown';
@@ -422,7 +439,7 @@
         document.getElementById('qeMileageCalc').textContent = apt.driver_total_distance ? '(calc: ' + parseFloat(apt.driver_total_distance).toFixed(1) + ' km)' : '';
 
         if (!qeModal) {
-            qeModal = new bootstrap.Modal(document.getElementById('financeQuickEditModal'));
+            qeModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('financeQuickEditModal'));
         }
         qeModal.show();
     }
@@ -491,6 +508,111 @@
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-check-lg"></i> Approve';
             }
+        }
+    }
+
+    // Save data only (no status change) from needs completion quick edit
+    async function saveQuickEditData() {
+        var aptId = document.getElementById('qeAppointmentId').value;
+        var newDriver = document.getElementById('qeDriver').value;
+        var apt = FinanceState.appointments.find(function(a) { return String(a.id) === String(aptId); });
+        if (!apt) return;
+
+        var btn = document.getElementById('btnQeSave');
+        var btnOther = document.getElementById('btnQeComplete');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+        }
+        if (btnOther) btnOther.disabled = true;
+
+        try {
+            var currentDriver = String(apt.driver_assigned || apt.driverAssigned || '');
+            var driverChanged = newDriver && newDriver !== currentDriver;
+
+            if (driverChanged) {
+                await APIClient.post('/update-appointment-complete', {
+                    id: aptId,
+                    driver_assigned: parseInt(newDriver)
+                });
+                await logFinanceAudit('update_driver', 'appointment', aptId, {
+                    action_type: 'quick_edit_save',
+                    old_driver: currentDriver,
+                    new_driver: newDriver
+                });
+                if (qeModal) qeModal.hide();
+                FinanceUtils.showToast('Appointment updated', 'success');
+                await window.loadTab_review();
+            } else {
+                if (qeModal) qeModal.hide();
+                FinanceUtils.showToast('No changes to save', 'info');
+            }
+        } catch (err) {
+            console.error('[Finance Review] Error saving:', err);
+            FinanceUtils.showToast('Failed to save changes', 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-floppy"></i> Save';
+            }
+            if (btnOther) btnOther.disabled = false;
+        }
+    }
+
+    // Complete appointment from needs completion quick edit
+    async function completeFromQuickEdit() {
+        var aptId = document.getElementById('qeAppointmentId').value;
+        var newDriver = document.getElementById('qeDriver').value;
+        var apt = FinanceState.appointments.find(function(a) { return String(a.id) === String(aptId); });
+        if (!apt) return;
+
+        var btn = document.getElementById('btnQeComplete');
+        var btnOther = document.getElementById('btnQeSave');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Completing...';
+        }
+        if (btnOther) btnOther.disabled = true;
+
+        try {
+            // Save driver change first if needed
+            var currentDriver = String(apt.driver_assigned || apt.driverAssigned || '');
+            var driverChanged = newDriver && newDriver !== currentDriver;
+            if (driverChanged) {
+                await APIClient.post('/update-appointment-complete', {
+                    id: aptId,
+                    driver_assigned: parseInt(newDriver)
+                });
+            }
+
+            // Mark as completed — include hours/mileage if entered
+            var hoursVal = document.getElementById('qeHours').value;
+            var mileageVal = document.getElementById('qeMileage').value;
+            var completePayload = { appointmentId: aptId };
+            if (mileageVal) completePayload.actual_mileage = parseFloat(mileageVal);
+            if (hoursVal) completePayload.actual_duration = parseFloat(hoursVal) * 60; // convert hours to minutes
+            await APIClient.post('/complete-appointment', completePayload);
+
+            await logFinanceAudit('mark_completed', 'appointment', aptId, {
+                action_type: 'quick_edit_complete',
+                driver_changed: driverChanged
+            });
+
+            if (qeModal) qeModal.hide();
+            FinanceUtils.showToast('Appointment marked as completed', 'success');
+            await window.loadTab_review();
+            TabManager.markStale('payroll');
+            TabManager.markStale('invoicing');
+
+        } catch (err) {
+            console.error('[Finance Review] Error completing:', err);
+            FinanceUtils.showToast('Failed to complete appointment', 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check2-circle"></i> Complete';
+            }
+            if (btnOther) btnOther.disabled = false;
         }
     }
 
@@ -641,7 +763,8 @@
                 var clickableCell = e.target.closest('.review-clickable');
                 if (clickableCell) {
                     var aptId = clickableCell.dataset.aptId;
-                    if (aptId) openQuickEdit(aptId);
+                    var isNeedsCompletion = !!clickableCell.closest('#needsCompletionTableBody');
+                    if (aptId) openQuickEdit(aptId, isNeedsCompletion ? 'needs_completion' : 'review');
                     return;
                 }
 
@@ -708,10 +831,18 @@
             }
         }
 
-        // Quick edit modal button
+        // Quick edit modal buttons
         var btnQeApprove = document.getElementById('btnQeApprove');
         if (btnQeApprove) {
             btnQeApprove.addEventListener('click', function() { saveQuickEdit(); });
+        }
+        var btnQeSave = document.getElementById('btnQeSave');
+        if (btnQeSave) {
+            btnQeSave.addEventListener('click', function() { saveQuickEditData(); });
+        }
+        var btnQeComplete = document.getElementById('btnQeComplete');
+        if (btnQeComplete) {
+            btnQeComplete.addEventListener('click', function() { completeFromQuickEdit(); });
         }
 
         // Bulk approve button
@@ -795,5 +926,5 @@
         }
     });
 
-    console.log('[Finance] Review v6.3.0 loaded');
+    console.log('[Finance] Review v6.4.0 loaded');
 })();

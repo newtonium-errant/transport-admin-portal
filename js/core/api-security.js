@@ -227,7 +227,7 @@ async function secureUpdateAppointment(appointmentData) {
     const safeData = createSecureAppointmentUpdate(appointmentData);
 
     return await secureApiRequest(
-        'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete-v5',
+        'https://webhook-processor-production-3bb8.up.railway.app/webhook/update-appointment-complete-v5_5',
         { method: 'POST' },
         safeData
     );

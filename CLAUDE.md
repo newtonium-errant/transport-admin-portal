@@ -290,20 +290,36 @@ The application uses Supabase PostgreSQL with 8 main tables: **users** (JWT auth
 
 ## Common Gotchas
 
+### Frontend Patterns
 1. **Appointment Array Format**: All pages MUST send appointments in array format to `/save-appointment-v7`, even single appointments
 2. **Field Name Casing**: Use `appointmentLength` (camelCase), NOT `appointment_length` (snake_case) - workflow validation will fail
-3. **Modal Async Loading**: Always `await modal.open()` before calling `selectClient()` to avoid race conditions
-4. **n8n Array Processing**: Code nodes must use `$input.all()` and `.map()` to process multiple appointments
-5. **User Object Properties**: Always check multiple property variations: `currentUser.fullName || currentUser.full_name || currentUser.username` (not just `full_name`)
-6. **Transit Time Data Structure**: Client travel times use nested structure: `clinic_travel_times[clinicName].primary.duration_minutes` (NOT `.minutes`)
-7. **Session Storage**: User authentication is client-side only - no server-side validation
-8. **Timezone Handling**: n8n runs in Halifax time (AST/ADT), but database stores UTC
-9. **Cost Fields**: Automatically filtered for non-admin roles via `api-security.js`
-10. **K Numbers**: Must be unique client identifiers - enforce in validation
-11. **Password Security**: Passwords are hashed with PBKDF2 - use secure login workflow
-12. **Google Calendar Sync**: Required for driver appointments - must create calendar on driver add
-13. **Railway Rate Limits**: Minimize logging in n8n workflows to avoid rate limit issues
-14. **Switch vs IF**: n8n workflows must use Switch nodes with string comparisons, not IF nodes
+3. **Modal Async Loading**: Always `await modal.open()` before calling `selectClient()` to avoid race conditions. Also: `editAppointment()` must be async and `await` the open call, otherwise spinner never completes
+4. **Bootstrap Modal Lifecycle**: Use `bootstrap.Modal.getOrCreateInstance()` instead of `new bootstrap.Modal()` to reuse existing instances and avoid stacking issues where one modal blocks another
+5. **CDN Cache Busting**: Add cache-busting query params to script src: `<script src="path/to/script.js?v=DATE_OR_HASH"></script>` or use timestamps from deployment time to force browsers to reload updated code
+6. **Cherry-pick Hazards**: Git cherry-pick can introduce broken string literals (line continuations fail, semicolons missing). Always test the exact commit in isolation and verify all syntax after cherry-picking cross-branch
+7. **Modal Button Text Updates**: When setting button `.innerHTML` with spinner HTML, preserve any nested `<span>` elements (e.g., for spinner), don't just replace with raw text
+8. **User Object Properties**: Always check multiple property variations: `currentUser.fullName || currentUser.full_name || currentUser.username` (not just `full_name`)
+9. **Transit Time Data Structure**: Client travel times use nested structure: `clinic_travel_times[clinicName].primary.duration_minutes` (NOT `.minutes`)
+10. **Session Storage**: User authentication is client-side only - no server-side validation
+11. **Cost Fields**: Automatically filtered for non-admin roles via `api-security.js`
+12. **K Numbers**: Must be unique client identifiers - enforce in validation
+
+### n8n Workflow Patterns
+13. **Merge Node Mode**: MUST use "Append" mode (not "Combine") for multi-item workflows. "Combine" merges all items into one object which breaks downstream iteration. Use "Append" to keep items separate through the workflow pipeline
+14. **Merge Node Validation**: After merge node, the resulting item array must be validated with a Code node to ensure correct structure before any downstream processing that expects multiple items
+15. **JSONB Serialization**: When building `JSONB` data (like `billing_snapshot`), ALWAYS use `JSON.stringify()` in Code nodes. n8n expressions don't automatically serialize objects to JSON strings, causing silent failures where the JSONB column receives an object instead of valid JSON
+16. **Custom Rate Field**: n8n nodes use snake_case (`custom_rate`), frontend uses camelCase (`customRate`). Map both in Code nodes when processing billing data. If overlooked, custom rates get silently ignored
+17. **Response Format Standards**: ALWAYS return standardized response `{ success: true/false, message: string, data: {...}, timestamp: ISO8601 }`. Non-standard formats (e.g., nested `{ success: false, data: null }` for unauthorized) break frontend error handling and cause client-side null reference errors
+18. **Switch vs IF**: n8n workflows must use Switch nodes with string comparisons, not IF nodes
+19. **Code Node Silent Failures**: Code nodes silently fail if they reference non-existent fields. Always use the "Preview" feature to verify output data structure before running on production items. If no items appear in preview, the upstream node is outputting wrong structure
+20. **Node Reference Pitfalls**: n8n node references like `$('Node Name').first()` fail silently if the node name has changed. Always verify node names exactly match node UI labels. Mismatched references produce undefined values that fail downstream expressions
+
+### Backend Deployment
+21. **GitHub Pages .nojekyll File**: Static HTML deployed to GitHub Pages REQUIRES `.nojekyll` file in root to disable Jekyll processing. Without it, CSS/JS don't load and pages appear blank. Add empty file: `touch .nojekyll && git add .nojekyll`
+22. **Railway Node Version**: package.json `engines.node` must be `>=18` (not 14) to support `lockfileVersion: 3`. Node 14 causes cryptic build failures. Check `package.json` before deployment
+23. **Railway Rate Limits**: Minimize logging in n8n workflows to avoid rate limit issues
+24. **Timezone Handling**: n8n runs in Halifax time (AST/ADT), but database stores UTC
+25. **Google Calendar Sync**: Required for driver appointments - must create calendar on driver add
 
 ## Security Considerations
 

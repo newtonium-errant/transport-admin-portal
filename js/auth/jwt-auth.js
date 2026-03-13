@@ -122,20 +122,31 @@ function getAuthHeaders() {
     };
 }
 
-// Token refresh timer (refreshes every 45 minutes)
+// Token refresh timer — schedules refresh 5 minutes before actual token expiry
 function startTokenRefreshTimer() {
     // Clear existing timer if any
-    if (window.tokenRefreshInterval) {
-        clearInterval(window.tokenRefreshInterval);
+    if (window.tokenRefreshTimeout) {
+        clearTimeout(window.tokenRefreshTimeout);
     }
 
-    // Refresh token every 45 minutes (token expires in 1 hour)
-    window.tokenRefreshInterval = setInterval(async () => {
-        console.log('Token refresh timer triggered');
-        await refreshAccessToken();
-    }, 45 * 60 * 1000);
+    const expiry = sessionStorage.getItem('rrts_token_expiry');
+    if (!expiry) return;
 
-    console.log('Token refresh timer started (45 min interval)');
+    const expiryTime = parseInt(expiry);
+    const now = Date.now();
+    // Refresh 5 minutes before expiry, minimum 0
+    const refreshIn = Math.max((expiryTime - now) - (5 * 60 * 1000), 0);
+
+    window.tokenRefreshTimeout = setTimeout(async () => {
+        console.log('Token refresh timer triggered');
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            // Re-schedule based on new token expiry
+            startTokenRefreshTimer();
+        }
+    }, refreshIn);
+
+    console.log(`Token refresh scheduled in ${Math.round(refreshIn / 60000)} minutes`);
 }
 
 // Refresh access token using refresh token
@@ -165,7 +176,7 @@ async function refreshAccessToken() {
         if (result.success) {
             // Update access token and expiry
             sessionStorage.setItem('rrts_access_token', result.access_token);
-            sessionStorage.setItem('rrts_token_expiry', Date.now() + (result.expires_in * 1000));
+            sessionStorage.setItem('rrts_token_expiry', Date.now() + ((result.expires_in || 3600) * 1000));
 
             // Store new refresh token (rotation security feature)
             if (result.refresh_token) {
@@ -201,8 +212,8 @@ function logout() {
     sessionStorage.removeItem(LAST_ACTIVITY_KEY); // Clear last activity timestamp
 
     // Clear token refresh timer if exists
-    if (window.tokenRefreshInterval) {
-        clearInterval(window.tokenRefreshInterval);
+    if (window.tokenRefreshTimeout) {
+        clearTimeout(window.tokenRefreshTimeout);
     }
 
     console.log('Logged out - redirecting to login');
@@ -290,8 +301,8 @@ const JWTManager = {
         sessionStorage.removeItem(LAST_ACTIVITY_KEY);
 
         // Clear token refresh timer if exists
-        if (window.tokenRefreshInterval) {
-            clearInterval(window.tokenRefreshInterval);
+        if (window.tokenRefreshTimeout) {
+            clearTimeout(window.tokenRefreshTimeout);
         }
     },
 
