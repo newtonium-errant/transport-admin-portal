@@ -296,19 +296,33 @@
             const tierConfig = this.getTierConfig(driver.pay_tier);
             const tripType = this.getTripType(appointment);
 
-            const driverMileage = parseFloat(appointment.driverMileage || appointment.driver_mileage) ||
-                                  (parseFloat(appointment.tripdistance || appointment.trip_distance) / 1000) || 0;
+            const driverMileage = parseFloat(appointment.approved_mileage) ||
+                                  parseFloat(appointment.driver_total_distance || appointment.driverMileage || appointment.driver_mileage) ||
+                                  parseFloat(appointment.tripdistance || appointment.trip_distance) || 0;
 
             const year = new Date(appointment.appointmenttime || appointment.appointmentDateTime || appointment.appointment_time).getFullYear();
             const mileageCalc = CRACalculator.calculate(driverMileage, ytdBefore, year);
 
-            const invoiceAmount = parseFloat(appointment.customRate || appointment.custom_rate) || 0;
-            const totalPay = invoiceAmount * tierConfig.percentage;
-            const hoursToPay = Math.max(0, (totalPay - mileageCalc.reimbursement) / tierConfig.hourlyRate);
+            // Hours-based pay model (matches n8n Submit Payroll workflow)
+            // Priority: approved_hours > calculated_hours > driver_work_duration/60 > appointment_length/60 > default 4
+            const hours = parseFloat(appointment.approved_hours || appointment.calculated_hours) ||
+                          (parseFloat(appointment.driver_work_duration) / 60) ||
+                          (parseFloat(appointment.this_appointment_length || appointment.appointmentlength) / 60) || 4;
+            const basePay = hours * tierConfig.hourlyRate;
+            const totalPay = basePay + mileageCalc.reimbursement;
+            const hoursToPay = hours;
+
+            // Invoice amount kept for display only (client billing), not used for driver pay
+            const appointmentType = appointment.appointment_type || appointment.appointmentType || 'round_trip';
+            const customRate = appointment.customRate || appointment.custom_rate;
+            const invoiceAmount = (customRate != null && customRate !== '' && parseFloat(customRate) > 0)
+                ? parseFloat(customRate)
+                : BillingCalculator.calculate(appointmentType, tripType.billedHours, null, null);
 
             return {
                 invoiceAmount,
                 totalPay,
+                basePay,
                 driverMileage,
                 mileageReimbursement: mileageCalc.reimbursement,
                 kmUnder: mileageCalc.kmUnder,

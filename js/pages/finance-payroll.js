@@ -27,28 +27,26 @@
 
             updatePeriodDisplay();
 
-            // Ensure appointments loaded
-            if (!FinanceState.appointments || FinanceState.appointments.length === 0) {
-                var response = await APIClient.get('/get-finance-appointments?tab=payroll').catch(function(err) {
-                    console.warn('[Finance Payroll] Error loading appointments:', err);
-                    return { data: [] };
-                });
-                // Handle array-wrapped n8n responses
-                var raw = [];
-                if (Array.isArray(response) && response.length > 0 && response[0].data) {
-                    raw = response[0].data.appointments || response[0].data || [];
-                } else if (response && response.data && response.data.appointments) {
-                    raw = response.data.appointments;
-                } else if (response && response.data && Array.isArray(response.data)) {
-                    raw = response.data;
-                } else if (response && response.appointments) {
-                    raw = response.appointments;
-                } else if (Array.isArray(response)) {
-                    raw = response;
-                }
-                if (!Array.isArray(raw)) raw = [];
-                FinanceState.appointments = raw;
+            // Always fetch payroll-specific data (different filter than review tab)
+            var response = await APIClient.get('/get-finance-appointments?tab=payroll').catch(function(err) {
+                console.warn('[Finance Payroll] Error loading appointments:', err);
+                return { data: [] };
+            });
+            // Handle array-wrapped n8n responses
+            var raw = [];
+            if (Array.isArray(response) && response.length > 0 && response[0].data) {
+                raw = response[0].data.appointments || response[0].data || [];
+            } else if (response && response.data && response.data.appointments) {
+                raw = response.data.appointments;
+            } else if (response && response.data && Array.isArray(response.data)) {
+                raw = response.data;
+            } else if (response && response.appointments) {
+                raw = response.appointments;
+            } else if (Array.isArray(response)) {
+                raw = response;
             }
+            if (!Array.isArray(raw)) raw = [];
+            FinanceState.appointments = raw;
 
             // Load staff mileage entries for period
             try {
@@ -316,7 +314,9 @@
             var tierLabel = 'Tier ' + stats.payTier;
             var paidBadge = stats.isPaid
                 ? '<span class="badge bg-success">Paid</span>'
-                : '<span class="badge bg-warning text-dark">Unpaid</span>';
+                : '<span class="badge bg-warning text-dark">Unpaid</span>' +
+                  '<button class="btn btn-sm btn-outline-success btn-mark-driver-paid ms-1" data-driver-id="' + stats.driverId + '" title="Mark as Paid">' +
+                  '<i class="bi bi-cash-coin"></i> Mark Paid</button>';
 
             html += '<div class="card mb-2 driver-payroll-card">' +
                 '<div class="card-body py-2 px-3 d-flex align-items-center justify-content-between cursor-pointer" ' +
@@ -637,18 +637,12 @@
         try {
             var period = FinanceState.payPeriod;
             await APIClient.post('/submit-payroll', {
-                period_start: period.start.toISOString(),
-                period_end: period.end.toISOString(),
-                driver_summaries: payrollData.driverGroups.map(function(g) {
-                    return {
-                        driver_id: g.driverId,
-                        trips: g.trips,
-                        total_pay: g.totalPay,
-                        total_mileage: g.totalMileage,
-                        mileage_reimbursement: g.totalMileageReimbursement
-                    };
+                pay_period_start: period.start.toISOString(),
+                pay_period_end: period.end.toISOString(),
+                driver_ids: payrollData.driverGroups.map(function(g) {
+                    return g.driverId;
                 }),
-                staff_summaries: payrollData.staffEntries.map(function(e) {
+                staff_entries: payrollData.staffEntries.map(function(e) {
                     return {
                         user_id: e.userId,
                         role: e.role,
@@ -660,8 +654,8 @@
             });
 
             await logFinanceAudit('submit_payroll', 'payroll', 'period', {
-                period_start: period.start.toISOString(),
-                period_end: period.end.toISOString()
+                pay_period_start: period.start.toISOString(),
+                pay_period_end: period.end.toISOString()
             });
 
             FinanceUtils.showToast('Payroll submitted successfully', 'success');
