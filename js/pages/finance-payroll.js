@@ -1,6 +1,6 @@
 /**
  * Finance Payroll Tab - Driver payroll and staff pay
- * Version: 6.0.0
+ * Version: 6.1.0
  */
 (function() {
     'use strict';
@@ -323,7 +323,24 @@
             return;
         }
 
+        var hasUnpaid = groups.some(function(s) { return !s.isPaid; });
+
         var html = '';
+
+        // Bulk action bar (only when unpaid drivers exist)
+        if (hasUnpaid) {
+            html += '<div id="driverPaidBulkBar" class="alert alert-info py-2 mb-2" style="display:none">' +
+                '<div class="d-flex justify-content-between align-items-center">' +
+                '<div class="d-flex align-items-center">' +
+                '<input type="checkbox" class="form-check-input me-2" id="driverPaidSelectAll">' +
+                '<span><strong id="driverPaidBulkCount">0</strong> driver(s) selected</span></div>' +
+                '<div class="d-flex gap-2">' +
+                '<button class="btn btn-sm btn-success" id="btnBulkMarkDriversPaid">' +
+                '<i class="bi bi-cash-coin"></i> Mark Selected as Paid</button>' +
+                '<button class="btn btn-sm btn-outline-dark" id="btnBulkDriverPaidClear">Clear</button>' +
+                '</div></div></div>';
+        }
+
         var grandTotals = { trips: 0, mileage: 0, mileageReimb: 0, hours: 0, pay: 0 };
 
         groups.forEach(function(stats, idx) {
@@ -341,10 +358,16 @@
                   '<button class="btn btn-sm btn-outline-success btn-mark-driver-paid ms-1" data-driver-id="' + stats.driverId + '" title="Mark as Paid">' +
                   '<i class="bi bi-cash-coin"></i> Mark Paid</button>';
 
+            // Checkbox for unpaid drivers (bulk selection)
+            var checkboxHtml = !stats.isPaid
+                ? '<input type="checkbox" class="form-check-input driver-paid-cb me-2" data-driver-id="' + stats.driverId + '" data-driver-name="' + FinanceUtils.escapeHtml(stats.driverName) + '">'
+                : '';
+
             html += '<div class="card mb-2 driver-payroll-card">' +
                 '<div class="card-body py-2 px-3 d-flex align-items-center justify-content-between cursor-pointer" ' +
                 'data-bs-toggle="collapse" data-bs-target="#' + expandId + '">' +
                 '<div class="d-flex align-items-center gap-3 flex-grow-1">' +
+                checkboxHtml +
                 '<i class="bi bi-chevron-right collapse-icon"></i>' +
                 '<strong>' + FinanceUtils.escapeHtml(stats.driverName) + '</strong>' +
                 '<span class="badge bg-secondary">' + FinanceUtils.escapeHtml(tierLabel) + '</span>' +
@@ -409,6 +432,41 @@
                 markDriverPaid(btn.dataset.driverId);
             });
         });
+
+        // Bulk selection checkboxes - stop propagation to prevent collapse toggle
+        container.querySelectorAll('.driver-paid-cb').forEach(function(cb) {
+            cb.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            cb.addEventListener('change', updateDriverPaidBulkBar);
+        });
+
+        // Select-all checkbox
+        var driverSelectAll = document.getElementById('driverPaidSelectAll');
+        if (driverSelectAll) {
+            driverSelectAll.addEventListener('change', function() {
+                container.querySelectorAll('.driver-paid-cb').forEach(function(cb) {
+                    cb.checked = driverSelectAll.checked;
+                });
+                updateDriverPaidBulkBar();
+            });
+        }
+
+        // Bulk mark paid button
+        var bulkPaidBtn = document.getElementById('btnBulkMarkDriversPaid');
+        if (bulkPaidBtn) {
+            bulkPaidBtn.addEventListener('click', bulkMarkDriversPaid);
+        }
+
+        // Clear button
+        var bulkClearBtn = document.getElementById('btnBulkDriverPaidClear');
+        if (bulkClearBtn) {
+            bulkClearBtn.addEventListener('click', function() {
+                container.querySelectorAll('.driver-paid-cb').forEach(function(cb) { cb.checked = false; });
+                if (driverSelectAll) driverSelectAll.checked = false;
+                updateDriverPaidBulkBar();
+            });
+        }
     }
 
     function renderDriverDetailTable(stats) {
@@ -608,6 +666,101 @@
     }
 
     // =============================================
+    // BULK SELECTION HELPERS
+    // =============================================
+    function getSelectedDriverIds() {
+        var ids = [];
+        document.querySelectorAll('.driver-paid-cb:checked').forEach(function(cb) {
+            ids.push(cb.dataset.driverId);
+        });
+        return ids;
+    }
+
+    function updateDriverPaidBulkBar() {
+        var selected = getSelectedDriverIds();
+        var bar = document.getElementById('driverPaidBulkBar');
+        var countEl = document.getElementById('driverPaidBulkCount');
+        if (bar) bar.style.display = selected.length > 0 ? 'block' : 'none';
+        if (countEl) countEl.textContent = selected.length;
+    }
+
+    async function bulkMarkDriversPaid() {
+        var selectedIds = getSelectedDriverIds();
+        if (selectedIds.length === 0) return;
+
+        var selectedDate = await showDatePickerModal('Bulk Mark Drivers as Paid',
+            'When were these ' + selectedIds.length + ' driver(s) paid?');
+        if (!selectedDate) return;
+
+        var btn = document.getElementById('btnBulkMarkDriversPaid');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> 0/' + selectedIds.length;
+        }
+
+        var period = FinanceState.payPeriod;
+        var succeeded = 0;
+        var failed = 0;
+
+        for (var i = 0; i < selectedIds.length; i++) {
+            var driverId = selectedIds[i];
+
+            if (btn) {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + (i + 1) + '/' + selectedIds.length;
+            }
+
+            try {
+                var unpaid = FinanceState.appointments.filter(function(apt) {
+                    var aptDate = new Date(FinanceUtils.getAppointmentDate(apt));
+                    var opStatus = apt.operationStatus || apt.operation_status;
+                    var driver = apt.driverAssigned || apt.driver_assigned;
+                    var paidAt = apt.driverPaidAt || apt.driver_paid_at;
+                    var deletedAt = apt.deletedAt || apt.deleted_at;
+
+                    return opStatus === 'completed' && String(driver) === String(driverId) && !paidAt && !deletedAt &&
+                           aptDate >= period.start && aptDate <= period.end;
+                });
+
+                var appointmentIds = unpaid.map(function(a) { return a.id; });
+                if (appointmentIds.length === 0) {
+                    succeeded++;
+                    continue;
+                }
+
+                await APIClient.post('/mark-driver-paid', {
+                    appointmentIds: appointmentIds,
+                    driver_paid_at: selectedDate
+                });
+
+                await logFinanceAudit('mark_driver_paid', 'driver', driverId, {
+                    driver_name: FinanceUtils.getDriverName(driverId),
+                    payment_date: selectedDate,
+                    appointment_count: appointmentIds.length,
+                    bulk: true
+                });
+
+                succeeded++;
+            } catch (error) {
+                console.error('[Finance Payroll] Error marking driver ' + driverId + ' paid:', error);
+                failed++;
+            }
+        }
+
+        if (failed > 0) {
+            FinanceUtils.showToast(succeeded + ' driver(s) marked paid, ' + failed + ' failed', 'warning');
+        } else {
+            FinanceUtils.showToast(succeeded + ' driver(s) marked as paid', 'success');
+        }
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cash-coin"></i> Mark Selected as Paid';
+        }
+
+        await window.loadTab_payroll();
+    }
+
+    // =============================================
     // ACTIONS
     // =============================================
     async function markDriverPaid(driverId) {
@@ -734,5 +887,5 @@
         }
     });
 
-    console.log('[Finance] Payroll v6.0.0 loaded');
+    console.log('[Finance] Payroll v6.1.0 loaded');
 })();
