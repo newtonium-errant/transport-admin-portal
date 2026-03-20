@@ -321,6 +321,9 @@ The application uses Supabase PostgreSQL with 8 main tables: **users** (JWT auth
 24. **Timezone Handling**: n8n runs in Halifax time (AST/ADT), but database stores UTC
 25. **Google Calendar Sync**: Required for driver appointments - must create calendar on driver add
 
+### Finance / Duration
+26. **Duration Fallback Chain**: `driver_work_duration` is stored in **minutes** (not hours). The payroll/billing fallback chain is: `approved_hours > calculated_hours > driver_work_duration/60 > appointment_length/60 > default 4`. Dividing by 60 is required when sourcing from minute-based DB columns. If overlooked, a 90-minute appointment shows as 90 hours of pay
+
 ## Security Considerations
 
 1. **Password Hashing**: All passwords stored using custom `simpleHash()` function with salt (PBKDF2 not available in n8n environment)

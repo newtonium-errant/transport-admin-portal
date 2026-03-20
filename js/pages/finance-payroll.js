@@ -8,7 +8,8 @@
     var payrollData = {
         driverGroups: [],
         staffEntries: [],
-        staffMileage: {}
+        staffMileage: {},
+        ytdStaffMileage: {}
     };
 
     // =============================================
@@ -66,6 +67,28 @@
             } catch (err) {
                 console.warn('[Finance Payroll] Staff mileage endpoint not available:', err.message);
                 payrollData.staffMileage = {};
+            }
+
+            // Load staff YTD mileage (Jan 1 to period start) for CRA threshold tracking
+            payrollData.ytdStaffMileage = {};
+            try {
+                var yearStart = new Date(period.start.getFullYear(), 0, 1);
+                if (period.start > yearStart) {
+                    var ytdResp = await APIClient.get('/get-staff-mileage', {
+                        period_start: yearStart.toISOString(),
+                        period_end: period.start.toISOString()
+                    });
+                    var ytdEntries = ytdResp.data || ytdResp || [];
+                    if (Array.isArray(ytdEntries)) {
+                        ytdEntries.forEach(function(e) {
+                            var uid = e.user_id || e.userId;
+                            var km = parseFloat(e.km || e.mileage_km) || 0;
+                            payrollData.ytdStaffMileage[uid] = (payrollData.ytdStaffMileage[uid] || 0) + km;
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('[Finance Payroll] Staff YTD mileage not available:', err.message);
             }
 
             calculateDriverPayroll();
@@ -228,7 +251,7 @@
                 var totalMileage = 0;
                 mileageEntries.forEach(function(e) { totalMileage += parseFloat(e.km || e.mileage_km) || 0; });
 
-                var ytdBefore = 0; // TODO: sum mileage entries for same user earlier in the year for accurate CRA threshold tracking
+                var ytdBefore = payrollData.ytdStaffMileage[user.id] || 0;
                 var craMileage = CRACalculator.calculate(totalMileage, ytdBefore, period.start.getFullYear());
 
                 entries.push({
@@ -254,7 +277,7 @@
                 var totalMileage = 0;
                 mileageEntries.forEach(function(e) { totalMileage += parseFloat(e.km || e.mileage_km) || 0; });
 
-                var ytdBefore = 0; // TODO: sum mileage entries for same user earlier in the year for accurate CRA threshold tracking
+                var ytdBefore = payrollData.ytdStaffMileage[user.id] || 0;
                 var craMileage = CRACalculator.calculate(totalMileage, ytdBefore, period.start.getFullYear());
 
                 entries.push({

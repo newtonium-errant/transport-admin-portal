@@ -478,17 +478,6 @@
             font-size: 16px;
         }
         
-        .driver-status {
-            font-size: 12px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-        
-        .status-available { background-color: #d4edda; color: #155724; }
-        .status-busy { background-color: #fff3cd; color: #856404; }
-        .status-offline { background-color: #f8d7da; color: #721c24; }
-        
         .driver-actions {
             display: flex;
             gap: 8px;
@@ -1039,13 +1028,6 @@
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label for="driverStatus">Initial Status</label>
-                                    <select id="driverStatus">
-                                        <option value="available">Available</option>
-                                        <option value="offline">Offline</option>
-                                    </select>
-                                </div>
                             </div>
 
                             <div class="form-row">
@@ -1300,14 +1282,6 @@
                                     <option value="outlook">Outlook Calendar</option>
                                     <option value="apple">Apple Calendar</option>
                                     <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="editDriverStatus" class="form-label">Status</label>
-                                <select class="form-select" id="editDriverStatus">
-                                    <option value="available">Available</option>
-                                    <option value="busy">Busy</option>
-                                    <option value="offline">Offline</option>
                                 </select>
                             </div>
                         </div>
@@ -2141,7 +2115,6 @@
                     workload_preference: document.getElementById('driverWorkload').value,
                     workload_percentage: parseInt(document.getElementById('driverWorkloadPct').value) || 100,
                     preferred_calendar_type: document.getElementById('driverCalendarType').value,
-                    status: document.getElementById('driverStatus').value,
                     active: true,
                     weekly_hours: getWeeklyHoursData(),
                     work_phone: document.getElementById('driverWorkPhone').value || null,
@@ -2224,7 +2197,6 @@
             document.getElementById('editDriverWorkload').value = driver.workload_preference || 'normal';
             document.getElementById('editDriverWorkloadPct').value = driver.workload_percentage || 100;
             document.getElementById('editDriverCalendarType').value = driver.preferred_calendar_type || 'google';
-            document.getElementById('editDriverStatus').value = driver.status || 'available';
             document.getElementById('editDriverActive').value = driver.active !== false ? 'true' : 'false';
             document.getElementById('editDriverWorkPhone').value = driver.work_phone || '';
             document.getElementById('editDriverVehicle').value = driver.vehicle_description || '';
@@ -2304,7 +2276,6 @@
                     workload_preference: document.getElementById('editDriverWorkload').value,
                     workload_percentage: parseInt(document.getElementById('editDriverWorkloadPct').value) || 100,
                     preferred_calendar_type: document.getElementById('editDriverCalendarType').value,
-                    status: document.getElementById('editDriverStatus').value,
                     active: document.getElementById('editDriverActive').value === 'true',
                     work_phone: document.getElementById('editDriverWorkPhone').value,
                     vehicle_description: document.getElementById('editDriverVehicle').value,

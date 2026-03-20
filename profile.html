@@ -3043,6 +3043,18 @@
                     driverData.home_city = payload.home_city;
                     driverData.home_province = payload.home_province;
                     driverData.home_postal_code = payload.home_postal_code;
+
+                    // Trigger async distance recalculation (fire-and-forget)
+                    try {
+                        authenticatedFetch(`${API_BASE}/recalculate-driver-clinic-distances`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ driver_id: payload.driver_id })
+                        });
+                        showToast('Distance recalculation started in background.', 'info');
+                    } catch (recalcErr) {
+                        console.warn('Distance recalculation trigger failed:', recalcErr);
+                    }
                 } else {
                     showToast(result.message || 'Failed to update address.', 'error');
                 }

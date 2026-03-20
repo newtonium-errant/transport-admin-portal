@@ -10,6 +10,13 @@ This file tracks database changes that were removed from production workflows as
 
 ---
 
+## Decisions / Resolved
+
+### Drivers table `status` column — No action needed
+The frontend sends a `status` field when saving drivers, but no `status` column exists on the `drivers` table. The value is silently dropped by Supabase. **Decision (2026-03-20):** Being removed from frontend code — no database column needed.
+
+---
+
 ## Completed Migrations
 
 ### 1. Add `primary_clinic_id` column to `clients` table — ✅ Done 2026-02-27
@@ -22,6 +29,11 @@ This file tracks database changes that were removed from production workflows as
 ### 2. Add `calendar_ical_url` column to `drivers` table — ✅ Done (confirmed 2026-02-27)
 **Migration File:** `database/sql/12_add_calendar_ical_url.sql`
 **Applied:** Both branches (confirmed present in production schema CSV)
+
+### 3. Backfill `driver_work_duration` for historical appointments — ✅ Done 2026-03-20
+**Script:** `database/sql/backfill_driver_work_duration.sql`
+**Context:** Migration 34 added the column; this backfill populates it for ~328 existing appointments using tiered calculation (completion time, appointment length + transit, or 240 min default).
+**Status:** Ready to run in Supabase SQL Editor (run dry-run preview first).
 
 ---
 
