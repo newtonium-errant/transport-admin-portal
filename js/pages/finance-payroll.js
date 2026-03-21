@@ -1,6 +1,6 @@
 /**
  * Finance Payroll Tab - Driver payroll and staff pay
- * Version: 6.1.0
+ * Version: 6.2.0
  */
 (function() {
     'use strict';
@@ -204,7 +204,9 @@
             stats.totalPay += payroll.totalPay;
             stats.runningYtd += payroll.driverMileage;
 
-            if (apt.driverPaidAt || apt.driver_paid_at) stats.isPaid = true;
+            var paidAt = apt.driverPaidAt || apt.driver_paid_at || null;
+            if (paidAt) stats.isPaid = true;
+            if (paidAt && !stats.paidAt) stats.paidAt = paidAt;
 
             stats.appointments.push({
                 id: apt.id,
@@ -212,7 +214,8 @@
                 knumber: apt.knumber || apt.k_number || '',
                 clientName: apt.client_name || apt.clientName || ((apt.clientFirstName || apt.client_first_name || '') + ' ' + (apt.clientLastName || apt.client_last_name || '')).trim() || 'Unknown',
                 payroll: payroll,
-                runningYtdAfter: stats.runningYtd
+                runningYtdAfter: stats.runningYtd,
+                driverPaidAt: paidAt
             });
         });
 
@@ -323,12 +326,14 @@
             return;
         }
 
-        var hasUnpaid = groups.some(function(s) { return !s.isPaid; });
+        // Split into unpaid and paid groups
+        var unpaidGroups = groups.filter(function(s) { return !s.isPaid; });
+        var paidGroups = groups.filter(function(s) { return s.isPaid; });
 
         var html = '';
 
         // Bulk action bar (only when unpaid drivers exist)
-        if (hasUnpaid) {
+        if (unpaidGroups.length > 0) {
             html += '<div id="driverPaidBulkBar" class="alert alert-info py-2 mb-2" style="display:none">' +
                 '<div class="d-flex justify-content-between align-items-center">' +
                 '<div class="d-flex align-items-center">' +
@@ -341,61 +346,60 @@
                 '</div></div></div>';
         }
 
+        // --- Unpaid drivers section ---
         var grandTotals = { trips: 0, mileage: 0, mileageReimb: 0, hours: 0, pay: 0 };
 
-        groups.forEach(function(stats, idx) {
-            grandTotals.trips += stats.trips;
-            grandTotals.mileage += stats.totalMileage;
-            grandTotals.mileageReimb += stats.totalMileageReimbursement;
-            grandTotals.hours += stats.totalHoursToPay;
-            grandTotals.pay += stats.totalPay;
+        if (unpaidGroups.length > 0) {
+            unpaidGroups.forEach(function(stats, idx) {
+                grandTotals.trips += stats.trips;
+                grandTotals.mileage += stats.totalMileage;
+                grandTotals.mileageReimb += stats.totalMileageReimbursement;
+                grandTotals.hours += stats.totalHoursToPay;
+                grandTotals.pay += stats.totalPay;
 
-            var expandId = 'driver-payroll-' + idx;
-            var tierLabel = 'Tier ' + stats.payTier;
-            var paidBadge = stats.isPaid
-                ? '<span class="badge bg-success">Paid</span>'
-                : '<span class="badge bg-warning text-dark">Unpaid</span>' +
-                  '<button class="btn btn-sm btn-outline-success btn-mark-driver-paid ms-1" data-driver-id="' + stats.driverId + '" title="Mark as Paid">' +
-                  '<i class="bi bi-cash-coin"></i> Mark Paid</button>';
+                var expandId = 'driver-payroll-' + idx;
+                var tierLabel = 'Tier ' + stats.payTier;
 
-            // Checkbox for unpaid drivers (bulk selection)
-            var checkboxHtml = !stats.isPaid
-                ? '<input type="checkbox" class="form-check-input driver-paid-cb me-2" data-driver-id="' + stats.driverId + '" data-driver-name="' + FinanceUtils.escapeHtml(stats.driverName) + '">'
-                : '';
+                html += '<div class="card mb-2 driver-payroll-card">' +
+                    '<div class="card-body py-2 px-3 d-flex align-items-center justify-content-between cursor-pointer" ' +
+                    'data-bs-toggle="collapse" data-bs-target="#' + expandId + '">' +
+                    '<div class="d-flex align-items-center gap-3 flex-grow-1">' +
+                    '<input type="checkbox" class="form-check-input driver-paid-cb me-2" data-driver-id="' + stats.driverId + '" data-driver-name="' + FinanceUtils.escapeHtml(stats.driverName) + '">' +
+                    '<i class="bi bi-chevron-right collapse-icon"></i>' +
+                    '<strong>' + FinanceUtils.escapeHtml(stats.driverName) + '</strong>' +
+                    '<span class="badge bg-secondary">' + FinanceUtils.escapeHtml(tierLabel) + '</span>' +
+                    '<span class="badge bg-warning text-dark">Unpaid</span>' +
+                    '<button class="btn btn-sm btn-outline-success btn-mark-driver-paid ms-1" data-driver-id="' + stats.driverId + '" title="Mark as Paid">' +
+                    '<i class="bi bi-cash-coin"></i> Mark Paid</button>' +
+                    '</div>' +
+                    '<div class="d-flex align-items-center gap-4 text-end payroll-summary-nums">' +
+                    '<span title="Trips">' + stats.trips + ' trips</span>' +
+                    '<span title="Hours">' + stats.totalHoursToPay.toFixed(1) + ' hrs</span>' +
+                    '<span title="Mileage">' + stats.totalMileage.toFixed(1) + ' km</span>' +
+                    '<span title="Mileage $">' + FinanceUtils.formatCurrency(stats.totalMileageReimbursement) + '</span>' +
+                    '<strong title="Total Pay">' + FinanceUtils.formatCurrency(stats.totalPay) + '</strong>' +
+                    '</div></div>' +
+                    '<div class="collapse" id="' + expandId + '">' +
+                    '<div class="card-body pt-0 px-3">' +
+                    renderDriverDetailTable(stats) +
+                    '</div></div></div>';
+            });
 
-            html += '<div class="card mb-2 driver-payroll-card">' +
-                '<div class="card-body py-2 px-3 d-flex align-items-center justify-content-between cursor-pointer" ' +
-                'data-bs-toggle="collapse" data-bs-target="#' + expandId + '">' +
-                '<div class="d-flex align-items-center gap-3 flex-grow-1">' +
-                checkboxHtml +
-                '<i class="bi bi-chevron-right collapse-icon"></i>' +
-                '<strong>' + FinanceUtils.escapeHtml(stats.driverName) + '</strong>' +
-                '<span class="badge bg-secondary">' + FinanceUtils.escapeHtml(tierLabel) + '</span>' +
-                paidBadge +
-                '</div>' +
-                '<div class="d-flex align-items-center gap-4 text-end payroll-summary-nums">' +
-                '<span title="Trips">' + stats.trips + ' trips</span>' +
-                '<span title="Hours">' + stats.totalHoursToPay.toFixed(1) + ' hrs</span>' +
-                '<span title="Mileage">' + stats.totalMileage.toFixed(1) + ' km</span>' +
-                '<span title="Mileage $">' + FinanceUtils.formatCurrency(stats.totalMileageReimbursement) + '</span>' +
-                '<strong title="Total Pay">' + FinanceUtils.formatCurrency(stats.totalPay) + '</strong>' +
-                '</div></div>' +
-                '<div class="collapse" id="' + expandId + '">' +
-                '<div class="card-body pt-0 px-3">' +
-                renderDriverDetailTable(stats) +
+            // Unpaid totals
+            html += '<div class="card bg-light mt-3"><div class="card-body py-2 px-3 d-flex justify-content-between">' +
+                '<strong>UNPAID TOTALS (' + unpaidGroups.length + ' driver' + (unpaidGroups.length !== 1 ? 's' : '') + ')</strong>' +
+                '<div class="d-flex gap-4 text-end payroll-summary-nums">' +
+                '<span>' + grandTotals.trips + ' trips</span>' +
+                '<span>' + grandTotals.hours.toFixed(1) + ' hrs</span>' +
+                '<span>' + grandTotals.mileage.toFixed(1) + ' km</span>' +
+                '<span>' + FinanceUtils.formatCurrency(grandTotals.mileageReimb) + '</span>' +
+                '<strong>' + FinanceUtils.formatCurrency(grandTotals.pay) + '</strong>' +
                 '</div></div></div>';
-        });
-
-        // Grand totals
-        html += '<div class="card bg-light mt-3"><div class="card-body py-2 px-3 d-flex justify-content-between">' +
-            '<strong>TOTALS (' + groups.length + ' drivers)</strong>' +
-            '<div class="d-flex gap-4 text-end payroll-summary-nums">' +
-            '<span>' + grandTotals.trips + ' trips</span>' +
-            '<span>' + grandTotals.hours.toFixed(1) + ' hrs</span>' +
-            '<span>' + grandTotals.mileage.toFixed(1) + ' km</span>' +
-            '<span>' + FinanceUtils.formatCurrency(grandTotals.mileageReimb) + '</span>' +
-            '<strong>' + FinanceUtils.formatCurrency(grandTotals.pay) + '</strong>' +
-            '</div></div></div>';
+        } else {
+            html += '<div class="text-center py-3 text-muted mb-3">' +
+                '<i class="bi bi-check-circle" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>' +
+                'All drivers paid for this period</div>';
+        }
 
         // Submit payroll button (admin only)
         if (FinanceState.currentUser && FinanceState.currentUser.role === 'admin') {
@@ -404,9 +408,14 @@
                 '<i class="bi bi-send"></i> Submit Payroll</button></div>';
         }
 
+        // --- Paid Payroll section ---
+        if (paidGroups.length > 0) {
+            html += renderPaidPayrollSection(paidGroups);
+        }
+
         container.innerHTML = html;
 
-        // Collapse icon rotation
+        // Collapse icon rotation (applies to both unpaid and paid sections)
         container.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(el) {
             var target = document.querySelector(el.dataset.bsTarget);
             if (target) {
@@ -467,6 +476,113 @@
                 updateDriverPaidBulkBar();
             });
         }
+    }
+
+    // =============================================
+    // PAID PAYROLL SECTION (grouped by payment date)
+    // =============================================
+    function renderPaidPayrollSection(paidGroups) {
+        // Group paid drivers by their payment date (date-only, no time)
+        var byDate = {};
+        paidGroups.forEach(function(stats) {
+            var rawDate = stats.paidAt || '';
+            var dateKey = rawDate ? rawDate.substring(0, 10) : 'unknown';
+            if (!byDate[dateKey]) byDate[dateKey] = [];
+            byDate[dateKey].push(stats);
+        });
+
+        // Sort date keys descending (most recent first)
+        var dateKeys = Object.keys(byDate).sort(function(a, b) {
+            return b.localeCompare(a);
+        });
+
+        var html = '<hr class="my-4">' +
+            '<h6 class="text-muted mb-3"><i class="bi bi-check2-circle me-2"></i>Paid Payroll</h6>';
+
+        var paidGrandTotals = { trips: 0, mileage: 0, mileageReimb: 0, hours: 0, pay: 0, drivers: 0 };
+
+        dateKeys.forEach(function(dateKey, dateIdx) {
+            var dateDrivers = byDate[dateKey];
+            var dateLabel = dateKey !== 'unknown' ? FinanceUtils.formatDateShort(dateKey) : 'Unknown Date';
+            var dateTotals = { trips: 0, hours: 0, mileage: 0, mileageReimb: 0, pay: 0 };
+
+            dateDrivers.forEach(function(s) {
+                dateTotals.trips += s.trips;
+                dateTotals.hours += s.totalHoursToPay;
+                dateTotals.mileage += s.totalMileage;
+                dateTotals.mileageReimb += s.totalMileageReimbursement;
+                dateTotals.pay += s.totalPay;
+            });
+
+            paidGrandTotals.trips += dateTotals.trips;
+            paidGrandTotals.hours += dateTotals.hours;
+            paidGrandTotals.mileage += dateTotals.mileage;
+            paidGrandTotals.mileageReimb += dateTotals.mileageReimb;
+            paidGrandTotals.pay += dateTotals.pay;
+            paidGrandTotals.drivers += dateDrivers.length;
+
+            var dateCollapseId = 'paid-date-group-' + dateIdx;
+
+            // Date group header (collapsed by default)
+            html += '<div class="card mb-2 border-success">' +
+                '<div class="card-body py-2 px-3 d-flex align-items-center justify-content-between cursor-pointer" ' +
+                'data-bs-toggle="collapse" data-bs-target="#' + dateCollapseId + '">' +
+                '<div class="d-flex align-items-center gap-3">' +
+                '<i class="bi bi-chevron-right collapse-icon"></i>' +
+                '<span class="badge bg-success"><i class="bi bi-calendar-check me-1"></i>Paid ' + FinanceUtils.escapeHtml(dateLabel) + '</span>' +
+                '<span class="text-muted">' + dateDrivers.length + ' driver' + (dateDrivers.length !== 1 ? 's' : '') + '</span>' +
+                '</div>' +
+                '<div class="d-flex align-items-center gap-4 text-end payroll-summary-nums">' +
+                '<span>' + dateTotals.trips + ' trips</span>' +
+                '<span>' + dateTotals.hours.toFixed(1) + ' hrs</span>' +
+                '<span>' + dateTotals.mileage.toFixed(1) + ' km</span>' +
+                '<span>' + FinanceUtils.formatCurrency(dateTotals.mileageReimb) + '</span>' +
+                '<strong>' + FinanceUtils.formatCurrency(dateTotals.pay) + '</strong>' +
+                '</div></div>' +
+                '<div class="collapse" id="' + dateCollapseId + '">' +
+                '<div class="card-body pt-0 px-3">';
+
+            // Driver cards inside the date group
+            dateDrivers.forEach(function(stats, driverIdx) {
+                var driverCollapseId = 'paid-driver-' + dateIdx + '-' + driverIdx;
+                var tierLabel = 'Tier ' + stats.payTier;
+
+                html += '<div class="card mb-2 bg-light">' +
+                    '<div class="card-body py-2 px-3 d-flex align-items-center justify-content-between cursor-pointer" ' +
+                    'data-bs-toggle="collapse" data-bs-target="#' + driverCollapseId + '">' +
+                    '<div class="d-flex align-items-center gap-3 flex-grow-1">' +
+                    '<i class="bi bi-chevron-right collapse-icon"></i>' +
+                    '<strong>' + FinanceUtils.escapeHtml(stats.driverName) + '</strong>' +
+                    '<span class="badge bg-secondary">' + FinanceUtils.escapeHtml(tierLabel) + '</span>' +
+                    '</div>' +
+                    '<div class="d-flex align-items-center gap-4 text-end payroll-summary-nums">' +
+                    '<span>' + stats.trips + ' trips</span>' +
+                    '<span>' + stats.totalHoursToPay.toFixed(1) + ' hrs</span>' +
+                    '<span>' + stats.totalMileage.toFixed(1) + ' km</span>' +
+                    '<span>' + FinanceUtils.formatCurrency(stats.totalMileageReimbursement) + '</span>' +
+                    '<strong>' + FinanceUtils.formatCurrency(stats.totalPay) + '</strong>' +
+                    '</div></div>' +
+                    '<div class="collapse" id="' + driverCollapseId + '">' +
+                    '<div class="card-body pt-0 px-3">' +
+                    renderDriverDetailTable(stats) +
+                    '</div></div></div>';
+            });
+
+            html += '</div></div></div>';
+        });
+
+        // Paid grand totals
+        html += '<div class="card bg-light mt-2 border-success"><div class="card-body py-2 px-3 d-flex justify-content-between">' +
+            '<strong>PAID TOTALS (' + paidGrandTotals.drivers + ' driver' + (paidGrandTotals.drivers !== 1 ? 's' : '') + ')</strong>' +
+            '<div class="d-flex gap-4 text-end payroll-summary-nums">' +
+            '<span>' + paidGrandTotals.trips + ' trips</span>' +
+            '<span>' + paidGrandTotals.hours.toFixed(1) + ' hrs</span>' +
+            '<span>' + paidGrandTotals.mileage.toFixed(1) + ' km</span>' +
+            '<span>' + FinanceUtils.formatCurrency(paidGrandTotals.mileageReimb) + '</span>' +
+            '<strong>' + FinanceUtils.formatCurrency(paidGrandTotals.pay) + '</strong>' +
+            '</div></div></div>';
+
+        return html;
     }
 
     function renderDriverDetailTable(stats) {
@@ -887,5 +1003,5 @@
         }
     });
 
-    console.log('[Finance] Payroll v6.1.0 loaded');
+    console.log('[Finance] Payroll v6.2.0 loaded');
 })();

@@ -171,9 +171,25 @@ QA audited all 20 finance workflow files. 6 had admin-only role checks blocking 
 - Active filters added to all 3 data fetch nodes
 - Full QA + DB schema review passed
 
-## Remaining Items
-1. **Update Appointment v5_5 response fix** — instruction doc ready, needs applying in n8n UI
-2. **Nav bar / operations page redesign** — proposal ready, not yet implemented
-3. **Driver address v2 workflow** — ready for import to n8n UI
-4. **Bulk mark drivers paid** — implemented, needs testing
-5. **Night Before SMS null guard** — applied but could also add to production Night Before workflow
+## Commits
+- `0a29591` — Resolve pending items: staff YTD CRA, driver status cleanup, address recalc, QA docs
+- `54003fe` — Add bulk mark drivers paid, update session notes with workflow fixes
+
+## Remaining Items / TODO
+
+### n8n UI (manual)
+1. **Update Appointment v5_5 response fix** — instruction doc at `docs/instructions/N8N-FIX-UPDATE-APPOINTMENT-V5_5-RESPONSE.md`
+2. **Driver Address v2 workflow** — import `Workflows/drivers/DRIVER - Update Driver Home Address v2.json` to n8n, test, then switch profile.html to v2 endpoint and remove frontend recalc call
+
+### Frontend (code)
+3. **Nav bar / operations page redesign** — proposal ready (simplified nav, 4-tab operations scheduling hub with Needs Completion, driver availability, today's appointments). Not yet implemented.
+4. **Remove frontend recalc from profile.html** — after driver address v2 is imported and tested (backend handles recalc now)
+5. **Bulk mark drivers paid** — committed, needs production testing
+
+### Repo Cleanup
+6. **Export updated workflow JSONs** — several Review copies are newer than repo copies and should replace them:
+   - `FIN - Approve Appointments (3).json` → replace repo copy (already done earlier)
+   - `FIN - Unapprove Appointments (1).json` → replace repo copy
+   - `RMDR - 1 Hour SMS Reminders (19).json` → replace repo copy
+   - `RMDR - Night Before SMS Reminders (8).json` → replace repo copy
+   - `CALC - Batch Calculate All Distances (1).json` → replace repo copy
